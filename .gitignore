@@ -6,3 +6,5 @@ dist
 .wrangler
 .env
 .env.*
+playwright-report
+test-results

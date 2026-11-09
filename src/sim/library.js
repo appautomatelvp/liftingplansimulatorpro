@@ -39,7 +39,8 @@
             // Modal Open / Close
             const modal = document.getElementById('library-studio-modal');
             document.getElementById('btn-open-3d-library').addEventListener('click', () => {
-                modal.classList.add('open');
+                if (window.UI?.layout) window.UI.layout.openModal('library-studio-modal');
+                else modal.classList.add('open');
                 setTimeout(() => {
                     const rect = container.getBoundingClientRect();
                     if (rect.width > 0 && rect.height > 0) {
@@ -57,7 +58,8 @@
                 }, 40);
             });
             document.getElementById('btn-close-3d-library').addEventListener('click', () => {
-                modal.classList.remove('open');
+                if (window.UI?.layout) window.UI.layout.closeModal('library-studio-modal');
+                else modal.classList.remove('open');
             });
 
             // Category Tabs
@@ -189,7 +191,8 @@
                 } else if (selectedLibraryItem) {
                     applyLibraryAssetToSimulation(selectedLibraryItem, activeLibraryCategory);
                 }
-                modal.classList.remove('open');
+                if (window.UI?.layout) window.UI.layout.closeModal('library-studio-modal');
+                else modal.classList.remove('open');
             });
 
             // Dimension & Weight Live Rescale Listeners
@@ -304,7 +307,8 @@
                     if (ev.target.classList.contains('apply-now-btn')) {
                         selectedLibraryItem = item;
                         applyLibraryAssetToSimulation(item, activeLibraryCategory);
-                        document.getElementById('library-studio-modal').classList.remove('open');
+                        if (window.UI?.layout) window.UI.layout.closeModal('library-studio-modal');
+                        else document.getElementById('library-studio-modal')?.classList.remove('open');
                         return;
                     }
                     selectedLibraryItem = item;
@@ -1859,7 +1863,8 @@
             render3DLibraryGrid();
             applyLibraryAssetToSimulation(newItem, 'cargo');
 
-            document.getElementById('library-studio-modal')?.classList.remove('open');
+            if (window.UI?.layout) window.UI.layout.closeModal('library-studio-modal');
+            else document.getElementById('library-studio-modal')?.classList.remove('open');
 
             const statusEl = document.getElementById('sim-status-text');
             if (statusEl) {

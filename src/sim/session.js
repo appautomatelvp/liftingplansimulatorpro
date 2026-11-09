@@ -1904,6 +1904,9 @@
             const drawer = document.getElementById('right-side-drawer');
             if (!drawer) return;
 
+            // Close all dropdown menus to prevent overlap
+            if (window.UI?.layout) window.UI.layout.closeAllMenus();
+
             // Dynamically fit drawer cleanly between top-bar and bottom-dock-bar
             const topBar = document.getElementById('top-bar');
             const bottomBar = document.getElementById('bottom-dock-bar');
@@ -2513,40 +2516,27 @@
 
             window.addEventListener('keydown', e => {
                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+                if (window.UI?.layout?.shouldSuspend3DHotkeys()) {
+                    if (e.key === 'Escape') {
+                        if (window.UI.layout.handleEscape()) {
+                            e.preventDefault();
+                            return;
+                        }
+                    }
+                    return;
+                }
+                if (e.key === 'Escape') {
+                    if (window.UI?.layout && window.UI.layout.handleEscape()) {
+                        e.preventDefault();
+                        return;
+                    }
+                }
                 if (e.key === 'F1' || e.key === '1') { e.preventDefault(); toggleRightDrawer('cargo'); }
                 if (e.key === 'F2' || e.key === '2') { e.preventDefault(); toggleRightDrawer('lugs'); }
                 if (e.key === 'F3' || e.key === '3') { e.preventDefault(); toggleRightDrawer('rig'); }
                 if (e.key === 'F4' || e.key === '4') { e.preventDefault(); toggleRightDrawer('gear'); }
                 if (e.key === 'F5' || e.key === '5') { e.preventDefault(); toggleRightDrawer('crane'); }
                 if (e.key === 'F6' || e.key === '6') { e.preventDefault(); toggleRightDrawer('site'); }
-                if (e.key === 'Escape') {
-                    const libModal = document.getElementById('library-studio-modal');
-                    if (libModal && (libModal.classList.contains('open') || libModal.style.display === 'flex')) {
-                        libModal.classList.remove('open');
-                        libModal.style.display = 'none';
-                        return;
-                    }
-                    const planModal = document.getElementById('liftplan-modal');
-                    if (planModal && planModal.classList.contains('open')) {
-                        planModal.classList.remove('open');
-                        return;
-                    }
-                    const compPanel = document.getElementById('compliance-hud-panel');
-                    if (compPanel && !compPanel.classList.contains('hidden')) {
-                        compPanel.classList.add('hidden');
-                        document.getElementById('btn-open-compliance')?.classList.remove('active');
-                        return;
-                    }
-                    const gear = document.getElementById('gear-editor');
-                    if (gear && gear.style.display !== 'none' && gear.style.display !== '') {
-                        gear.style.display = 'none';
-                        return;
-                    }
-                    if (isDrawerOpen) {
-                        e.preventDefault();
-                        closeRightDrawer();
-                    }
-                }
                 if (e.key === 'h' || e.key === 'H') btnFull.click();
                 if (e.key === 'm' || e.key === 'M') {
                     if (typeof simAudio !== 'undefined') {
@@ -3249,28 +3239,41 @@
 
             // Unified Top Bar Dropdown Management
             const allDropdowns = [
-                { btnId: 'btn-menu-camera', panelId: 'dropdown-panel-camera' },
-                { btnId: 'btn-display-options', panelId: 'display-options-popover', arrowId: 'arrow-display-options' },
-                { btnId: 'btn-toggle-gfx', panelId: 'gfx-menu-popover', arrowId: 'arrow-gfx-menu' },
-                { btnId: 'btn-menu-docs', panelId: 'dropdown-panel-docs' },
-                { btnId: 'btn-menu-system', panelId: 'dropdown-panel-system' }
+                { menuId: 'menu-camera', btnId: 'btn-menu-camera', panelId: 'dropdown-panel-camera' },
+                { menuId: 'menu-display', btnId: 'btn-display-options', panelId: 'display-options-popover', arrowId: 'arrow-display-options' },
+                { menuId: 'menu-gfx', btnId: 'btn-toggle-gfx', panelId: 'gfx-menu-popover', arrowId: 'arrow-gfx-menu' },
+                { menuId: 'menu-docs', btnId: 'btn-menu-docs', panelId: 'dropdown-panel-docs' },
+                { menuId: 'menu-system', btnId: 'btn-menu-system', panelId: 'dropdown-panel-system' }
             ];
 
             function closeAllTopDropdowns() {
                 allDropdowns.forEach(d => {
                     const panel = document.getElementById(d.panelId);
-                    if (panel) panel.classList.add('hidden');
+                    if (panel) {
+                        panel.classList.add('hidden');
+                        panel.classList.remove('open');
+                    }
+                    const wrap = document.getElementById(d.menuId);
+                    if (wrap) wrap.classList.remove('open');
+                    const btn = document.getElementById(d.btnId);
+                    if (btn) btn.setAttribute('aria-expanded', 'false');
                     if (d.arrowId) {
                         const arrow = document.getElementById(d.arrowId);
                         if (arrow) arrow.style.transform = 'rotate(0deg)';
                     }
                 });
             }
+            if (window.UI?.layout) {
+                window.UI.layout.closeAllMenus = closeAllTopDropdowns;
+            }
 
             allDropdowns.forEach(d => {
                 const btn = document.getElementById(d.btnId);
                 const panel = document.getElementById(d.panelId);
+                const wrap = document.getElementById(d.menuId);
                 if (btn && panel) {
+                    btn.setAttribute('aria-haspopup', 'true');
+                    btn.setAttribute('aria-expanded', 'false');
                     panel.addEventListener('click', (e) => e.stopPropagation());
                     panel.addEventListener('pointerdown', (e) => e.stopPropagation());
 
@@ -3280,6 +3283,9 @@
                         closeAllTopDropdowns();
                         if (isCurrentlyHidden) {
                             panel.classList.remove('hidden');
+                            panel.classList.add('open');
+                            if (wrap) wrap.classList.add('open');
+                            btn.setAttribute('aria-expanded', 'true');
                             panel.style.zIndex = 'var(--z-popover)';
                             if (d.arrowId) {
                                 const arrow = document.getElementById(d.arrowId);

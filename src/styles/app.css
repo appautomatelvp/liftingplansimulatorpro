@@ -533,3 +533,10 @@ body.drawer-open {
         }
         .risk-track { height: 7px; border-radius: 99px; background: #1e293b; overflow: hidden; }
         .risk-fill { height: 100%; width: 0%; border-radius: 99px; background: linear-gradient(90deg, #34d399, #facc15, #ef4444); }
+
+        /* Responsive dock compact mode below 1280px */
+        @media (max-width: 1280px) {
+            #bottom-dock-bar .dock-label {
+                display: none;
+            }
+        }

@@ -4,6 +4,7 @@ import path from 'node:path';
 
 const simParts = [
   'state.js',
+  'ui-layout.js',
   'audio.js',
   'scene.js',
   'rigging.js',

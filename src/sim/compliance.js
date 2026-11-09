@@ -39,7 +39,8 @@ function initComplianceUI() {
         const closePlanBtn = document.getElementById('btn-close-liftplan-modal');
         if (closePlanBtn) {
             closePlanBtn.addEventListener('click', () => {
-                modalPlan.classList.remove('open');
+                if (window.UI?.layout) window.UI.layout.closeModal('liftplan-modal');
+                else modalPlan.classList.remove('open');
             });
         }
 
@@ -542,7 +543,8 @@ function openLiftPlanModal() {
     if (!modal) return;
 
     activeLiftPlanModel = buildCurrentLiftPlanModel();
-    modal.classList.add('open');
+    if (window.UI?.layout) window.UI.layout.openModal('liftplan-modal');
+    else modal.classList.add('open');
     renderLiftPlanModalContent();
 }
 
