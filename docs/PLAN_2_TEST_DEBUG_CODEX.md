@@ -1,244 +1,200 @@
-# KẾ HOẠCH 2 — KIỂM THỬ & TỰ SỬA LỖI (giao cho Codex)
+# KẾ HOẠCH 2 (BẢN CẬP NHẬT MỚI NHẤT) — KIỂM THỬ TOÀN DIỆN & TỰ SỬA LỖI GIAO CHO CODEX
 
-> **Điều kiện đầu vào:** Kế hoạch 1 đã hoàn tất (hoặc từng bước đã merge). Codex đọc kèm `docs/ui-id-registry.md` và danh sách `data-testid` (Plan 1 §4).
-> **Mục tiêu:** chứng minh mọi chức năng vận hành đúng, đồng bộ, không chồng đè; tự sửa đến khi **toàn bộ test xanh**.
+> **Trạng thái đầu vào:** Bản kế hoạch này đã được đồng bộ hóa với toàn bộ nâng cấp của **Kế hoạch 1 (Đợt 1 + Đợt 2: Bước F1–F6)**. Hiện tại hệ thống đã có sẵn:
+> - [`playwright.config.js`](file:///d:/APP%20PROJECT/PHUONG%20PROJECT/LIFTING%20PLAN%20SIMULATOR%20PRO/playwright.config.js) (4 projects độ phân giải: `1280×720`, `1366×768`, `1920×1080`, `2560×1440`)
+> - [`e2e/layout.spec.js`](file:///d:/APP%20PROJECT/PHUONG%20PROJECT/LIFTING%20PLAN%20SIMULATOR%20PRO/e2e/layout.spec.js) (Bộ test khung ban đầu — **cần Codex nâng cấp bằng thuật toán Hit-Test thực tế ở Mục B bên dưới**)
+> - [`src/sim/ui-layout.js`](file:///d:/APP%20PROJECT/PHUONG%20PROJECT/LIFTING%20PLAN%20SIMULATOR%20PRO/src/sim/ui-layout.js) (`window.UI.layout` quản lý loại trừ Modal / Menu / Drawer)
+> - [`docs/ui-id-registry.md`](file:///d:/APP%20PROJECT/PHUONG%20PROJECT/LIFTING%20PLAN%20SIMULATOR%20PRO/docs/ui-id-registry.md) (449 DOM IDs bắt buộc bảo toàn)
+>
+> **Nhiệm vụ của Codex:** Chạy kiểm thử thực tế trên trình duyệt Chromium + Vitest, phát hiện mọi lỗi hiển thị/tương tác/vật lý còn sót lại và **tự động sửa code cho đến khi 100% bài kiểm thử XANH thực chất**.
 
 ---
 
-## A. QUY TRÌNH VÒNG LẶP TỰ SỬA (bắt buộc)
+## A. BÀI HỌC QUAN TRỌNG: TẠI SAO TEST CŨ XANH NHƯNG GIAO DIỆN THỰC TẾ VẪN LỖI?
+
+> [!WARNING]
+> **Cấm Codex chỉ dùng `expect(locator).toBeVisible()` đơn thuần hoặc dùng `.click({ force: true })` để lách lỗi!**
+> Trong đợt chạy trước, `e2e/layout.spec.js` báo `7 passed` nhưng thực tế trên màn hình người dùng vẫn gặp **5 lỗi nghiêm trọng** vì lý do kỹ thuật sau:
+> 1. **Lỗi nút Camera/Hồ sơ/Hệ thống bấm không hiện menu:** Hàm `.toBeVisible()` của Playwright chỉ kiểm tra `display !== 'none'` và `width > 0`, **không phát hiện được** việc `#dropdown-panel-camera` nằm trong `<header id="top-bar">` bị cắt cụt bởi `backdrop-filter: blur(20px)` + `max-height: 44px; overflow: hidden`!
+> 2. **Lỗi dùng `.click({ force: true })` trên Tab 6:** Khi dùng `{ force: true }`, Playwright bỏ qua việc kiểm tra thanh kéo ngang `#drawer-inner-tabs`, làm lọt lỗi các tab 4, 5, 6 bị khuất và xuất hiện thanh cuộn ngang!
+> 3. **Lỗi `#fit-banner` bị `#dock-hud` đè lên:** Chưa có phép kiểm tra giao cắt hình học (`rectsIntersect`) và kiểm tra tia nhìn (`document.elementFromPoint`) trên thanh cảnh báo đỏ.
+> 4. **Lỗi `#right-side-drawer` hở đáy ~70px:** Chưa có assertion kiểm tra `drawerRect.bottom === window.innerHeight`.
+> 5. **Lỗi các con số trong `#dock-hud` đè lên nhau (`0.0 m0.00 / 0.00 m`):** Chưa kiểm tra `scrollWidth > clientWidth` và va chạm giữa các `.hud-card` liền kề.
+
+---
+
+## B. HÀM KIỂM TRA HIT-TEST THỰC TẾ BẮT BUỘC DÙNG TRONG `e2e/`
+
+Codex phải thêm bộ helper sau vào đầu `e2e/layout.spec.js` để kiểm tra **hiển thị thật bằng mắt người dùng**:
+
+```javascript
+/**
+ * Kiểm tra phần tử thực sự nhìn thấy được bằng mắt người dùng:
+ * 1. Nằm trọn trong viewport
+ * 2. Không bị bất kỳ thẻ cha nào cắt (clip) bởi overflow:hidden/clip + chiều cao nhỏ
+ * 3. Tại tâm phần tử, tia nhìn document.elementFromPoint(cx, cy) phải trúng chính nó (hoặc con của nó),
+ *    không bị bảng khác (như #dock-hud hay #right-side-drawer) đè lên trên!
+ */
+async function assertTrulyVisibleAndClickable(page, selector, label = selector) {
+  const result = await page.evaluate((sel) => {
+    const el = document.querySelector(sel);
+    if (!el) return { ok: false, reason: 'Element not found in DOM' };
+    const style = window.getComputedStyle(el);
+    if (style.display === 'none' || style.visibility === 'hidden' || parseFloat(style.opacity) === 0) {
+      return { ok: false, reason: `Hidden by style (display=${style.display}, visibility=${style.visibility}, opacity=${style.opacity})` };
+    }
+    const rect = el.getBoundingClientRect();
+    if (rect.width < 2 || rect.height < 2) {
+      return { ok: false, reason: `Zero size (${rect.width}x${rect.height})` };
+    }
+    if (rect.left < -1 || rect.top < -1 || rect.right > window.innerWidth + 1 || rect.bottom > window.innerHeight + 1) {
+      return { ok: false, reason: `Out of viewport: rect=(${Math.round(rect.left)},${Math.round(rect.top)},${Math.round(rect.right)},${Math.round(rect.bottom)}) vs viewport=${window.innerWidth}x${window.innerHeight}` };
+    }
+    // Kiểm tra có bị thẻ cha cắt bởi overflow:hidden hoặc backdrop-filter containing block không
+    let parent = el.parentElement;
+    while (parent && parent !== document.body && parent !== document.documentElement) {
+      const ps = window.getComputedStyle(parent);
+      const clipsX = ps.overflowX === 'hidden' || ps.overflowX === 'clip' || ps.overflowX === 'auto' || ps.overflowX === 'scroll';
+      const clipsY = ps.overflowY === 'hidden' || ps.overflowY === 'clip' || ps.overflowY === 'auto' || ps.overflowY === 'scroll';
+      if (clipsX || clipsY) {
+        const pr = parent.getBoundingClientRect();
+        if (clipsY && (rect.bottom > pr.bottom + 2 || rect.top < pr.top - 2)) {
+          return { ok: false, reason: `Clipped vertically by ancestor #${parent.id || parent.className} (ancestor bottom=${Math.round(pr.bottom)}, el bottom=${Math.round(rect.bottom)})` };
+        }
+        if (clipsX && (rect.right > pr.right + 2 || rect.left < pr.left - 2)) {
+          return { ok: false, reason: `Clipped horizontally by ancestor #${parent.id || parent.className} (ancestor right=${Math.round(pr.right)}, el right=${Math.round(rect.right)})` };
+        }
+      }
+      parent = parent.parentElement;
+    }
+    // Kiểm tra elementFromPoint tại tâm phần tử
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const hit = document.elementFromPoint(cx, cy);
+    if (!hit) {
+      return { ok: false, reason: `elementFromPoint(${Math.round(cx)}, ${Math.round(cy)}) returned null` };
+    }
+    if (hit !== el && !el.contains(hit) && !hit.contains(el)) {
+      return {
+        ok: false,
+        reason: `Occluded at center (${Math.round(cx)}, ${Math.round(cy)}) by <${hit.tagName.toLowerCase()} id="${hit.id}" class="${hit.className}">`
+      };
+    }
+    return { ok: true, rect: { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom, width: rect.width, height: rect.height } };
+  }, selector);
+
+  expect(result.ok, `[${label}] ${result.reason || 'OK'}`).toBe(true);
+  return result.rect;
+}
+```
+
+---
+
+## C. QUY TRÌNH VÒNG LẶP TỰ SỬA CỦA CODEX (AUTONOMOUS DEBUG LOOP)
 
 ```mermaid
 flowchart TD
-  S[Chạy bộ test nhóm N] --> P{Pass?}
-  P -- Có --> N[Sang nhóm N+1]
-  P -- Không --> R[Ghi lỗi vào BUGLOG.md: ID, bước tái hiện, kỳ vọng/thực tế, ảnh chụp]
-  R --> D[Xác định nguyên nhân gốc: UI / state / physics / i18n]
-  D --> F[Sửa tối thiểu tại đúng nguồn]
-  F --> T[Viết/thêm test hồi quy cho lỗi]
-  T --> A[Chạy lại nhóm N + toàn bộ smoke]
-  A --> P
+  S[Chạy bộ test nhóm N trên 4 độ phân giải] --> P{Pass 100%?}
+  P -- Có --> N[Chuyển sang nhóm N+1]
+  P -- Không --> R[Ghi lỗi vào docs/BUGLOG.md kèm kết quả assertTrulyVisibleAndClickable]
+  R --> D[Đối chiếu nguyên nhân trong PLAN_1_UI_UPGRADE_GEMINI.md Bước F1–F6]
+  D --> F[Sửa trực tiếp HTML/CSS/JS tại đúng nguồn]
+  F --> T[Chạy lại test vừa sửa + npm test + npm run build]
+  T --> P
 ```
 
-**Quy tắc:**
-1. Mỗi lỗi → 1 commit: `fix(BUG-xxx): mô tả` + test hồi quy đi kèm.
-2. **Tối đa 5 vòng/lỗi.** Quá 5 vòng → dừng, ghi `BLOCKED` trong `BUGLOG.md` kèm giả thuyết, chuyển lỗi khác.
-3. Không sửa test cho "xanh" khi lỗi thật còn đó; chỉ sửa test khi spec sai (ghi lý do).
-4. Không phá hành vi chức năng cũ: sau mỗi sửa chạy `npm test` + `npm run build`.
-5. Không đổi `id` DOM tuỳ tiện (xem registry). Không thêm phụ thuộc ngoài danh sách §B.
-6. Kết thúc mỗi nhóm: cập nhật bảng **Tiến độ** (§J).
-
-## B. HẠ TẦNG TEST (Bước 0)
-
-| Công cụ | Việc | Lệnh |
-|---|---|---|
-| Vitest (đã có, 16 file trong `test/`) | Logic lõi/vật lý | `npm test` |
-| **Playwright** (thêm devDependency) | Test UI thật trên `npm run dev` | `npm i -D @playwright/test; npx playwright install chromium` |
-| Config | `playwright.config.js`: `webServer: { command:'npm run dev', url:'http://localhost:5173', reuseExistingServer:true }`; projects theo viewport §C | |
-| Script mới trong `package.json` | `"test:ui":"playwright test"`, `"test:all":"vitest run && playwright test"` | |
-| Hook console | Fixture fail test nếu có `console.error`, `pageerror`, request 404 | |
-| Screenshot | `expect(page).toHaveScreenshot()` cho từng viewport (baseline sau Plan 1) | |
-
-> Lưu ý: dev server có thể chạy cổng 5174 nếu 5173 bận → đọc cổng từ log hoặc đặt `server.strictPort` khi chạy test.
-
-Viewport ma trận (lặp **mọi** test UI): `1280×720`, `1366×768`, `1536×864`, `1920×1080`, `2560×1440`.
+**Quy tắc bắt buộc khi Codex sửa lỗi:**
+1. **Cấm sửa test để ép xanh** (ví dụ: cấm dùng `{ force: true }` khi click nút, cấm bỏ qua kiểm tra `elementFromPoint`). Nếu test đỏ nghĩa là giao diện đang bị che/cắt thật → phải sửa code HTML/CSS/JS.
+2. **Kiểm tra trước xem Bước F1–F5 của Kế hoạch 1 đã được áp dụng đầy đủ chưa:** Nếu bất kỳ mục nào của Bước F1–F5 chưa được áp dụng hoặc áp dụng thiếu, Codex chủ động thực thi luôn.
+3. **Bảo toàn 449 DOM IDs:** Không xóa bất kỳ `id` nào trong [`docs/ui-id-registry.md`](file:///d:/APP%20PROJECT/PHUONG%20PROJECT/LIFTING%20PLAN%20SIMULATOR%20PRO/docs/ui-id-registry.md).
 
 ---
 
-## C. NHÓM 1 — LAYOUT, CHỒNG ĐÈ, KHÔNG BỊ CHE (Playwright)
+## D. NHÓM 1 — KIỂM THỬ BỐ CỤC, CHỐNG CHỒNG ĐÈ & TƯƠNG TÁC THẬT (`e2e/layout.spec.js`)
 
-Kiểm tra bằng `getBoundingClientRect` + `document.elementFromPoint` (không chỉ screenshot).
+Chạy trên cả 4 project viewport (`1280×720`, `1366×768`, `1920×1080`, `2560×1440`):
 
-| ID | Kịch bản | Kỳ vọng |
+| Mã Test | Kịch bản kiểm thử chi tiết | Điều kiện Pass bắt buộc (Assertions) |
 |---|---|---|
-| UI-001 | Tải trang, drawer đóng | Không scroll ngang/dọc `document`; mọi nút top bar/dock nằm trong viewport |
-| UI-002 | Với **mỗi** nút top bar & dock: tâm nút → `elementFromPoint` | Trả về chính nút (không bị phần tử khác che) |
-| UI-003 | Mở drawer (mỗi tab ①–⑥) | Drawer không giao (intersect) với dock/top bar; HUD cảnh báo vẫn nhìn thấy đủ |
-| UI-004 | Duyệt toàn bộ ô nhập/slider trong drawer (cuộn từng mục) | Cuộn được tới cuối, không phần tử bị cắt chiều ngang (`scrollWidth ≤ clientWidth`) |
-| UI-005 | Mở lần lượt: menu Camera → Hiển thị → Đồ họa → Hồ sơ → Hệ thống | Chỉ 1 menu mở; panel nằm trọn trong viewport |
-| UI-006 | Mở modal Thư viện 3D / Lift Plan khi drawer mở | Modal ở lớp trên cùng (`elementFromPoint` giữa modal = modal); `Esc` đóng |
-| UI-007 | Mở Analysis panel + drawer + menu cùng lúc | Không 2 panel nào giao nhau (trừ modal/menu overlay hợp lệ) |
-| UI-008 | Kéo/phóng to/thu gọn Analysis panel | Luôn ở trong viewport, không đè dock |
-| UI-009 | Thang z-index: lấy `getComputedStyle().zIndex` của 9 lớp | Thứ tự đúng `canvas<labels<hud<dock<drawer<topbar<popover<modal<toast`; không giá trị ngoài token |
-| UI-010 | Đếm `id` trùng trong DOM | = 0 |
-| UI-011 | Quét nút trùng chức năng (cùng handler/nhãn) | Không có 2 điều khiển trực tiếp cùng thông số (xem §F) |
-| UI-012 | Resize động 2560→1280 khi đang mở drawer | Layout tự co, không vỡ, không phần tử mất |
-| UI-013 | Đổi ngôn ngữ VI↔EN | Không nhãn bị tràn/cắt; không ký tự `?`/`�` hỏng dấu |
-| UI-014 | Phím tắt `1–6`, `Esc`, `Tab` | Chuyển tab/đóng lớp đúng; focus không rơi vào phần tử ẩn |
-
-**Tiêu chí qua nhóm:** 14/14 × 5 viewport xanh, screenshot khớp baseline (ngưỡng 0.2%).
+| **UI-001** | Tải trang, kiểm tra tràn toàn cục & Console sạch | `scrollWidth <= innerWidth`, `scrollHeight <= innerHeight`; **0 `console.error`**, **0 `pageerror`**. |
+| **UI-002** | Hit-test toàn bộ nút trên `#top-bar` và `#bottom-dock-bar` | Gọi `assertTrulyVisibleAndClickable` cho từng nút trên Top Bar và Dock Bar → không nút nào bị cắt hoặc che. |
+| **UI-003** | **Kiểm tra chiều cao `#right-side-drawer` tận dụng hết khoảng không bên dưới** | Khi Drawer mở:<ul><li>`Math.abs(drawerRect.top - topBarRect.bottom) <= 2`</li><li>**`Math.abs(drawerRect.bottom - window.innerHeight) <= 2`** (Drawer chạm sát đáy màn hình, tuyệt đối không có khoảng trống ~70px bên dưới!).</li><li>`dockRect.right <= drawerRect.left + 2` (Dock nằm trọn bên trái của Drawer, không đè nhau).</li></ul> |
+| **UI-004** | **Kiểm tra 6 Tab trong `#drawer-inner-tabs` hiển thị 100% không có thanh kéo ngang** | <ul><li>`#drawer-inner-tabs` có `scrollWidth <= clientWidth` và `getComputedStyle(el).overflowX !== 'auto' && !== 'scroll'`.</li><li>Gọi `assertTrulyVisibleAndClickable` cho **cả 6 nút tab cùng một lúc** (`tab-cargo`, `tab-lugs`, `tab-rig`, `tab-gear`, `tab-crane`, `tab-site`) mà không cần cuộn ngang.</li><li>Click chuẩn (không `{ force: true }`) vào từng tab 1 → 6, kiểm tra trang `#drawer-page-*` tương ứng active và cuộn được từ đầu đến cuối.</li></ul> |
+| **UI-005** | **Kiểm tra 5 Menu thả xuống trên Top Bar (Sửa triệt để lỗi liệt nút Camera/Hồ sơ/Hệ thống)** | Lần lượt click vào từng nút:<ol><li>`#btn-menu-camera` → Gọi `assertTrulyVisibleAndClickable(page, '#dropdown-panel-camera')`. Sau đó click thật vào `.cam-btn[data-cam="front"]` bên trong panel → kiểm tra nút `front` có class `active` và camera 3D thực sự đổi góc nhìn!</li><li>`#btn-display-options` → Gọi `assertTrulyVisibleAndClickable(page, '#display-options-popover')`; kiểm tra 3 nút `#btn-toggle-cad-edges`, `#btn-xray`, `#btn-toggle-vectors` bấm được.</li><li>`#btn-toggle-gfx` → Gọi `assertTrulyVisibleAndClickable(page, '#gfx-menu-popover')`.</li><li>`#btn-menu-docs` → Gọi `assertTrulyVisibleAndClickable(page, '#dropdown-panel-docs')`.</li><li>`#btn-menu-system` → Gọi `assertTrulyVisibleAndClickable(page, '#dropdown-panel-system')`.</li></ol>Mở menu sau phải tự động đóng menu trước; bấm `Esc` đóng menu. |
+| **UI-006** | Kiểm tra Modal Thư viện 3D (`#library-studio-modal`) và Hồ sơ Lift Plan (`#liftplan-modal`) | Mở từ `#dropdown-panel-docs` → menu tự đóng, Modal nổi trên cùng (`assertTrulyVisibleAndClickable`), bấm `Esc` đóng Modal. |
+| **UI-007** | **Kiểm tra dòng cảnh báo `#fit-banner` KHÔNG bị `#dock-hud` che khuất** | Khi `#fit-banner` hiển thị (ví dụ ở cấu hình mặc định hoặc khi hạ chiều dài cáp trên cho thiếu cáp):<ul><li>Gọi `assertTrulyVisibleAndClickable(page, '#fit-banner')` (lưu ý `#fit-banner` có `pointer-events: none` nên khi check `elementFromPoint(cx, cy)`, phần tử trả về phải là `<canvas>` nằm dưới nó chứ **tuyệt đối KHÔNG ĐƯỢC là `#dock-hud` hay `#bottom-dock-bar`**!).</li><li>Kiểm tra hình học: `fitBannerRect.bottom <= dockRect.top - 4` và `fitBannerRect.right <= drawerRect.left - 4`.</li></ul> |
+| **UI-008** | **Kiểm tra 14 ô chỉ số trong `#dock-hud` KHÔNG bị đè chữ lên nhau** | Duyệt tất cả `.hud-card` trong `#dock-hud`:<ul><li>Không có 2 `.hud-card` cùng hàng nào giao nhau (`cardA.right <= cardB.left + 1`).</li><li>Chữ `.hud-val` (đặc biệt là `#hud-cog` `0.00 / 0.00 m`, `#hud-mbl` `77.5 t`, `#hud-radius` `0.0 m`) nằm gọn trong `.hud-card`, không tràn sang ô cạnh bên.</li></ul> |
+| **UI-009** | Kiểm tra thang `z-index` tokens & `0` ID trùng lặp | Thứ tự `--z-canvas < --z-labels < --z-hud < --z-dock < --z-drawer < --z-topbar < --z-popover < --z-modal < --z-toast`; số ID trùng trong DOM = `0`. |
+| **UI-010** | Kiểm tra phím tắt `1–6`, `Esc`, `M`, `H` | Bấm `1..6` mở đúng tab; khi đang mở Modal hoặc đang gõ trong `<input>` thì phím tắt 3D tạm khóa; `Esc` đóng đúng thứ tự ưu tiên: Modal → Menu → Compliance/Gear Panel → Drawer. |
 
 ---
 
-## D. NHÓM 2 — CHỨC NĂNG TỪNG TAB (Playwright + đọc state qua `page.evaluate`)
+## E. NHÓM 2 — KIỂM THỬ LOGIC CHỨC NĂNG TỪNG TAB (1.x → 6.x) & ĐỒNG BỘ DỮ LIỆU
 
-Với mỗi thông số: đổi giá trị → kiểm tra (a) nhãn hiển thị, (b) state nội bộ, (c) cảnh vật 3D/số liệu top bar đổi, (d) giá trị ngoài miền bị chặn.
+Codex viết file `e2e/functional-tabs.spec.js` kiểm tra sự đồng bộ giữa UI và `state` / vật lý:
 
-### D1. Tab ① Hàng hóa
-| ID | Thao tác | Kỳ vọng |
-|---|---|---|
-| CG-001 | Chọn từng loại hàng (container, kiện, OOG…) | Khối hàng 3D đổi; Net load top-bar cập nhật |
-| CG-002 | Nhập L/W/H, khối lượng (biên: 0, âm, 1e6, rỗng, chữ) | Từ chối giá trị sai, hiện thông báo; không NaN trong HUD |
-| CG-003 | Công thức thể tích/khối lượng riêng | `m = ρ·V` khớp ±0.5% |
-| CG-004 | Dời CoG (X,Y,Z) | Chấm CoG 3D dịch chuyển; góc nghiêng khi nhấc đổi đúng chiều; nằm trong hộp hàng |
-| CG-005 | Yaw: ô số, nút ±5°, preset 0/45/90 | Hàng xoay; **chỉ 1 điều khiển** (không còn bản ở dock); giá trị giữ khi đổi tab |
-| CG-006 | Bật OOG | Panel OOG hiện; thông số OOG ảnh hưởng CoG/kiểm định |
+### 1. Tab ① Hàng hóa (`drawer-page-cargo`)
+- **CG-001:** Đổi loại hàng (Flat Rack, Container 20ft/40ft, Hộp, Trụ...) → kích thước L/W/H và khối lượng cập nhật đúng trên cả Drawer, Top Bar (`#top-net-load`, `#top-gross-load`) và `#dock-hud` (`#hud-gross`).
+- **CG-002:** Kéo thanh trượt Trọng tâm CoG (`#inp-cogX`, `#inp-cogY`, `#inp-cogZ`) → nhãn `#val-cogX/Y/Z`, bản đồ 2D `#cog-canvas` và nhãn 3D `CoG (x, y, z)` thay đổi khớp nhau 100%.
+- **CG-003:** Đổi góc xoay kiện trên mặt đất (`#inp-groundCargoYaw` và các nút preset `0°`, `45°`, `90°`) → nhãn `#lbl-ground-angle` trên 3D cập nhật đúng.
 
-### D2. Tab ② Điểm nâng
-| ID | Thao tác | Kỳ vọng |
-|---|---|---|
-| LG-001 | Thêm/xoá/đổi loại pad-eye | Tai cẩu 3D đúng vị trí; số nhánh cáp = số điểm |
-| LG-002 | Kéo điểm ra ngoài thân hàng | Cảnh báo; bị chặn/snap về biên |
-| LG-003 | Bật corner protector | Hiện mô hình bảo vệ; hệ số ma sát/hư hại đổi |
-| LG-004 | Đối xứng theo CoG | Lệch CoG → điểm nâng đề xuất cân bằng |
+### 2. Tab ② Điểm nâng (`drawer-page-lugs`)
+- **LG-001:** Chọn từng điểm nâng LP1..LP4 hoặc Tất cả → dịch chuyển vị trí tai cẩu → khoảng cách Span và chiều dài cáp tự động tính lại.
+- **LG-002:** Bật/tắt lót bảo vệ góc cáp (`#chk-cornerProtector`) → trạng thái bảo vệ cập nhật.
 
-### D3. Tab ③ Dầm & Hình học treo
-| ID | Thao tác | Kỳ vọng |
-|---|---|---|
-| RG-001 | Chọn 8 loại dầm (Modular, Lifting Beam, H-Beam, ISO, Cascaded, Truss, Bridle 4-leg, Basket) | Mô hình 3D đổi, tải trọng bản thân dầm vào Rig load |
-| RG-002 | Span: slider, ô số, nút −1m…+1m, preset 6/8/10/12.2/14 | Hai nguồn (slider/ô số) luôn bằng nhau; preset nhảy đúng |
-| RG-003 | Góc bridle: 30°…70° preset 45/60/70 | Lực nhánh `T = W/(n·sinθ)` sai số <1%; cảnh báo khi θ<45° |
-| RG-004 | Chiều dài nhánh cáp tầng 1/2 | Hình học 3D & góc tự tính lại, hiển thị "thiếu x m" đúng |
-| RG-005 | Cảnh báo "thiếu 0.16 m – cáp trên …" | Hiện đủ chữ (không cắt) và biến mất khi sửa đúng |
+### 3. Tab ③ Dầm ngáng (`drawer-page-rig`)
+- **RG-001:** Chọn lần lượt 8 chủng loại dầm (Modular Spreader, Lifting Beam, H-Beam, ISO Container Spreader, Cascaded, Truss, Bridle 4-Leg, Basket) → mô hình 3D thay đổi không lỗi console; khối lượng Rig (`#top-rig-load`, `#hud-rig`) cập nhật đúng.
+- **RG-002:** Đổi Chiều dài dầm (`#inp-spreaderSpan`, `#num-spreaderSpan`, các nút `-1m..+1m`, preset `12.2m`) → giá trị slider và ô nhập số luôn bằng nhau; nút **Tự Khớp Kiện (`#btn-auto-span`)** tự động đặt Span khớp với khoảng cách tai cẩu.
+- **RG-003:** Đổi độ dài nhánh cáp Tầng 1 (`#inp-upperSlingLen`) và góc bắt cáp → góc `β`, `α` và hệ số `TF (LAF)` tính đúng công thức hình học không gian.
 
-### D4. Tab ④ Cáp & Phụ kiện
-| ID | Thao tác | Kỳ vọng |
-|---|---|---|
-| GR-001 | Đổi loại/đường kính sling, shackle | WLL, hệ số an toàn cập nhật; so với catalog (`RiggingEquipmentCatalog.js`) |
-| GR-002 | Tải vượt WLL | Thanh tải đỏ, trạng thái "NGUY HIỂM", Nhấc thử bị chặn/cảnh báo |
-| GR-003 | Phân bổ lực (T0–T3) khi CoG lệch | Tổng T·cosα = W; tổng không vượt 1% |
-| GR-004 | Bảng khối lượng (Net/Rig/Gross) | `Gross = Net + Rig` = số top bar (3 nơi nhất quán) |
-| GR-005 | Editor gear (cũ `#gear-editor`) | Chỉnh phụ kiện không mở panel nổi thứ 3 |
+### 4. Tab ④ Cáp treo (`drawer-page-gear`)
+- **GR-001:** Đổi chủng loại cáp (Cáp thép, Cáp vải dẹt, Cáp vải tròn, Xích hợp kim) và đường kính → tải trọng làm việc `SWL/WLL` và `MBL Min` (`#hud-mbl`) cập nhật đúng.
+- **GR-002:** Chỉnh Tăng đơ (`#inp-turnbuckle`) hoặc bấm **Cân Bằng (`#btn-auto-level`)** → kiện hàng lệch tâm được tự động bù chiều dài cáp để cân bằng ngang (góc nghiêng `#hud-tilt` giảm về gần `0.0°`).
 
-### D5. Tab ⑤ Cẩu & Móc
-| ID | Thao tác | Kỳ vọng |
-|---|---|---|
-| CR-001 | Chọn cẩu 3D, bán kính | Biểu đồ tải LMI đổi; % sử dụng đúng so với `CraneLoadChartEngine` |
-| CR-002 | Vượt tải định mức | Trạng thái cảnh báo, âm báo (nếu bật), khoá nâng |
-| CR-003 | Độ cao hook: dock `num-hook-y` ↔ ô trong tab ⑤ | Hai nơi đồng bộ tức thì; phạm vi 0.5–32 m bị kẹp |
-| CR-004 | Hoist ±0.2/±1 m, Kéo/Hạ giữ chuột, preset | Hook di chuyển đúng tốc độ; dừng khi nhả |
-| CR-005 | Slew ±5°, ±15° | Cẩu quay; HUD góc cập nhật |
+### 5. Tab ⑤ Cẩu 3D (`drawer-page-crane`)
+- **CR-001:** Bật/tắt hiển thị Cần trục 3D, đổi bán kính vươn cần và chiều cao móc cẩu → đồng bộ 2 chiều với cụm điều khiển `🪝 Tời` và `Cần` ở `#bottom-dock-bar`.
 
-### D6. Tab ⑥ Hiện trường
-| ID | Thao tác | Kỳ vọng |
-|---|---|---|
-| ST-001 | Nền đất/sàn thử, áp lực nền (kPa, T/m²) | Giá trị so `GroundPressureEngine` ±1% |
-| ST-002 | Sàn kê (dunnage) đổi vật liệu/kích thước | Áp lực nền giảm theo diện tích; cảnh báo nếu vượt |
-| ST-003 | Gió 0–12.8 m/s | Lực gió, góc lệch (0.24°…) cập nhật; ≥ngưỡng → cảnh báo |
-| ST-004 | Độ dốc nền | Hàng/cẩu nghiêng đúng, kiểm định cập nhật |
+### 6. Tab ⑥ Hiện trường (`drawer-page-site`)
+- **ST-001:** Đổi nền đất, kích thước đà kê dunnage và tốc độ gió → áp lực nền và cảnh báo an toàn cập nhật đúng.
 
 ---
 
-## E. NHÓM 3 — VẬN HÀNH DOCK & MÔ PHỎNG (Playwright + Vitest)
+## F. NHÓM 3 — KIỂM THỬ VẬN HÀNH MÔ PHỎNG & XUẤT HỒ SƠ (`e2e/operations.spec.js`)
 
-| ID | Kịch bản | Kỳ vọng |
+| Mã Test | Kịch bản | Kỳ vọng nghiệm thu |
 |---|---|---|
-| OP-001 | **Nhóm cáp** (pretension) | Cáp căng, không trùng; trạng thái `sim-status-text` đổi |
-| OP-002 | **Nhấc thử** | Hàng rời đất, tải phân bổ ổn định, không rung quá ngưỡng; trạng thái "ĐANG NHẤC" |
-| OP-003 | **Đong đưa** | Con lắc dao động tắt dần, chu kỳ ≈ 2π√(L/g) ±5% |
-| OP-004 | **Cân bằng** | Góc nghiêng ≤ 0.5° sau cân bằng; lực nhánh đều |
-| OP-005 | **Hạ đất** | Hàng hạ êm, tiếp đất, tải về 0 |
-| OP-006 | **Reset / Hard reset** | Hard reset đưa về mặc định (so snapshot state ban đầu); Reset giữ cấu hình |
-| OP-007 | **Đặt mốc (baseline)** | Lưu và so sánh sai khác ở HUD |
-| OP-008 | **Ghi → Dừng → Xem** | File replay sinh ra, phát lại khớp quỹ đạo ±1 frame |
-| OP-009 | Bấm liên tiếp/nhanh nhiều nút | Không treo, không trạng thái kẹt (xem §H) |
-| OP-010 | Lệnh bị khoá đúng ngữ cảnh | VD: "Hạ đất" khi chưa nhấc → vô hiệu/báo; không crash |
+| **OP-001** | Chuỗi thao tác nâng hạ chuẩn: **Nhớm Cáp (`#btn-pretension`)** → **Nhấc Thử (`#btn-test-lift`)** → **Đung Đưa (`#btn-swing-test`)** → **Cân Bằng (`#btn-auto-level`)** → **Hạ Đất (`#btn-reset-initial`)** → **Reset (`#btn-hard-reset`)** | Không văng lỗi console; khi Nhấc Thử thì `Cách Sàn` (`#hud-clear`) > 0 và `Tải Móc` (`#hud-load`) ≈ `Tổng Tải` (`#hud-gross`); khi Hạ Đất / Reset thì kiện hàng về lại mặt đà kê ổn định. |
+| **OP-002** | Ghi & Phát lại chuyển động: **Ghi (`#btn-rec`)** → Tời/Quay cần → **Dừng (`#btn-replay-stop`)** → **Xem (`#btn-replay`)** | Nhãn `#lbl-replay` hiển thị trạng thái ghi/phát lại và tái hiện đúng chuyển động. |
+| **EX-001** | Mở **Kiểm Định An Toàn (`#btn-open-compliance`)** từ menu Hồ sơ | Bảng `#compliance-hud-panel` hiện ở góc trái (không đè Drawer phải), danh sách tiêu chuẩn ASME/ISO render đầy đủ. |
+| **EX-002** | Mở **Hồ Sơ Lift Plan (`#btn-open-liftplan`)** từ menu Hồ sơ | Modal `#liftplan-modal` hiện ở lớp cao nhất (`--z-modal`), số liệu Gross/Net/Rig trong báo cáo khớp 100% với Top Bar. |
 
 ---
 
-## F. NHÓM 4 — ĐỒNG BỘ STATE & KHÔNG TRÙNG LẶP
+## G. DANH MỤC LỆNH CHẠY KIỂM THỬ & TIÊU CHÍ HOÀN THÀNH CHO CODEX
 
-Bảng "nguồn chân lý": mỗi thông số có **1 state**, mọi widget hiển thị dùng chung.
+1. **Chạy kiểm thử Unit & Vật lý (Vitest — 160 tests):**
+   ```bash
+   npm test
+   ```
+2. **Chạy kiểm thử Giao diện E2E trên cả 4 độ phân giải (Playwright):**
+   ```bash
+   npx playwright test
+   ```
+3. **Chạy kiểm tra đóng gói Production:**
+   ```bash
+   npm run build
+   ```
+4. **Cập nhật ảnh chụp nghiệm thu sau khi sửa xong toàn bộ:**
+   ```bash
+   node scripts/capture-screens.js
+   ```
 
-| Thông số | Widget phải đồng bộ | Test |
-|---|---|---|
-| Hook height | `num-hook-y`, `inp-hook-y`, tab ⑤, HUD | SY-001: đổi ở 1 nơi → các nơi còn lại bằng nhau ≤ 1 frame |
-| Cargo yaw | tab ① (ô số/preset), gizmo 3D, nhãn `lbl-ground-angle` | SY-002 |
-| Span dầm | tab ③ slider/ô số/nút, mô hình 3D, Lift Plan | SY-003 |
-| Net/Rig/Gross | Top bar, HUD, tab ④, PDF/Lift Plan | SY-004: 4 nơi cùng giá trị |
-| Đơn vị (m/ft, T/kN) | Mọi nhãn & ô nhập | SY-005: đổi đơn vị không đổi giá trị vật lý (quy đổi 2 chiều round‑trip ±1e‑6) |
-| Ngôn ngữ | Mọi nhãn + PDF | SY-006 |
-| Lưu/khôi phục session | Reload trang | SY-007: state (hàng, dầm, cáp, cẩu, view) khôi phục đủ |
-| Trùng lặp chức năng | Quét handler: không 2 nút gọi cùng hành động | SY-008 (script đọc `data-action`/id registry) |
-
-Test hồi quy "đổi qua lại 20 lần, tab nào cũng đúng" cho mỗi cặp widget.
-
----
-
-## G. NHÓM 5 — LÕI KỸ THUẬT & VẬT LÝ (Vitest — mở rộng `test/`)
-
-Chạy trước (xanh) rồi **bổ sung** các test thiếu:
-
-| ID | File gợi ý | Nội dung |
-|---|---|---|
-| EN-001 | `engineering.test.js` (có) + mới | Lực nhánh theo góc, hệ số động (DAF), WLL theo chuẩn ASME B30.9/B30.20 |
-| EN-002 | `ground_pressure.test.js` (mới) | Áp lực nền với/không dunnage; biên 0 |
-| EN-003 | `crane_load_chart.test.js` (mới) | Nội suy bảng tải, ngoài miền → từ chối |
-| EN-004 | `liftplan.test.js` (có) + mới | Số liệu trong hồ sơ = state; checksum nhất quán |
-| EN-005 | `cog_tilt_stability.test.js` (có) | Bổ sung CoG ngoài tâm đa giác điểm nâng |
-| PH-001 | `rigging.test.js`, `simulation.test.js` (có) | Cáp chỉ chịu kéo (unilateral), không xuyên hàng |
-| PH-002 | `solid_collision_and_settling.test.js` (có) | Hàng đặt xuống ổn định < 3 s, không xuyên đất |
-| PH-003 | `physics_destruction.test.js` (có) | Cáp đứt khi vượt MBL, sự kiện phát đúng |
-| PH-004 | Property‑based (fast-check, tuỳ chọn) | Ngẫu nhiên 1000 cấu hình hợp lệ → không NaN/Infinity, tổng lực cân bằng |
-| PH-005 | Determinism | Cùng seed → cùng kết quả sau 600 bước |
-
-Thêm kiểm tra: không `NaN`/`Infinity` trong **mọi** phần tử văn bản số (Playwright quét `textContent` toàn drawer/HUD).
-
----
-
-## H. NHÓM 6 — ĐỘ BỀN, HIỆU NĂNG, LỖI BIÊN
-
-| ID | Kịch bản | Kỳ vọng |
-|---|---|---|
-| RB-001 | Soak 10 phút đổi tham số ngẫu nhiên + thao tác dock | Không lỗi console; heap tăng < 20% (rò rỉ); FPS TB ≥ 30 |
-| RB-002 | Spam click 200 lần/10 s mọi nút | Không treo, không trạng thái chồng |
-| RB-003 | Đổi cấu hình ngay giữa lúc nhấc/đong đưa | Mô phỏng ổn định hoặc reset sạch |
-| RB-004 | Nhập số cực đoan (1e9, −1, 0, NaN, rỗng, dấu phẩy) | Bị chặn, giá trị cũ giữ nguyên |
-| RB-005 | Tải mô hình 3D lỗi/định dạng sai (Thư viện) | Thông báo lỗi thân thiện, app vẫn chạy |
-| RB-006 | WebGL mất context | Thông báo + khôi phục |
-| RB-007 | Hiệu năng khởi động | Load < 5 s (dev) , `npm run build` thành công, cảnh báo chunk có chủ đích |
-| RB-008 | Màn hình cảm ứng/touch (Playwright `hasTouch`) | Tab, menu, slider dùng được |
-
----
-
-## I. NHÓM 7 — XUẤT HỒ SƠ & TIÊU CHUẨN
-
-| ID | Kịch bản | Kỳ vọng |
-|---|---|---|
-| EX-001 | Mở **Lift Plan** (`btn-open-liftplan`) | Modal đầy đủ, điền đúng từ state |
-| EX-002 | **Xuất PDF nhanh** | File tải về > 0 KB; parse text: có tên dự án, Net/Rig/Gross, WLL, góc, kết luận An toàn |
-| EX-003 | **Kiểm định** (`btn-open-compliance`) | Danh sách điều kiện khớp từng thông số hiện tại; đổi thông số → badge pass/fail đổi |
-| EX-004 | Export OBJ/lưu session | Mở lại nhập được, so snapshot |
-| EX-005 | Thư viện 3D: upload STL/GLB/ảnh | Mô hình xuất hiện, gắn được làm hàng; hủy không để rác trong scene |
-
----
-
-## J. THEO DÕI TIẾN ĐỘ & BÁO CÁO
-
-Tạo `docs/TEST_REPORT.md` cập nhật liên tục:
-
-| Nhóm | Số test | Pass | Fail | Blocked | Ghi chú |
-|---|---|---|---|---|---|
-| C Layout | 14×5 | | | | |
-| D Tab | 40+ | | | | |
-| E Vận hành | 10 | | | | |
-| F Đồng bộ | 8 | | | | |
-| G Lõi/Vật lý | 10+ | | | | |
-| H Độ bền | 8 | | | | |
-| I Xuất hồ sơ | 5 | | | | |
-
-`docs/BUGLOG.md` mỗi lỗi: `BUG-001 | mức (Blocker/Major/Minor) | nhóm | bước tái hiện | kỳ vọng vs thực tế | nguyên nhân | commit sửa | test hồi quy`.
-
-## K. THỨ TỰ THỰC HIỆN CHO CODEX
-1. §B hạ tầng → chạy `npm test` hiện có, sửa lỗi nền (baseline xanh).
-2. §C Layout → §F Đồng bộ (vì ảnh hưởng mọi test sau).
-3. §D từng tab → §E vận hành → §G lõi → §I xuất hồ sơ → §H độ bền.
-4. Chạy lại **toàn bộ** `npm run test:all` ×3 lần liên tiếp (chống flaky).
-5. Chụp screenshot cuối, cập nhật README, tạo tag `v-ui-stable`.
-
-## L. TIÊU CHÍ HOÀN THÀNH (Definition of Done)
-- [ ] `npm run test:all` xanh **3 lần liên tiếp**, 0 test bị skip không lý do.
-- [ ] `npm run build` thành công; 0 `console.error`/`pageerror` trong mọi kịch bản.
-- [ ] Mọi test layout xanh ở cả **5 viewport**; không phần tử bị che/chồng.
-- [ ] 8 bảng đồng bộ (§F) xanh; 0 id trùng; 0 chức năng lặp.
-- [ ] `BUGLOG.md` không còn Blocker/Major mở; Minor còn lại có kế hoạch.
-- [ ] Hồ sơ PDF/Lift Plan số liệu khớp 100% với HUD & state.
+### Tiêu chí nghiệm thu cuối cùng (Definition of Done):
+- [ ] **5 lỗi giao diện người dùng phản ánh đã được xử lý triệt để 100%**:
+  1. Cả 5 nút menu Top Bar (`Camera`, `Hiển Thị`, `Đồ Họa`, `Hồ Sơ & Chuẩn`, `Hệ Thống`) bấm vào đều mở bảng tùy chọn rõ ràng, không bị `#top-bar` cắt khuất.
+  2. Thanh chuyển 6 Tab trong Drawer hiển thị dạng **Lưới 3×2 hiện hữu 100%**, không dùng thanh kéo ngang.
+  3. Bảng `#right-side-drawer` kéo dài sát đáy màn hình (`bottom: 0`), tận dụng tối đa không gian dọc.
+  4. Dòng cảnh báo đỏ `#fit-banner` nổi phía trên thanh Dock, không bao giờ bị `#dock-hud` che khuất.
+  5. Bảng chỉ số `#dock-hud` căn cột lưới đều đặn, không có bất kỳ con số nào đè lên nhau.
+- [ ] Toàn bộ bài test trong `npm test` (160 Vitest tests) và `npx playwright test` (trên cả 4 độ phân giải) đều **PASS 100%** với hàm `assertTrulyVisibleAndClickable`.
+- [ ] `npm run build` thành công với 0 lỗi.

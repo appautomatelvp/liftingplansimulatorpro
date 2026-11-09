@@ -236,112 +236,47 @@
             </div>
         </div>
 
-        <!-- 1. MENU CAMERA -->
-        <div id="menu-camera" class="menu-dropdown relative inline-block dropdown-wrapper shrink-0">
-            <button id="btn-menu-camera" type="button" class="pendant-btn !py-0.5 !px-2 text-[10.5px] font-bold whitespace-nowrap flex items-center gap-1 shadow" data-testid="menu-camera" title="Góc nhìn camera 3D &amp; Chế độ bám">
-                <span>🎥 Camera</span> <span class="text-[7px]">▼</span>
-            </button>
-            <div id="dropdown-panel-camera" class="hidden absolute top-full left-0 mt-1 bg-slate-900/98 backdrop-blur-xl border border-sky-500/50 rounded-lg shadow-2xl p-2 z-[var(--z-popover)] text-xs text-slate-200 select-none min-w-[280px]">
-                <div class="text-[10px] font-bold text-sky-400 uppercase tracking-wider mb-1.5 pb-1 border-b border-slate-800">Góc nhìn Camera 3D</div>
-                <div class="grid grid-cols-3 gap-1 mb-2">
-                    <button class="pendant-btn !py-1 !px-1 text-[10px] cam-btn active justify-center" data-cam="iso" title="Phối cảnh 3D cận cảnh">Iso</button>
-                    <button class="pendant-btn !py-1 !px-1 text-[10px] cam-btn justify-center" data-cam="hook" title="Cận cảnh Đầu Hook &amp; Cáp">Móc</button>
-                    <button class="pendant-btn !py-1 !px-1 text-[10px] cam-btn justify-center" data-cam="front" title="Mặt đứng chính diện">Đứng</button>
-                    <button class="pendant-btn !py-1 !px-1 text-[10px] cam-btn justify-center" data-cam="side" title="Mặt bên">Bên</button>
-                    <button class="pendant-btn !py-1 !px-1 text-[10px] cam-btn justify-center" data-cam="top" title="Mặt bằng kiểm tra CoG">Bằng</button>
-                    <button class="pendant-btn !py-1 !px-1 text-[10px] cam-btn justify-center" data-cam="crane" title="Toàn cảnh máy cẩu">Cẩu</button>
-                </div>
-                <div class="pt-1.5 border-t border-slate-800 flex items-center justify-between">
-                    <button id="btn-cam-follow" type="button" class="pendant-btn !py-0.5 !px-1.5 text-[10px] flex items-center gap-1 font-semibold text-slate-300 hover:text-sky-300 transition" title="Bật/Tắt chế độ camera tự động bám theo điểm chỉ định trên kiện hàng khi kéo lên">
-                        <span class="text-xs leading-none">🎥</span>
-                        <span id="cam-follow-label">Bám: TẮT</span>
-                    </button>
-                    <select id="sel-cam-follow-mode" class="hidden bg-slate-800 text-sky-300 border border-slate-600 rounded text-[9.5px] px-1 py-0.5 outline-none focus:border-sky-400 cursor-pointer" title="Chọn điểm trên kiện hàng để camera bám theo">
-                        <option value="cog">Trọng tâm (CoG)</option>
-                        <option value="center">Tâm kiện (Center)</option>
-                        <option value="top">Đỉnh kiện (Top)</option>
-                        <option value="hook">Móc cẩu (Hook)</option>
-                        <option value="lp1">Tai cẩu LP1</option>
-                        <option value="lp2">Tai cẩu LP2</option>
-                        <option value="lp3">Tai cẩu LP3</option>
-                        <option value="lp4">Tai cẩu LP4</option>
-                        <option value="custom">Tùy chỉnh...</option>
-                    </select>
-                </div>
+        <!-- CỤM 5 MENU ĐIỀU KHIỂN TRUNG TÂM & NÚT ĐÓNG/MỞ DRAWER -->
+        <div class="flex items-center gap-1.5 shrink-0">
+            <!-- 1. MENU CAMERA -->
+            <div id="menu-camera" class="menu-dropdown relative inline-block dropdown-wrapper shrink-0">
+                <button id="btn-menu-camera" type="button" class="pendant-btn !py-1 !px-2.5 text-[11px] font-bold whitespace-nowrap flex items-center gap-1 shadow" data-testid="menu-camera" title="Góc nhìn camera 3D &amp; Chế độ bám">
+                    <span>🎥 Camera</span> <span class="text-[8px] transition-transform" id="arrow-camera-menu">▼</span>
+                </button>
             </div>
-        </div>
 
-        <!-- 2. MENU HIỂN THỊ -->
-        <div class="flex items-center gap-0.5 shrink-0">
-            <button id="btn-toggle-cad-edges" class="pendant-btn !py-0.5 !px-1.5 text-[10px] whitespace-nowrap hidden sm:inline-flex" title="Bật nét CAD kỹ thuật">CAD</button>
-            <button id="btn-xray" class="pendant-btn !py-0.5 !px-1.5 text-[10px] whitespace-nowrap hidden sm:inline-flex" title="Nhìn xuyên vỏ hàng">X-Ray</button>
-            <button id="btn-toggle-vectors" class="pendant-btn !py-0.5 !px-1.5 text-[10px] whitespace-nowrap hidden xl:inline-flex" title="Mũi tên véc-tơ lực cáp">Lực</button>
-            <div id="menu-display" class="menu-dropdown relative inline-block dropdown-wrapper">
-                <button id="btn-display-options" type="button" class="pendant-btn emerald !py-0.5 !px-2 text-[10.5px] font-bold whitespace-nowrap flex items-center gap-1 shadow" data-testid="menu-display" title="Tùy chọn ẩn/hiện các chỉ số kỹ thuật 3D (Lực, góc, ma ní, cáp, nền...)">
+            <!-- 2. MENU HIỂN THỊ -->
+            <div id="menu-display" class="menu-dropdown relative inline-block dropdown-wrapper shrink-0">
+                <button id="btn-display-options" type="button" class="pendant-btn emerald !py-1 !px-2.5 text-[11px] font-bold whitespace-nowrap flex items-center gap-1 shadow" data-testid="menu-display" title="Tùy chọn ẩn/hiện CAD, X-Ray, véc-tơ lực và các chỉ số kỹ thuật 3D">
                     <span>👁️ Hiển Thị</span>
-                    <span class="text-[7px] transition-transform" id="arrow-display-options">▼</span>
+                    <span class="text-[8px] transition-transform" id="arrow-display-options">▼</span>
                 </button>
             </div>
-        </div>
 
-        <!-- 3. MENU ĐỒ HỌA -->
-        <div id="menu-gfx" class="menu-dropdown relative inline-block dropdown-wrapper shrink-0">
-            <button id="btn-toggle-gfx" type="button" class="pendant-btn !py-0.5 !px-2 text-[10.5px] font-bold whitespace-nowrap flex items-center gap-1 shadow" data-testid="menu-gfx" title="Cấu hình đồ họa &amp; Ánh sáng môi trường CAE">
-                <span>✨ Đồ Họa</span>
-                <span class="text-[7px]" id="arrow-gfx-menu">▼</span>
-            </button>
-        </div>
-
-        <!-- 4. MENU HỒ SƠ & TIÊU CHUẨN -->
-        <div id="menu-docs" class="menu-dropdown relative inline-block dropdown-wrapper shrink-0">
-            <button id="btn-menu-docs" type="button" class="pendant-btn yellow !py-0.5 !px-2 text-[10.5px] font-bold whitespace-nowrap flex items-center gap-1 shadow" data-testid="menu-docs" title="Hồ sơ Lift Plan, Tiêu chuẩn an toàn &amp; Thư viện 3D">
-                <span>📋 Hồ Sơ &amp; Chuẩn</span> <span class="text-[7px]">▼</span>
-            </button>
-            <div id="dropdown-panel-docs" class="hidden absolute top-full left-0 mt-1 bg-slate-900/98 backdrop-blur-xl border border-amber-500/50 rounded-lg shadow-2xl p-2 z-[var(--z-popover)] text-xs text-slate-200 select-none min-w-[210px] space-y-1">
-                <button id="btn-open-compliance" class="w-full text-left pendant-btn emerald !py-1 !px-2 text-[10.5px] font-bold shadow whitespace-nowrap flex items-center gap-1.5" title="Mở bảng kiểm định an toàn quốc tế (ASME / ISO)">
-                    <span>🛡️</span> <span>Kiểm Định An Toàn (ASME/ISO)</span>
-                </button>
-                <button id="btn-open-liftplan" class="w-full text-left pendant-btn yellow !py-1 !px-2 text-[10.5px] font-bold shadow whitespace-nowrap flex items-center gap-1.5" title="Lập &amp; Xuất hồ sơ Lift Plan ASME P30.1">
-                    <span>📋</span> <span>Hồ Sơ Lift Plan ASME P30.1</span>
-                </button>
-                <button id="btn-quick-export-pdf" class="w-full text-left pendant-btn !py-1 !px-2 text-[10.5px] font-bold shadow whitespace-nowrap bg-rose-700/90 hover:bg-rose-600 text-white border border-rose-400/80 transition flex items-center gap-1.5" title="Xuất báo cáo PDF Kỹ thuật 2D/3D chuyên nghiệp chuẩn ASME P30.1 / B30.9">
-                    <span>📄</span> <span>Xuất Báo Cáo PDF</span>
-                </button>
-                <div class="h-px bg-slate-800 my-1"></div>
-                <button id="btn-open-3d-library" class="w-full text-left pendant-btn yellow !py-1 !px-2 text-[10.5px] font-bold shadow whitespace-nowrap flex items-center gap-1.5" title="Kho thư viện 3D, Upload STL/CAD và Ảnh chụp">
-                    <span>📚</span> <span>Thư Viện 3D &amp; Upload</span>
+            <!-- 3. MENU ĐỒ HỌA -->
+            <div id="menu-gfx" class="menu-dropdown relative inline-block dropdown-wrapper shrink-0">
+                <button id="btn-toggle-gfx" type="button" class="pendant-btn !py-1 !px-2.5 text-[11px] font-bold whitespace-nowrap flex items-center gap-1 shadow" data-testid="menu-gfx" title="Cấu hình đồ họa &amp; Ánh sáng môi trường CAE">
+                    <span>✨ Đồ Họa</span>
+                    <span class="text-[8px] transition-transform" id="arrow-gfx-menu">▼</span>
                 </button>
             </div>
-        </div>
 
-        <!-- 5. MENU HỆ THỐNG -->
-        <div id="menu-system" class="menu-dropdown relative inline-block dropdown-wrapper shrink-0">
-            <button id="btn-menu-system" type="button" class="pendant-btn !py-0.5 !px-2 text-[10.5px] font-bold whitespace-nowrap flex items-center gap-1 shadow" data-testid="menu-system" title="Cài đặt hệ thống, đơn vị, âm thanh &amp; toàn màn hình">
-                <span>⚙️ Hệ Thống</span> <span class="text-[7px]">▼</span>
-            </button>
-            <div id="dropdown-panel-system" class="hidden absolute top-full right-0 mt-1 bg-slate-900/98 backdrop-blur-xl border border-slate-700 rounded-lg shadow-2xl p-2 z-[var(--z-popover)] text-xs text-slate-200 select-none min-w-[180px] space-y-1">
-                <div class="flex items-center justify-between p-1 hover:bg-slate-800 rounded">
-                    <span>Âm thanh (M):</span>
-                    <button id="btn-sound-toggle" class="pendant-btn !px-2 !py-0.5 text-[10px] active">🔊 Bật</button>
-                </div>
-                <div class="flex items-center justify-between p-1 hover:bg-slate-800 rounded">
-                    <span>Ngôn ngữ:</span>
-                    <button id="btn-lang" type="button" class="pendant-btn !px-2 !py-0.5 text-[10px] text-amber-200 border-amber-400/50">VI / EN</button>
-                </div>
-                <div class="flex items-center justify-between p-1 hover:bg-slate-800 rounded">
-                    <span>Hệ đo:</span>
-                    <button id="btn-unit-toggle" type="button" class="pendant-btn !px-2 !py-0.5 text-[10px] font-bold text-sky-200 border-sky-400/50">Mét (m)</button>
-                </div>
-                <div class="flex items-center justify-between p-1 hover:bg-slate-800 rounded">
-                    <span>Toàn màn hình:</span>
-                    <button id="btn-fullscreen-view" class="pendant-btn yellow !px-2 !py-0.5 text-[10px]">⛶ Mở</button>
-                </div>
+            <!-- 4. MENU HỒ SƠ & TIÊU CHUẨN -->
+            <div id="menu-docs" class="menu-dropdown relative inline-block dropdown-wrapper shrink-0">
+                <button id="btn-menu-docs" type="button" class="pendant-btn yellow !py-1 !px-2.5 text-[11px] font-bold whitespace-nowrap flex items-center gap-1 shadow" data-testid="menu-docs" title="Hồ sơ Lift Plan, Tiêu chuẩn an toàn &amp; Thư viện 3D">
+                    <span>📋 Hồ Sơ &amp; Chuẩn</span> <span class="text-[8px] transition-transform" id="arrow-docs-menu">▼</span>
+                </button>
             </div>
-        </div>
 
-        <!-- NÚT MỞ/ĐÓNG BẢNG THÔNG SỐ 25% (DRAWER TOGGLE) -->
-        <div class="flex items-center shrink-0">
-            <button id="btn-toggle-drawer" class="pendant-btn emerald !py-0.5 !px-2.5 text-[10.5px] font-extrabold shadow-lg flex items-center gap-1.5" title="Mở/Đóng Bảng Thông Số Kỹ Thuật (Phím 1-6 / Esc)" data-testid="drawer-toggle">
+            <!-- 5. MENU HỆ THỐNG -->
+            <div id="menu-system" class="menu-dropdown relative inline-block dropdown-wrapper shrink-0">
+                <button id="btn-menu-system" type="button" class="pendant-btn !py-1 !px-2.5 text-[11px] font-bold whitespace-nowrap flex items-center gap-1 shadow" data-testid="menu-system" title="Cài đặt hệ thống, đơn vị, âm thanh &amp; toàn màn hình">
+                    <span>⚙️ Hệ Thống</span> <span class="text-[8px] transition-transform" id="arrow-system-menu">▼</span>
+                </button>
+            </div>
+
+            <!-- NÚT MỞ/ĐÓNG BẢNG THÔNG SỐ (DRAWER TOGGLE) -->
+            <button id="btn-toggle-drawer" type="button" class="pendant-btn emerald !py-1 !px-2.5 text-[11px] font-extrabold shadow-lg flex items-center gap-1.5 ml-1" title="Mở/Đóng Bảng Thông Số Kỹ Thuật (Phím 1-6 / Esc)" data-testid="drawer-toggle">
                 <span>📐</span> <span>Thông Số (1-6)</span>
             </button>
         </div>
@@ -545,9 +480,9 @@
                 </div>
             </div>
 
-            <!-- Quick Inner Tab Switcher Pills (Single Source of Navigation) -->
-            <div class="flex items-center gap-1 px-2.5 py-1.5 border-b border-slate-800 bg-slate-950/80 overflow-x-auto shrink-0 scrollbar-none" id="drawer-inner-tabs" role="tablist" aria-label="Các trang hiệu chỉnh">
-                <button class="drawer-inner-tab-btn active" data-drawer-tab="cargo" type="button" role="tab" data-testid="tab-cargo">📦 1. Hàng</button>
+            <!-- Thanh chuyển 6 Tab hiển thị 100% dạng Lưới 3x2 — TUYỆT ĐỐI KHÔNG CUỘN NGANG -->
+            <div class="grid grid-cols-3 gap-1.5 px-2.5 py-2 border-b border-slate-800 bg-slate-950/90 shrink-0" id="drawer-inner-tabs" role="tablist" aria-label="Các trang hiệu chỉnh">
+                <button class="drawer-inner-tab-btn active" data-drawer-tab="cargo" type="button" role="tab" data-testid="tab-cargo">📦 1. Hàng hóa</button>
                 <button class="drawer-inner-tab-btn" data-drawer-tab="lugs" type="button" role="tab" data-testid="tab-lugs">📍 2. Điểm nâng</button>
                 <button class="drawer-inner-tab-btn" data-drawer-tab="rig" type="button" role="tab" data-testid="tab-rig">🟠 3. Dầm ngáng</button>
                 <button class="drawer-inner-tab-btn" data-drawer-tab="gear" type="button" role="tab" data-testid="tab-gear">⛓️ 4. Cáp treo</button>
@@ -2624,9 +2559,43 @@
     </div>
 
     <!-- ======================================================================= -->
-    <!-- FLOATING POPOVERS: MOVED TO ROOT BODY LEVEL FOR UNRESTRICTED STACKING     -->
+    <!-- FLOATING POPOVERS: ĐẶT Ở CẤP ROOT BODY ĐỂ KHÔNG BỊ #TOP-BAR CẮT (CLIP)  -->
     <!-- ======================================================================= -->
-    <div id="display-options-popover" class="hidden fixed bg-slate-900/98 backdrop-blur-xl border border-sky-500/50 rounded-lg shadow-2xl p-3 text-slate-200 text-xs select-none w-80 box-border pointer-events-auto">
+
+    <!-- 1. POPOVER CAMERA -->
+    <div id="dropdown-panel-camera" class="topbar-popover-panel hidden fixed bg-slate-900/98 backdrop-blur-xl border border-sky-500/50 rounded-lg shadow-2xl p-3 text-xs text-slate-200 select-none w-72 box-border pointer-events-auto">
+        <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-700/80">
+            <span class="font-extrabold text-[11px] uppercase tracking-wider text-sky-400">🎥 Góc Nhìn Camera 3D</span>
+        </div>
+        <div class="grid grid-cols-3 gap-1.5 mb-2.5">
+            <button type="button" class="pendant-btn !py-1.5 !px-2 text-[11px] cam-btn active justify-center" data-cam="iso" title="Phối cảnh 3D cận cảnh">Iso</button>
+            <button type="button" class="pendant-btn !py-1.5 !px-2 text-[11px] cam-btn justify-center" data-cam="hook" title="Cận cảnh Đầu Hook &amp; Cáp">Móc</button>
+            <button type="button" class="pendant-btn !py-1.5 !px-2 text-[11px] cam-btn justify-center" data-cam="front" title="Mặt đứng chính diện">Đứng</button>
+            <button type="button" class="pendant-btn !py-1.5 !px-2 text-[11px] cam-btn justify-center" data-cam="side" title="Mặt bên">Bên</button>
+            <button type="button" class="pendant-btn !py-1.5 !px-2 text-[11px] cam-btn justify-center" data-cam="top" title="Mặt bằng kiểm tra CoG">Bằng</button>
+            <button type="button" class="pendant-btn !py-1.5 !px-2 text-[11px] cam-btn justify-center" data-cam="crane" title="Toàn cảnh máy cẩu">Cẩu</button>
+        </div>
+        <div class="pt-2 border-t border-slate-800 flex items-center justify-between gap-2">
+            <button id="btn-cam-follow" type="button" class="pendant-btn !py-1 !px-2 text-[10.5px] flex items-center gap-1 font-semibold text-slate-300 hover:text-sky-300 transition" title="Bật/Tắt chế độ camera tự động bám theo điểm chỉ định trên kiện hàng khi kéo lên">
+                <span>🎥</span>
+                <span id="cam-follow-label">Bám: TẮT</span>
+            </button>
+            <select id="sel-cam-follow-mode" class="hidden bg-slate-800 text-sky-300 border border-slate-600 rounded text-[10px] px-1.5 py-1 outline-none focus:border-sky-400 cursor-pointer" title="Chọn điểm trên kiện hàng để camera bám theo">
+                <option value="cog">Trọng tâm (CoG)</option>
+                <option value="center">Tâm kiện (Center)</option>
+                <option value="top">Đỉnh kiện (Top)</option>
+                <option value="hook">Móc cẩu (Hook)</option>
+                <option value="lp1">Tai cẩu LP1</option>
+                <option value="lp2">Tai cẩu LP2</option>
+                <option value="lp3">Tai cẩu LP3</option>
+                <option value="lp4">Tai cẩu LP4</option>
+                <option value="custom">Tùy chỉnh...</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- 2. POPOVER HIỂN THỊ (Tích hợp luôn CAD, X-Ray, Véc-tơ Lực ở đầu) -->
+    <div id="display-options-popover" class="topbar-popover-panel hidden fixed bg-slate-900/98 backdrop-blur-xl border border-sky-500/50 rounded-lg shadow-2xl p-3 text-slate-200 text-xs select-none w-80 box-border pointer-events-auto">
         <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-700/80">
             <span class="font-extrabold text-[11px] uppercase tracking-wider text-sky-400 flex items-center gap-1.5">
                 <span>👁️</span> <span>Tùy Chọn Hiển Thị 3D</span>
@@ -2636,6 +2605,12 @@
                 <button id="btn-display-none" type="button" class="text-[9px] bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-600 px-1.5 py-0.5 rounded font-bold transition">Ẩn Hết</button>
                 <button id="btn-display-close" type="button" class="text-[11px] text-slate-400 hover:text-white px-1.5 ml-0.5">✕</button>
             </div>
+        </div>
+        <!-- 3 NÚT NHANH CAD, X-RAY, LỰC -->
+        <div class="grid grid-cols-3 gap-1.5 pb-2 mb-2 border-b border-slate-800">
+            <button id="btn-toggle-cad-edges" type="button" class="pendant-btn !py-1 !px-2 text-[10.5px] justify-center" title="Bật nét CAD kỹ thuật">📐 Nét CAD</button>
+            <button id="btn-xray" type="button" class="pendant-btn !py-1 !px-2 text-[10.5px] justify-center" title="Nhìn xuyên vỏ hàng">🔍 X-Ray</button>
+            <button id="btn-toggle-vectors" type="button" class="pendant-btn !py-1 !px-2 text-[10.5px] justify-center" title="Mũi tên véc-tơ lực cáp">↗️ Véc-tơ Lực</button>
         </div>
         <div class="space-y-1.5 text-[11px] max-h-[380px] overflow-y-auto pr-0.5">
             <label class="flex items-center justify-between p-1 rounded hover:bg-slate-800/60 cursor-pointer">
@@ -2711,8 +2686,8 @@
         </div>
     </div>
 
-    <!-- FLOATING POPOVER: ĐỒ HỌA & MÔI TRƯỜNG CAE -->
-    <div id="gfx-menu-popover" class="hidden fixed bg-slate-900/98 backdrop-blur-xl border border-amber-500/50 rounded-lg shadow-2xl p-3 text-slate-200 text-xs select-none w-72 box-border pointer-events-auto">
+    <!-- 3. POPOVER ĐỒ HỌA & MÔI TRƯỜNG CAE -->
+    <div id="gfx-menu-popover" class="topbar-popover-panel hidden fixed bg-slate-900/98 backdrop-blur-xl border border-amber-500/50 rounded-lg shadow-2xl p-3 text-slate-200 text-xs select-none w-72 box-border pointer-events-auto">
         <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-700/80">
             <span class="font-extrabold text-[11px] uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
                 <span>✨</span> <span>Đồ Họa &amp; Môi Trường CAE</span>
@@ -2744,6 +2719,45 @@
                 <input type="file" id="inp-custom-hdri" accept=".hdr,.exr" class="hidden">
                 <button id="btn-upload-hdri" type="button" class="pendant-btn !py-0.5 !px-2 text-[10px] font-bold" title="Tải file môi trường HDRI riêng (.hdr / .exr)">🌆 Chọn File HDRI</button>
             </div>
+        </div>
+    </div>
+
+    <!-- 4. POPOVER HỒ SƠ & CHUẨN -->
+    <div id="dropdown-panel-docs" class="topbar-popover-panel hidden fixed bg-slate-900/98 backdrop-blur-xl border border-amber-500/50 rounded-lg shadow-2xl p-2.5 text-xs text-slate-200 select-none w-64 box-border pointer-events-auto space-y-1.5">
+        <div class="text-[10px] font-extrabold uppercase tracking-wider text-amber-400 pb-1 border-b border-slate-800">📋 Hồ Sơ Kỹ Thuật &amp; Thư Viện</div>
+        <button id="btn-open-compliance" type="button" class="w-full text-left pendant-btn emerald !py-1.5 !px-2.5 text-[11px] font-bold shadow flex items-center gap-2">
+            <span>🛡️</span> <span>Kiểm Định An Toàn (ASME/ISO)</span>
+        </button>
+        <button id="btn-open-liftplan" type="button" class="w-full text-left pendant-btn yellow !py-1.5 !px-2.5 text-[11px] font-bold shadow flex items-center gap-2">
+            <span>📋</span> <span>Hồ Sơ Lift Plan ASME P30.1</span>
+        </button>
+        <button id="btn-quick-export-pdf" type="button" class="w-full text-left pendant-btn !py-1.5 !px-2.5 text-[11px] font-bold shadow bg-rose-700/90 hover:bg-rose-600 text-white border border-rose-400/80 flex items-center gap-2">
+            <span>📄</span> <span>Xuất Báo Cáo PDF</span>
+        </button>
+        <div class="h-px bg-slate-800 my-1"></div>
+        <button id="btn-open-3d-library" type="button" class="w-full text-left pendant-btn blue !py-1.5 !px-2.5 text-[11px] font-bold shadow flex items-center gap-2">
+            <span>📚</span> <span>Thư Viện 3D &amp; Upload CAD</span>
+        </button>
+    </div>
+
+    <!-- 5. POPOVER HỆ THỐNG -->
+    <div id="dropdown-panel-system" class="topbar-popover-panel hidden fixed bg-slate-900/98 backdrop-blur-xl border border-slate-600 rounded-lg shadow-2xl p-2.5 text-xs text-slate-200 select-none w-56 box-border pointer-events-auto space-y-1.5">
+        <div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-300 pb-1 border-b border-slate-800">⚙️ Cài Đặt Hệ Thống</div>
+        <div class="flex items-center justify-between p-1 hover:bg-slate-800/80 rounded">
+            <span>Âm thanh (M):</span>
+            <button id="btn-sound-toggle" type="button" class="pendant-btn !px-2.5 !py-0.5 text-[10.5px] active">🔊 Bật</button>
+        </div>
+        <div class="flex items-center justify-between p-1 hover:bg-slate-800/80 rounded">
+            <span>Ngôn ngữ:</span>
+            <button id="btn-lang" type="button" class="pendant-btn !px-2.5 !py-0.5 text-[10.5px] text-amber-200 border-amber-400/50">VI / EN</button>
+        </div>
+        <div class="flex items-center justify-between p-1 hover:bg-slate-800/80 rounded">
+            <span>Hệ đo lường:</span>
+            <button id="btn-unit-toggle" type="button" class="pendant-btn !px-2.5 !py-0.5 text-[10.5px] font-bold text-sky-200 border-sky-400/50">Mét (m)</button>
+        </div>
+        <div class="flex items-center justify-between p-1 hover:bg-slate-800/80 rounded">
+            <span>Toàn màn hình (H):</span>
+            <button id="btn-fullscreen-view" type="button" class="pendant-btn yellow !px-2.5 !py-0.5 text-[10.5px]">⛶ Mở</button>
         </div>
     </div>
 

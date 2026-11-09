@@ -203,4 +203,25 @@ window.UI = window.UI || {};
             setTimeout(() => toast.remove(), 300);
         }, durationMs);
     };
+
+    // Dynamic --dock-h tracker using ResizeObserver
+    function initDockHeightObserver() {
+        const dock = document.getElementById('bottom-dock-bar');
+        if (!dock || typeof ResizeObserver === 'undefined') return;
+        const ro = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                const h = Math.round(entry.contentRect.height || dock.offsetHeight || 64);
+                if (h > 0) {
+                    document.documentElement.style.setProperty('--dock-h', `${h}px`);
+                }
+            }
+        });
+        ro.observe(dock);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initDockHeightObserver);
+    } else {
+        initDockHeightObserver();
+    }
 })();

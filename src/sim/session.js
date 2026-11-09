@@ -1907,13 +1907,11 @@
             // Close all dropdown menus to prevent overlap
             if (window.UI?.layout) window.UI.layout.closeAllMenus();
 
-            // Dynamically fit drawer cleanly between top-bar and bottom-dock-bar
+            // Dynamically fit drawer cleanly between top-bar and bottom of screen
             const topBar = document.getElementById('top-bar');
-            const bottomBar = document.getElementById('bottom-dock-bar');
             const topH = (topBar ? topBar.offsetHeight : 44) || 44;
-            const botH = (bottomBar ? bottomBar.offsetHeight : 44) || 44;
-            drawer.style.top = `${topH + 2}px`;
-            drawer.style.bottom = `${botH + 4}px`;
+            drawer.style.top = `${topH}px`;
+            drawer.style.bottom = '0px';
 
             // Switch page
             document.querySelectorAll('.drawer-page').forEach(page => page.classList.remove('active'));
@@ -1992,13 +1990,11 @@
             window.addEventListener('resize', () => {
                 if (isDrawerOpen) {
                     const topBar = document.getElementById('top-bar');
-                    const bottomBar = document.getElementById('bottom-dock-bar');
                     const drawer = document.getElementById('right-side-drawer');
-                    if (drawer && topBar && bottomBar) {
+                    if (drawer && topBar) {
                         const topH = (topBar ? topBar.offsetHeight : 44) || 44;
-                        const botH = (bottomBar ? bottomBar.offsetHeight : 44) || 44;
-                        drawer.style.top = `${topH + 2}px`;
-                        drawer.style.bottom = `${botH + 4}px`;
+                        drawer.style.top = `${topH}px`;
+                        drawer.style.bottom = '0px';
                     }
                 }
             });
@@ -3239,11 +3235,11 @@
 
             // Unified Top Bar Dropdown Management
             const allDropdowns = [
-                { menuId: 'menu-camera', btnId: 'btn-menu-camera', panelId: 'dropdown-panel-camera' },
+                { menuId: 'menu-camera', btnId: 'btn-menu-camera', panelId: 'dropdown-panel-camera', arrowId: 'arrow-camera-menu' },
                 { menuId: 'menu-display', btnId: 'btn-display-options', panelId: 'display-options-popover', arrowId: 'arrow-display-options' },
                 { menuId: 'menu-gfx', btnId: 'btn-toggle-gfx', panelId: 'gfx-menu-popover', arrowId: 'arrow-gfx-menu' },
-                { menuId: 'menu-docs', btnId: 'btn-menu-docs', panelId: 'dropdown-panel-docs' },
-                { menuId: 'menu-system', btnId: 'btn-menu-system', panelId: 'dropdown-panel-system' }
+                { menuId: 'menu-docs', btnId: 'btn-menu-docs', panelId: 'dropdown-panel-docs', arrowId: 'arrow-docs-menu' },
+                { menuId: 'menu-system', btnId: 'btn-menu-system', panelId: 'dropdown-panel-system', arrowId: 'arrow-system-menu' }
             ];
 
             function closeAllTopDropdowns() {
@@ -3307,6 +3303,14 @@
                         }
                     });
                 }
+            });
+
+            // Close dropdowns upon clicking action items inside docs panel or camera presets
+            ['btn-open-compliance', 'btn-open-liftplan', 'btn-quick-export-pdf', 'btn-open-3d-library'].forEach(id => {
+                document.getElementById(id)?.addEventListener('click', () => closeAllTopDropdowns());
+            });
+            document.querySelectorAll('#dropdown-panel-camera .cam-btn').forEach(btn => {
+                btn.addEventListener('click', () => closeAllTopDropdowns());
             });
 
             document.getElementById('btn-display-close')?.addEventListener('click', (e) => {
