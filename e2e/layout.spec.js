@@ -54,6 +54,8 @@ test.describe('Lifting Plan Simulator - Layout & Collision Avoidance E2E', () =>
     await drawerToggleBtn.click();
     await expect(drawer).toHaveClass(/drawer-open/);
     await expect(page.locator('body')).toHaveClass(/drawer-open/);
+    // Wait for drawer slide-in transition to complete
+    await page.waitForTimeout(350);
 
     // Test switching tabs: 1. Cargo, 2. Lugs, 3. Rig, 4. Gear, 5. Crane, 6. Site
     const tabs = [
@@ -67,7 +69,7 @@ test.describe('Lifting Plan Simulator - Layout & Collision Avoidance E2E', () =>
 
     for (const t of tabs) {
       const tabBtn = page.locator(`[data-testid="${t.id}"]`);
-      await tabBtn.click({ force: true });
+      await tabBtn.click();
       await expect(tabBtn).toHaveClass(/active/);
       await expect(page.locator(`#${t.page}`)).toHaveClass(/active/);
     }

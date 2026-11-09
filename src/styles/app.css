@@ -512,6 +512,9 @@ body.drawer-open {
             max-width: min(92vw, 420px) !important;
             z-index: var(--z-hud) !important;
         }
+        #compliance-hud-panel.hidden {
+            display: none !important;
+        }
         .studio-tab-btn {
             padding: 0.45rem 0.85rem;
             font-size: 0.75rem;
