@@ -2,6 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+    --topbar-h: 44px;
+    --dock-h: 56px;
+    --dock-gap: 6px;
+    --drawer-w: clamp(360px, 26vw, 480px);
+    --safe-right: 0px;
+    --z-canvas: 1;
+    --z-labels: 5;
+    --z-hud: 20;
+    --z-dock: 30;
+    --z-drawer: 40;
+    --z-topbar: 50;
+    --z-popover: 60;
+    --z-modal: 80;
+    --z-toast: 100;
+}
+
+body.drawer-open {
+    --safe-right: var(--drawer-w);
+}
+
         body {
             margin: 0;
             overflow: hidden;
@@ -11,12 +32,12 @@
             user-select: none;
         }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
-        #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
+        #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: var(--z-canvas); }
 
         /* 3D Floating Telemetry & Interactive Gizmo Labels */
         #labels-container {
             position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
-            pointer-events: none; z-index: 5; overflow: hidden;
+            pointer-events: none; z-index: var(--z-labels); overflow: hidden;
         }
         .label-3d {
             position: absolute;
@@ -55,7 +76,7 @@
             justify-content: space-between;
             gap: 4px 6px;
             padding: 3px 8px;
-            z-index: 1000;
+            z-index: var(--z-topbar);
             pointer-events: auto;
             overflow-x: hidden !important;
             overflow-y: hidden !important;
@@ -68,7 +89,7 @@
         }
 
         #display-options-popover, #gfx-menu-popover {
-            z-index: 100000 !important;
+            z-index: var(--z-popover) !important;
         }
 
         #lbl-ground-angle {
@@ -86,7 +107,7 @@
         /* Main UI Layout */
         #ui-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 10; pointer-events: none;
+            z-index: var(--z-hud); pointer-events: none;
             display: flex; flex-direction: column; justify-content: flex-end;
             padding: 0;
         }
@@ -94,13 +115,13 @@
         /* 25% Right-Side Slide-Over Engineering Drawer */
         #right-side-drawer {
             position: fixed;
-            top: 46px !important;
+            top: var(--topbar-h) !important;
             right: 0;
-            bottom: 66px !important; /* Raised to sit cleanly above 2-row bottom-dock-bar */
-            width: 25vw;
-            min-width: 385px;
+            bottom: calc(var(--dock-h) + var(--dock-gap) * 2) !important;
+            width: var(--drawer-w);
+            min-width: 360px;
             max-width: 520px;
-            z-index: 1040 !important;
+            z-index: var(--z-drawer) !important;
             background: rgba(11, 17, 32, 0.98);
             backdrop-filter: blur(24px);
             border-left: 1.5px solid rgba(71, 85, 105, 0.85);
@@ -164,20 +185,20 @@
         /* Bottom Dock Bar & Stations */
         #bottom-dock-bar {
             position: fixed;
-            bottom: 6px;
+            bottom: var(--dock-gap);
             left: 8px;
-            right: 8px;
-            height: 56px;
-            min-height: 56px;
-            max-height: 58px;
-            z-index: 1045; /* Above background elements and comfortably reachable */
+            right: calc(8px + var(--safe-right));
+            min-height: var(--dock-h);
+            max-height: calc(var(--dock-h) * 2);
+            z-index: var(--z-dock);
             pointer-events: none;
             display: flex;
-            flex-wrap: nowrap !important;
+            flex-wrap: wrap;
             align-items: center;
             justify-content: space-between;
             gap: 6px;
             box-sizing: border-box;
+            transition: right 0.28s cubic-bezier(0.16, 1, 0.3, 1);
         }
         #bottom-dock-bar > * {
             pointer-events: auto !important;
@@ -229,7 +250,6 @@
             justify-content: center;
             gap: 2px;
             white-space: nowrap !important;
-            z-index: 1046 !important; /* Ensure menu buttons are ALWAYS on top and never hidden */
             padding: 3px 6px;
         }
         .hud-shell {
@@ -310,7 +330,7 @@
         #gear-editor {
             top: 52px !important; right: 8px !important; left: auto !important; bottom: 80px !important;
             transform: none !important; width: min(24vw, 380px) !important; max-height: none !important;
-            z-index: 90 !important;
+            z-index: var(--z-drawer) !important;
         }
         .pointer-events-auto { pointer-events: auto; }
 
@@ -434,7 +454,7 @@
         #library-studio-modal {
             position: fixed;
             inset: 0;
-            z-index: 50;
+            z-index: var(--z-modal);
             background: rgba(5, 9, 17, 0.86);
             backdrop-filter: blur(14px);
             display: none;
@@ -444,6 +464,12 @@
         }
         #library-studio-modal.open {
             display: flex;
+        }
+        .modal-layer, #liftplan-modal {
+            z-index: var(--z-modal) !important;
+        }
+        #compliance-hud-panel {
+            z-index: var(--z-hud) !important;
         }
         .studio-tab-btn {
             padding: 0.45rem 0.85rem;
