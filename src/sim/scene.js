@@ -14,6 +14,14 @@
             MATS.yellowHazard = new THREE.MeshPhysicalMaterial({ color: 0xfacc15, metalness: 0.42, roughness: 0.28, clearcoat: 0.35 });
             MATS.orangeBeam = new THREE.MeshPhysicalMaterial({ color: 0xf97316, metalness: 0.48, roughness: 0.26, clearcoat: 0.35 });
             MATS.redMaster = new THREE.MeshPhysicalMaterial({ color: 0xdc2626, metalness: 0.52, roughness: 0.24, clearcoat: 0.45 });
+            MATS.flashRed = new THREE.MeshPhysicalMaterial({
+                color: 0xff0022,
+                emissive: 0xff0022,
+                emissiveIntensity: 1.4,
+                metalness: 0.35,
+                roughness: 0.15,
+                clearcoat: 0.6
+            });
             MATS.craneRed = new THREE.MeshPhysicalMaterial({ color: 0xc81e1e, metalness: 0.4, roughness: 0.28, clearcoat: 0.4 });
             MATS.gantryBlue = new THREE.MeshPhysicalMaterial({ color: 0x0284c7, metalness: 0.42, roughness: 0.28, clearcoat: 0.4 });
             MATS.bargePurple = new THREE.MeshPhysicalMaterial({ color: 0x0f766e, metalness: 0.38, roughness: 0.32, clearcoat: 0.35 });

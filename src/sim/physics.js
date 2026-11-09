@@ -2131,8 +2131,8 @@
                 if (banner) {
                     banner.style.display = 'block';
                     banner.textContent = state.lang === 'en'
-                        ? `Error: Horizontal sling angle is less than 30 degrees (${minHorizAngle.toFixed(1)}°). Operation prohibited under ASME B30.9.`
-                        : `Error: Horizontal sling angle is less than 30 degrees (${minHorizAngle.toFixed(1)}°). Operation prohibited under ASME B30.9. (Lỗi: Góc nâng ngang cáp < 30°. Nghiêm cấm thao tác cẩu theo ASME B30.9 & OSHA).`;
+                        ? `⛔ PROHIBITED (ASME B30.9 / OSHA): Sling angle is ${minHorizAngle.toFixed(1)}° (< 30°)! Tension factor exceeds 200% — Operation strictly prohibited.`
+                        : `⛔ NGUY HIỂM (ASME B30.9 / OSHA): Góc nâng ngang cáp chỉ đạt ${minHorizAngle.toFixed(1)}° (< 30°)! Lực căng tăng vọt > 200% — Nghiêm cấm nâng cẩu.`;
                 }
             }
 
@@ -4084,49 +4084,75 @@
                 if (ch.geometry) ch.geometry.dispose();
                 if (ch.material) ch.material.dispose();
             }
-            const gaps = [];
-            {
-                (phy.cables || []).forEach(c => {
-                    if (cableIsBroken(c)) return;
-                    const A = attachWorld(c.a);
-                    const B = attachWorld(c.b);
-                    const slack = A.distanceTo(B) - c.L0;
-                    if (!(slack > 0.08)) return;
-                    gaps.push({ role: c.role, index: c.index, slack: slack });
-                    const dir = B.clone().sub(A);
-                    if (dir.lengthSq() < 1e-8) return;
-                    const n = dir.normalize();
-                    const reach = A.clone().addScaledVector(n, Math.min(c.L0, A.distanceTo(B)));
-                    const tip = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), new THREE.MeshBasicMaterial({ color: 0xff2d2d }));
-                    tip.position.copy(reach);
-                    const miss = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 8), new THREE.MeshBasicMaterial({ color: 0xff2d2d }));
-                    miss.position.copy(B);
-                    phy.fitGroup.add(tip, miss);
-                });
-            }
+
             const banner = document.getElementById('fit-banner');
             if (!banner) return;
-            if (phy.isOperationBlocked) {
+
+            // International Cable Sling Angle Safety Rules (ASME B30.9 / OSHA 1910.184 / ISO 12480):
+            // - Angle Beta >= 60°: Optimal / Recommended
+            // - 45° <= Beta < 60°: Acceptable with standard safety factors
+            // - 30° <= Beta < 45°: Warning - High tension factor (LAF > 1.41)
+            // - Beta < 30°: PROHIBITED BY ASME B30.9 & OSHA - Tension factor > 2.0x, risk of structural failure
+            const cables = phy.cables || [];
+            let worstCable = null;
+            let minBeta = 90;
+            const now = performance.now();
+
+            cables.forEach(c => {
+                if (cableIsBroken(c)) return;
+                const A = attachWorld(c.a);
+                const B = attachWorld(c.b);
+                const dist = A.distanceTo(B);
+                if (dist < 0.1) return;
+                const dy = Math.abs(B.y - A.y);
+                const beta = Math.asin(THREE.MathUtils.clamp(dy / dist, 0, 1)) * (180 / Math.PI);
+
+                if (beta < 45.0) {
+                    if (beta < minBeta) {
+                        minBeta = beta;
+                        worstCable = c;
+                    }
+                    // Trigger 3-flash red pulse on this cable if entering warning zone
+                    if (!c._hasFlashedForAngle) {
+                        c._isFlashing = true;
+                        c._flashStartTime = now;
+                        c._hasFlashedForAngle = true;
+                    }
+                    c._angleDanger = (beta < 30.0);
+                } else {
+                    c._hasFlashedForAngle = false;
+                    c._angleDanger = false;
+                }
+            });
+
+            if (worstCable && minBeta < 45.0) {
+                const roleNamesVi = { upper: 'cáp trên', leg: 'cáp nhánh', hanger: 'cáp treo', extra: 'cáp phụ' };
+                const roleNamesEn = { upper: 'upper sling', leg: 'sling leg', hanger: 'hanger', extra: 'extra sling' };
+                const cNameVi = `${roleNamesVi[worstCable.role] || 'nhánh cáp'} ${worstCable.index + 1}`;
+                const cNameEn = `${roleNamesEn[worstCable.role] || 'sling leg'} ${worstCable.index + 1}`;
+
                 banner.style.display = 'block';
-                const isLegBroken = (idx) => !!(state.gear && state.gear.legs && state.gear.legs[idx] && state.gear.legs[idx].broken);
-                const tautAngles = (phy.legAngleDeg || []).filter((deg, i) => !isLegBroken(i) && (!phy.legSlacks || !phy.legSlacks[i]));
-                const minHorizAngle = tautAngles.length ? Math.min(...tautAngles) : Math.max(0, 90 - (phy.maxAngleVert || 0));
-                banner.textContent = state.lang === 'en'
-                    ? `Error: Horizontal sling angle is less than 30 degrees (${minHorizAngle.toFixed(1)}°). Operation prohibited under ASME B30.9.`
-                    : `Error: Horizontal sling angle is less than 30 degrees (${minHorizAngle.toFixed(1)}°). Operation prohibited under ASME B30.9. (Lỗi: Góc nâng ngang cáp < 30°. Nghiêm cấm nâng cẩu theo ASME B30.9 & OSHA).`;
-                return;
-            }
-            if (!gaps.length) {
+
+                if (minBeta < 30.0) {
+                    phy.isOperationBlocked = true;
+                    banner.style.background = 'linear-gradient(180deg, rgba(153, 27, 27, 0.98) 0%, rgba(127, 29, 29, 0.98) 100%)';
+                    banner.style.borderColor = '#ef4444';
+                    banner.style.boxShadow = '0 8px 25px rgba(220, 38, 38, 0.55), 0 0 15px rgba(239, 68, 68, 0.45)';
+                    banner.textContent = state.lang === 'en'
+                        ? `⛔ PROHIBITED (ASME B30.9 / OSHA): Sling angle of ${cNameEn} is ${minBeta.toFixed(1)}° (< 30°)! Tension factor exceeds 200% — Operation prohibited.`
+                        : `⛔ NGUY HIỂM (ASME B30.9 / OSHA): Góc kéo của ${cNameVi} = ${minBeta.toFixed(1)}° (< 30°)! Lực căng tăng vọt > 200% — Nghiêm cấm nâng cẩu.`;
+                } else {
+                    phy.isOperationBlocked = false;
+                    banner.style.background = 'linear-gradient(180deg, rgba(146, 64, 14, 0.96) 0%, rgba(120, 53, 15, 0.98) 100%)';
+                    banner.style.borderColor = '#f59e0b';
+                    banner.style.boxShadow = '0 8px 25px rgba(245, 158, 11, 0.45), 0 0 15px rgba(245, 158, 11, 0.35)';
+                    banner.textContent = state.lang === 'en'
+                        ? `⚠️ SAFETY WARNING: Sling angle of ${cNameEn} is ${minBeta.toFixed(1)}° (< 45°) — High tension factor, ASME B30.9 recommends ≥ 60°.`
+                        : `⚠️ CẢNH BÁO GÓC KÉO: Góc kéo của ${cNameVi} = ${minBeta.toFixed(1)}° (< 45°) — Hệ số tải căng cao, ASME B30.9 khuyến nghị ≥ 60°.`;
+                }
+            } else {
+                phy.isOperationBlocked = false;
                 banner.style.display = 'none';
                 banner.textContent = '';
-                return;
             }
-            const names = state.lang === 'en'
-                ? { upper: 'upper sling', leg: 'sling leg', hanger: 'hanger', extra: 'extra rope' }
-                : { upper: 'cáp trên', leg: 'cáp nhánh', hanger: 'cáp treo', extra: 'cáp thêm' };
-            banner.style.display = 'block';
-            banner.textContent = L('Rope will not stretch — ', 'Cáp không giãn — ') + gaps.map(g => L(
-                `${names[g.role] || 'joint'} ${g.index + 1} stops short by ${g.slack.toFixed(2)} m`,
-                `${names[g.role] || 'mối'} ${g.index + 1} không tới, thiếu ${g.slack.toFixed(2)} m`
-            )).join(' · ');
         }

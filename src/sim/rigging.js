@@ -2886,6 +2886,21 @@
             if (meta.broken || isOverloaded) mat = MATS.redMaster;
             else if (meta.selected) mat = MATS.lpSelected;
 
+            // International Sling Angle Warning: 3-flash red pulse on dangerous sling
+            if (cable && cable._isFlashing && cable._flashStartTime) {
+                const elapsed = performance.now() - cable._flashStartTime;
+                if (elapsed < 1080) { // 3 pulses of 360ms each (180ms ON / 180ms OFF)
+                    const isRedPhase = (Math.floor(elapsed / 180) % 2) === 0;
+                    if (isRedPhase) {
+                        mat = MATS.flashRed || MATS.redMaster;
+                    }
+                } else {
+                    cable._isFlashing = false;
+                }
+            } else if (cable && cable._angleDanger) {
+                mat = MATS.redMaster;
+            }
+
             const dia = Math.max(6, meta.diaMm || (look === 'web' ? 50 : (look === 'chain' ? 16 : 20)));
             // diaScale: legacy factor, still used to size end thimbles / eyes.
             const diaScale = THREE.MathUtils.clamp(dia / (look === 'web' ? 50 : 18), 0.55, 2.6) * (meta.selected ? 1.35 : 1);

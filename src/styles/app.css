@@ -201,23 +201,26 @@ body.drawer-open {
             display: block;
         }
 
-        /* Bottom Dock Bar & Stations */
+        /* Bottom Dock Bar: Bảng tổng hợp điều chỉnh cẩu & thử tải an toàn đặt ở dưới cùng */
         #bottom-dock-bar {
             position: fixed;
-            bottom: var(--dock-gap);
-            left: 8px;
-            right: calc(8px + var(--safe-right));
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            right: auto;
             min-height: var(--dock-h);
             max-height: calc(var(--dock-h) * 2);
             z-index: var(--z-dock);
             pointer-events: none;
             display: flex;
-            flex-wrap: wrap;
             align-items: center;
-            justify-content: space-between;
-            gap: 6px;
+            justify-content: center;
             box-sizing: border-box;
-            transition: right 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: left 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        body.drawer-open #bottom-dock-bar {
+            left: calc((100vw - var(--safe-right, 420px)) / 2);
+            transform: translateX(-50%);
         }
         #bottom-dock-bar > * {
             pointer-events: auto !important;
@@ -228,15 +231,12 @@ body.drawer-open {
             background: rgba(15, 23, 42, 0.95);
             border: 1px solid rgba(71, 85, 105, 0.85);
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-            height: 100%;
             box-sizing: border-box;
         }
         .dock-station button, .dock-station input {
             pointer-events: auto !important;
         }
         #footer-left-crane {
-            order: 1 !important;
-            flex-shrink: 0 !important;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -271,30 +271,23 @@ body.drawer-open {
             white-space: nowrap !important;
             padding: 3px 6px;
         }
+        #dock-hud {
+            position: fixed;
+            top: calc(var(--topbar-h) + 8px);
+            left: 10px;
+            z-index: var(--z-hud);
+            pointer-events: auto !important;
+            box-sizing: border-box;
+            width: 276px;
+        }
         .hud-shell {
-            background: linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(2, 6, 23, 0.96));
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(2, 6, 23, 0.98));
             border: 1px solid rgba(56, 189, 248, 0.4);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.65), inset 0 0 18px rgba(14, 165, 233, 0.08);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            gap: 3px;
-            padding: 4px 10px;
-            height: 100%;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.75), inset 0 0 16px rgba(14, 165, 233, 0.08);
+            border-radius: 12px;
+            padding: 8px;
             box-sizing: border-box;
             overflow: hidden !important;
-        }
-        .hud-shell::-webkit-scrollbar {
-            display: none !important;
-            width: 0 !important;
-            height: 0 !important;
-        }
-        .hud-row {
-            display: grid;
-            grid-template-columns: repeat(7, minmax(max-content, 1fr));
-            align-items: center;
-            column-gap: 8px;
-            line-height: 1.1;
         }
         .hud-card {
             display: flex;
@@ -302,24 +295,27 @@ body.drawer-open {
             align-items: center;
             justify-content: center;
             text-align: center;
-            min-width: 48px;
-            padding: 1px 4px;
+            min-width: 0;
+            padding: 2.5px 1.5px;
             box-sizing: border-box;
+            background: rgba(30, 41, 59, 0.45);
+            border: 1px solid rgba(51, 65, 85, 0.55);
+            border-radius: 6px;
         }
         .hud-card .hud-label {
-            font-size: 7.5px;
+            font-size: 7px;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.03em;
+            letter-spacing: 0.02em;
             color: #94a3b8;
             white-space: nowrap;
             line-height: 1.1;
-            margin-bottom: 1px;
+            margin-bottom: 1.5px;
         }
         .hud-card .hud-val {
             font-family: 'JetBrains Mono', monospace;
             font-weight: 700;
-            font-size: 10.5px;
+            font-size: 10px;
             line-height: 1.15;
             white-space: nowrap;
         }
@@ -338,23 +334,26 @@ body.drawer-open {
         #fit-banner {
             display: none;
             position: fixed;
-            bottom: calc(var(--dock-h, 64px) + 22px);
-            left: calc((100vw - var(--safe-right, 0px)) / 2);
+            bottom: calc(var(--dock-h, 54px) + 20px);
+            left: 50%;
             transform: translateX(-50%);
-            max-width: calc(100vw - var(--safe-right, 0px) - 32px);
+            max-width: min(92vw, 840px);
             width: max-content;
             z-index: var(--z-popover);
-            background: linear-gradient(180deg, rgba(153, 27, 27, 0.96) 0%, rgba(127, 29, 29, 0.98) 100%);
+            background: linear-gradient(180deg, rgba(153, 27, 27, 0.98) 0%, rgba(127, 29, 29, 0.98) 100%);
             color: #fef2f2;
-            border: 1.5px solid #f87171;
-            box-shadow: 0 8px 25px rgba(220, 38, 38, 0.45), 0 0 12px rgba(239, 68, 68, 0.35);
+            border: 1.5px solid #ef4444;
+            box-shadow: 0 8px 30px rgba(220, 38, 38, 0.55), 0 0 16px rgba(239, 68, 68, 0.45);
             border-radius: 8px;
-            padding: 6px 14px;
+            padding: 7px 16px;
             font-size: 12px;
             font-weight: 700;
             text-align: center;
             pointer-events: none;
             transition: left 0.28s cubic-bezier(0.16, 1, 0.3, 1), bottom 0.2s ease;
+        }
+        body.drawer-open #fit-banner {
+            left: calc((100vw - var(--safe-right, 420px)) / 2);
         }
         #gear-editor {
             position: fixed !important;

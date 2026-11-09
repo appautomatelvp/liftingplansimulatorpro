@@ -285,6 +285,84 @@
     <!-- Main UI Layer -->
     <div id="ui-layer">
 
+        <!-- BẢNG CHỈ SỐ KỸ THUẬT & AN TOÀN (COMPACT TELEMETRY WIDGET - GÓC TRÊN BÊN TRÁI GẦN HEADER) -->
+        <div id="dock-hud" class="fixed top-[52px] left-3 z-[var(--z-hud)] pointer-events-auto" data-testid="dock-hud">
+            <div class="hud-shell rounded-xl shadow-2xl p-2 select-none border border-sky-500/40 bg-slate-900/96 backdrop-blur-xl w-[276px] box-border">
+                <!-- Header của Widget: Tiêu đề & Trạng thái an toàn -->
+                <div class="flex items-center justify-between pb-1 mb-1 border-b border-slate-800">
+                    <span class="font-bold text-[10px] uppercase tracking-wider text-sky-400 flex items-center gap-1">
+                        <span>📊</span> <span>Chỉ Số Tải &amp; An Toàn</span>
+                    </span>
+                    <span id="hud-risk" class="hud-val text-[8.5px] font-black text-emerald-300 px-1 py-0.2 rounded bg-emerald-950/80 border border-emerald-500/40">AN TOÀN</span>
+                </div>
+                <!-- Risk Track -->
+                <div class="risk-track h-1 w-full rounded-full bg-slate-800 mb-1.5 overflow-hidden">
+                    <div id="hud-riskbar" class="risk-fill h-full bg-emerald-500 transition-all duration-200" style="width: 0%;"></div>
+                </div>
+
+                <!-- Lưới 4 cột x 3 hàng hiển thị 12 chỉ số gọn gàng -->
+                <div class="grid grid-cols-4 gap-1 text-center py-0.5">
+                    <div class="hud-card">
+                        <span class="hud-label" data-i18n="hudHook">Tải Móc</span>
+                        <span id="hud-load" class="hud-val text-amber-300">0.0 T</span>
+                    </div>
+                    <div class="hud-card">
+                        <span class="hud-label" data-i18n="hudHookUtil">% Móc</span>
+                        <span id="hud-hook-util" class="hud-val text-amber-200">0%</span>
+                    </div>
+                    <div class="hud-card">
+                        <span class="hud-label" data-i18n="hudGross">Tổng Tải</span>
+                        <span id="hud-gross" class="hud-val text-white">0.0 t</span>
+                    </div>
+                    <div class="hud-card">
+                        <span class="hud-label" data-i18n="hudRig">Bộ Treo</span>
+                        <span id="hud-rig" class="hud-val text-slate-200">0.0 t</span>
+                    </div>
+
+                    <div class="hud-card">
+                        <span class="hud-label" data-i18n="hudBeta">Góc β</span>
+                        <span id="hud-beta" class="hud-val text-sky-200">90°</span>
+                    </div>
+                    <div class="hud-card">
+                        <span class="hud-label" data-i18n="hudTf">Hệ Số TF</span>
+                        <span id="hud-tf" class="hud-val text-sky-200">1.00</span>
+                    </div>
+                    <div class="hud-card">
+                        <span class="hud-label" data-i18n="hudLeg">% Cáp</span>
+                        <span id="hud-leg-util" class="hud-val text-emerald-300">0%</span>
+                    </div>
+                    <div class="hud-card">
+                        <span class="hud-label" data-i18n="hudMbl">MBL Min</span>
+                        <span id="hud-mbl" class="hud-val text-slate-200">—</span>
+                    </div>
+
+                    <div class="hud-card">
+                        <span class="hud-label" data-i18n="hudRadius">Bán Kính</span>
+                        <span id="hud-radius" class="hud-val text-white">0.0 m</span>
+                    </div>
+                    <div class="hud-card">
+                        <span class="hud-label" data-i18n="hudCog">Lệch CoG</span>
+                        <span id="hud-cog" class="hud-val text-yellow-200">0 / 0</span>
+                    </div>
+                    <div class="hud-card">
+                        <span class="hud-label" data-i18n="hudTilt">Nghiêng</span>
+                        <span id="hud-tilt" class="hud-val text-white">0.0°</span>
+                    </div>
+                    <div class="hud-card">
+                        <span class="hud-label" data-i18n="hudClear">Cách Sàn</span>
+                        <span id="hud-clear" class="hud-val text-sky-300">0.00 m</span>
+                    </div>
+                </div>
+
+                <!-- Footer của box: Hư hại -->
+                <div class="flex items-center justify-between pt-1 mt-1 border-t border-slate-800/80 text-[9.5px]">
+                    <span class="text-slate-400">Hư hại tải động:</span>
+                    <span id="hud-damage" class="hud-val font-mono font-bold text-rose-300">0%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- CẢNH BÁO AN TOÀN GÓC KÉO CỦA CÁP (ASME B30.9 / OSHA) -->
         <div id="fit-banner"></div>
         <div id="toast-container" class="toast-container pointer-events-none fixed top-16 right-4 z-[var(--z-toast)] flex flex-col gap-2" data-testid="toast"></div>
 
@@ -365,79 +443,6 @@
                     <div id="val-slew" class="text-[11px] font-mono font-bold text-sky-300 min-w-[20px] text-center">0°</div>
                     <button type="button" class="btn-slew-step pendant-btn !py-0.5 !px-0.5 text-[8.5px] font-mono" data-slew="15">+15°</button>
                     <button id="btn-slew-right" type="button" class="pendant-btn !py-0.5 !px-1 text-[10px]" title="Quay cần sang phải 5°">↷</button>
-                </div>
-            </div>
-
-            <!-- FOOTER GIỮA: THÔNG SỐ KỸ THUẬT (HUD TELEMETRY) - 2 HÀNG ĐẦY ĐỦ, KHÔNG CẦN NÚT CHI TIẾT -->
-            <div id="dock-hud" class="flex items-center justify-center flex-1 min-w-0 overflow-hidden" data-testid="dock-hud">
-                <div class="hud-shell pointer-events-auto rounded-xl shadow-xl select-none max-w-full">
-                    <!-- HÀNG 1: TẢI TRỌNG & DÂY BUỘC (LOADS & RIGGING) -->
-                    <div class="hud-row">
-                        <div class="hud-card">
-                            <span class="hud-label" data-i18n="hudHook">Tải Móc</span>
-                            <span id="hud-load" class="hud-val text-amber-300">0.0 T</span>
-                        </div>
-                        <div class="hud-card">
-                            <span class="hud-label" data-i18n="hudHookUtil">% SWL Móc</span>
-                            <span id="hud-hook-util" class="hud-val text-amber-200">0%</span>
-                        </div>
-                        <div class="hud-card">
-                            <span class="hud-label" data-i18n="hudGross">Tổng Tải</span>
-                            <span id="hud-gross" class="hud-val text-white">0.0 t</span>
-                        </div>
-                        <div class="hud-card">
-                            <span class="hud-label" data-i18n="hudRig">Bộ Treo</span>
-                            <span id="hud-rig" class="hud-val text-slate-200">0.0 t</span>
-                        </div>
-                        <div class="hud-card">
-                            <span class="hud-label" data-i18n="hudBeta">Góc β</span>
-                            <span id="hud-beta" class="hud-val text-sky-200">90°</span>
-                        </div>
-                        <div class="hud-card">
-                            <span class="hud-label" data-i18n="hudTf">Hệ Số TF</span>
-                            <span id="hud-tf" class="hud-val text-sky-200">1.00</span>
-                        </div>
-                        <div class="hud-card">
-                            <span class="hud-label" data-i18n="hudLeg">% SWL Cáp</span>
-                            <span id="hud-leg-util" class="hud-val text-emerald-300">0%</span>
-                        </div>
-                    </div>
-
-                    <!-- HÀNG 2: HÌNH HỌC, MẶT BẰNG & AN TOÀN (GEOMETRY & SAFETY) -->
-                    <div class="hud-row">
-                        <div class="hud-card">
-                            <span class="hud-label" data-i18n="hudMbl">MBL Min</span>
-                            <span id="hud-mbl" class="hud-val text-slate-200">—</span>
-                        </div>
-                        <div class="hud-card">
-                            <span class="hud-label" data-i18n="hudRadius">Bán Kính R</span>
-                            <span id="hud-radius" class="hud-val text-white">0.0 m</span>
-                        </div>
-                        <div class="hud-card">
-                            <span class="hud-label" data-i18n="hudCog">Lệch CoG</span>
-                            <span id="hud-cog" class="hud-val text-yellow-200">0 / 0</span>
-                        </div>
-                        <div class="hud-card">
-                            <span class="hud-label" data-i18n="hudTilt">Nghiêng</span>
-                            <span id="hud-tilt" class="hud-val text-white">0.0°</span>
-                        </div>
-                        <div class="hud-card">
-                            <span class="hud-label" data-i18n="hudClear">Cách Sàn</span>
-                            <span id="hud-clear" class="hud-val text-sky-300">0.00 m</span>
-                        </div>
-                        <div class="hud-card">
-                            <span class="hud-label">Hư Hại</span>
-                            <span id="hud-damage" class="hud-val text-rose-300">0%</span>
-                        </div>
-                        <div class="hud-card !min-w-[65px]">
-                            <div class="flex items-center justify-between w-full">
-                                <span class="hud-label !mb-0">Rủi Ro</span>
-                                <span id="hud-risk" class="hud-val !text-[8.5px] text-emerald-300">AN TOÀN</span>
-                            </div>
-                            <div class="risk-track mt-0.5 h-1.5 w-full"><div id="hud-riskbar" class="risk-fill"></div></div>
-                        </div>
-                    </div>
-
                 </div>
             </div>
         </div>
