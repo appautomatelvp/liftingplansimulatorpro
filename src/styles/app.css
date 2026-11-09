@@ -1,0 +1,496 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #070b12;
+            font-family: 'Inter', sans-serif;
+            color: #e2e8f0;
+            user-select: none;
+        }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
+
+        /* 3D Floating Telemetry & Interactive Gizmo Labels */
+        #labels-container {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none; z-index: 5; overflow: hidden;
+        }
+        .label-3d {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            background: rgba(15, 23, 42, 0.90);
+            border: 1px solid rgba(148, 163, 184, 0.4);
+            padding: 2px 7px;
+            border-radius: 5px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            font-weight: 700;
+            white-space: nowrap;
+            pointer-events: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+            transition: opacity 0.12s;
+        }
+
+        /* Executive Top Engineering Bar */
+        #top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 44px !important;
+            min-height: 44px !important;
+            max-height: 44px !important;
+            max-width: 100vw;
+            box-sizing: border-box;
+            background: rgba(11, 17, 32, 0.96);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(51, 65, 85, 0.75);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.65);
+            display: flex;
+            flex-wrap: nowrap !important;
+            align-items: center;
+            justify-content: space-between;
+            gap: 4px 6px;
+            padding: 3px 8px;
+            z-index: 1000;
+            pointer-events: auto;
+            overflow-x: hidden !important;
+            overflow-y: hidden !important;
+            scrollbar-width: none !important;
+        }
+        #top-bar::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+
+        #display-options-popover, #gfx-menu-popover {
+            z-index: 100000 !important;
+        }
+
+        #lbl-ground-angle {
+            font-size: 15px !important;
+            font-weight: 900 !important;
+            letter-spacing: 0.5px;
+            padding: 3px 10px !important;
+            background: rgba(15, 23, 42, 0.92) !important;
+            border: 1.5px solid #f59e0b !important;
+            box-shadow: 0 0 16px rgba(245, 158, 11, 0.45) !important;
+            color: #fbbf24 !important;
+            border-radius: 8px !important;
+        }
+
+        /* Main UI Layout */
+        #ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 10; pointer-events: none;
+            display: flex; flex-direction: column; justify-content: flex-end;
+            padding: 0;
+        }
+
+        /* 25% Right-Side Slide-Over Engineering Drawer */
+        #right-side-drawer {
+            position: fixed;
+            top: 46px !important;
+            right: 0;
+            bottom: 66px !important; /* Raised to sit cleanly above 2-row bottom-dock-bar */
+            width: 25vw;
+            min-width: 385px;
+            max-width: 520px;
+            z-index: 1040 !important;
+            background: rgba(11, 17, 32, 0.98);
+            backdrop-filter: blur(24px);
+            border-left: 1.5px solid rgba(71, 85, 105, 0.85);
+            box-shadow: -12px 0 40px rgba(0, 0, 0, 0.75);
+            transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+            display: flex;
+            flex-direction: column;
+            pointer-events: auto !important;
+            box-sizing: border-box;
+        }
+        #right-side-drawer.drawer-closed {
+            transform: translateX(105%);
+            pointer-events: none;
+            opacity: 0;
+        }
+        #right-side-drawer.drawer-open {
+            transform: translateX(0);
+            pointer-events: auto !important;
+            opacity: 1;
+        }
+        #right-side-drawer > div:last-child {
+            flex: 1 1 0% !important;
+            min-height: 0 !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            padding-bottom: 120px !important; /* Generous bottom padding so NO buttons are ever covered at the bottom */
+            scrollbar-width: thin;
+            scrollbar-color: rgba(56, 189, 248, 0.35) transparent;
+        }
+        .drawer-inner-tab-btn {
+            padding: 3px 8px;
+            font-size: 11px;
+            font-weight: 700;
+            border-radius: 6px;
+            color: #94a3b8;
+            background: transparent;
+            border: 1px solid transparent;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-sizing: border-box !important;
+            line-height: 1.35 !important;
+            overflow: visible !important;
+        }
+        .drawer-inner-tab-btn:hover {
+            color: #f8fafc;
+            background: rgba(30, 41, 59, 0.6);
+        }
+        .drawer-inner-tab-btn.active {
+            color: #38bdf8;
+            background: rgba(14, 165, 233, 0.15);
+            border-color: rgba(56, 189, 248, 0.4);
+        }
+        .drawer-page {
+            display: none;
+        }
+        .drawer-page.active {
+            display: block;
+        }
+
+        /* Bottom Dock Bar & Stations */
+        #bottom-dock-bar {
+            position: fixed;
+            bottom: 6px;
+            left: 8px;
+            right: 8px;
+            height: 56px;
+            min-height: 56px;
+            max-height: 58px;
+            z-index: 1045; /* Above background elements and comfortably reachable */
+            pointer-events: none;
+            display: flex;
+            flex-wrap: nowrap !important;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            box-sizing: border-box;
+        }
+        #bottom-dock-bar > * {
+            pointer-events: auto !important;
+        }
+        .dock-station {
+            pointer-events: auto !important;
+            backdrop-filter: blur(16px);
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(71, 85, 105, 0.85);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            height: 100%;
+            box-sizing: border-box;
+        }
+        .dock-station button, .dock-station input {
+            pointer-events: auto !important;
+        }
+        #footer-left-crane {
+            order: 1 !important;
+            flex-shrink: 0 !important;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 2px;
+            white-space: nowrap !important;
+            padding: 3px 6px;
+        }
+        #dock-hud {
+            order: 2 !important;
+            display: flex !important;
+            flex: 1 1 auto;
+            min-width: 0;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden !important;
+            scrollbar-width: none !important;
+            height: 100%;
+        }
+        #dock-hud::-webkit-scrollbar,
+        .hud-shell::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+        #footer-right-menu {
+            order: 3 !important;
+            flex-shrink: 0 !important;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 2px;
+            white-space: nowrap !important;
+            z-index: 1046 !important; /* Ensure menu buttons are ALWAYS on top and never hidden */
+            padding: 3px 6px;
+        }
+        .hud-shell {
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(71, 85, 105, 0.85);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.65);
+            overflow: hidden !important;
+            scrollbar-width: none !important;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 2px;
+            padding: 2px 6px;
+            height: 100%;
+            box-sizing: border-box;
+        }
+        .hud-shell::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+        .hud-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            line-height: 1;
+        }
+        .hud-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            min-width: 36px;
+            max-width: 52px;
+            padding: 0 1px;
+            flex: 0 0 auto;
+            box-sizing: border-box;
+        }
+        .hud-card .hud-label {
+            font-size: 6.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            color: #94a3b8;
+            white-space: nowrap;
+            line-height: 1;
+            margin-bottom: 1px;
+            max-width: 50px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .hud-card .hud-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 10px;
+            line-height: 1;
+            white-space: nowrap;
+        }
+        #dock-cam { order: 2; display: none; }
+        body.show-cam #dock-cam { display: flex; }
+        body:not(.dock-tools) .dock-more { display: none !important; }
+        .dock-brand { display: none; }
+        #sim-status-text {
+            max-width: 195px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: inline-block;
+            line-height: 1.25;
+        }
+        #fit-banner {
+            display: none; order: 2; align-self: center; max-width: min(92vw, 920px);
+            background: rgba(127, 29, 29, 0.94); color: #fee2e2; border: 1px solid #ef4444;
+            border-radius: 8px; padding: 4px 10px; font-size: 12px; font-weight: 700; pointer-events: none;
+        }
+        #gear-editor {
+            top: 52px !important; right: 8px !important; left: auto !important; bottom: 80px !important;
+            transform: none !important; width: min(24vw, 380px) !important; max-height: none !important;
+            z-index: 90 !important;
+        }
+        .pointer-events-auto { pointer-events: auto; }
+
+        /* CAD Panels & Collapse Transitions */
+        .cad-panel {
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(71, 85, 105, 0.7);
+            box-shadow: 0 14px 36px rgba(0, 0, 0, 0.7);
+            border-radius: 0.75rem;
+            transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+        }
+        .panel-collapsed-left {
+            transform: translateX(-110%);
+            opacity: 0;
+            pointer-events: none !important;
+            position: absolute;
+        }
+        .panel-collapsed-right {
+            transform: translateX(110%);
+            opacity: 0;
+            pointer-events: none !important;
+            position: absolute;
+            right: 0.65rem;
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.4); }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+        /* Range Sliders */
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 13px; width: 13px; border-radius: 50%;
+            background: #38bdf8; cursor: pointer; margin-top: -4.5px;
+            border: 2px solid #0f172a; box-shadow: 0 0 8px rgba(56, 189, 248, 0.7);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 4px; cursor: pointer; background: #334155; border-radius: 2px;
+        }
+
+        /* Interactive Cards & Buttons */
+        .card-btn {
+            background: rgba(30, 41, 59, 0.75);
+            border: 1px solid rgba(71, 85, 105, 0.6);
+            border-radius: 0.45rem;
+            padding: 0.4rem 0.5rem;
+            cursor: pointer;
+            transition: all 0.14s ease;
+            text-align: left;
+            box-sizing: border-box !important;
+            line-height: 1.35 !important;
+            overflow: visible !important;
+        }
+        .card-btn:hover { background: rgba(51, 65, 85, 0.85); border-color: #94a3b8; }
+        .card-btn.active {
+            background: rgba(14, 116, 144, 0.4);
+            border-color: #38bdf8;
+            box-shadow: inset 0 0 12px rgba(56, 189, 248, 0.25);
+        }
+
+        .pendant-btn {
+            background: linear-gradient(180deg, #243247 0%, #172234 100%);
+            border: 1px solid rgba(100, 116, 139, 0.65);
+            border-radius: 0.45rem;
+            padding: 0.35rem 0.65rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #f8fafc;
+            cursor: pointer;
+            transition: all 0.14s ease;
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+            white-space: nowrap;
+            box-sizing: border-box !important;
+            line-height: 1.35 !important;
+            overflow: visible !important;
+            min-height: 24px;
+        }
+        .pendant-btn:hover {
+            background: linear-gradient(180deg, #334155 0%, #1e293b 100%);
+            border-color: #38bdf8;
+            color: #fff;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+        }
+        .pendant-btn:active { transform: translateY(1px); }
+        .pendant-btn.active {
+            background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%);
+            border-color: #38bdf8;
+            color: #fff;
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+        }
+        .pendant-btn.yellow {
+            background: linear-gradient(180deg, #eab308 0%, #ca8a04 100%);
+            border-color: #fde047; color: #0f172a;
+        }
+        .pendant-btn.emerald {
+            background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+            border-color: #34d399; color: #052e16;
+        }
+        .pendant-btn.red {
+            background: linear-gradient(180deg, #ef4444 0%, #b91c1c 100%);
+            border-color: #fca5a5; color: #fff;
+        }
+        .pendant-btn.blue {
+            background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%);
+            border-color: #38bdf8; color: #f0f9ff;
+        }
+
+        .section-title {
+            font-size: 0.67rem; font-weight: 800; letter-spacing: 0.07em;
+            text-transform: uppercase; color: #38bdf8;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid rgba(51, 65, 85, 0.85);
+            padding-bottom: 0.22rem; margin-bottom: 0.45rem;
+        }
+
+        /* 3D Asset Studio & Library Modal Overlay */
+        #library-studio-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            background: rgba(5, 9, 17, 0.86);
+            backdrop-filter: blur(14px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1.25rem;
+        }
+        #library-studio-modal.open {
+            display: flex;
+        }
+        .studio-tab-btn {
+            padding: 0.45rem 0.85rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 0.5rem;
+            border: 1px solid rgba(71, 85, 105, 0.6);
+            background: rgba(30, 41, 59, 0.7);
+            color: #cbd5e1;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .studio-tab-btn:hover { background: rgba(51, 65, 85, 0.9); color: #fff; }
+        .studio-tab-btn.active {
+            background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%);
+            border-color: #38bdf8;
+            color: #fff;
+            box-shadow: 0 0 14px rgba(56, 189, 248, 0.4);
+        }
+
+        .menu-tab {
+            flex: 1;
+            padding: 0.32rem 0.2rem;
+            font-size: 0.62rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            border-radius: 0.4rem;
+            border: 1px solid rgba(71, 85, 105, 0.7);
+            background: rgba(15, 23, 42, 0.8);
+            color: #94a3b8;
+            cursor: pointer;
+        }
+        .menu-tab.active {
+            background: linear-gradient(180deg, #0369a1 0%, #0c4a6e 100%);
+            border-color: #38bdf8;
+            color: #f8fafc;
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+        }
+        .left-page { display: none; flex-direction: column; gap: 0.75rem; }
+        .left-page.active { display: flex; }
+        .hud-shell {
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.88), rgba(2, 6, 23, 0.92));
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55), inset 0 0 18px rgba(14, 165, 233, 0.08);
+            overflow: hidden !important;
+            scrollbar-width: none !important;
+        }
+        .risk-track { height: 7px; border-radius: 99px; background: #1e293b; overflow: hidden; }
+        .risk-fill { height: 100%; width: 0%; border-radius: 99px; background: linear-gradient(90deg, #34d399, #facc15, #ef4444); }

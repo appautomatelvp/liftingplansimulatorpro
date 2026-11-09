@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="50%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#0b1120"/>
+  <rect x="2" y="2" width="60" height="60" rx="12" fill="none" stroke="#1e293b" stroke-width="2"/>
+  <!-- Crane Hook Block -->
+  <path d="M 28 8 L 36 8 L 36 18 L 28 18 Z" fill="#64748b"/>
+  <path d="M 24 18 L 40 18 L 37 32 L 27 32 Z" fill="#f59e0b"/>
+  <!-- Hook Shank & Throat -->
+  <circle cx="32" cy="38" r="6" fill="none" stroke="#f1f5f9" stroke-width="4.5"/>
+  <path d="M 32 32 L 32 40 A 11 11 0 0 0 43 51 A 11 11 0 0 0 51 40 L 47 40 A 7 7 0 0 1 42 46 A 7 7 0 0 1 35 40 L 35 32 Z" fill="url(#grad)"/>
+</svg>
