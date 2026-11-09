@@ -283,7 +283,7 @@
             </button>
         </div>
 
-        <!-- CỤM TIÊU CHUẨN & XUẤT BÁO CÁO -->
+        <!-- CỤM TIÊU CHUẨN, HỒ SƠ & THƯ VIỆN -->
         <div class="flex items-center gap-1 shrink-0">
             <button id="btn-open-compliance" class="pendant-btn emerald !py-0.5 !px-1.5 text-[10.5px] font-bold shadow-lg whitespace-nowrap" title="Mở bảng kiểm định an toàn quốc tế (ASME / ISO)">
                 🛡️ Tiêu Chuẩn
@@ -294,14 +294,21 @@
             <button id="btn-quick-export-pdf" class="pendant-btn !py-0.5 !px-1.5 text-[10.5px] font-bold shadow-lg whitespace-nowrap bg-rose-700/90 hover:bg-rose-600 text-white border border-rose-400/80 transition" title="Xuất báo cáo PDF Kỹ thuật 2D/3D chuyên nghiệp chuẩn ASME P30.1 / B30.9">
                 📄 PDF
             </button>
+            <button id="btn-open-3d-library" class="pendant-btn yellow !py-0.5 !px-1.5 text-[10.5px] font-bold shadow-lg whitespace-nowrap" title="Kho thư viện 3D, Upload STL/CAD và Ảnh chụp">
+                📚 Thư Viện 3D
+            </button>
         </div>
 
-        <!-- CỤM TIỆN ÍCH -->
+        <!-- CỤM TIỆN ÍCH HỆ THỐNG & TOGGLE DRAWER -->
         <div class="flex items-center gap-0.5 shrink-0">
             <button id="btn-sound-toggle" class="pendant-btn !px-1.5 !py-0.5 text-[10px] whitespace-nowrap active" title="Bật/Tắt âm thanh mô phỏng (M)">🔊</button>
             <button id="btn-lang" type="button" class="pendant-btn !px-1.5 !py-0.5 text-[10px] text-amber-200 border-amber-400/50 whitespace-nowrap" title="Switch language / Đổi ngôn ngữ">EN</button>
             <button id="btn-unit-toggle" type="button" class="pendant-btn !px-1.5 !py-0.5 text-[10px] font-bold text-sky-200 border-sky-400/50 whitespace-nowrap" title="Chuyển đổi hệ đo: Mét (m) ⇄ Feet (ft)">m</button>
             <button id="btn-fullscreen-view" class="pendant-btn yellow !px-1.5 !py-0.5 text-[10px] whitespace-nowrap" title="Toàn màn hình / Đóng các bảng">⛶</button>
+            <div class="h-3.5 w-px bg-slate-700 mx-0.5"></div>
+            <button id="btn-toggle-drawer" class="pendant-btn emerald !py-0.5 !px-2 text-[10.5px] font-bold shadow-lg" title="Mở/Đóng Bảng Thông Số Kỹ Thuật (Phím 1-6 / Esc)" data-testid="drawer-toggle">
+                <span>📐</span> <span>Thông Số</span>
+            </button>
         </div>
     </header>
 
@@ -467,78 +474,49 @@
                         </div>
                     </div>
 
-                    <!-- Hidden legacy items for backward compatibility -->
-                    <button id="btn-toggle-hud-extra" type="button" class="hidden"></button>
-                    <span id="hud-span" class="hidden"></span>
-                    <span id="hud-scene" class="hidden"></span>
-                    <span id="hud-pose" class="hidden"></span>
                 </div>
-            </div>
-
-            <!-- FOOTER BÊN PHẢI: CÁC NÚT MỞ BẢNG HIỆU CHỈNH 25% BÊN PHẢI -->
-            <div id="footer-right-menu" class="dock-station flex flex-col justify-center gap-1 rounded-xl px-2 py-1 shadow-xl shrink-0 pointer-events-auto">
-                <div class="flex items-center gap-1">
-                    <button class="drawer-nav-btn pendant-btn !py-0.5 !px-1.5 text-sky-200 border-sky-500/40 text-[10px] font-bold whitespace-nowrap" data-drawer-tab="cargo" title="Mở bảng hiệu chỉnh Kiện Hàng, Kích thước, CoG, Hướng xoay">
-                        <span>📦</span> <span>Kiện</span>
-                    </button>
-                    <button class="drawer-nav-btn pendant-btn !py-0.5 !px-1.5 text-amber-200 border-amber-500/40 text-[10px] font-bold whitespace-nowrap" data-drawer-tab="rig" title="Mở bảng hiệu chỉnh Dầm ngáng, Spreader, Cáp trên &amp; dưới">
-                        <span>🟠</span> <span>Dầm</span>
-                    </button>
-                    <button class="drawer-nav-btn pendant-btn !py-0.5 !px-1.5 text-emerald-200 border-emerald-500/40 text-[10px] font-bold whitespace-nowrap" data-drawer-tab="gear" title="Mở bảng Dây cáp, Xích, Ma ní, Bảng BOM chi tiết">
-                        <span>⛓️</span> <span>Cáp</span>
-                    </button>
-                    <button class="drawer-nav-btn pendant-btn !py-0.5 !px-1.5 text-rose-200 border-rose-500/40 text-[10px] font-bold whitespace-nowrap" data-drawer-tab="lugs" title="Mở bảng Tai cẩu LP1-LP4 &amp; Trọng tâm CoG">
-                        <span>📍</span> <span>Tai cẩu</span>
-                    </button>
-                </div>
-                <div class="flex items-center gap-1">
-                    <button class="drawer-nav-btn pendant-btn !py-0.5 !px-1.5 text-indigo-200 border-indigo-500/40 text-[10px] font-bold whitespace-nowrap" data-drawer-tab="site" title="Mở bảng Mặt bằng, Đà kê gỗ, Gió &amp; Môi trường">
-                        <span>🌍</span> <span>Sàn kê</span>
-                    </button>
-                    <button class="drawer-nav-btn pendant-btn !py-0.5 !px-1.5 text-yellow-200 border-yellow-500/40 text-[10px] font-bold whitespace-nowrap" data-drawer-tab="crane" title="Mở bảng Chế độ Cẩu 3D (LTM, LR, Cầu trục, Móc)">
-                        <span>🏗️</span> <span>Cẩu 3D</span>
-                    </button>
-                    <div class="h-3 w-px bg-slate-700 mx-0.5"></div>
-                    <button id="btn-open-3d-library" class="pendant-btn yellow !py-0.5 !px-1.5 text-[10px] font-bold whitespace-nowrap" title="Kho thư viện 3D, Upload STL/CAD và Ảnh chụp">
-                        <span>📚</span> <span>Thư Viện 3D</span>
-                    </button>
-                </div>
-
-                <!-- Hidden legacy buttons for JS compatibility -->
-                <button id="btn-collapse-left" class="hidden" type="button"></button>
-                <button id="btn-collapse-right" class="hidden" type="button"></button>
-                <button id="btn-toggle-hud" class="hidden" type="button"></button>
-                <button id="btn-toggle-cam" class="hidden" type="button"></button>
-                <button id="btn-gear-sheet" class="hidden" type="button"></button>
-                <button id="btn-rig-fit" class="hidden" type="button"></button>
-                <button id="btn-reset-all" class="hidden" type="button"></button>
             </div>
         </div>
 
+        <!-- Hidden legacy compatibility elements -->
+        <div id="legacy-shims" class="hidden" style="display:none;" aria-hidden="true">
+            <button id="btn-toggle-hud-extra" type="button"></button>
+            <span id="hud-span"></span>
+            <span id="hud-scene"></span>
+            <span id="hud-pose"></span>
+            <button id="btn-collapse-left" type="button"></button>
+            <button id="btn-collapse-right" type="button"></button>
+            <button id="btn-toggle-hud" type="button"></button>
+            <button id="btn-toggle-cam" type="button"></button>
+            <button id="btn-gear-sheet" type="button"></button>
+            <button id="btn-rig-fit" type="button"></button>
+            <button id="btn-reset-all" type="button"></button>
+        </div>
+
         <!-- BẢNG HIỆU CHỈNH TOÀN BỘ KHỐI CHỨC NĂNG CHÍNH (25% DIỆN TÍCH MÀN HÌNH BÊN PHẢI) -->
-        <aside id="right-side-drawer" class="drawer-closed">
+        <aside id="right-side-drawer" class="drawer-closed" data-testid="drawer">
             <!-- Drawer Header -->
             <div class="flex items-center justify-between px-3 py-2 border-b border-slate-700/80 bg-slate-900/95 shrink-0">
                 <div class="flex items-center gap-2 min-w-0">
                     <span id="drawer-header-icon" class="text-base shrink-0">📦</span>
                     <div class="min-w-0">
-                        <h3 id="drawer-header-title" class="font-black text-xs uppercase tracking-wider text-sky-400 truncate">Hiệu Chỉnh Kiện Hàng</h3>
-                        <div id="drawer-header-sub" class="text-[9px] text-slate-400 truncate">Kích thước, Khối lượng, Hướng xoay &amp; CoG</div>
+                        <h3 id="drawer-header-title" class="font-black text-xs uppercase tracking-wider text-sky-400 truncate">1. Hàng Hóa &amp; Trọng Tâm</h3>
+                        <div id="drawer-header-sub" class="text-[9px] text-slate-400 truncate">Kích thước, Khối lượng, Trọng tâm CoG &amp; Hướng xoay</div>
                     </div>
                 </div>
                 <div class="flex items-center gap-1.5 shrink-0">
-                    <button id="btn-close-drawer" type="button" class="pendant-btn red !py-0.5 !px-2 text-xs font-bold shadow" title="Đóng bảng hiệu chỉnh (hoặc ấn lại nút menu)">✕ Đóng</button>
+                    <button id="btn-close-drawer" type="button" class="pendant-btn red !py-0.5 !px-2 text-xs font-bold shadow" title="Đóng bảng hiệu chỉnh (Phím Esc)" data-testid="drawer-close">✕ Đóng</button>
                 </div>
             </div>
 
-            <!-- Quick Inner Tab Switcher Pills -->
-            <div class="flex items-center gap-1 px-2.5 py-1.5 border-b border-slate-800 bg-slate-950/80 overflow-x-auto shrink-0 scrollbar-none" id="drawer-inner-tabs">
-                <button class="drawer-inner-tab-btn active" data-drawer-tab="cargo" type="button">📦 Kiện</button>
-                <button class="drawer-inner-tab-btn" data-drawer-tab="rig" type="button">🟠 Dầm</button>
-                <button class="drawer-inner-tab-btn" data-drawer-tab="gear" type="button">⛓️ Cáp</button>
-                <button class="drawer-inner-tab-btn" data-drawer-tab="lugs" type="button">📍 Tai cẩu</button>
-                <button class="drawer-inner-tab-btn" data-drawer-tab="site" type="button">🌍 Sàn kê</button>
-                <button class="drawer-inner-tab-btn" data-drawer-tab="crane" type="button">🏗️ Cẩu 3D</button>
+            <!-- Quick Inner Tab Switcher Pills (Single Source of Navigation) -->
+            <div class="flex items-center gap-1 px-2.5 py-1.5 border-b border-slate-800 bg-slate-950/80 overflow-x-auto shrink-0 scrollbar-none" id="drawer-inner-tabs" role="tablist" aria-label="Các trang hiệu chỉnh">
+                <button class="drawer-inner-tab-btn active" data-drawer-tab="cargo" type="button" role="tab" data-testid="tab-cargo">📦 1. Hàng</button>
+                <button class="drawer-inner-tab-btn" data-drawer-tab="lugs" type="button" role="tab" data-testid="tab-lugs">📍 2. Điểm nâng</button>
+                <button class="drawer-inner-tab-btn" data-drawer-tab="rig" type="button" role="tab" data-testid="tab-rig">🟠 3. Dầm ngáng</button>
+                <button class="drawer-inner-tab-btn" data-drawer-tab="gear" type="button" role="tab" data-testid="tab-gear">⛓️ 4. Cáp treo</button>
+                <button class="drawer-inner-tab-btn" data-drawer-tab="crane" type="button" role="tab" data-testid="tab-crane">🏗️ 5. Cẩu 3D</button>
+                <button class="drawer-inner-tab-btn" data-drawer-tab="site" type="button" role="tab" data-testid="tab-site">🌍 6. Hiện trường</button>
             </div>
 
             <!-- Drawer Scrollable Body containing 6 pages -->

@@ -2457,6 +2457,13 @@
                 });
             }
 
+            const btnToggleDrawer = document.getElementById('btn-toggle-drawer');
+            if (btnToggleDrawer) {
+                btnToggleDrawer.addEventListener('click', () => {
+                    toggleRightDrawer(currentDrawerTab || 'cargo');
+                });
+            }
+
             // 1. Panel Collapse & Fullscreen Clean View Buttons
             document.getElementById('btn-collapse-left').addEventListener('click', () => toggleLeftPanel());
             document.getElementById('btn-rig-fit').addEventListener('click', () => {
