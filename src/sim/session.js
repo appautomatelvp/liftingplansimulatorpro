@@ -1934,12 +1934,12 @@
 
             // Header titles & icons
             const tabTitles = {
-                cargo: { icon: '📦', title: 'Hiệu Chỉnh Kiện Hàng', sub: 'Kích thước, Khối lượng, Hướng xoay & CoG' },
-                rig: { icon: '🟠', title: 'Dầm Ngáng & Cáp Treo', sub: 'Spreader, Lifting Beam, Tầng 1 & Tầng 2' },
-                gear: { icon: '⛓️', title: 'Cáp Thép, Xích & Ma Ní', sub: 'Phụ kiện, WLL/SWL danh định & Bảng BOM' },
-                lugs: { icon: '📍', title: 'Tai Cẩu LP & Trọng Tâm CoG', sub: 'Tọa độ LP1-LP4, Bích hàn & Tăng đơ' },
-                site: { icon: '🌍', title: 'Mặt Bằng & Đà Kê Dunnage', sub: 'Nền bê tông, đà gỗ kê & Môi trường' },
-                crane: { icon: '🏗️', title: 'Chế Độ Cẩu 3D & Tải Trọng', sub: 'Liebherr LTM, LR, Cầu trục & Cáp nhánh' }
+                cargo: { icon: '📦', title: '1. Hàng Hóa & Trọng Tâm', sub: 'Kích thước, Khối lượng, Trọng tâm CoG & Hướng xoay' },
+                lugs: { icon: '📍', title: '2. Điểm Nâng & Tai Cẩu', sub: 'Vị trí Pad-eye, Bích hàn & Bảo vệ góc cáp' },
+                rig: { icon: '🟠', title: '3. Dầm Ngáng & Đòn Gánh', sub: 'Spreader, Lifting Beam, Tầng 1 & Tầng 2' },
+                gear: { icon: '⛓️', title: '4. Cáp Treo & Phụ Kiện', sub: 'Sling cáp/xích, Shackle ma ní & Tải an toàn WLL' },
+                crane: { icon: '🏗️', title: '5. Thiết Bị Cẩu & Móc', sub: 'Cần trục Liebherr, Móc cẩu & Biểu đồ tải LMI' },
+                site: { icon: '🌍', title: '6. Hiện Trường & Sàn Kê', sub: 'Nền đất, Đà kê dunnage & Tải trọng gió' }
             };
             const t = tabTitles[currentDrawerTab] || tabTitles.cargo;
             const titleEl = document.getElementById('drawer-header-title');
@@ -1951,6 +1951,9 @@
 
             drawer.classList.remove('drawer-closed');
             drawer.classList.add('drawer-open');
+            if (typeof document !== 'undefined' && document.body) {
+                document.body.classList.add('drawer-open');
+            }
             isDrawerOpen = true;
 
             state.leftCollapsed = (currentDrawerTab !== 'cargo' && currentDrawerTab !== 'lugs');
@@ -1963,6 +1966,9 @@
             if (!drawer) return;
             drawer.classList.add('drawer-closed');
             drawer.classList.remove('drawer-open');
+            if (typeof document !== 'undefined' && document.body) {
+                document.body.classList.remove('drawer-open');
+            }
             isDrawerOpen = false;
 
             document.querySelectorAll('.drawer-nav-btn').forEach(btn => btn.classList.remove('active'));
@@ -2500,8 +2506,12 @@
 
             window.addEventListener('keydown', e => {
                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
-                if (e.key === 'F1') { e.preventDefault(); toggleRightDrawer('cargo'); }
-                if (e.key === 'F2') { e.preventDefault(); toggleRightDrawer('rig'); }
+                if (e.key === 'F1' || e.key === '1') { e.preventDefault(); toggleRightDrawer('cargo'); }
+                if (e.key === 'F2' || e.key === '2') { e.preventDefault(); toggleRightDrawer('lugs'); }
+                if (e.key === 'F3' || e.key === '3') { e.preventDefault(); toggleRightDrawer('rig'); }
+                if (e.key === 'F4' || e.key === '4') { e.preventDefault(); toggleRightDrawer('gear'); }
+                if (e.key === 'F5' || e.key === '5') { e.preventDefault(); toggleRightDrawer('crane'); }
+                if (e.key === 'F6' || e.key === '6') { e.preventDefault(); toggleRightDrawer('site'); }
                 if (e.key === 'Escape') {
                     if (isDrawerOpen) {
                         e.preventDefault();
