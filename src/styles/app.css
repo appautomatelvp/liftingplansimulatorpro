@@ -328,8 +328,16 @@ body.drawer-open {
             border-radius: 8px; padding: 4px 10px; font-size: 12px; font-weight: 700; pointer-events: none;
         }
         #gear-editor {
-            top: 52px !important; right: 8px !important; left: auto !important; bottom: 80px !important;
-            transform: none !important; width: min(24vw, 380px) !important; max-height: none !important;
+            position: fixed !important;
+            left: 14px !important;
+            right: auto !important;
+            bottom: calc(var(--dock-h) + var(--dock-gap) * 2 + 8px) !important;
+            top: auto !important;
+            transform: none !important;
+            width: 440px !important;
+            max-width: min(92vw, 460px) !important;
+            max-height: 48vh !important;
+            overflow: auto !important;
             z-index: var(--z-drawer) !important;
         }
         .pointer-events-auto { pointer-events: auto; }
@@ -469,6 +477,11 @@ body.drawer-open {
             z-index: var(--z-modal) !important;
         }
         #compliance-hud-panel {
+            top: calc(var(--topbar-h) + 10px) !important;
+            left: 14px !important;
+            right: auto !important;
+            width: 380px !important;
+            max-width: min(92vw, 420px) !important;
             z-index: var(--z-hud) !important;
         }
         .studio-tab-btn {

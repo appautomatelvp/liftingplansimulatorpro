@@ -2520,6 +2520,28 @@
                 if (e.key === 'F5' || e.key === '5') { e.preventDefault(); toggleRightDrawer('crane'); }
                 if (e.key === 'F6' || e.key === '6') { e.preventDefault(); toggleRightDrawer('site'); }
                 if (e.key === 'Escape') {
+                    const libModal = document.getElementById('library-studio-modal');
+                    if (libModal && (libModal.classList.contains('open') || libModal.style.display === 'flex')) {
+                        libModal.classList.remove('open');
+                        libModal.style.display = 'none';
+                        return;
+                    }
+                    const planModal = document.getElementById('liftplan-modal');
+                    if (planModal && planModal.classList.contains('open')) {
+                        planModal.classList.remove('open');
+                        return;
+                    }
+                    const compPanel = document.getElementById('compliance-hud-panel');
+                    if (compPanel && !compPanel.classList.contains('hidden')) {
+                        compPanel.classList.add('hidden');
+                        document.getElementById('btn-open-compliance')?.classList.remove('active');
+                        return;
+                    }
+                    const gear = document.getElementById('gear-editor');
+                    if (gear && gear.style.display !== 'none' && gear.style.display !== '') {
+                        gear.style.display = 'none';
+                        return;
+                    }
                     if (isDrawerOpen) {
                         e.preventDefault();
                         closeRightDrawer();
@@ -3225,100 +3247,73 @@
             window.syncDisplayOptionsUI = syncDisplayOptionsUI;
             const syncIndicatorButtonsUI = syncDisplayOptionsUI; // alias for safety
 
-            // Display Options Popover toggle
-            const btnDispOpt = document.getElementById('btn-display-options');
-            const popoverDispOpt = document.getElementById('display-options-popover');
-            const arrowDispOpt = document.getElementById('arrow-display-options');
+            // Unified Top Bar Dropdown Management
+            const allDropdowns = [
+                { btnId: 'btn-menu-camera', panelId: 'dropdown-panel-camera' },
+                { btnId: 'btn-display-options', panelId: 'display-options-popover', arrowId: 'arrow-display-options' },
+                { btnId: 'btn-toggle-gfx', panelId: 'gfx-menu-popover', arrowId: 'arrow-gfx-menu' },
+                { btnId: 'btn-menu-docs', panelId: 'dropdown-panel-docs' },
+                { btnId: 'btn-menu-system', panelId: 'dropdown-panel-system' }
+            ];
 
-            if (btnDispOpt && popoverDispOpt) {
-                popoverDispOpt.addEventListener('click', (e) => e.stopPropagation());
-                popoverDispOpt.addEventListener('pointerdown', (e) => e.stopPropagation());
-                btnDispOpt.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const isHidden = popoverDispOpt.classList.contains('hidden');
-                    if (isHidden) {
-                        if (popoverGfx) popoverGfx.classList.add('hidden');
-                        if (arrowGfx) arrowGfx.style.transform = 'rotate(0deg)';
-                        const rect = btnDispOpt.getBoundingClientRect();
-                        const popoverWidth = 320;
-                        let safeLeft = rect.left;
-                        if (safeLeft + popoverWidth > window.innerWidth - 16) {
-                            safeLeft = window.innerWidth - popoverWidth - 16;
-                        }
-                        if (safeLeft < 16) {
-                            safeLeft = 16;
-                        }
-                        popoverDispOpt.style.position = 'fixed';
-                        popoverDispOpt.style.top = `${rect.bottom + 6}px`;
-                        popoverDispOpt.style.left = `${safeLeft}px`;
-                        popoverDispOpt.style.right = 'auto';
-                        popoverDispOpt.style.zIndex = '999999';
-                        popoverDispOpt.classList.remove('hidden');
-                    } else {
-                        popoverDispOpt.classList.add('hidden');
-                    }
-                    if (arrowDispOpt) arrowDispOpt.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
-                });
-
-                document.getElementById('btn-display-close')?.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    popoverDispOpt.classList.add('hidden');
-                    if (arrowDispOpt) arrowDispOpt.style.transform = 'rotate(0deg)';
-                });
-
-                window.addEventListener('click', (e) => {
-                    if (!popoverDispOpt.contains(e.target) && e.target !== btnDispOpt && !btnDispOpt.contains(e.target)) {
-                        popoverDispOpt.classList.add('hidden');
-                        if (arrowDispOpt) arrowDispOpt.style.transform = 'rotate(0deg)';
+            function closeAllTopDropdowns() {
+                allDropdowns.forEach(d => {
+                    const panel = document.getElementById(d.panelId);
+                    if (panel) panel.classList.add('hidden');
+                    if (d.arrowId) {
+                        const arrow = document.getElementById(d.arrowId);
+                        if (arrow) arrow.style.transform = 'rotate(0deg)';
                     }
                 });
             }
 
-            // GFX Menu Popover toggle
-            const btnGfx = document.getElementById('btn-toggle-gfx');
-            const popoverGfx = document.getElementById('gfx-menu-popover');
-            const arrowGfx = document.getElementById('arrow-gfx-menu');
-            if (btnGfx && popoverGfx) {
-                popoverGfx.addEventListener('click', (e) => e.stopPropagation());
-                popoverGfx.addEventListener('pointerdown', (e) => e.stopPropagation());
-                btnGfx.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const isHidden = popoverGfx.classList.contains('hidden');
-                    if (isHidden) {
-                        if (popoverDispOpt) popoverDispOpt.classList.add('hidden');
-                        if (arrowDispOpt) arrowDispOpt.style.transform = 'rotate(0deg)';
-                        const rect = btnGfx.getBoundingClientRect();
-                        const popWidth = 288;
-                        let safeLeft = rect.left;
-                        if (safeLeft + popWidth > window.innerWidth - 16) {
-                            safeLeft = window.innerWidth - popWidth - 16;
+            allDropdowns.forEach(d => {
+                const btn = document.getElementById(d.btnId);
+                const panel = document.getElementById(d.panelId);
+                if (btn && panel) {
+                    panel.addEventListener('click', (e) => e.stopPropagation());
+                    panel.addEventListener('pointerdown', (e) => e.stopPropagation());
+
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const isCurrentlyHidden = panel.classList.contains('hidden');
+                        closeAllTopDropdowns();
+                        if (isCurrentlyHidden) {
+                            panel.classList.remove('hidden');
+                            panel.style.zIndex = 'var(--z-popover)';
+                            if (d.arrowId) {
+                                const arrow = document.getElementById(d.arrowId);
+                                if (arrow) arrow.style.transform = 'rotate(180deg)';
+                            }
+
+                            // Keep within viewport boundaries
+                            const rect = btn.getBoundingClientRect();
+                            const pWidth = panel.offsetWidth || 280;
+                            let safeLeft = rect.left;
+                            if (safeLeft + pWidth > window.innerWidth - 16) {
+                                safeLeft = Math.max(12, window.innerWidth - pWidth - 16);
+                            }
+                            if (safeLeft < 12) safeLeft = 12;
+                            panel.style.position = 'fixed';
+                            panel.style.top = `${rect.bottom + 6}px`;
+                            panel.style.left = `${safeLeft}px`;
+                            panel.style.right = 'auto';
                         }
-                        if (safeLeft < 16) safeLeft = 16;
-                        popoverGfx.style.position = 'fixed';
-                        popoverGfx.style.top = `${rect.bottom + 6}px`;
-                        popoverGfx.style.left = `${safeLeft}px`;
-                        popoverGfx.style.right = 'auto';
-                        popoverGfx.style.zIndex = '999999';
-                        popoverGfx.classList.remove('hidden');
-                    } else {
-                        popoverGfx.classList.add('hidden');
-                    }
-                    if (arrowGfx) arrowGfx.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
-                });
+                    });
+                }
+            });
 
-                document.getElementById('btn-close-gfx-popover')?.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    popoverGfx.classList.add('hidden');
-                    if (arrowGfx) arrowGfx.style.transform = 'rotate(0deg)';
-                });
+            document.getElementById('btn-display-close')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeAllTopDropdowns();
+            });
 
-                window.addEventListener('click', (e) => {
-                    if (!popoverGfx.contains(e.target) && e.target !== btnGfx && !btnGfx.contains(e.target)) {
-                        popoverGfx.classList.add('hidden');
-                        if (arrowGfx) arrowGfx.style.transform = 'rotate(0deg)';
-                    }
-                });
-            }
+            document.getElementById('btn-close-gfx-popover')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeAllTopDropdowns();
+            });
+
+            window.addEventListener('click', () => closeAllTopDropdowns());
 
             // HUD Extra Stats Toggle Button
             const btnToggleHudExtra = document.getElementById('btn-toggle-hud-extra');
