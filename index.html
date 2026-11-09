@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -524,10 +524,10 @@
                 <!-- Page 1: CARGO -->
                 <div id="drawer-page-cargo" class="drawer-page active space-y-3">
                     
-<!-- 1. Cargo Library (CARGO & LOAD TYPES) -->
+<!-- 1.1 Cargo Library (CARGO & LOAD TYPES) -->
                 <div>
                     <div class="section-title">
-                        <span>1. Cargo &amp; Load Types — Hàng Hóa &amp; Kiện Hàng</span>
+                        <span>1.1 Chủng Loại Kiện Hàng — Cargo &amp; Load Types</span>
                         <span class="text-[10px] font-mono text-amber-400" id="lbl-vol">28.1 m³</span>
                     </div>
                     <div class="grid grid-cols-3 gap-1.5 max-h-[230px] overflow-y-auto pr-0.5" id="cargo-library">
@@ -598,10 +598,10 @@
                     </div>
                 </div>
 
-                <!-- 2. Cargo Dimensions & Weight -->
+                <!-- 1.2 Cargo Dimensions & Weight -->
                 <div>
                     <div class="section-title">
-                        <span>2. Kích Thước Hình Học &amp; Khối Lượng</span>
+                        <span>1.2 Kích Thước Hình Học &amp; Khối Lượng — Geometry &amp; Mass</span>
                     </div>
                     <div class="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
                         <!-- Dài (L) -->
@@ -679,10 +679,10 @@
                     </div>
                 </div>
 
-                <!-- 2B. Open Top & Flat Rack OOG Cargo & Tarpaulin Controls -->
+                <!-- 1.5 Open Top & Flat Rack OOG Cargo & Tarpaulin Controls -->
                 <div id="oog-cargo-panel" class="hidden bg-slate-900/90 p-2.5 rounded-lg border border-amber-500/40 mt-1">
                     <div class="section-title !border-amber-500/30 !text-amber-300 !mb-1.5">
-                        <span id="lbl-oog-title">2B. Kiện Hàng OOG &amp; Bạt Phủ</span>
+                        <span id="lbl-oog-title">1.5 Kiện Hàng Quá Khổ (OOG) &amp; Bạt Phủ</span>
                         <span id="lbl-oog-badge" class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">OVER-GAUGE</span>
                     </div>
                     <div class="flex items-center gap-1.5 mb-2">
@@ -801,11 +801,51 @@
                     </div>
                 </div>
 
-<!-- 5. GÓC XOAY SỰ CỐ & HƯỚNG KÉO CẨU -->
-<!-- 5. Detailed Cargo Rotation, Orientation & Pulling Vector Control -->
+                <!-- 1.3 3D Center of Gravity (CoG) Setup & Top-Down Plan Map -->
+                <div class="bg-slate-900/80 p-2.5 rounded-lg border border-yellow-500/40">
+                    <div class="section-title !border-yellow-500/30 !text-yellow-400">
+                        <span>1.3 Trọng Tâm Kiện Hàng — Center of Gravity (CoG)</span>
+                        <button id="btn-reset-cog" class="text-[9px] bg-slate-800 hover:bg-slate-700 text-slate-200 px-1.5 py-0.5 rounded border border-slate-600">Đưa Về Tâm 0</button>
+                    </div>
+                    <div class="flex gap-2.5 items-center mb-1.5">
+                        <!-- Interactive 2D Top-Down Footprint Map of Cargo, LP1-LP4 & CoG -->
+                        <div class="flex flex-col items-center">
+                            <canvas id="cog-map-canvas" width="96" height="68" class="rounded border border-slate-700 bg-slate-950 cursor-crosshair" title="Click hoặc kéo trên sơ đồ mặt bằng để đặt nhanh Trọng tâm CoG"></canvas>
+                            <span class="text-[9px] text-slate-400 mt-0.5">Mặt bằng LP &amp; CoG</span>
+                        </div>
+                        <div class="flex-1 space-y-1 text-[11px]">
+                            <div>
+                                <div class="flex justify-between text-slate-300">
+                                    <span>Lệch dọc X (eX):</span>
+                                    <span class="font-mono font-bold text-yellow-400"><span id="v-cogX">0.00</span>m</span>
+                                </div>
+                                <input type="range" id="inp-cogX" min="-2.5" max="2.5" step="0.05" value="0.0">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-slate-300">
+                                    <span>Lệch ngang Z (eZ):</span>
+                                    <span class="font-mono font-bold text-yellow-400"><span id="v-cogZ">0.00</span>m</span>
+                                </div>
+                                <input type="range" id="inp-cogZ" min="-1.5" max="1.5" step="0.05" value="0.0">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-slate-300">
+                                    <span>Độ cao CoG (eY):</span>
+                                    <span class="font-mono font-bold text-yellow-400"><span id="v-cogY">0.00</span>m</span>
+                                </div>
+                                <input type="range" id="inp-cogY" min="-1.0" max="1.5" step="0.05" value="0.0">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-[10px] text-yellow-300/90 bg-yellow-500/10 px-2 py-1 rounded border border-yellow-500/20">
+                        💡 <b>Mẹo:</b> Bấm <b>🔍 X-Ray Hàng</b> hoặc kéo trực tiếp quả cầu <b>🎯 Center of Gravity (CoG)</b> trên 3D/Sơ đồ.
+                    </div>
+                </div>
+
+                <!-- 1.4 GÓC XOAY SỰ CỐ & HƯỚNG KÉO CẨU -->
                 <div class="bg-slate-900/80 p-2.5 rounded-lg border border-sky-500/40">
                     <div class="section-title !border-sky-500/30 !text-sky-300">
-                        <span>5. Góc Xoay, Hướng Xoay & Hướng Kéo</span>
+                        <span>1.4 Góc Xoay, Hướng Xoay &amp; Hướng Kéo</span>
                         <button id="btn-reset-orient" class="text-[9px] bg-slate-800 hover:bg-slate-700 text-sky-200 px-1.5 py-0.5 rounded border border-slate-600">Đặt Lại 0°</button>
                     </div>
                     <p class="text-[10px] text-slate-400 mb-1.5">Đặt kiện ở đúng góc sự cố khi còn trên mặt đất, bắt cáp, rồi kéo. Khi cáp căng, hàng được thả để vật lý xoay thật.</p>
@@ -903,13 +943,79 @@
 
                 </div>
 
-                <!-- Page 2: RIG (SPREADERS & BRIDLES) -->
+                <!-- Page 2: LUGS (LIFTING POINTS & PAD-EYES) -->
+                <div id="drawer-page-lugs" class="drawer-page space-y-3">
+                    <!-- 2.1 Adjustable Lifting Points (LP1, LP2, LP3, LP4) -->
+                    <div class="bg-slate-900/80 p-2.5 rounded-lg border border-emerald-500/40">
+                        <div class="section-title !border-emerald-500/30 !text-emerald-400">
+                            <span>2.1 Điểm Nâng &amp; Tai Cẩu — Lifting Points &amp; Pad-eyes</span>
+                            <button id="btn-sym-lugs" class="text-[9px] bg-slate-800 hover:bg-slate-700 text-emerald-300 px-1.5 py-0.5 rounded border border-slate-600">Đối Xứng 4 Góc</button>
+                        </div>
+
+                        <p class="text-[10px] text-slate-400 mb-2">
+                            <b>Pad-eye / Lug Plate (Tai cẩu / Bích cẩu)</b> hàn sát vỏ thật của kiện. Kéo <b>Lifting Point (LP)</b> trên bề mặt 3D hoặc chỉnh tọa độ bên dưới.
+                        </p>
+
+                        <!-- Quick Elevation Preset -->
+                        <div class="flex items-center justify-between bg-slate-800/90 p-1 rounded border border-slate-700 mb-2 text-[11px]">
+                            <span class="text-slate-300 pl-1">Vị trí Pad-eye / Lug Plate:</span>
+                            <div class="flex gap-1" id="lug-elevation-group">
+                                <button class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-600 text-white" data-elev="top">Trên Đỉnh Hàng</button>
+                                <button class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-700 text-slate-300" data-elev="mid">Giữa Thân</button>
+                                <button class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-700 text-slate-300" data-elev="bottom">Đáy Hàng</button>
+                            </div>
+                        </div>
+
+                        <!-- Individual LP Selector Tabs (LP1, LP2, LP3, LP4, or ALL Symmetric) -->
+                        <div class="grid grid-cols-5 gap-1 mb-2" id="lp-tabs">
+                            <button class="py-1 rounded text-[10px] font-mono font-bold bg-sky-600 text-white border border-sky-400" data-lp="all">Cả 4</button>
+                            <button class="py-1 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700" data-lp="0">LP1 (+X+Z)</button>
+                            <button class="py-1 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700" data-lp="1">LP2 (-X+Z)</button>
+                            <button class="py-1 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700" data-lp="2">LP3 (-X-Z)</button>
+                            <button class="py-1 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700" data-lp="3">LP4 (+X-Z)</button>
+                        </div>
+
+                        <!-- Coordinate & Turnbuckle Sliders for Selected LP -->
+                        <div class="space-y-1.5 text-[11px]">
+                            <div>
+                                <div class="flex justify-between text-slate-300">
+                                    <span id="lbl-lp-x">Tọa độ Dọc Lifting Point (X):</span>
+                                    <span class="font-mono font-bold text-emerald-400"><span id="v-lpX">2.80</span> m</span>
+                                </div>
+                                <input type="range" id="inp-lpX" min="-6.0" max="6.0" step="0.05" value="2.80">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-slate-300">
+                                    <span id="lbl-lp-z">Tọa độ Ngang Lifting Point (Z):</span>
+                                    <span class="font-mono font-bold text-emerald-400"><span id="v-lpZ">1.05</span> m</span>
+                                </div>
+                                <input type="range" id="inp-lpZ" min="-2.5" max="2.5" step="0.05" value="1.05">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-slate-300">
+                                    <span>Cao độ Pad-eye / Lug Plate (Y):</span>
+                                    <span class="font-mono font-bold text-emerald-400"><span id="v-lpY">1.25</span> m</span>
+                                </div>
+                                <input type="range" id="inp-lpY" min="-2.2" max="2.2" step="0.05" value="1.25">
+                            </div>
+                            <div class="pt-1 border-t border-slate-700/80">
+                                <div class="flex justify-between text-sky-300">
+                                    <span>Turnbuckle — Tăng đơ chỉnh cáp (ΔL):</span>
+                                    <span class="font-mono font-bold"><span id="v-lpDeltaL">0.00</span> m</span>
+                                </div>
+                                <input type="range" id="inp-lpDeltaL" min="-1.5" max="1.5" step="0.02" value="0.00">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Page 3: RIG (SPREADERS & BRIDLES) -->
                 <div id="drawer-page-rig" class="drawer-page space-y-3">
                     
-                    <!-- 1. Danh mục Spreader Bars & Lifting Beams -->
+                    <!-- 3.1 Danh mục Spreader Bars & Lifting Beams -->
                     <div>
                         <div class="section-title">
-                            <span>1. Spreaders &amp; Lifting Beams — Dầm Ngáng &amp; Đòn Gánh</span>
+                            <span>3.1 Chủng Loại Dầm Ngáng — Spreaders &amp; Lifting Beams</span>
                         </div>
                         <div class="grid grid-cols-2 gap-1.5" id="beam-store">
                             <div class="card-btn active" data-beam="spreader">
@@ -947,12 +1053,12 @@
                         </div>
                     </div>
 
-                    <!-- 2. KÍCH THƯỚC DẦM NGÁNG (SPREADER SPAN & BEAM GEOMETRY) -->
+                    <!-- 3.2 KÍCH THƯỚC DẦM NGÁNG (SPREADER SPAN & BEAM GEOMETRY) -->
                     <div id="box-spreader-dimension" class="flex flex-col gap-2 bg-slate-900/90 p-2.5 rounded-lg border border-amber-500/50 text-[11px] shadow-lg">
                         <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
                             <div class="flex items-center gap-1.5 font-bold text-amber-300 text-xs">
                                 <span>📐</span>
-                                <span>2. KÍCH THƯỚC DẦM NGÁNG (SPREADER SPAN)</span>
+                                <span>3.2 Kích Thước Dầm Ngáng (Spreader Span)</span>
                             </div>
                             <button id="btn-beam-auto-fit" type="button" class="px-2 py-0.5 rounded text-[9.5px] font-bold bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/70 shadow-sm transition" title="Tự động căn chỉnh chiều dài dầm khớp với bề rộng kiện hàng (đảm bảo cáp dưới thả đứng 90°)">
                                 ⚡ Tự Khớp Kiện
@@ -1008,12 +1114,12 @@
                         </div>
                     </div>
 
-                    <!-- 3. CẤU TRÚC PHÂN TẦNG CÁP & GÓC NÂNG (RIGGING TREE) -->
+                    <!-- 3.3 CẤU TRÚC PHÂN TẦNG CÁP & GÓC NÂNG (RIGGING TREE) -->
                     <div class="flex flex-col gap-2.5 bg-slate-900/90 p-2.5 rounded-lg border border-slate-700/80 text-[11px]">
                         <!-- Panel Header & Quick Unit Toggle -->
                         <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
                             <span class="text-[10px] font-extrabold uppercase tracking-wider text-sky-300 flex items-center gap-1">
-                                🌲 3. Cấu Trúc Phân Tầng Cáp &amp; Góc Nâng
+                                🌲 3.3 Cấu Trúc Phân Tầng Cáp &amp; Góc Nâng
                             </span>
                             <div class="flex items-center gap-1">
                                 <button id="btn-unit-toggle-panel" type="button" class="px-2 py-0.5 rounded text-[9px] font-bold bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-600 transition" title="Chuyển đổi Mét (m) ⇄ Feet (ft)">
@@ -1216,10 +1322,10 @@
                 <!-- Page 3: GEAR (SLINGS, HARDWARE & BOM) -->
                 <div id="drawer-page-gear" class="drawer-page space-y-3">
                     
-<!-- 3. Slings & Hardware Store -->
+<!-- 4.1 Slings & Hardware Store -->
                 <div>
                     <div class="section-title">
-                        <span>3. Slings &amp; Rigging Hardware — Dây Cáp &amp; Phụ Kiện Kết Nối</span>
+                        <span>4.1 Chủng Loại Cáp &amp; Phụ Kiện Treo — Slings &amp; Hardware</span>
                     </div>
                     <div class="grid grid-cols-5 gap-1 mb-1.5" id="sling-store">
                         <div class="card-btn active text-center" data-sling="wire">
@@ -1356,12 +1462,12 @@
                 </div>
 </div>
 
-                    <!-- PHASE 1: ELASTIC SLING ELONGATION & DNV-ST-N001 SKEW LOAD -->
+                    <!-- 4.2: ELASTIC SLING ELONGATION & DNV-ST-N001 SKEW LOAD -->
                     <div class="bg-slate-950/95 p-2.5 rounded-xl border border-indigo-500/40 flex flex-col gap-2 shadow-xl">
                         <div class="flex items-center justify-between border-b border-slate-800 pb-1">
                             <div class="flex items-center gap-1.5 font-bold text-xs text-indigo-300">
                                 <span>⛓️</span>
-                                <span>ĐỘ DÃN CÁP HOOKE &amp; SIÊU TĨNH 4 NHÁNH</span>
+                                <span>4.2 Độ Dãn Cáp Hooke &amp; Siêu Tĩnh 4 Nhánh</span>
                             </div>
                             <span id="skew-status-badge" class="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">DNV-ST-N001</span>
                         </div>
@@ -1413,10 +1519,10 @@
                         </div>
                     </div>
 
-                    <!-- 4. Real-Time Engineering Telemetry & Load Distribution -->
-                    <div class="bg-slate-950/95 p-2.5 rounded-xl border border-slate-700 flex flex-col gap-2 mt-auto">
+                    <!-- 4.3 Real-Time Engineering Telemetry & Load Distribution -->
+                    <div id="gear-load-summary" class="bg-slate-950/95 p-2.5 rounded-xl border border-slate-700 flex flex-col gap-2 mt-auto">
                         <div class="flex items-center justify-between border-b border-slate-800 pb-1">
-                            <span class="text-[10px] font-extrabold uppercase tracking-wider text-sky-400">📊 Thông Số Kỹ Thuật &amp; Tải Trọng Cáp</span>
+                            <span class="text-[10px] font-extrabold uppercase tracking-wider text-sky-400">📊 4.3 Thông Số Kỹ Thuật &amp; Tải Trọng Cáp</span>
                             <span id="badge-safety" class="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">CHUẨN AN TOÀN</span>
                         </div>
 
@@ -1514,118 +1620,172 @@
 
                 </div>
 
-                <!-- Page 4: LUGS & COG -->
-                <div id="drawer-page-lugs" class="drawer-page space-y-3">
-                    <!-- 3. 3D Center of Gravity (CoG) Setup & Top-Down Plan Map -->
-                <div class="bg-slate-900/80 p-2.5 rounded-lg border border-yellow-500/40">
-                    <div class="section-title !border-yellow-500/30 !text-yellow-400">
-                        <span>3. Center of Gravity (CoG) — Trọng Tâm Kiện Hàng</span>
-                        <button id="btn-reset-cog" class="text-[9px] bg-slate-800 hover:bg-slate-700 text-slate-200 px-1.5 py-0.5 rounded border border-slate-600">Đưa Về Tâm 0</button>
+                <!-- Page 5: CRANE & ANALYTICS -->
+                <div id="drawer-page-crane" class="drawer-page space-y-3">
+                    
+<!-- 5.1 Crane & Hook Modes (Chế Độ Đầu Móc & Máy Cẩu 3D) -->
+                <div>
+                    <div class="section-title">
+                        <span>5.1 Thiết Bị Cẩu 3D &amp; Đầu Hook — 3D Cranes</span>
+                        <span class="text-[9px] text-amber-400 font-mono">Bám theo Móc Cẩu</span>
                     </div>
-                    <div class="flex gap-2.5 items-center mb-1.5">
-                        <!-- Interactive 2D Top-Down Footprint Map of Cargo, LP1-LP4 & CoG -->
-                        <div class="flex flex-col items-center">
-                            <canvas id="cog-map-canvas" width="96" height="68" class="rounded border border-slate-700 bg-slate-950 cursor-crosshair" title="Click hoặc kéo trên sơ đồ mặt bằng để đặt nhanh Trọng tâm CoG"></canvas>
-                            <span class="text-[9px] text-slate-400 mt-0.5">Mặt bằng LP & CoG</span>
+                    <div class="grid grid-cols-2 gap-1.5" id="crane-store">
+                        <div class="card-btn active" data-crane="hook_only">
+                            <div class="text-[11px] font-bold text-amber-300">🪝 Cụm Móc &amp; Cáp Treo</div>
+                            <div class="text-[9px] text-slate-400">Chỉ hiện Đầu Hook · Góc nhìn 360°</div>
                         </div>
-                        <div class="flex-1 space-y-1 text-[11px]">
-                            <div>
-                                <div class="flex justify-between text-slate-300">
-                                    <span>Lệch dọc X (eX):</span>
-                                    <span class="font-mono font-bold text-yellow-400"><span id="v-cogX">0.00</span>m</span>
-                                </div>
-                                <input type="range" id="inp-cogX" min="-2.5" max="2.5" step="0.05" value="0.0">
-                            </div>
-                            <div>
-                                <div class="flex justify-between text-slate-300">
-                                    <span>Lệch ngang Z (eZ):</span>
-                                    <span class="font-mono font-bold text-yellow-400"><span id="v-cogZ">0.00</span>m</span>
-                                </div>
-                                <input type="range" id="inp-cogZ" min="-1.5" max="1.5" step="0.05" value="0.0">
-                            </div>
-                            <div>
-                                <div class="flex justify-between text-slate-300">
-                                    <span>Độ cao CoG (eY):</span>
-                                    <span class="font-mono font-bold text-yellow-400"><span id="v-cogY">0.00</span>m</span>
-                                </div>
-                                <input type="range" id="inp-cogY" min="-1.0" max="1.5" step="0.05" value="0.0">
-                            </div>
+                        <div class="card-btn" data-crane="mobile_telescopic">
+                            <div class="text-[11px] font-bold text-amber-400">🏗️ Cẩu Bánh Lốp LTM</div>
+                            <div class="text-[9px] text-slate-400">Liebherr LTM 1200 · Chân chống H</div>
                         </div>
-                    </div>
-                    <div class="text-[10px] text-yellow-300/90 bg-yellow-500/10 px-2 py-1 rounded border border-yellow-500/20">
-                        💡 <b>Mẹo:</b> Bấm <b>🔍 X-Ray Hàng</b> hoặc kéo trực tiếp quả cầu <b>🎯 Center of Gravity (CoG)</b> trên 3D/Sơ đồ.
-                    </div>
-                </div>
-
-                <!-- 4. Adjustable Lifting Points (LP1, LP2, LP3, LP4) -->
-                <div class="bg-slate-900/80 p-2.5 rounded-lg border border-emerald-500/40">
-                    <div class="section-title !border-emerald-500/30 !text-emerald-400">
-                        <span>4. Lifting Point &amp; Pad-eye / Lug Plate — Điểm Nâng &amp; Tai Cẩu</span>
-                        <button id="btn-sym-lugs" class="text-[9px] bg-slate-800 hover:bg-slate-700 text-emerald-300 px-1.5 py-0.5 rounded border border-slate-600">Đối Xứng 4 Góc</button>
-                    </div>
-
-                    <p class="text-[10px] text-slate-400 mb-2">
-                        <b>Pad-eye / Lug Plate (Tai cẩu / Bích cẩu)</b> hàn sát vỏ thật của kiện. Kéo <b>Lifting Point (LP)</b> trên bề mặt 3D hoặc chỉnh tọa độ bên dưới.
-                    </p>
-
-                    <!-- Quick Elevation Preset -->
-                    <div class="flex items-center justify-between bg-slate-800/90 p-1 rounded border border-slate-700 mb-2 text-[11px]">
-                        <span class="text-slate-300 pl-1">Vị trí Pad-eye / Lug Plate:</span>
-                        <div class="flex gap-1" id="lug-elevation-group">
-                            <button class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-600 text-white" data-elev="top">Trên Đỉnh Hàng</button>
-                            <button class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-700 text-slate-300" data-elev="mid">Giữa Thân</button>
-                            <button class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-700 text-slate-300" data-elev="bottom">Đáy Hàng</button>
+                        <div class="card-btn" data-crane="crawler">
+                            <div class="text-[11px] font-bold text-yellow-300">🚜 Cẩu Bánh Xích LR</div>
+                            <div class="text-[9px] text-slate-400">Liebherr LR 1300 · Cần giàn thép</div>
                         </div>
-                    </div>
-
-                    <!-- Individual LP Selector Tabs (LP1, LP2, LP3, LP4, or ALL Symmetric) -->
-                    <div class="grid grid-cols-5 gap-1 mb-2" id="lp-tabs">
-                        <button class="py-1 rounded text-[10px] font-mono font-bold bg-sky-600 text-white border border-sky-400" data-lp="all">Cả 4</button>
-                        <button class="py-1 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700" data-lp="0">LP1 (+X+Z)</button>
-                        <button class="py-1 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700" data-lp="1">LP2 (-X+Z)</button>
-                        <button class="py-1 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700" data-lp="2">LP3 (-X-Z)</button>
-                        <button class="py-1 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700" data-lp="3">LP4 (+X-Z)</button>
-                    </div>
-
-                    <!-- Coordinate & Turnbuckle Sliders for Selected LP -->
-                    <div class="space-y-1.5 text-[11px]">
-                        <div>
-                            <div class="flex justify-between text-slate-300">
-                                <span id="lbl-lp-x">Tọa độ Dọc Lifting Point (X):</span>
-                                <span class="font-mono font-bold text-emerald-400"><span id="v-lpX">2.80</span> m</span>
-                            </div>
-                            <input type="range" id="inp-lpX" min="-6.0" max="6.0" step="0.05" value="2.80">
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-slate-300">
-                                <span id="lbl-lp-z">Tọa độ Ngang Lifting Point (Z):</span>
-                                <span class="font-mono font-bold text-emerald-400"><span id="v-lpZ">1.05</span> m</span>
-                            </div>
-                            <input type="range" id="inp-lpZ" min="-2.5" max="2.5" step="0.05" value="1.05">
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-slate-300">
-                                <span>Cao độ Pad-eye / Lug Plate (Y):</span>
-                                <span class="font-mono font-bold text-emerald-400"><span id="v-lpY">1.25</span> m</span>
-                            </div>
-                            <input type="range" id="inp-lpY" min="-2.2" max="2.2" step="0.05" value="1.25">
-                        </div>
-                        <div class="pt-1 border-t border-slate-700/80">
-                            <div class="flex justify-between text-sky-300">
-                                <span>Turnbuckle — Tăng đơ chỉnh cáp (ΔL):</span>
-                                <span class="font-mono font-bold"><span id="v-lpDeltaL">0.00</span> m</span>
-                            </div>
-                            <input type="range" id="inp-lpDeltaL" min="-1.5" max="1.5" step="0.02" value="0.00">
+                        <div class="card-btn" data-crane="gantry">
+                            <div class="text-[11px] font-bold text-sky-400">🏭 Cầu Trục Xưởng Test</div>
+                            <div class="text-[9px] text-slate-400">Overhead Bridge Crane 80T</div>
                         </div>
                     </div>
                 </div>
+
+                <!-- 5.2: CRANE LOAD CHART & LMI ENGINE (ASME B30.5 / EN 13000 / ASME P30.1) -->
+                <div class="bg-slate-950/95 p-2.5 rounded-xl border border-amber-500/50 flex flex-col gap-2 shadow-xl">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-1">
+                        <div class="flex items-center gap-1.5 font-bold text-xs text-amber-300">
+                            <span>🏗️</span>
+                            <span>5.2 Bảng Tải Trọng Cẩu &amp; LMI Thực Tế</span>
+                        </div>
+                        <span id="lmi-status-badge" class="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">🟢 AN TOÀN</span>
+                    </div>
+
+                    <!-- Crane Model & Outrigger Span Selection -->
+                    <div class="grid grid-cols-2 gap-1.5 text-[10px]">
+                        <div>
+                            <label class="text-slate-400 block mb-0.5">Dòng Cần Cẩu:</label>
+                            <select id="sel-crane-model" class="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-amber-200 font-bold outline-none">
+                                <option value="liebherr_ltm1200" selected>Liebherr LTM 1200-5.1 (200T)</option>
+                                <option value="liebherr_lr1300">Liebherr LR 1300 (300T Xích)</option>
+                                <option value="kato_kr500">Kato KR-500 (50T Bánh Béo)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-slate-400 block mb-0.5">Độ Mở Chân Chống:</label>
+                            <select id="sel-outrigger-ext" class="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-slate-200 outline-none">
+                                <option value="100" selected>100% Tiêu Chuẩn (8.3m)</option>
+                                <option value="75">75% Thu Hẹp (6.2m)</option>
+                                <option value="50">50% Hạn Chế (4.4m)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Live Crane Working Geometry & Capacity Bar -->
+                    <div class="grid grid-cols-3 gap-1 bg-slate-900/90 p-1.5 rounded border border-slate-800 text-center text-[10px]">
+                        <div>
+                            <span class="text-slate-400 block text-[9px]">Bán Kính R:</span>
+                            <span id="lmi-radius" class="font-mono font-bold text-sky-300">11.3 m</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block text-[9px]">Chiều Dài Cần:</span>
+                            <span id="lmi-boom-len" class="font-mono font-bold text-amber-300">35.8 m</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block text-[9px]">Góc Ngẩng Cần:</span>
+                            <span id="lmi-boom-ang" class="font-mono font-bold text-emerald-300">71.6°</span>
+                        </div>
+                    </div>
+
+                    <!-- LMI Capacity Utilization Bar -->
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-[10px]">
+                            <span class="text-slate-300">Sức Nâng Tối Đa: <b id="lmi-rated-cap" class="text-amber-300 font-mono">53.0 T</b></span>
+                            <span class="font-mono font-bold text-sky-400">Tải cẩu: <span id="lmi-util-pct" class="text-emerald-400 font-extrabold">42.5%</span></span>
+                        </div>
+                        <div class="relative bg-slate-900 h-2.5 rounded-full overflow-hidden border border-slate-700">
+                            <div id="lmi-util-bar" class="h-full bg-emerald-500 transition-all duration-100" style="width: 42.5%"></div>
+                            <!-- 75% Monitor line -->
+                            <div class="absolute top-0 bottom-0 left-[75%] w-0.5 bg-yellow-400/80" title="Ngưỡng cảnh báo 75%"></div>
+                            <!-- 85% Critical lift line -->
+                            <div class="absolute top-0 bottom-0 left-[85%] w-0.5 bg-orange-500" title="Ngưỡng Cẩu Nguy Hiểm ASME P30.1 (85%)"></div>
+                        </div>
+                        <div class="flex justify-between text-[8px] font-mono text-slate-500">
+                            <span>0%</span>
+                            <span class="text-yellow-400">75% Giám Sát</span>
+                            <span class="text-orange-400 font-bold">85% Critical Lift</span>
+                            <span class="text-rose-400 font-bold">100% Quá Tải</span>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Boom Geometry Sliders -->
+                    <div class="space-y-1.5 pt-2 border-t border-slate-800 text-[10px]">
+                        <div>
+                            <div class="flex justify-between text-[9px] mb-0.5">
+                                <span class="text-slate-400">Điều chỉnh Chiều Dài Cần (Boom Length):</span>
+                                <span id="val-boom-len-slider" class="font-mono font-bold text-amber-300">35.8 m</span>
+                            </div>
+                            <input type="range" id="rng-boom-len" min="15" max="72" step="1" value="36" class="w-full accent-amber-400">
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-[9px] mb-0.5">
+                                <span class="text-slate-400">Điều chỉnh Góc Ngẩng Cần (Boom Angle):</span>
+                                <span id="val-boom-ang-slider" class="font-mono font-bold text-emerald-300">71.6°</span>
+                            </div>
+                            <input type="range" id="rng-boom-ang" min="30" max="83" step="0.5" value="71.5" class="w-full accent-emerald-400">
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Page 5: SITE (TESTBED, TIMBER DUNNAGE, SOIL & WIND ENVIRONMENT) -->
+                <!-- REEVING & HOOK BLOCK SPECIFICATIONS -->
+                <div class="bg-slate-950/95 p-2.5 rounded-xl border border-yellow-500/40 flex flex-col gap-2 shadow-xl">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-1">
+                        <div class="flex items-center gap-1.5 font-bold text-xs text-yellow-300">
+                            <span>🪝</span>
+                            <span>BỘI SUẤT PALĂNG &amp; CỤM MÓC CẨU</span>
+                        </div>
+                        <span class="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-sky-500/20 text-sky-400 border border-sky-500/40">ASME B30.10</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-1.5 text-[10px]">
+                        <div>
+                            <label class="text-slate-400 block mb-0.5">Số Nhánh Cáp Luồn (Reeving):</label>
+                            <select id="sel-crane-reeving" class="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-yellow-300 font-bold outline-none">
+                                <option value="2">2 Nhánh (Tối đa 21.0 T)</option>
+                                <option value="4" selected>4 Nhánh (Tối đa 42.0 T)</option>
+                                <option value="6">6 Nhánh (Tối đa 63.0 T)</option>
+                                <option value="8">8 Nhánh (Tối đa 84.0 T)</option>
+                                <option value="12">12 Nhánh (Tối đa 126.0 T)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-slate-400 block mb-0.5">Khối Lượng Móc (Hook Tare):</label>
+                            <div class="flex items-center bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5">
+                                <input type="number" id="inp-hook-tare" min="0.3" max="5.0" step="0.1" value="1.2" class="w-14 bg-transparent font-mono font-bold text-amber-300 text-xs focus:outline-none">
+                                <span class="text-slate-400 text-[10px] ml-0.5">Tấn</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900/90 p-1.5 rounded border border-slate-800 text-[10px] flex items-center justify-between">
+                        <div>
+                            <span class="text-slate-400">Sức Nâng Dây Tời Palăng:</span>
+                            <b id="val-reeving-capacity" class="font-mono text-emerald-400">42.0 T</b>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-slate-400">Lực Kéo Đơn Nhánh:</span>
+                            <b class="font-mono text-sky-300">10.5 T / line</b>
+                        </div>
+                    </div>
+                </div>
+
+
+
+                </div>
+            
+<!-- Page 6: SITE (TESTBED, TIMBER DUNNAGE, SOIL & WIND ENVIRONMENT) -->
                 <div id="drawer-page-site" class="drawer-page space-y-3">
-                    <!-- 1. Testbed Scene Selection -->
+                    <!-- 6.1 Testbed Scene Selection -->
                     <div>
-                        <div class="section-title"><span>1. Sàn Thử Kỹ Thuật (Testbed Environment)</span></div>
+                        <div class="section-title"><span>6.1 Sàn Thử Kỹ Thuật — Testbed Environment</span></div>
                         <div class="grid grid-cols-1 gap-1.5" id="scene-store">
                             <div class="card-btn active" data-scene="studio">
                                 <div class="text-[11px] font-bold text-sky-300">🏢 Studio Kỹ Thuật (CAD Dark)</div>
@@ -1642,12 +1802,12 @@
                         </div>
                     </div>
 
-                    <!-- 2. Timber Dunnage Presets & Geometry Specs -->
+                    <!-- 6.2 Timber Dunnage Presets & Geometry Specs -->
                     <div class="bg-slate-950/95 p-2.5 rounded-xl border border-amber-500/40 flex flex-col gap-2 shadow-xl">
                         <div class="flex items-center justify-between border-b border-slate-800 pb-1">
                             <div class="flex items-center gap-1.5 font-bold text-xs text-amber-300">
                                 <span>🪵</span>
-                                <span>THÔNG SỐ ĐÀ GỖ KÊ HÀNG (TIMBER DUNNAGE)</span>
+                                <span>6.2 Sàn Kê &amp; Tấm Lót Đà Gỗ (Timber Dunnage)</span>
                             </div>
                             <span id="dunnage-status-badge" class="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">🟢 ĐẠT CHUẨN NÉN</span>
                         </div>
@@ -1831,12 +1991,12 @@
                         </div>
                     </div>
 
-                    <!-- 5. Wind Load & Site Aerodynamics Engine (ASME B30.5 / EN 13000) -->
+                    <!-- 6.3 Wind Load & Site Aerodynamics Engine (ASME B30.5 / EN 13000) -->
                     <div class="bg-slate-950/95 p-2.5 rounded-xl border border-indigo-500/40 flex flex-col gap-2 shadow-xl">
                         <div class="flex items-center justify-between border-b border-slate-800 pb-1">
                             <div class="flex items-center gap-1.5 font-bold text-xs text-indigo-300">
                                 <span>💨</span>
-                                <span>MÔI TRƯỜNG GIÓ &amp; KHÍ ĐỘNG HỌC KIỆN HÀNG</span>
+                                <span>6.3 Tải Trọng Gió &amp; Môi Trường Hiện Trường</span>
                             </div>
                             <span id="wind-status-badge" class="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">🟢 GIÓ NHẸ (CẤP 2)</span>
                         </div>
@@ -1889,167 +2049,7 @@
                     </div>
                 </div>
 
-                <!-- Page 6: CRANE & ANALYTICS -->
-                <div id="drawer-page-crane" class="drawer-page space-y-3">
-                    
-<!-- 1. Crane & Hook Modes (Chế Độ Đầu Móc & Máy Cẩu 3D) -->
-                <div>
-                    <div class="section-title">
-                        <span>1. Đầu Hook &amp; Thiết Bị Nâng (3D Cranes)</span>
-                        <span class="text-[9px] text-amber-400 font-mono">Bám theo Móc Cẩu</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-1.5" id="crane-store">
-                        <div class="card-btn active" data-crane="hook_only">
-                            <div class="text-[11px] font-bold text-amber-300">🪝 Cụm Móc &amp; Cáp Treo</div>
-                            <div class="text-[9px] text-slate-400">Chỉ hiện Đầu Hook · Góc nhìn 360°</div>
-                        </div>
-                        <div class="card-btn" data-crane="mobile_telescopic">
-                            <div class="text-[11px] font-bold text-amber-400">🏗️ Cẩu Bánh Lốp LTM</div>
-                            <div class="text-[9px] text-slate-400">Liebherr LTM 1200 · Chân chống H</div>
-                        </div>
-                        <div class="card-btn" data-crane="crawler">
-                            <div class="text-[11px] font-bold text-yellow-300">🚜 Cẩu Bánh Xích LR</div>
-                            <div class="text-[9px] text-slate-400">Liebherr LR 1300 · Cần giàn thép</div>
-                        </div>
-                        <div class="card-btn" data-crane="gantry">
-                            <div class="text-[11px] font-bold text-sky-400">🏭 Cầu Trục Xưởng Test</div>
-                            <div class="text-[9px] text-slate-400">Overhead Bridge Crane 80T</div>
-                        </div>
-                    </div>
                 </div>
-
-                <!-- PHASE 1: CRANE LOAD CHART & LMI ENGINE (ASME B30.5 / EN 13000 / ASME P30.1) -->
-                <div class="bg-slate-950/95 p-2.5 rounded-xl border border-amber-500/50 flex flex-col gap-2 shadow-xl">
-                    <div class="flex items-center justify-between border-b border-slate-800 pb-1">
-                        <div class="flex items-center gap-1.5 font-bold text-xs text-amber-300">
-                            <span>🏗️</span>
-                            <span>BẢNG TẢI TRỌNG CẨU &amp; LMI THỰC TẾ</span>
-                        </div>
-                        <span id="lmi-status-badge" class="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">🟢 AN TOÀN</span>
-                    </div>
-
-                    <!-- Crane Model & Outrigger Span Selection -->
-                    <div class="grid grid-cols-2 gap-1.5 text-[10px]">
-                        <div>
-                            <label class="text-slate-400 block mb-0.5">Dòng Cần Cẩu:</label>
-                            <select id="sel-crane-model" class="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-amber-200 font-bold outline-none">
-                                <option value="liebherr_ltm1200" selected>Liebherr LTM 1200-5.1 (200T)</option>
-                                <option value="liebherr_lr1300">Liebherr LR 1300 (300T Xích)</option>
-                                <option value="kato_kr500">Kato KR-500 (50T Bánh Béo)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="text-slate-400 block mb-0.5">Độ Mở Chân Chống:</label>
-                            <select id="sel-outrigger-ext" class="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-slate-200 outline-none">
-                                <option value="100" selected>100% Tiêu Chuẩn (8.3m)</option>
-                                <option value="75">75% Thu Hẹp (6.2m)</option>
-                                <option value="50">50% Hạn Chế (4.4m)</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Live Crane Working Geometry & Capacity Bar -->
-                    <div class="grid grid-cols-3 gap-1 bg-slate-900/90 p-1.5 rounded border border-slate-800 text-center text-[10px]">
-                        <div>
-                            <span class="text-slate-400 block text-[9px]">Bán Kính R:</span>
-                            <span id="lmi-radius" class="font-mono font-bold text-sky-300">11.3 m</span>
-                        </div>
-                        <div>
-                            <span class="text-slate-400 block text-[9px]">Chiều Dài Cần:</span>
-                            <span id="lmi-boom-len" class="font-mono font-bold text-amber-300">35.8 m</span>
-                        </div>
-                        <div>
-                            <span class="text-slate-400 block text-[9px]">Góc Ngẩng Cần:</span>
-                            <span id="lmi-boom-ang" class="font-mono font-bold text-emerald-300">71.6°</span>
-                        </div>
-                    </div>
-
-                    <!-- LMI Capacity Utilization Bar -->
-                    <div class="space-y-1">
-                        <div class="flex justify-between text-[10px]">
-                            <span class="text-slate-300">Sức Nâng Tối Đa: <b id="lmi-rated-cap" class="text-amber-300 font-mono">53.0 T</b></span>
-                            <span class="font-mono font-bold text-sky-400">Tải cẩu: <span id="lmi-util-pct" class="text-emerald-400 font-extrabold">42.5%</span></span>
-                        </div>
-                        <div class="relative bg-slate-900 h-2.5 rounded-full overflow-hidden border border-slate-700">
-                            <div id="lmi-util-bar" class="h-full bg-emerald-500 transition-all duration-100" style="width: 42.5%"></div>
-                            <!-- 75% Monitor line -->
-                            <div class="absolute top-0 bottom-0 left-[75%] w-0.5 bg-yellow-400/80" title="Ngưỡng cảnh báo 75%"></div>
-                            <!-- 85% Critical lift line -->
-                            <div class="absolute top-0 bottom-0 left-[85%] w-0.5 bg-orange-500" title="Ngưỡng Cẩu Nguy Hiểm ASME P30.1 (85%)"></div>
-                        </div>
-                        <div class="flex justify-between text-[8px] font-mono text-slate-500">
-                            <span>0%</span>
-                            <span class="text-yellow-400">75% Giám Sát</span>
-                            <span class="text-orange-400 font-bold">85% Critical Lift</span>
-                            <span class="text-rose-400 font-bold">100% Quá Tải</span>
-                        </div>
-                    </div>
-
-                    <!-- Interactive Boom Geometry Sliders -->
-                    <div class="space-y-1.5 pt-2 border-t border-slate-800 text-[10px]">
-                        <div>
-                            <div class="flex justify-between text-[9px] mb-0.5">
-                                <span class="text-slate-400">Điều chỉnh Chiều Dài Cần (Boom Length):</span>
-                                <span id="val-boom-len-slider" class="font-mono font-bold text-amber-300">35.8 m</span>
-                            </div>
-                            <input type="range" id="rng-boom-len" min="15" max="72" step="1" value="36" class="w-full accent-amber-400">
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-[9px] mb-0.5">
-                                <span class="text-slate-400">Điều chỉnh Góc Ngẩng Cần (Boom Angle):</span>
-                                <span id="val-boom-ang-slider" class="font-mono font-bold text-emerald-300">71.6°</span>
-                            </div>
-                            <input type="range" id="rng-boom-ang" min="30" max="83" step="0.5" value="71.5" class="w-full accent-emerald-400">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- REEVING & HOOK BLOCK SPECIFICATIONS -->
-                <div class="bg-slate-950/95 p-2.5 rounded-xl border border-yellow-500/40 flex flex-col gap-2 shadow-xl">
-                    <div class="flex items-center justify-between border-b border-slate-800 pb-1">
-                        <div class="flex items-center gap-1.5 font-bold text-xs text-yellow-300">
-                            <span>🪝</span>
-                            <span>BỘI SUẤT PALĂNG &amp; CỤM MÓC CẨU</span>
-                        </div>
-                        <span class="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-sky-500/20 text-sky-400 border border-sky-500/40">ASME B30.10</span>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-1.5 text-[10px]">
-                        <div>
-                            <label class="text-slate-400 block mb-0.5">Số Nhánh Cáp Luồn (Reeving):</label>
-                            <select id="sel-crane-reeving" class="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-yellow-300 font-bold outline-none">
-                                <option value="2">2 Nhánh (Tối đa 21.0 T)</option>
-                                <option value="4" selected>4 Nhánh (Tối đa 42.0 T)</option>
-                                <option value="6">6 Nhánh (Tối đa 63.0 T)</option>
-                                <option value="8">8 Nhánh (Tối đa 84.0 T)</option>
-                                <option value="12">12 Nhánh (Tối đa 126.0 T)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="text-slate-400 block mb-0.5">Khối Lượng Móc (Hook Tare):</label>
-                            <div class="flex items-center bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5">
-                                <input type="number" id="inp-hook-tare" min="0.3" max="5.0" step="0.1" value="1.2" class="w-14 bg-transparent font-mono font-bold text-amber-300 text-xs focus:outline-none">
-                                <span class="text-slate-400 text-[10px] ml-0.5">Tấn</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-900/90 p-1.5 rounded border border-slate-800 text-[10px] flex items-center justify-between">
-                        <div>
-                            <span class="text-slate-400">Sức Nâng Dây Tời Palăng:</span>
-                            <b id="val-reeving-capacity" class="font-mono text-emerald-400">42.0 T</b>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-slate-400">Lực Kéo Đơn Nhánh:</span>
-                            <b class="font-mono text-sky-300">10.5 T / line</b>
-                        </div>
-                    </div>
-                </div>
-
-
-
-                </div>
-            </div>
         </aside>
 
     </div>
@@ -2714,3 +2714,4 @@
     <script type="module" src="/src/main.js"></script>
 </body>
 </html>
+
