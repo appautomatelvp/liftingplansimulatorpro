@@ -1,0 +1,24 @@
+# Bus OBJ companion materials
+newmtl base2
+Ka 0.04 0.04 0.045
+Kd 0.16 0.17 0.19
+Ks 0.22 0.22 0.22
+Ns 36.0
+d 1.0
+illum 2
+
+newmtl bus
+Ka 0.18 0.03 0.03
+Kd 0.78 0.12 0.12
+Ks 0.28 0.28 0.28
+Ns 48.0
+d 1.0
+illum 2
+
+newmtl glass
+Ka 0.08 0.10 0.12
+Kd 0.35 0.45 0.55
+Ks 0.70 0.70 0.70
+Ns 120.0
+d 0.35
+illum 2

@@ -1,0 +1,40 @@
+# Reefer 40HC Realistic V2 materials
+newmtl Reefer_White
+Ka 0.23 0.235 0.24
+Kd 0.93 0.95 0.96
+Ks 0.32 0.32 0.32
+Ns 56.0
+d 1.0
+illum 2
+
+newmtl Dark_Chassis
+Ka 0.03 0.035 0.04
+Kd 0.14 0.16 0.18
+Ks 0.25 0.25 0.25
+Ns 40.0
+d 1.0
+illum 2
+
+newmtl Galvanized_Steel
+Ka 0.18 0.19 0.20
+Kd 0.72 0.76 0.80
+Ks 0.55 0.55 0.55
+Ns 90.0
+d 1.0
+illum 2
+
+newmtl Control_Grey
+Ka 0.10 0.11 0.12
+Kd 0.42 0.45 0.48
+Ks 0.28 0.28 0.28
+Ns 48.0
+d 1.0
+illum 2
+
+newmtl Black_Rubber
+Ka 0.02 0.02 0.025
+Kd 0.08 0.09 0.10
+Ks 0.08 0.08 0.08
+Ns 16.0
+d 1.0
+illum 2

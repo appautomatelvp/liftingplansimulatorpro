@@ -1,0 +1,64 @@
+# STS Spreader material library (RAL / industrial finishes)
+newmtl Yellow_RAL1028
+Ka 0.22 0.14 0.01
+Kd 0.90 0.58 0.04
+Ks 0.35 0.35 0.35
+Ns 64.0
+d 1.0
+illum 2
+
+newmtl Black_Hazard
+Ka 0.02 0.02 0.02
+Kd 0.08 0.08 0.08
+Ks 0.12 0.12 0.12
+Ns 24.0
+d 1.0
+illum 2
+
+newmtl DarkSteel_Twistlock
+Ka 0.05 0.055 0.06
+Kd 0.22 0.24 0.27
+Ks 0.45 0.45 0.45
+Ns 80.0
+d 1.0
+illum 2
+
+newmtl Chrome_CylinderRod
+Ka 0.22 0.23 0.24
+Kd 0.78 0.80 0.82
+Ks 0.85 0.85 0.85
+Ns 140.0
+d 1.0
+illum 2
+
+newmtl Grey_Cabinet_RAL7035
+Ka 0.16 0.17 0.17
+Kd 0.65 0.68 0.69
+Ks 0.28 0.28 0.28
+Ns 48.0
+d 1.0
+illum 2
+
+newmtl Red_Flipper_RAL3020
+Ka 0.18 0.03 0.02
+Kd 0.78 0.12 0.08
+Ks 0.30 0.30 0.30
+Ns 52.0
+d 1.0
+illum 2
+
+newmtl White_LogoPlate
+Ka 0.24 0.24 0.24
+Kd 0.94 0.94 0.95
+Ks 0.25 0.25 0.25
+Ns 40.0
+d 1.0
+illum 2
+
+newmtl Blue_LogoAccent
+Ka 0.02 0.06 0.14
+Kd 0.10 0.35 0.72
+Ks 0.30 0.30 0.30
+Ns 52.0
+d 1.0
+illum 2

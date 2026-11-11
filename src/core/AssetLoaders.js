@@ -26,18 +26,18 @@ export class AssetLoaders {
         if (!match) return null;
         const mtlFile = match[1].trim().replace(/\\/g, '/').split('/').pop();
         if (!mtlFile) return null;
-        return new Promise((resolve) => {
-            this.mtlLoader.setPath(basePath);
-            this.mtlLoader.load(
-                mtlFile,
-                (materials) => {
-                    try { materials.preload(); } catch (_) { /* ignore */ }
-                    resolve(materials);
-                },
-                undefined,
-                () => resolve(null)
-            );
-        });
+        const mtlUrl = `${basePath}${mtlFile}`;
+        // Prefetch via fetch so a missing MTL does not spam console 404 from MTLLoader
+        try {
+            const res = await fetch(mtlUrl);
+            if (!res.ok) return null;
+            const mtlText = await res.text();
+            const materials = this.mtlLoader.parse(mtlText, basePath);
+            try { materials.preload(); } catch (_) { /* ignore */ }
+            return materials;
+        } catch (_) {
+            return null;
+        }
     }
 
     /**
