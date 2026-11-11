@@ -187,7 +187,7 @@ export class HullOptimizer {
         const INTERIOR_NAME_REGEX = /(int|_int|\(int\)|interior|inside|in_\w+|seat|chair|bench|passenger|steering|dashboard|dash\b|pedal|console_int|cockpit|cabin_int|engine|motor_int|piston|crank|gearbox|transmission|exhaust_int|pipe_int|battery_int|luggage_rack|bed_int)/i;
         
         // Critical Exterior Components to Never Cull
-        const EXTERIOR_PROTECTED_REGEX = /(body|hull|shell|outer|exterior|frame|chassis|skin|panel|roof|wall|glass|window|windshield|windscreen|wheel|tire|tyre|rim|w_f|w_r|track|spreader|beam|lug|padeye)/i;
+        const EXTERIOR_PROTECTED_REGEX = /(body|hull|shell|outer|exterior|frame|chassis|skin|panel|roof|wall|glass|window|windshield|windscreen|wheel|tire|tyre|rim|w_f|w_r|track|spreader|beam|lug|padeye|tank|barrel|vessel|corrugat|casting|door|floor|deck|hatch|bulk|platform|ladder|catwalk|reefer|thermo|lock|gasket|wood)/i;
 
         const insetMargin = options.insetMargin != null ? options.insetMargin : 0.04;
         const innerBox = new THREE.Box3(
@@ -283,7 +283,7 @@ export class HullOptimizer {
         const numericMaxTris = typeof maxTris === 'number' ? maxTris : parseInt(maxTris, 10);
 
         // Critical Exterior Components to Protect from Decimation
-        const EXTERIOR_PROTECTED_REGEX = /(body|hull|shell|outer|exterior|frame|chassis|skin|panel|roof|wall|glass|window|windshield|windscreen|wheel|tire|tyre|rim|w_f|w_r|track|spreader|beam|lug|padeye)/i;
+        const EXTERIOR_PROTECTED_REGEX = /(body|hull|shell|outer|exterior|frame|chassis|skin|panel|roof|wall|glass|window|windshield|windscreen|wheel|tire|tyre|rim|w_f|w_r|track|spreader|beam|lug|padeye|tank|barrel|vessel|corrugat|casting|door|floor|deck|hatch|bulk|platform|ladder|catwalk|reefer|thermo|lock|gasket|wood)/i;
 
         // If user explicitly specified a finite triangle budget (e.g. 25000, 50000) and stripOnly is false:
         if (!stripOnly && !isNaN(numericMaxTris) && numericMaxTris > 0 && currentTris > numericMaxTris) {

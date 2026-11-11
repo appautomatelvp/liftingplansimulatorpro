@@ -204,6 +204,7 @@ export class PBRMaterialFactory {
     /**
      * Builds realistic helical strand Normal Map & PBR Material for Steel Wire Ropes.
      * Matches IWRC 6x36 crane hoist and rigging slings.
+     * Features: Greased industrial lubricant tint, deep helical valleys, micro-scratches.
      */
     createWireRopeMaterial() {
         const cacheKey = 'wire_rope_pbr';
@@ -211,41 +212,314 @@ export class PBRMaterialFactory {
             return this.cachedMaterials.get(cacheKey);
         }
 
-        const size = 256;
-        const cvs = this.createCanvas(size, size);
-        const ctx = cvs.getContext('2d');
-        ctx.fillStyle = 'rgb(128, 128, 255)';
-        ctx.fillRect(0, 0, size, size);
+        const size = 512;
+        const cvsBase = this.createCanvas(size, size);
+        const ctxBase = cvsBase.getContext('2d');
+        const cvsNorm = this.createCanvas(size, size);
+        const ctxNorm = cvsNorm.getContext('2d');
+        const cvsRough = this.createCanvas(size, size);
+        const ctxRough = cvsRough.getContext('2d');
 
-        // Diagonal spiral strand ridges
-        const strandCount = 8;
-        const strandWidth = size / strandCount;
+        // 1. Albedo: Greased steel with graphite/brown tint in valleys
+        ctxBase.fillStyle = '#6e7885'; // Steel base
+        ctxBase.fillRect(0, 0, size, size);
+
+        // 2. Normal: Diagonal 6-strand helical valleys + internal 36-wire micro-grooves
+        ctxNorm.fillStyle = 'rgb(128, 128, 255)';
+        ctxNorm.fillRect(0, 0, size, size);
+
+        // 3. Roughness: Glossy steel ridges (0.24) vs matte grease in valleys (0.68)
+        ctxRough.fillStyle = 'rgb(65, 65, 65)';
+        ctxRough.fillRect(0, 0, size, size);
+
+        const strandCount = 6;
+        const strandW = size / strandCount;
+
         for (let i = 0; i < strandCount * 2; i++) {
-            const grad = ctx.createLinearGradient(0, i * strandWidth, size, (i - 1) * strandWidth);
-            grad.addColorStop(0.0, 'rgb(70, 128, 240)');
-            grad.addColorStop(0.5, 'rgb(128, 128, 255)');
-            grad.addColorStop(1.0, 'rgb(190, 128, 240)');
-            ctx.fillStyle = grad;
-            ctx.beginPath();
-            ctx.moveTo(0, i * strandWidth);
-            ctx.lineTo(size, (i - 1) * strandWidth);
-            ctx.lineTo(size, (i - 1) * strandWidth + strandWidth * 0.7);
-            ctx.lineTo(0, i * strandWidth + strandWidth * 0.7);
-            ctx.fill();
+            const y0 = i * strandW;
+            const y1 = (i - 1) * strandW;
+
+            // Valley groove shading on Base
+            const gradBase = ctxBase.createLinearGradient(0, y0, size, y1);
+            gradBase.addColorStop(0.0, '#221f1d'); // Dark graphite lubricant
+            gradBase.addColorStop(0.25, '#7f8b9b'); // Polished steel crown
+            gradBase.addColorStop(0.5, '#6b7583');
+            gradBase.addColorStop(0.75, '#8a96a6');
+            gradBase.addColorStop(1.0, '#221f1d');
+            ctxBase.fillStyle = gradBase;
+            ctxBase.beginPath();
+            ctxBase.moveTo(0, y0);
+            ctxBase.lineTo(size, y1);
+            ctxBase.lineTo(size, y1 + strandW);
+            ctxBase.lineTo(0, y0 + strandW);
+            ctxBase.fill();
+
+            // Normal map ridge gradient
+            const gradNorm = ctxNorm.createLinearGradient(0, y0, size, y1);
+            gradNorm.addColorStop(0.0, 'rgb(60, 128, 230)');
+            gradNorm.addColorStop(0.5, 'rgb(128, 128, 255)');
+            gradNorm.addColorStop(1.0, 'rgb(195, 128, 230)');
+            ctxNorm.fillStyle = gradNorm;
+            ctxNorm.beginPath();
+            ctxNorm.moveTo(0, y0);
+            ctxNorm.lineTo(size, y1);
+            ctxNorm.lineTo(size, y1 + strandW);
+            ctxNorm.lineTo(0, y0 + strandW);
+            ctxNorm.fill();
+
+            // Roughness gradient: darker (shinier) in center, rough in crevice
+            const gradRough = ctxRough.createLinearGradient(0, y0, size, y1);
+            gradRough.addColorStop(0.0, 'rgb(160, 160, 160)'); // grease
+            gradRough.addColorStop(0.5, 'rgb(60, 60, 60)');     // steel shine
+            gradRough.addColorStop(1.0, 'rgb(160, 160, 160)');
+            ctxRough.fillStyle = gradRough;
+            ctxRough.beginPath();
+            ctxRough.moveTo(0, y0);
+            ctxRough.lineTo(size, y1);
+            ctxRough.lineTo(size, y1 + strandW);
+            ctxRough.lineTo(0, y0 + strandW);
+            ctxRough.fill();
         }
 
-        const strandNormal = new THREE.CanvasTexture(cvs);
-        strandNormal.colorSpace = THREE.NoColorSpace;
-        strandNormal.wrapS = strandNormal.wrapT = THREE.RepeatWrapping;
-        strandNormal.repeat.set(1, 16); // Tile along the length of rope
-        strandNormal.anisotropy = this.maxAnisotropy;
+        const baseMap = new THREE.CanvasTexture(cvsBase);
+        baseMap.colorSpace = THREE.SRGBColorSpace;
+        baseMap.wrapS = baseMap.wrapT = THREE.RepeatWrapping;
+        baseMap.repeat.set(1, 16);
+        baseMap.anisotropy = this.maxAnisotropy;
+
+        const normalMap = new THREE.CanvasTexture(cvsNorm);
+        normalMap.colorSpace = THREE.NoColorSpace;
+        normalMap.wrapS = normalMap.wrapT = THREE.RepeatWrapping;
+        normalMap.repeat.set(1, 16);
+        normalMap.anisotropy = this.maxAnisotropy;
+
+        const roughMap = new THREE.CanvasTexture(cvsRough);
+        roughMap.colorSpace = THREE.NoColorSpace;
+        roughMap.wrapS = roughMap.wrapT = THREE.RepeatWrapping;
+        roughMap.repeat.set(1, 16);
+
+        const material = new THREE.MeshPhysicalMaterial({
+            map: baseMap,
+            normalMap,
+            normalScale: new THREE.Vector2(1.15, 1.15),
+            roughnessMap: roughMap,
+            roughness: 0.30,
+            metalness: 0.90,
+            clearcoat: 0.20,
+            clearcoatRoughness: 0.35
+        });
+
+        this.cachedMaterials.set(cacheKey, material);
+        return material;
+    }
+
+    /**
+     * Builds Grade 80/100 Forged Alloy Steel Chain Material with contact wear.
+     * @param {'body' | 'powder_red' | 'powder_yellow'} variant
+     */
+    createChainAlloyMaterial(variant = 'body') {
+        const cacheKey = `chain_alloy_${variant}`;
+        if (this.cachedMaterials.has(cacheKey)) {
+            return this.cachedMaterials.get(cacheKey);
+        }
+
+        if (variant === 'powder_red') {
+            const mat = new THREE.MeshPhysicalMaterial({
+                color: 0xdc2626,
+                metalness: 0.42,
+                roughness: 0.22,
+                clearcoat: 0.48,
+                clearcoatRoughness: 0.18
+            });
+            this.cachedMaterials.set(cacheKey, mat);
+            return mat;
+        }
+
+        if (variant === 'powder_yellow') {
+            const mat = new THREE.MeshPhysicalMaterial({
+                color: 0xeab308,
+                metalness: 0.42,
+                roughness: 0.22,
+                clearcoat: 0.48,
+                clearcoatRoughness: 0.18
+            });
+            this.cachedMaterials.set(cacheKey, mat);
+            return mat;
+        }
+
+        // Industrial manganese-phosphate quenched body with high-friction edge wear
+        const size = 256;
+        const cvsBase = this.createCanvas(size, size);
+        const ctxBase = cvsBase.getContext('2d');
+        ctxBase.fillStyle = '#2b303a'; // Dark quenched alloy steel
+        ctxBase.fillRect(0, 0, size, size);
+
+        // Wear highlights at contact crown zones
+        const grad = ctxBase.createLinearGradient(0, 0, size, size);
+        grad.addColorStop(0.0, '#788496'); // Polished steel exposure
+        grad.addColorStop(0.3, '#2a2e37');
+        grad.addColorStop(0.7, '#24272f');
+        grad.addColorStop(1.0, '#788496');
+        ctxBase.fillStyle = grad;
+        ctxBase.fillRect(0, 0, size, size);
+
+        const baseMap = new THREE.CanvasTexture(cvsBase);
+        baseMap.colorSpace = THREE.SRGBColorSpace;
+        baseMap.wrapS = baseMap.wrapT = THREE.RepeatWrapping;
+
+        const mat = new THREE.MeshPhysicalMaterial({
+            map: baseMap,
+            color: 0x3e4554,
+            metalness: 0.88,
+            roughness: 0.32,
+            clearcoat: 0.16,
+            clearcoatRoughness: 0.30
+        });
+
+        this.cachedMaterials.set(cacheKey, mat);
+        return mat;
+    }
+
+    /**
+     * Builds High-Density Cross-Weave Polyester Web Sling Material per EN 1492-1.
+     * Features: Distinct continuous black capacity stripes, herringbone weave, edge selvedges.
+     */
+    createWebSlingMaterial(colorHex = '#16a34a', stripeCount = 2) {
+        const cacheKey = `web_sling_${colorHex}_${stripeCount}`;
+        if (this.cachedMaterials.has(cacheKey)) {
+            return this.cachedMaterials.get(cacheKey);
+        }
+
+        const size = 512;
+        const cvsBase = this.createCanvas(size, size);
+        const ctxBase = cvsBase.getContext('2d');
+        const cvsNorm = this.createCanvas(size, size);
+        const ctxNorm = cvsNorm.getContext('2d');
+
+        // 1. Base fabric color
+        ctxBase.fillStyle = colorHex;
+        ctxBase.fillRect(0, 0, size, size);
+
+        // Reinforced border selvedge (left & right 10%)
+        ctxBase.fillStyle = 'rgba(0, 0, 0, 0.16)';
+        ctxBase.fillRect(0, 0, 48, size);
+        ctxBase.fillRect(size - 48, 0, 48, size);
+
+        // Fine cross-weave textile herringbone pattern
+        ctxBase.fillStyle = 'rgba(255, 255, 255, 0.08)';
+        for (let y = 0; y < size; y += 8) {
+            for (let x = 0; x < size; x += 16) {
+                if ((y / 8) % 2 === 0) {
+                    ctxBase.fillRect(x, y, 8, 4);
+                } else {
+                    ctxBase.fillRect(x + 4, y, 8, 4);
+                }
+            }
+        }
+
+        // 2. Continuous black capacity stripes along length (EN 1492-1 rule: 1 line = 1 Tonne)
+        const sCount = Math.max(0, Math.min(8, stripeCount || 0));
+        if (sCount > 0) {
+            ctxBase.fillStyle = '#111827';
+            const centerAreaW = size - 140;
+            const step = centerAreaW / (sCount + 1);
+            for (let s = 1; s <= sCount; s++) {
+                const sx = 70 + s * step;
+                ctxBase.fillRect(sx - 3, 0, 6, size);
+            }
+        }
+
+        // 3. Normal map: Cross-stitch fabric ridges
+        ctxNorm.fillStyle = 'rgb(128, 128, 255)';
+        ctxNorm.fillRect(0, 0, size, size);
+        for (let y = 0; y < size; y += 8) {
+            ctxNorm.fillStyle = 'rgb(115, 128, 255)';
+            ctxNorm.fillRect(0, y, size, 2);
+            ctxNorm.fillStyle = 'rgb(142, 128, 255)';
+            ctxNorm.fillRect(0, y + 4, size, 2);
+        }
+
+        const baseMap = new THREE.CanvasTexture(cvsBase);
+        baseMap.colorSpace = THREE.SRGBColorSpace;
+        baseMap.wrapS = baseMap.wrapT = THREE.RepeatWrapping;
+        baseMap.repeat.set(1, 8);
+        baseMap.anisotropy = this.maxAnisotropy;
+
+        const normalMap = new THREE.CanvasTexture(cvsNorm);
+        normalMap.colorSpace = THREE.NoColorSpace;
+        normalMap.wrapS = normalMap.wrapT = THREE.RepeatWrapping;
+        normalMap.repeat.set(1, 8);
 
         const material = new THREE.MeshStandardMaterial({
-            color: 0x94a3b8,
-            metalness: 0.92,
-            roughness: 0.24,
-            normalMap: strandNormal,
-            normalScale: new THREE.Vector2(0.65, 0.65)
+            map: baseMap,
+            normalMap,
+            normalScale: new THREE.Vector2(0.80, 0.80),
+            roughness: 0.94,
+            metalness: 0.02,
+            side: THREE.DoubleSide
+        });
+
+        this.cachedMaterials.set(cacheKey, material);
+        return material;
+    }
+
+    /**
+     * Builds Seamless Protective Sleeve Round Sling Material per EN 1492-2.
+     * Features: Smooth woven Nylon casing, bunched wrinkle shading, NO black capacity stripes.
+     */
+    createRoundSlingMaterial(colorHex = '#2563eb') {
+        const cacheKey = `round_sling_${colorHex}`;
+        if (this.cachedMaterials.has(cacheKey)) {
+            return this.cachedMaterials.get(cacheKey);
+        }
+
+        const size = 512;
+        const cvsBase = this.createCanvas(size, size);
+        const ctxBase = cvsBase.getContext('2d');
+        const cvsNorm = this.createCanvas(size, size);
+        const ctxNorm = cvsNorm.getContext('2d');
+
+        // Base solid color
+        ctxBase.fillStyle = colorHex;
+        ctxBase.fillRect(0, 0, size, size);
+
+        // Bunched fabric sleeve wrinkles (circumferential shading bands)
+        for (let y = 0; y < size; y += 24) {
+            const grad = ctxBase.createLinearGradient(0, y, 0, y + 24);
+            grad.addColorStop(0.0, 'rgba(0, 0, 0, 0.18)');
+            grad.addColorStop(0.45, 'rgba(255, 255, 255, 0.12)');
+            grad.addColorStop(1.0, 'rgba(0, 0, 0, 0.18)');
+            ctxBase.fillStyle = grad;
+            ctxBase.fillRect(0, y, size, 24);
+        }
+
+        // Normal map: Soft wrinkle ripples
+        ctxNorm.fillStyle = 'rgb(128, 128, 255)';
+        ctxNorm.fillRect(0, 0, size, size);
+        for (let y = 0; y < size; y += 24) {
+            ctxNorm.fillStyle = 'rgb(128, 105, 255)';
+            ctxNorm.fillRect(0, y, size, 6);
+            ctxNorm.fillStyle = 'rgb(128, 150, 255)';
+            ctxNorm.fillRect(0, y + 12, size, 6);
+        }
+
+        const baseMap = new THREE.CanvasTexture(cvsBase);
+        baseMap.colorSpace = THREE.SRGBColorSpace;
+        baseMap.wrapS = baseMap.wrapT = THREE.RepeatWrapping;
+        baseMap.repeat.set(1, 6);
+        baseMap.anisotropy = this.maxAnisotropy;
+
+        const normalMap = new THREE.CanvasTexture(cvsNorm);
+        normalMap.colorSpace = THREE.NoColorSpace;
+        normalMap.wrapS = normalMap.wrapT = THREE.RepeatWrapping;
+        normalMap.repeat.set(1, 6);
+
+        const material = new THREE.MeshStandardMaterial({
+            map: baseMap,
+            normalMap,
+            normalScale: new THREE.Vector2(0.65, 0.65),
+            roughness: 0.88,
+            metalness: 0.02
         });
 
         this.cachedMaterials.set(cacheKey, material);

@@ -65,7 +65,120 @@ export const SLING_MATERIALS = {
     }
 };
 
+/**
+ * International Sling Color Coding & Geometric Matrix per EN 1492-1 (Web) & EN 1492-2 (Round)
+ */
+export const EN1492_COLOR_TABLE = [
+    { maxWllT: 1.0, colorNameVi: 'Tím (1T)', colorHex: '#9333ea', stripeCount: 1, webWidthMm: 30, webThickMm: 5.0, roundDiaMm: 24, linearMassWeb: 0.24, linearMassRound: 0.32 },
+    { maxWllT: 2.0, colorNameVi: 'Xanh lá (2T)', colorHex: '#16a34a', stripeCount: 2, webWidthMm: 60, webThickMm: 6.0, roundDiaMm: 32, linearMassWeb: 0.48, linearMassRound: 0.58 },
+    { maxWllT: 3.0, colorNameVi: 'Vàng (3T)', colorHex: '#eab308', stripeCount: 3, webWidthMm: 90, webThickMm: 7.0, roundDiaMm: 40, linearMassWeb: 0.74, linearMassRound: 0.85 },
+    { maxWllT: 4.0, colorNameVi: 'Xám (4T)', colorHex: '#64748b', stripeCount: 4, webWidthMm: 120, webThickMm: 7.5, roundDiaMm: 46, linearMassWeb: 0.98, linearMassRound: 1.12 },
+    { maxWllT: 5.0, colorNameVi: 'Đỏ (5T)', colorHex: '#dc2626', stripeCount: 5, webWidthMm: 150, webThickMm: 8.0, roundDiaMm: 52, linearMassWeb: 1.25, linearMassRound: 1.42 },
+    { maxWllT: 6.0, colorNameVi: 'Nâu (6T)', colorHex: '#92400e', stripeCount: 6, webWidthMm: 180, webThickMm: 8.5, roundDiaMm: 58, linearMassWeb: 1.52, linearMassRound: 1.70 },
+    { maxWllT: 8.0, colorNameVi: 'Xanh dương (8T)', colorHex: '#2563eb', stripeCount: 8, webWidthMm: 240, webThickMm: 9.0, roundDiaMm: 66, linearMassWeb: 2.05, linearMassRound: 2.25 },
+    { maxWllT: Infinity, colorNameVi: 'Cam (Heavy 10T+)', colorHex: '#ea580c', stripeCount: 0, webWidthMm: 300, webThickMm: 10.0, roundDiaMm: 85, linearMassWeb: 2.80, linearMassRound: 3.10 }
+];
+
+export function getEN1492ColorSpec(wllT = 2.0) {
+    const wll = Math.max(0.1, Number(wllT) || 2.0);
+    for (const entry of EN1492_COLOR_TABLE) {
+        if (wll <= entry.maxWllT) return entry;
+    }
+    return EN1492_COLOR_TABLE[EN1492_COLOR_TABLE.length - 1];
+}
+
+export function getSlingPhysicalSpec(slingType = 'wire', wllT = 15.0, customDiaMm = null, grade = '') {
+    const type = slingType || 'wire';
+    const wll = Math.max(0.2, Number(wllT) || 15.0);
+    const enSpec = getEN1492ColorSpec(wll);
+
+    let diaMm = customDiaMm;
+    let thicknessMm = 0;
+    let modulusE_GPa = 105.0;
+    let materialId = 'wire';
+    let colorHex = '#94a3b8';
+    let colorNameVi = 'Thép mạ kẽm / IWRC';
+    let stripeCount = 0;
+    let linearMassKgPerM = 0;
+    let endHardwareMassKg = 0;
+
+    if (type === 'chain') {
+        materialId = 'chain';
+        modulusE_GPa = 195.0;
+        colorHex = '#272b33';
+        colorNameVi = (grade === 'g100') ? 'Xích hợp kim Grade 100' : 'Xích hợp kim Grade 80';
+        const k = (grade === 'g100') ? 0.0398 : 0.0318;
+        if (!diaMm || diaMm <= 0) diaMm = Math.max(6, Math.round(Math.sqrt(wll / k)));
+        thicknessMm = diaMm;
+        linearMassKgPerM = 0.0218 * diaMm * diaMm;
+        endHardwareMassKg = 0.0085 * diaMm * diaMm;
+    } else if (type === 'web') {
+        materialId = (grade === 'hmpe') ? 'dyneema' : 'poly';
+        modulusE_GPa = (grade === 'hmpe') ? 32.0 : 2.8;
+        colorHex = enSpec.colorHex;
+        colorNameVi = enSpec.colorNameVi;
+        stripeCount = enSpec.stripeCount;
+        if (!diaMm || diaMm <= 0) diaMm = enSpec.webWidthMm;
+        thicknessMm = enSpec.webThickMm;
+        linearMassKgPerM = 1.38e-3 * diaMm * thicknessMm;
+        endHardwareMassKg = 0.15 + (diaMm / 300) * 0.45;
+    } else if (type === 'round_sling') {
+        materialId = (grade === 'hmpe') ? 'dyneema' : 'poly';
+        modulusE_GPa = (grade === 'hmpe') ? 32.0 : 2.8;
+        colorHex = enSpec.colorHex;
+        colorNameVi = enSpec.colorNameVi;
+        stripeCount = 0; // Round sling does not have black capacity stripes per EN 1492-2
+        if (!diaMm || diaMm <= 0) diaMm = enSpec.roundDiaMm;
+        thicknessMm = diaMm;
+        linearMassKgPerM = 0.00054 * diaMm * diaMm;
+        endHardwareMassKg = 0.18;
+    } else if (type === 'grommet') {
+        materialId = 'wire';
+        modulusE_GPa = 105.0;
+        colorHex = '#6e7885';
+        colorNameVi = 'Cáp thép vòng kín IMCA M179';
+        if (!diaMm || diaMm <= 0) diaMm = Math.max(10, Math.round(Math.sqrt(wll / (1.75 * 0.0163))));
+        thicknessMm = diaMm;
+        linearMassKgPerM = 2 * 0.00425 * diaMm * diaMm;
+        endHardwareMassKg = 0.0018 * diaMm * diaMm + 2 * (0.00425 * diaMm * diaMm * 0.35);
+    } else { // 'wire'
+        materialId = 'wire';
+        modulusE_GPa = (grade === 'fc' || String(grade).startsWith('fc')) ? 90.0 : 110.0;
+        colorHex = '#6e7885';
+        colorNameVi = 'Cáp thép 6x36 IWRC';
+        if (!diaMm || diaMm <= 0) diaMm = Math.max(8, Math.round(Math.sqrt((wll * 5.0) / (1.960 * 0.356))));
+        thicknessMm = diaMm;
+        // User confirmed standard: linear mass factor M = 0.0040 kg/m/mm² (ISO 2408 6x36 IWRC)
+        linearMassKgPerM = (grade === 'fc' || String(grade).startsWith('fc')) ? (0.0036 * diaMm * diaMm) : (0.0040 * diaMm * diaMm);
+        endHardwareMassKg = 0.0028 * diaMm * diaMm;
+    }
+
+    return {
+        slingType: type,
+        materialId,
+        modulusE_GPa,
+        diaMm,
+        thicknessMm,
+        colorHex,
+        colorNameVi,
+        stripeCount,
+        linearMassKgPerM,
+        endHardwareMassKg,
+        computeMassKg: (lengthM = 2.5, parts = 1) => {
+            const L = Math.max(0.3, Number(lengthM) || 2.5);
+            const p = Math.max(1, Math.min(4, Number(parts) || 1));
+            return p * (linearMassKgPerM * L + endHardwareMassKg);
+        }
+    };
+}
+
 export class ElasticSlingEngine {
+    static getEN1492ColorSpec = getEN1492ColorSpec;
+    static getSlingPhysicalSpec = getSlingPhysicalSpec;
+    static calculateElongation(tT, lM, mType, dMm) {
+        return new ElasticSlingEngine().calculateElongation(tT, lM, mType, dMm);
+    }
+
     constructor() {
         this.gravity = 9.80665;
     }
@@ -105,19 +218,32 @@ export class ElasticSlingEngine {
      * @returns {{ deltaL_mm: number, strainPct: number, stretchedLengthM: number }}
      */
     calculateElongation(tensionTonnes, nominalLengthM, materialType = 'wire', diameterMm = 28) {
+        let tT = tensionTonnes;
+        let lM = nominalLengthM;
+        let mType = materialType;
+        let dMm = diameterMm;
+
+        // Support both object argument ({ tensionT, lengthM, diaMm, material }) and positional arguments
+        if (tensionTonnes && typeof tensionTonnes === 'object') {
+            tT = tensionTonnes.tensionT ?? tensionTonnes.tensionTonnes ?? 0;
+            lM = tensionTonnes.lengthM ?? tensionTonnes.nominalLengthM ?? 5.0;
+            mType = tensionTonnes.material ?? tensionTonnes.materialType ?? 'wire';
+            dMm = tensionTonnes.diaMm ?? tensionTonnes.diameterMm ?? 28;
+        }
+
         const aliases = {
             wire_rope_sling: 'wire', webbing_sling: 'web', synthetic_web_sling: 'web',
             chain_sling: 'chain', grommet_sling: 'grommet', polyester: 'poly'
         };
-        const normalizedType = aliases[materialType] || materialType;
+        const normalizedType = aliases[mType] || mType;
         const mat = SLING_MATERIALS[normalizedType?.toUpperCase()] ||
                     Object.values(SLING_MATERIALS).find(m => m.id === normalizedType) ||
                     SLING_MATERIALS.WIRE_ROPE_IWRC;
 
-        const tensionN = Math.max(0, Number(tensionTonnes) || 0) * 1000 * this.gravity;
-        const L0 = Math.max(0.5, Number(nominalLengthM) || 5.0);
+        const tensionN = Math.max(0, Number(tT) || 0) * 1000 * this.gravity;
+        const L0 = Math.max(0.5, Number(lM) || 5.0);
         const E = mat.modulusE_GPa * 1e9; // N/m²
-        const A = ElasticSlingEngine.getEffectiveAreaM2(mat.id, diameterMm);
+        const A = ElasticSlingEngine.getEffectiveAreaM2(mat.id, dMm);
 
         const deltaL_m = (tensionN * L0) / (E * A);
         const deltaL_mm = Math.round(deltaL_m * 1000 * 10) / 10;
@@ -208,7 +334,7 @@ export class ElasticSlingEngine {
      */
     evaluateFourLegIndeterminacy(symmetricTensionsT, isRigidPayload = true, skewFactor = 1.35) {
         if (!Array.isArray(symmetricTensionsT) || symmetricTensionsT.length !== 4) {
-            return { realisticTensionsT: symmetricTensionsT, hasSkewRisk: false };
+            return { realisticTensionsT: symmetricTensionsT, heavyPairSharePct: 50.0, hasSkewRisk: false };
         }
 
         if (!isRigidPayload) {
@@ -216,6 +342,7 @@ export class ElasticSlingEngine {
             return {
                 realisticTensionsT: symmetricTensionsT.map(t => Math.round(t * 100) / 100),
                 skewFactor: 1.0,
+                heavyPairSharePct: 50.0,
                 hasSkewRisk: false,
                 skewDescriptionVi: 'Hàng có độ mềm dẻo, tải trọng phân bổ đều 4 nhánh.'
             };
@@ -226,6 +353,18 @@ export class ElasticSlingEngine {
         // DNV-ST-N001 Rule: Assume Diagonal 1 carries the heavy share (SF * base) and Diagonal 2 carries the remainder
         const totalStaticT = symmetricTensionsT.reduce((a, b) => a + b, 0);
         const sf = Math.max(1.15, Math.min(1.50, Number(skewFactor) || 1.35));
+
+        // When load is at rest or zero tension, retain theoretical DNV-ST-N001 skew share (default ~67.5%)
+        if (totalStaticT < 0.001) {
+            const defaultSharePct = Math.round((sf / 2) * 1000) / 10;
+            return {
+                realisticTensionsT: [0, 0, 0, 0],
+                skewFactor: sf,
+                heavyPairSharePct: defaultSharePct,
+                hasSkewRisk: defaultSharePct > 65.0,
+                skewDescriptionVi: `Theo chuẩn DNV-ST-N001: 2 nhánh đường chéo gánh ${defaultSharePct}% tổng tải trọng do tính chất siêu tĩnh của vật thể cứng.`
+            };
+        }
 
         // Heavily loaded diagonal takes: (totalStaticT / 2) * (sf / 2)
         // Or each leg in the heavy diagonal is multiplied by sf:

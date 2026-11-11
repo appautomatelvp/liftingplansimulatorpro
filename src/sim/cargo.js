@@ -18,32 +18,276 @@
             });
         }
 
+        /**
+         * ISO 1161 corner fittings — FIXED world size on every container length.
+         * ~178 mm cube with aperture slots. No oversized black posts (those looked wrong vs CAD 20ft).
+         */
+        /** ISO 1161 top/side aperture centres from outer L×W (not phủ bì edge). */
+        function isoCornerHoleHalf(L, W) {
+            let spanX = 5.853;
+            if (L >= 13.2) spanX = 13.557;
+            else if (L >= 9.0) spanX = 11.985;
+            const spanZ = 2.259;
+            // Keep holes inside outer shell with standard casting inset
+            const hx = Math.min(spanX * 0.5, L * 0.5 - 0.05);
+            const hz = Math.min(spanZ * 0.5, W * 0.5 - 0.05);
+            return { hx, hz, spanX: hx * 2, spanZ: hz * 2 };
+        }
+
+        /** Stamp ISO top twistlock holes on CAD containers (hole centres = ISO 1161 pitch). */
+        function stampIsoTopTwistlockHoles(group, L, W, H) {
+            const { hx, hz } = isoCornerHoleHalf(L, W);
+            const holeMat = new THREE.MeshStandardMaterial({
+                color: 0x05070a, roughness: 0.92, metalness: 0.15, side: THREE.DoubleSide
+            });
+            const ringMat = new THREE.MeshStandardMaterial({
+                color: 0x1f2937, roughness: 0.55, metalness: 0.6, side: THREE.DoubleSide
+            });
+            const stamp = new THREE.Group();
+            stamp.name = 'ISO_TopTwistlockHoles';
+            [[1, 1], [-1, 1], [-1, -1], [1, -1]].forEach((s, i) => {
+                const g = new THREE.Group();
+                g.name = `ISO_Hole_${i}`;
+                g.position.set(s[0] * hx, H / 2 + 0.002, s[1] * hz);
+                const recess = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.02, 20), holeMat);
+                const ring = new THREE.Mesh(new THREE.RingGeometry(0.052, 0.078, 20), ringMat);
+                ring.rotation.x = -Math.PI / 2;
+                ring.position.y = 0.012;
+                g.add(recess, ring);
+                stamp.add(g);
+            });
+            stamp.traverse(o => { o.userData.noLugWeld = true; });
+            group.add(stamp);
+            return stamp;
+        }
+
         function addCornerCastings(group, L, W, H) {
-            const boxGeo = new THREE.BoxGeometry(0.18, 0.18, 0.18);
-            const holeGeoX = new THREE.BoxGeometry(0.19, 0.06, 0.09);
-            const holeGeoY = new THREE.BoxGeometry(0.10, 0.19, 0.07);
-            const holeGeoZ = new THREE.BoxGeometry(0.09, 0.06, 0.19);
+            const CAST = 0.178;
+            const half = CAST * 0.5;
+            const { hx, hz } = isoCornerHoleHalf(L, W);
+            const boxGeo = new THREE.BoxGeometry(CAST, CAST, CAST);
+            const holeGeoX = new THREE.BoxGeometry(CAST + 0.01, 0.066, 0.092);
+            const holeGeoY = new THREE.BoxGeometry(0.105, CAST + 0.01, 0.072);
+            const holeGeoZ = new THREE.BoxGeometry(0.092, 0.066, CAST + 0.01);
             const holeMat = new THREE.MeshStandardMaterial({ color: 0x05070a, roughness: 0.9, metalness: 0.2 });
+            const steel = MATS.darkSteel || MATS.gunmetal;
+            // Casting body stays at outer corner; top/side hole discs sit on ISO 1161 centres
             [-1, 1].forEach(sx => [-1, 1].forEach(sy => [-1, 1].forEach(sz => {
                 const ccGroup = new THREE.Group();
-                const cc = new THREE.Mesh(boxGeo, MATS.darkSteel.clone());
-                const hx = new THREE.Mesh(holeGeoX, holeMat);
-                const hy = new THREE.Mesh(holeGeoY, holeMat);
-                const hz = new THREE.Mesh(holeGeoZ, holeMat);
-                ccGroup.add(cc, hx, hy, hz);
-                ccGroup.position.set(sx * (L / 2 - 0.09), sy * (H / 2 - 0.09), sz * (W / 2 - 0.09));
+                ccGroup.name = 'ISO_CornerCasting';
+                const body = new THREE.Mesh(boxGeo, steel.clone());
+                body.position.set(
+                    sx * (L / 2 - half) - sx * hx,
+                    0,
+                    sz * (W / 2 - half) - sz * hz
+                );
+                // Body local offset so group origin = ISO hole centre
+                ccGroup.add(body);
+                ccGroup.add(new THREE.Mesh(holeGeoX, holeMat));
+                ccGroup.add(new THREE.Mesh(holeGeoY, holeMat));
+                ccGroup.add(new THREE.Mesh(holeGeoZ, holeMat));
+                ccGroup.position.set(sx * hx, sy * (H / 2 - half), sz * hz);
                 group.add(ccGroup);
             })));
         }
 
-        // ISO 668 dry-van shell: thin skins + exterior trapezoidal corrugation (gân sóng), hollow interior
+        /** Map X so door/front ends keep native size; only the mid-body grows with target length. */
+        function mapLengthPreserveEnds(x, L0, L1, keep) {
+            const h0 = L0 * 0.5;
+            const h1 = L1 * 0.5;
+            const k = Math.min(keep, h0 * 0.42, h1 * 0.42);
+            if (x <= -h0 + k) return x - (h0 - h1);
+            if (x >= h0 - k) return x + (h1 - h0);
+            const t = (x - (-h0 + k)) / Math.max(1e-6, L0 - 2 * k);
+            return (-h1 + k) + t * (L1 - 2 * k);
+        }
+
+        /**
+         * Lengthen authentic 20ft CAD into 40/HC/opentop:
+         * - Door end + front end + corner castings stay unstretched
+         * - Mid shell extends; then re-stamp side corrugation at fixed pitch (same look as 20ft)
+         */
+        function elongateIsoCadRoot(root, targetL, keep = 1.18) {
+            root.updateMatrixWorld(true);
+            const box = new THREE.Box3().setFromObject(root);
+            const L0 = Math.max(0.5, box.max.x - box.min.x);
+            if (Math.abs(targetL - L0) < 0.08) return L0;
+            const _v = new THREE.Vector3();
+            const _inv = new THREE.Matrix4();
+            root.traverse(child => {
+                if (!child.isMesh || !child.geometry || !child.geometry.attributes.position) return;
+                let geo = child.geometry.clone();
+                if (geo.index) geo = geo.toNonIndexed();
+                child.geometry = geo;
+                child.updateMatrixWorld(true);
+                _inv.copy(child.matrixWorld).invert();
+                const pos = geo.attributes.position;
+                for (let i = 0; i < pos.count; i++) {
+                    _v.fromBufferAttribute(pos, i).applyMatrix4(child.matrixWorld);
+                    _v.x = mapLengthPreserveEnds(_v.x, L0, targetL, keep);
+                    _v.applyMatrix4(_inv);
+                    pos.setXYZ(i, _v.x, _v.y, _v.z);
+                }
+                pos.needsUpdate = true;
+                geo.computeVertexNormals();
+            });
+            return L0;
+        }
+
+        /** Re-stamp vertical side corrugation at fixed pitch so lengthened CAD mid doesn't look stretched. */
+        function restampSideCorrugation(group, L, W, H, bodyMat) {
+            const pitch = 0.280;
+            const inset = 1.05; // leave CAD door/front zones alone
+            const depth = 0.045;
+            const ribW = 0.095;
+            const shoulderW = 0.155;
+            const wallT = 0.02;
+            const y0 = -H * 0.42;
+            const ribH = H * 0.78;
+            const mat = bodyMat.clone();
+            for (let x = -L / 2 + inset; x <= L / 2 - inset + 1e-6; x += pitch) {
+                [-1, 1].forEach(sz => {
+                    const z0 = sz * (W / 2 - 0.01);
+                    const lobe = new THREE.Mesh(new THREE.BoxGeometry(ribW, ribH, depth), mat);
+                    lobe.position.set(x, y0 + ribH * 0.5, z0 + sz * (depth * 0.55));
+                    lobe.castShadow = true;
+                    group.add(lobe);
+                    const sh = new THREE.Mesh(new THREE.BoxGeometry(shoulderW, ribH * 0.92, depth * 0.4), mat);
+                    sh.position.set(x, y0 + ribH * 0.5, z0 + sz * (depth * 0.22));
+                    group.add(sh);
+                });
+            }
+            // Thin side skin fill so gaps between stretched CAD panels don't show
+            [-1, 1].forEach(sz => {
+                const span = Math.max(0.4, L - inset * 2);
+                if (span < 0.5) return;
+                const fill = new THREE.Mesh(new THREE.BoxGeometry(span, H * 0.72, wallT), mat);
+                fill.position.set(0, 0, sz * (W / 2 - 0.04));
+                fill.castShadow = true;
+                group.add(fill);
+            });
+        }
+
+        function tintIsoCadClone(clone, bodyColor) {
+            const roughness = 0.42;
+            const metalness = 0.28;
+            clone.traverse(child => {
+                if (!child.isMesh) return;
+                child.castShadow = true;
+                child.receiveShadow = true;
+                if (Array.isArray(child.material)) {
+                    child.material = [
+                        new THREE.MeshStandardMaterial({
+                            color: bodyColor, roughness, metalness, name: 'ContainerBody_Lengthened'
+                        }),
+                        new THREE.MeshStandardMaterial({
+                            color: 0xe2e8f0, roughness: 0.22, metalness: 0.85, name: 'ContainerHardware_GalvanizedSteel'
+                        })
+                    ];
+                } else {
+                    child.material = new THREE.MeshStandardMaterial({ color: bodyColor, roughness, metalness });
+                }
+            });
+            return new THREE.MeshStandardMaterial({ color: bodyColor, roughness, metalness });
+        }
+
+        function buildFrom20ftCadLengthened(group, type, L, W, H) {
+            const proto = customCargoMeshes && customCargoMeshes['container_22g1'];
+            if (!proto) return false;
+            const clone = proto.clone(true);
+            clone.updateMatrixWorld(true);
+
+            if (type === 'opentop' && state.oogTarp === false) {
+                clone.traverse(child => {
+                    if (!child.isMesh || !child.geometry?.attributes?.position) return;
+                    const geo = child.geometry;
+                    const pos = geo.attributes.position;
+                    const norm = geo.attributes.normal;
+                    const uv = geo.attributes.uv;
+                    const newPos = [];
+                    const newNorm = norm ? [] : null;
+                    const newUv = uv ? [] : null;
+                    for (let i = 0; i < pos.count; i += 3) {
+                        if (pos.getY(i) > 2.37 && pos.getY(i + 1) > 2.37 && pos.getY(i + 2) > 2.37) continue;
+                        for (let j = 0; j < 3; j++) {
+                            const idx = i + j;
+                            newPos.push(pos.getX(idx), pos.getY(idx), pos.getZ(idx));
+                            if (newNorm) newNorm.push(norm.getX(idx), norm.getY(idx), norm.getZ(idx));
+                            if (newUv) newUv.push(uv.getX(idx), uv.getY(idx));
+                        }
+                    }
+                    const openGeo = new THREE.BufferGeometry();
+                    openGeo.setAttribute('position', new THREE.Float32BufferAttribute(newPos, 3));
+                    if (newNorm) openGeo.setAttribute('normal', new THREE.Float32BufferAttribute(newNorm, 3));
+                    if (newUv) openGeo.setAttribute('uv', new THREE.Float32BufferAttribute(newUv, 2));
+                    openGeo.computeVertexNormals();
+                    child.geometry = openGeo;
+                });
+            }
+
+            const bodyColor = (type === 'iso40' || type === 'container_40ft_glb') ? 0x881337
+                : (type === 'iso40hc' ? 0x065f46
+                    : (type === 'opentop' ? 0x1d4ed8 : 0x1d4ed8));
+            const bodyMat = tintIsoCadClone(clone, bodyColor);
+
+            const bbox = new THREE.Box3().setFromObject(clone);
+            const sz = new THREE.Vector3();
+            bbox.getSize(sz);
+            const center = new THREE.Vector3();
+            bbox.getCenter(center);
+            clone.position.sub(center);
+
+            // Cross-section fit first (W/H), then lengthen X while preserving door/front
+            if (sz.y > 0.01 && sz.z > 0.01) {
+                clone.scale.y *= (H / sz.y);
+                clone.scale.z *= (W / sz.z);
+            }
+            clone.updateMatrixWorld(true);
+            const box2 = new THREE.Box3().setFromObject(clone);
+            const L0 = box2.max.x - box2.min.x;
+            const c2 = new THREE.Vector3();
+            box2.getCenter(c2);
+            clone.position.sub(c2);
+
+            elongateIsoCadRoot(clone, L, 1.20);
+            clone.updateMatrixWorld(true);
+            const box3 = new THREE.Box3().setFromObject(clone);
+            const c3 = new THREE.Vector3();
+            box3.getCenter(c3);
+            clone.position.sub(c3);
+
+            group.add(clone);
+            restampSideCorrugation(group, L, W, H, bodyMat);
+
+            if (type === 'opentop') addOpenTopTopAssembly(group, L, W, H);
+            if (type === 'iso40hc') {
+                const stripeGeo = new THREE.BoxGeometry(0.32, 0.12, 0.02);
+                const stripeMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4, metalness: 0.2 });
+                [-L / 2 + 0.20, L / 2 - 0.20].forEach(cx => {
+                    [-W / 2 - 0.01, W / 2 + 0.01].forEach(cz => {
+                        const stripe = new THREE.Mesh(stripeGeo, stripeMat);
+                        stripe.position.set(cx, H / 2 - 0.12, cz);
+                        group.add(stripe);
+                    });
+                });
+            }
+            return true;
+        }
+
+        // ISO 668 dry-van shell: thin skins + exterior corrugation.
+        // Longer containers ADD more ribs at FIXED pitch — never stretch 20ft detailing.
         function addCorrugatedShell(group, L, W, H, mat) {
             const skin = mat.clone();
             const wallT = 0.055;
             const floorH = 0.16;
             const roofT = 0.05;
             const corrugDepth = 0.038;
+            const RIB_PITCH = 0.280; // fixed ISO-like side corrugation pitch (m)
+            const RIB_W = 0.100;
+            const SHOULDER_W = 0.160;
+            const ROOF_PITCH = 0.260;
             const sideH = H - floorH - roofT - 0.04;
+            const inset = 0.35; // keep ribs clear of fixed corner posts / castings
 
             // Timber / steel floor (interior)
             const floor = new THREE.Mesh(new THREE.BoxGeometry(L - 0.20, floorH, W - 0.20), MATS.timberWood ? MATS.timberWood.clone() : skin);
@@ -51,101 +295,117 @@
             floor.receiveShadow = true;
             group.add(floor);
 
-            // Top & bottom side rails + end sills (ISO main frame)
+            // Top & bottom side rails + end sills (ISO main frame) — fixed section sizes
             const railH = 0.12;
+            const railT = 0.11;
             [-H / 2 + railH / 2, H / 2 - railH / 2].forEach(ry => {
                 [-1, 1].forEach(sz => {
-                    const sr = new THREE.Mesh(new THREE.BoxGeometry(L - 0.20, railH, 0.11), skin);
-                    sr.position.set(0, ry, sz * (W / 2 - 0.055));
+                    const sr = new THREE.Mesh(new THREE.BoxGeometry(Math.max(0.4, L - 0.20), railH, railT), skin);
+                    sr.position.set(0, ry, sz * (W / 2 - railT * 0.5));
                     sr.castShadow = true;
                     group.add(sr);
                 });
                 [-1, 1].forEach(sx => {
-                    const er = new THREE.Mesh(new THREE.BoxGeometry(0.11, railH, W - 0.20), skin);
-                    er.position.set(sx * (L / 2 - 0.055), ry, 0);
+                    const er = new THREE.Mesh(new THREE.BoxGeometry(railT, railH, Math.max(0.4, W - 0.20)), skin);
+                    er.position.set(sx * (L / 2 - railT * 0.5), ry, 0);
                     group.add(er);
                 });
             });
 
-            // ±Z corrugated side walls (vertical trapezoid lobes on the OUTSIDE only)
-            const numSideRibs = Math.max(12, Math.round(L / 0.28));
-            const pitch = (L - 0.70) / Math.max(1, numSideRibs - 1);
+            // ±Z corrugated side walls — rib count grows with L, pitch stays RIB_PITCH
+            const usableL = Math.max(RIB_PITCH, L - inset * 2);
+            const numSideRibs = Math.max(4, Math.round(usableL / RIB_PITCH) + 1);
             [-1, 1].forEach(sz => {
                 const zWall = sz * (W / 2 - wallT * 0.5);
-                const panel = new THREE.Mesh(new THREE.BoxGeometry(L - 0.36, sideH, wallT), skin);
+                const panel = new THREE.Mesh(new THREE.BoxGeometry(Math.max(0.4, L - 0.36), sideH, wallT), skin);
                 panel.position.set(0, -H / 2 + floorH + sideH / 2, zWall);
                 panel.castShadow = true;
                 panel.receiveShadow = true;
                 group.add(panel);
                 for (let i = 0; i < numSideRibs; i++) {
-                    const rx = -L / 2 + 0.35 + i * pitch;
-                    // Outer lobe
-                    const lobe = new THREE.Mesh(new THREE.BoxGeometry(0.10, sideH - 0.04, corrugDepth), skin);
+                    const rx = -L / 2 + inset + i * RIB_PITCH;
+                    if (rx > L / 2 - inset) break;
+                    const lobe = new THREE.Mesh(new THREE.BoxGeometry(RIB_W, sideH - 0.04, corrugDepth), skin);
                     lobe.position.set(rx, panel.position.y, zWall + sz * (wallT * 0.5 + corrugDepth * 0.5));
                     group.add(lobe);
-                    // Trapezoid shoulder (slightly wider, shallower)
-                    const shoulder = new THREE.Mesh(new THREE.BoxGeometry(0.16, sideH - 0.08, corrugDepth * 0.45), skin);
+                    const shoulder = new THREE.Mesh(new THREE.BoxGeometry(SHOULDER_W, sideH - 0.08, corrugDepth * 0.45), skin);
                     shoulder.position.set(rx, panel.position.y, zWall + sz * (wallT * 0.5 + corrugDepth * 0.22));
                     group.add(shoulder);
                 }
             });
 
-            // −X front corrugated bulkhead
+            // −X front corrugated bulkhead — fixed pitch across width
             const frontZ = -L / 2 + wallT * 0.5 + 0.02;
             const front = new THREE.Mesh(new THREE.BoxGeometry(wallT, sideH, W - 0.28), skin);
             front.position.set(frontZ, -H / 2 + floorH + sideH / 2, 0);
             front.castShadow = true;
             group.add(front);
-            const numFrontRibs = Math.max(6, Math.round((W - 0.4) / 0.28));
+            const usableW = Math.max(RIB_PITCH, W - 0.56);
+            const numFrontRibs = Math.max(4, Math.round(usableW / RIB_PITCH) + 1);
             for (let i = 0; i < numFrontRibs; i++) {
-                const rz = -W / 2 + 0.28 + i * ((W - 0.56) / Math.max(1, numFrontRibs - 1));
-                const lobe = new THREE.Mesh(new THREE.BoxGeometry(corrugDepth, sideH - 0.06, 0.10), skin);
+                const rz = -W / 2 + 0.28 + i * RIB_PITCH;
+                if (rz > W / 2 - 0.28) break;
+                const lobe = new THREE.Mesh(new THREE.BoxGeometry(corrugDepth, sideH - 0.06, RIB_W), skin);
                 lobe.position.set(frontZ - wallT * 0.5 - corrugDepth * 0.5, front.position.y, rz);
                 group.add(lobe);
             }
 
-            // +X rear doors (twin leaves) + locking rods
+            // +X rear doors — match CAD 20ft: twin leaves with 3 recessed horizontal panels each
             const doorT = 0.05;
             const doorX = L / 2 - doorT * 0.5 - 0.02;
+            const doorH = sideH - 0.06;
+            const doorY = -H / 2 + floorH + sideH / 2;
+            const leafW = W * 0.48 - 0.04;
             [-1, 1].forEach(sz => {
-                const leaf = new THREE.Mesh(new THREE.BoxGeometry(doorT, sideH - 0.06, W * 0.48 - 0.04), skin);
-                leaf.position.set(doorX, -H / 2 + floorH + sideH / 2, sz * W * 0.25);
+                const leaf = new THREE.Mesh(new THREE.BoxGeometry(doorT, doorH, leafW), skin);
+                leaf.position.set(doorX, doorY, sz * W * 0.25);
                 leaf.castShadow = true;
                 group.add(leaf);
+                // Three recessed panels per leaf (like conts20ft.obj)
+                [-0.30, 0.0, 0.30].forEach(yf => {
+                    const panelH = doorH * 0.22;
+                    const recess = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.012, panelH, leafW * 0.78),
+                        new THREE.MeshStandardMaterial({ color: skin.color, roughness: 0.55, metalness: 0.2 })
+                    );
+                    recess.position.set(doorX + doorT * 0.55, doorY + yf * doorH * 0.55, sz * W * 0.25);
+                    group.add(recess);
+                });
             });
-            // Door cams / horizontal anti-rack bars
-            [-0.28, 0.08, 0.38].forEach(yf => {
-                const bar = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.05, W - 0.30), MATS.galvSteel.clone());
-                bar.position.set(doorX + 0.02, -H / 2 + floorH + sideH * (0.5 + yf * 0.35), 0);
+            // Horizontal cams / anti-rack bars
+            [-0.22, 0.06, 0.34].forEach(yf => {
+                const bar = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.045, W - 0.30), MATS.galvSteel.clone());
+                bar.position.set(doorX + 0.02, doorY + yf * doorH * 0.5, 0);
                 group.add(bar);
             });
+            // Four locking rods (2 per leaf)
             [-0.34, -0.14, 0.14, 0.34].forEach(zf => {
-                const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, sideH - 0.12, 10), MATS.galvSteel.clone());
-                rod.position.set(L / 2 - 0.01, -H / 2 + floorH + sideH / 2, zf * W);
+                const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, doorH - 0.08, 10), MATS.galvSteel.clone());
+                rod.position.set(L / 2 - 0.005, doorY, zf * W);
                 group.add(rod);
             });
 
-            // CSC Safety Approval Plate on left door leaf
             const cscPlate = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.22, 0.32), new THREE.MeshStandardMaterial({ color: 0xcfd8dc, roughness: 0.35, metalness: 0.7 }));
-            cscPlate.position.set(L / 2 + 0.01, -H / 2 + floorH + sideH * 0.45, -W * 0.22);
+            cscPlate.position.set(L / 2 + 0.01, doorY + doorH * 0.12, -W * 0.22);
             group.add(cscPlate);
 
-            // Door operating handles (Tay khóa xoay container)
             [-0.14, 0.14].forEach(zf => {
                 const handle = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.03, 0.18), MATS.galvSteel.clone());
-                handle.position.set(L / 2 + 0.025, -H / 2 + floorH + sideH * 0.38, zf * W + (zf < 0 ? 0.08 : -0.08));
+                handle.position.set(L / 2 + 0.025, doorY - doorH * 0.08, zf * W + (zf < 0 ? 0.08 : -0.08));
                 group.add(handle);
             });
 
-            // Corrugated roof (transverse ribs)
+            // Corrugated roof — fixed transverse pitch
             const roofY = H / 2 - roofT / 2;
-            const roof = new THREE.Mesh(new THREE.BoxGeometry(L - 0.28, roofT, W - 0.28), skin);
+            const roof = new THREE.Mesh(new THREE.BoxGeometry(Math.max(0.4, L - 0.28), roofT, W - 0.28), skin);
             roof.position.y = roofY;
             roof.castShadow = true;
             group.add(roof);
-            const numRoofRibs = Math.max(14, Math.round(L / 0.26));
+            const roofUsable = Math.max(ROOF_PITCH, L - 0.60);
+            const numRoofRibs = Math.max(6, Math.round(roofUsable / ROOF_PITCH) + 1);
             for (let i = 0; i < numRoofRibs; i++) {
-                const rx = -L / 2 + 0.30 + i * ((L - 0.60) / Math.max(1, numRoofRibs - 1));
+                const rx = -L / 2 + 0.30 + i * ROOF_PITCH;
+                if (rx > L / 2 - 0.30) break;
                 const rRib = new THREE.Mesh(new THREE.BoxGeometry(0.08, corrugDepth, W - 0.34), skin);
                 rRib.position.set(rx, roofY + roofT * 0.5 + corrugDepth * 0.35, 0);
                 group.add(rRib);
@@ -179,10 +439,13 @@
                 });
             });
 
-            // Two Hollow Corrugated Side Walls (Left -Z and Right +Z)
+            // Two Hollow Corrugated Side Walls — fixed pitch ribs (more ribs when L grows)
             const sideWallH = H - 0.24;
             const sidePanelGeo = new THREE.BoxGeometry(L - 0.24, sideWallH, wallThick);
-            const numRibs = Math.max(10, Math.floor(L * 3.2));
+            const OT_PITCH = 0.280;
+            const otInset = 0.34;
+            const otUsable = Math.max(OT_PITCH, L - otInset * 2);
+            const numRibs = Math.max(4, Math.round(otUsable / OT_PITCH) + 1);
             [-1, 1].forEach(sz => {
                 const wz = sz * (W / 2 - wallThick * 0.65);
                 const panel = new THREE.Mesh(sidePanelGeo, wallMat);
@@ -192,7 +455,8 @@
                 group.add(panel);
 
                 for (let i = 0; i < numRibs; i++) {
-                    const rx = -L / 2 + 0.34 + (i / (numRibs - 1)) * (L - 0.68);
+                    const rx = -L / 2 + otInset + i * OT_PITCH;
+                    if (rx > L / 2 - otInset) break;
                     const rib = new THREE.Mesh(new THREE.BoxGeometry(0.06, sideWallH, wallThick + 0.045), wallMat);
                     rib.position.set(rx, 0, wz);
                     group.add(rib);
@@ -240,39 +504,52 @@
             // Internal Cargo inside Open Top (Adjustable Height / Length / Width)
             const hasCargo = state.oogHasCargo !== false;
             const hasTarp = state.oogTarp !== false;
-            const cL = THREE.MathUtils.clamp(state.oogCargoL || L * 0.84, 1.2, L - 0.22);
-            const cW = THREE.MathUtils.clamp(state.oogCargoW || W * 0.88, 0.9, W - 0.16);
-            const cH = THREE.MathUtils.clamp(state.oogCargoH || H * 1.15, 0.6, 4.8);
-            const cargoPeakY = floorTopY + cH;
+            const wallClear = 0.22;
+            const maxInnerL = Math.max(1.2, L - wallClear * 2);
+            const maxInnerW = Math.max(0.85, W - wallClear * 2);
+            const halfInnerL = maxInnerL * 0.5;
+            const cL = THREE.MathUtils.clamp(state.oogCargoL || L * 0.84, 1.2, maxInnerL);
+            const cW = THREE.MathUtils.clamp(state.oogCargoW || Math.min(0.95, maxInnerW * 0.72), 0.55, maxInnerW);
+            const wantDia = THREE.MathUtils.clamp(state.oogCargoH || H * 1.22, 0.6, 4.8);
+            const skidH = 0.10;
+            let numTires = Math.max(1, Math.min(4, Math.round(cL / Math.max(1.0, wantDia * 1.05))));
+            const fitDia = (n) => (maxInnerL - 0.08 * Math.max(0, n - 1)) / n;
+            while (numTires > 1 && fitDia(numTires) < Math.min(wantDia, H * 0.85)) numTires -= 1;
+            const tireDia = THREE.MathUtils.clamp(Math.min(wantDia, fitDia(numTires)), 0.8, maxInnerL - 0.04);
+            const tireR = tireDia * 0.5;
+            const tireThick = Math.min(cW * 0.92, maxInnerW - 0.10, 0.95);
+            const maxCenterX = Math.max(0, halfInnerL - tireR - 0.02);
+            const cargoPeakY = floorTopY + skidH + tireDia;
 
             if (hasCargo) {
                 const cargoGroup = new THREE.Group();
-                // Heavy timber dunnage skid + steel machinery base
-                const skidH = Math.min(0.18, cH * 0.12);
-                const skid = new THREE.Mesh(new THREE.BoxGeometry(cL, skidH, cW), MATS.woodCrate.clone());
+                const skid = new THREE.Mesh(
+                    new THREE.BoxGeometry(Math.min(cL, maxInnerL), skidH, Math.min(tireThick + 0.28, maxInnerW - 0.04)),
+                    MATS.woodCrate.clone()
+                );
                 skid.position.y = floorTopY + skidH / 2;
                 cargoGroup.add(skid);
 
-                // Giant OTR Mining Tires & Heavy Equipment Modules (matching real-world Open Top OOG cargo)
-                const bodyH = Math.max(0.3, cH - skidH);
-                const tireDia = bodyH;
-                const tireR = tireDia * 0.5;
-                const tireThick = Math.min(cW * 0.42, 0.78);
-                const numTires = Math.max(2, Math.min(5, Math.floor(cL / Math.max(0.75, tireDia * 0.72))));
                 const tireMat = MATS.rubberTire ? MATS.rubberTire.clone() : MATS.darkSteel.clone();
 
-                // Central support rack + Giant OTR Tires standing upright inside the Open Top container
-                const rack = new THREE.Mesh(new THREE.BoxGeometry(cL * 0.92, bodyH * 0.52, cW * 0.76), MATS.woodCrate.clone());
-                rack.position.y = floorTopY + skidH + bodyH * 0.26;
+                const rackH = Math.min(tireR * 0.45, H * 0.28);
+                const rack = new THREE.Mesh(
+                    new THREE.BoxGeometry(Math.min(cL, maxInnerL) * 0.90, rackH, Math.min(tireThick * 0.5, maxInnerW * 0.35)),
+                    MATS.woodCrate.clone()
+                );
+                rack.position.y = floorTopY + skidH + rackH / 2;
                 rack.castShadow = true;
                 cargoGroup.add(rack);
 
                 for (let t = 0; t < numTires; t++) {
-                    const tx = numTires === 1 ? 0 : (-cL * 0.34 + (t / (numTires - 1)) * (cL * 0.68));
-                    const tz = (t % 2 === 0 ? 1 : -1) * Math.min(0.12, (cW - tireThick) * 0.22);
+                    let tx = 0;
+                    if (numTires > 1) {
+                        const span = Math.min(cL - tireDia, maxCenterX * 2);
+                        tx = THREE.MathUtils.clamp(-span * 0.5 + (t / (numTires - 1)) * span, -maxCenterX, maxCenterX);
+                    }
                     const tireGroup = new THREE.Group();
-                    tireGroup.position.set(tx, floorTopY + skidH + tireR, tz);
-                    tireGroup.rotation.y = 0.22 * (t % 2 === 0 ? 1 : -1);
+                    // Axis along width (Z) — Ø in X/Y; X clamped inside ends, Z inside side walls
+                    tireGroup.position.set(tx, floorTopY + skidH + tireR, 0);
 
                     // Outer treaded OTR tire carcass
                     const carcass = new THREE.Mesh(new THREE.CylinderGeometry(tireR, tireR, tireThick, 28), tireMat);
@@ -301,45 +578,55 @@
                 group.add(cargoGroup);
             }
 
-            // Dynamic 3D Deformable Tarpaulin Sheet (Tấm vải bạt phủ nóc căng phồng theo đỉnh hàng)
+            // Dynamic tarp draped over upright tire crowns
             if (hasTarp) {
                 const tarpGroup = new THREE.Group();
                 tarpGroup.name = 'openTopTarpaulin';
-                const segX = 36;
-                const segZ = 20;
                 const tarpL = L - 0.04;
                 const tarpW = W - 0.04;
                 const skirtDrop = 0.28;
+                const rimY = H / 2 + 0.01;
                 const tarpMat = new THREE.MeshStandardMaterial({
-                    color: 0xdbe4ee,
-                    roughness: 0.62,
-                    metalness: 0.06,
+                    color: 0x3f6b4e,
+                    roughness: 0.78,
+                    metalness: 0.02,
                     side: THREE.DoubleSide
                 });
 
-                // Top tented sheet vertices displaced smoothly over the cargo contour peak
-                const topGeo = new THREE.PlaneGeometry(tarpL, tarpW, segX, segZ);
+                const topGeo = new THREE.PlaneGeometry(tarpL, tarpW, 56, 28);
                 topGeo.rotateX(-Math.PI / 2);
                 const pos = topGeo.attributes.position;
-                const overTop = hasCargo ? Math.max(0, cargoPeakY - H / 2 + 0.04) : 0;
-
+                const tireCenterY = floorTopY + skidH + tireR;
+                const rEff = tireR + 0.10;
+                const tireXsProc = [];
+                if (hasCargo) {
+                    for (let t = 0; t < numTires; t++) {
+                        if (numTires === 1) tireXsProc.push(0);
+                        else {
+                            const span = Math.min(cL - tireDia, maxCenterX * 2);
+                            tireXsProc.push(THREE.MathUtils.clamp(
+                                -span * 0.5 + (t / (numTires - 1)) * span,
+                                -maxCenterX,
+                                maxCenterX
+                            ));
+                        }
+                    }
+                }
                 for (let i = 0; i < pos.count; i++) {
                     const vx = pos.getX(i);
                     const vz = pos.getZ(i);
-                    const edgeX = Math.abs(vx) / (tarpL * 0.5);
-                    const edgeZ = Math.abs(vz) / (tarpW * 0.5);
-                    const rimLock = Math.max(0, 1 - Math.pow(Math.max(edgeX, edgeZ), 6));
-
-                    // Smooth tenting profile over cargo footprint (cL x cW)
-                    const ux = Math.max(0, 1 - Math.pow(vx / Math.max(0.35, cL * 0.54), 2));
-                    const uz = Math.max(0, 1 - Math.pow(vz / Math.max(0.30, cW * 0.54), 2));
-                    const dome = Math.pow(ux * uz, 0.65);
-
-                    // Subtle realistic fabric tension ripples between roof bows
-                    const bowWave = Math.cos((vx / Math.max(0.5, L)) * bowCount * Math.PI * 2) * 0.012 * (1 - dome * 0.6);
-                    const baseCrown = 0.035 * (1 - edgeZ * edgeZ);
-                    const yVal = H / 2 + 0.01 + rimLock * (overTop * dome + baseCrown + bowWave);
-                    pos.setY(i, yVal);
+                    const edge = Math.max(Math.abs(vx) / (tarpL * 0.5), Math.abs(vz) / (tarpW * 0.5));
+                    const rimLock = Math.max(0, 1 - Math.pow(THREE.MathUtils.clamp(edge, 0, 1), 4.5));
+                    let peak = rimY + 0.03;
+                    for (let t = 0; t < tireXsProc.length; t++) {
+                        const dx = vx - tireXsProc[t];
+                        if (Math.abs(dx) > rEff) continue;
+                        const yArc = tireCenterY + Math.sqrt(Math.max(0, rEff * rEff - dx * dx));
+                        const zKeep = Math.max(0, 1 - Math.pow(Math.abs(vz) / Math.max(0.35, tarpW * 0.46), 2.4));
+                        peak = Math.max(peak, THREE.MathUtils.lerp(rimY + 0.04, yArc + 0.04, zKeep));
+                    }
+                    if (!hasCargo) peak = rimY + 0.04;
+                    pos.setY(i, rimY + rimLock * Math.max(0.02, peak - rimY));
                 }
                 topGeo.computeVertexNormals();
                 const topTarpMesh = new THREE.Mesh(topGeo, tarpMat);
@@ -469,162 +756,568 @@
             // 8 ISO Corner Castings (top & bottom of the 4 corner posts)
             addCornerCastings(group, L, W, H);
 
-            // 4. Toggleable & Adjustable OOG Cargo on Flat Rack (Supports Over-Width, Over-Length, Over-Height)
-            if (state.oogHasCargo !== false) {
-                const oogGroup = new THREE.Group();
-                oogGroup.name = 'flatRackOogCargo';
-                const cL = THREE.MathUtils.clamp(state.oogCargoL || L * 0.72, 1.5, 14.5);
-                const cW = THREE.MathUtils.clamp(state.oogCargoW || W * 1.28, 1.0, 5.2);
-                const cH = THREE.MathUtils.clamp(state.oogCargoH || H * 1.08, 0.8, 4.8);
-                const dunnageH = 0.10;
-                const cargoBottomY = deckTopY + dunnageH;
-                const cargoTopY = cargoBottomY + cH;
+            // 4. Toggleable OOG cargo on deck
+            addDeckOogCargoOverlay(group, L, W, H, deckTopY);
+        }
 
-                // Transverse Timber Dunnage Bearers & Wooden Pallets on deck (extending to max(W, cW))
-                const bearerW = Math.max(W - 0.12, cW + 0.14);
-                const numBearers = Math.max(4, Math.floor(cL * 0.85));
-                for (let b = 0; b < numBearers; b++) {
-                    const bx = -cL * 0.44 + (b / (numBearers - 1)) * (cL * 0.88);
-                    const bearer = new THREE.Mesh(new THREE.BoxGeometry(0.16, dunnageH, bearerW), plankMat);
-                    bearer.position.set(bx, deckTopY + dunnageH / 2, 0);
-                    bearer.castShadow = true;
-                    bearer.userData.noLugWeld = true;
-                    group.add(bearer);
-                }
+        /** Prefer CAD wood/floor mesh top; fallback keeps cargo ON the deck (not into it). */
+        function measureCadDeckTopY(group, L, W, H, fallbackY) {
+            let best = null;
+            group.updateMatrixWorld(true);
+            group.traverse(child => {
+                if (!child.isMesh || !child.geometry) return;
+                const n = `${child.name || ''} ${child.material?.name || ''}`.toLowerCase();
+                if (!(n.includes('floor') || n.includes('wood') || n.includes('deck') || n.includes('plank'))) return;
+                const box = new THREE.Box3().setFromObject(child);
+                if (!Number.isFinite(box.max.y)) return;
+                if (best == null || box.max.y > best) best = box.max.y;
+            });
+            if (best != null) return best;
+            return fallbackY != null ? fallbackY : (-H / 2 + Math.min(0.60, Math.max(0.35, H * 0.20)));
+        }
 
-                // Fore & Aft Cribbing Pallets on unoccupied deck ends (exactly like reference photo)
-                const freeEndSpan = (L - 0.50 - cL) * 0.5;
-                if (freeEndSpan > 0.65) {
-                    [-1, 1].forEach(sx => {
-                        const px = sx * (cL * 0.5 + freeEndSpan * 0.5);
-                        const pallet = new THREE.Mesh(new THREE.BoxGeometry(freeEndSpan * 0.82, 0.11, W * 0.86), plankMat);
-                        pallet.position.set(px, deckTopY + 0.055, 0);
-                        pallet.userData.noLugWeld = true;
-                        group.add(pallet);
-                    });
-                }
+        /** OOG crate + dunnage + lashing straps on Flat Rack / Platform decks (works with CAD or procedural). */
+        function addDeckOogCargoOverlay(group, L, W, H, deckTopY) {
+            if (state.oogHasCargo === false) return;
+            const plankMat = MATS.timberWood ? MATS.timberWood.clone() : MATS.woodCrate.clone();
+            const strapMat = new THREE.MeshStandardMaterial({ color: 0xff5500, roughness: 0.55, metalness: 0.08 });
+            const oogGroup = new THREE.Group();
+            oogGroup.name = 'flatRackOogCargo';
+            oogGroup.userData.noStructuralDeform = true;
+            const cL = THREE.MathUtils.clamp(state.oogCargoL || L * 0.72, 1.5, 14.5);
+            const cW = THREE.MathUtils.clamp(state.oogCargoW || W * 1.28, 1.0, 5.2);
+            const cH = THREE.MathUtils.clamp(state.oogCargoH || Math.max(H * 1.08, 1.6), 0.8, 4.8);
+            const dunnageH = 0.12;
+            // Sit ON deck: dunnage then crate — never below deckTopY
+            const cargoBottomY = deckTopY + dunnageH + 0.01;
+            const cargoTopY = cargoBottomY + cH;
+            const deckH = Math.max(0.12, Math.min(0.35, H * 0.55));
 
-                // Heavy Plywood & Timber-Framed OOG Machinery Case
-                const crateMat = MATS.woodCrate.clone();
-                const crateBody = new THREE.Mesh(new THREE.BoxGeometry(cL, cH, cW), crateMat);
-                crateBody.position.set(0, cargoBottomY + cH / 2, 0);
-                crateBody.castShadow = true;
-                crateBody.receiveShadow = true;
-                oogGroup.add(crateBody);
-
-                // Solid Heavy-Duty UV Waterproof Top Sheeting Hood (Lớp bạt nilon dày che đỉnh thùng hàng)
-                const hoodH = Math.min(0.68, cH * 0.28);
-                const polyHoodMat = new THREE.MeshStandardMaterial({
-                    color: 0xf1f5f9,
-                    roughness: 0.45,
-                    metalness: 0.02,
-                    polygonOffset: true,
-                    polygonOffsetFactor: -1.0,
-                    polygonOffsetUnits: -2.0
-                });
-                const polyHood = new THREE.Mesh(new THREE.BoxGeometry(cL + 0.06, hoodH, cW + 0.06), polyHoodMat);
-                polyHood.position.set(0, cargoTopY - hoodH / 2 + 0.015, 0);
-                polyHood.castShadow = true;
-                polyHood.receiveShadow = true;
-                oogGroup.add(polyHood);
-
-                // Exterior Timber Framing Studs & Horizontal Battens
-                const studCount = Math.max(4, Math.floor(cL * 0.9));
-                for (let s = 0; s < studCount; s++) {
-                    const sx = -cL * 0.48 + (s / (studCount - 1)) * (cL * 0.96);
-                    const stud = new THREE.Mesh(new THREE.BoxGeometry(0.09, cH + 0.02, cW + 0.04), plankMat);
-                    stud.position.set(sx, cargoBottomY + cH / 2, 0);
-                    oogGroup.add(stud);
-                }
-                [0.06, 0.52, 0.96].forEach(hf => {
-                    const band = new THREE.Mesh(new THREE.BoxGeometry(cL + 0.04, 0.09, cW + 0.04), plankMat);
-                    band.position.set(0, cargoBottomY + cH * hf, 0);
-                    oogGroup.add(band);
-                });
-
-                // Heavy-Duty Orange Polyester Ratchet Lashing Straps (Dây chằng tăng đơ màu cam)
-                const lashingGroup = new THREE.Group();
-                lashingGroup.name = 'flatRackLashingStraps';
-                const brokenLashingGroup = new THREE.Group();
-                brokenLashingGroup.name = 'flatRackBrokenStraps';
-                brokenLashingGroup.visible = false;
-
-                const lashingStrapMat = strapMat.clone();
-                lashingStrapMat.polygonOffset = true;
-                lashingStrapMat.polygonOffsetFactor = -2.0;
-                lashingStrapMat.polygonOffsetUnits = -4.0;
-
-                const strapCount = Math.max(4, Math.min(8, Math.floor(cL * 0.85)));
-                for (let k = 0; k < strapCount; k++) {
-                    const sx = -cL * 0.42 + (k / (strapCount - 1)) * (cL * 0.84);
-                    // Top horizontal strap across roof cleanly resting on top of the hood
-                    const topStrap = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.018, cW + 0.09), lashingStrapMat);
-                    topStrap.position.set(sx, cargoTopY + 0.032, 0);
-                    topStrap.castShadow = true;
-                    lashingGroup.add(topStrap);
-
-                    // Left & Right vertical/angled lashing legs down to Flat Rack side rails + Steel Ratchet Tensioner
-                    [-1, 1].forEach(sz => {
-                        const sideStrap = new THREE.Mesh(new THREE.BoxGeometry(0.065, cH + dunnageH, 0.018), lashingStrapMat);
-                        sideStrap.position.set(sx, deckTopY + (cH + dunnageH) * 0.5, sz * (cW * 0.5 + 0.036));
-                        sideStrap.castShadow = true;
-                        lashingGroup.add(sideStrap);
-
-                        // Metallic ratchet buckle tensioner at mid-lower height
-                        const ratchet = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.18, 0.05), MATS.galvSteel);
-                        ratchet.position.set(sx, cargoBottomY + cH * 0.28, sz * (cW * 0.5 + 0.045));
-                        lashingGroup.add(ratchet);
-
-                        // Snapped/frayed strap tail remaining on Flat Rack side girder after lashing rupture
-                        const tailLen = 0.55 + (k % 2) * 0.18;
-                        const brokenTail = new THREE.Mesh(new THREE.BoxGeometry(0.065, tailLen, 0.018), MATS.redMaster);
-                        brokenTail.position.set(sx, deckTopY - tailLen * 0.38, sz * (W * 0.5 + 0.035));
-                        brokenTail.rotation.x = sz * 0.28;
-                        brokenTail.rotation.z = (k % 2 === 0 ? 1 : -1) * 0.16;
-                        brokenLashingGroup.add(brokenTail);
-                    });
-                }
-                oogGroup.add(lashingGroup);
-                brokenLashingGroup.traverse(o => { o.userData.noLugWeld = true; });
-                group.add(brokenLashingGroup);
-
-                oogGroup.userData.oogMeta = {
-                    cL,
-                    cW,
-                    cH,
-                    // Exact outer envelope used by physics (separate from Flat Rack L/W/H)
-                    half: { hx: cL * 0.5, hy: cH * 0.5, hz: cW * 0.5 },
-                    centerY: cargoBottomY + cH / 2,
-                    cargoBottomY,
-                    deckTopY,
-                    deckH: 0.30,
-                    frameL: L,
-                    frameW: W,
-                    frameH: H
-                };
-                oogGroup.traverse(o => { o.userData.noLugWeld = true; });
-                group.add(oogGroup);
+            const bearerW = Math.max(W - 0.12, cW + 0.14);
+            const numBearers = Math.max(4, Math.floor(cL * 0.85));
+            for (let b = 0; b < numBearers; b++) {
+                const bx = numBearers <= 1 ? 0 : (-cL * 0.44 + (b / (numBearers - 1)) * (cL * 0.88));
+                const bearer = new THREE.Mesh(new THREE.BoxGeometry(0.16, dunnageH, bearerW), plankMat);
+                bearer.position.set(bx, deckTopY + dunnageH / 2, 0);
+                bearer.castShadow = true;
+                bearer.userData.noLugWeld = true;
+                group.add(bearer);
             }
+
+            const freeEndSpan = (L - 0.50 - cL) * 0.5;
+            if (freeEndSpan > 0.65) {
+                [-1, 1].forEach(sx => {
+                    const px = sx * (cL * 0.5 + freeEndSpan * 0.5);
+                    const pallet = new THREE.Mesh(new THREE.BoxGeometry(freeEndSpan * 0.82, 0.11, W * 0.86), plankMat);
+                    pallet.position.set(px, deckTopY + 0.055, 0);
+                    pallet.userData.noLugWeld = true;
+                    group.add(pallet);
+                });
+            }
+
+            const crateMat = MATS.woodCrate.clone();
+            const crateBody = new THREE.Mesh(new THREE.BoxGeometry(cL, cH, cW), crateMat);
+            crateBody.position.set(0, cargoBottomY + cH / 2, 0);
+            crateBody.castShadow = true;
+            crateBody.receiveShadow = true;
+            oogGroup.add(crateBody);
+
+            const hoodH = Math.min(0.68, cH * 0.28);
+            const polyHoodMat = new THREE.MeshStandardMaterial({
+                color: 0xf1f5f9,
+                roughness: 0.45,
+                metalness: 0.02,
+                polygonOffset: true,
+                polygonOffsetFactor: -1.0,
+                polygonOffsetUnits: -2.0
+            });
+            const polyHood = new THREE.Mesh(new THREE.BoxGeometry(cL + 0.06, hoodH, cW + 0.06), polyHoodMat);
+            polyHood.position.set(0, cargoTopY - hoodH / 2 + 0.015, 0);
+            polyHood.castShadow = true;
+            polyHood.receiveShadow = true;
+            oogGroup.add(polyHood);
+
+            const studCount = Math.max(4, Math.floor(cL * 0.9));
+            for (let s = 0; s < studCount; s++) {
+                const sx = studCount <= 1 ? 0 : (-cL * 0.48 + (s / (studCount - 1)) * (cL * 0.96));
+                const stud = new THREE.Mesh(new THREE.BoxGeometry(0.09, cH + 0.02, cW + 0.04), plankMat);
+                stud.position.set(sx, cargoBottomY + cH / 2, 0);
+                oogGroup.add(stud);
+            }
+            [0.06, 0.52, 0.96].forEach(hf => {
+                const band = new THREE.Mesh(new THREE.BoxGeometry(cL + 0.04, 0.09, cW + 0.04), plankMat);
+                band.position.set(0, cargoBottomY + cH * hf, 0);
+                oogGroup.add(band);
+            });
+
+            // Over-the-top ratchet lashing: top across cargo, sides outside faces, anchor at deck rail
+            const lashingGroup = new THREE.Group();
+            lashingGroup.name = 'flatRackLashingStraps';
+            const brokenLashingGroup = new THREE.Group();
+            brokenLashingGroup.name = 'flatRackBrokenStraps';
+            brokenLashingGroup.visible = false;
+
+            const lashingStrapMat = strapMat.clone();
+            lashingStrapMat.polygonOffset = true;
+            lashingStrapMat.polygonOffsetFactor = -2.0;
+            lashingStrapMat.polygonOffsetUnits = -4.0;
+
+            const strapCount = Math.max(4, Math.min(8, Math.floor(cL * 0.85)));
+            const railZ = Math.max(W * 0.5 + 0.02, cW * 0.5 + 0.08);
+            for (let k = 0; k < strapCount; k++) {
+                const sx = strapCount <= 1 ? 0 : (-cL * 0.42 + (k / (strapCount - 1)) * (cL * 0.84));
+                const topStrap = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.018, cW + 0.12), lashingStrapMat);
+                topStrap.position.set(sx, cargoTopY + 0.04, 0);
+                topStrap.castShadow = true;
+                lashingGroup.add(topStrap);
+
+                [-1, 1].forEach(sz => {
+                    const sideH = Math.max(0.4, cargoTopY - deckTopY);
+                    const sideStrap = new THREE.Mesh(new THREE.BoxGeometry(0.065, sideH, 0.018), lashingStrapMat);
+                    sideStrap.position.set(sx, deckTopY + sideH * 0.5, sz * (cW * 0.5 + 0.04));
+                    sideStrap.castShadow = true;
+                    lashingGroup.add(sideStrap);
+
+                    // Short pull-down from cargo side to FR side rail (outside cargo)
+                    const pullLen = Math.max(0.18, railZ - cW * 0.5);
+                    const pull = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.016, pullLen), lashingStrapMat);
+                    pull.position.set(sx, deckTopY + 0.04, sz * (cW * 0.5 + pullLen * 0.5 + 0.02));
+                    lashingGroup.add(pull);
+
+                    const ratchet = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.16, 0.06), MATS.galvSteel);
+                    ratchet.position.set(sx, cargoBottomY + cH * 0.22, sz * (cW * 0.5 + 0.055));
+                    lashingGroup.add(ratchet);
+
+                    const tailLen = 0.45 + (k % 2) * 0.14;
+                    const brokenTail = new THREE.Mesh(new THREE.BoxGeometry(0.065, tailLen, 0.018), MATS.redMaster);
+                    brokenTail.position.set(sx, deckTopY + 0.08, sz * (railZ + 0.02));
+                    brokenTail.rotation.x = sz * 0.35;
+                    brokenLashingGroup.add(brokenTail);
+                });
+            }
+            oogGroup.add(lashingGroup);
+            brokenLashingGroup.traverse(o => { o.userData.noLugWeld = true; });
+            group.add(brokenLashingGroup);
+
+            oogGroup.userData.oogMeta = {
+                cL, cW, cH,
+                half: { hx: cL * 0.5, hy: cH * 0.5, hz: cW * 0.5 },
+                centerY: cargoBottomY + cH / 2,
+                cargoBottomY,
+                deckTopY,
+                deckH,
+                frameL: L,
+                frameW: W,
+                frameH: H
+            };
+            oogGroup.traverse(o => { o.userData.noLugWeld = true; });
+            group.add(oogGroup);
+        }
+
+        /**
+         * Open Top OOG: upright OTR mining tires (no side-wall pierce); may rise above roof.
+         * Tarp ON → hide CAD tarp and drape fabric over tire crowns (not a square crate).
+         */
+        function addOpenTopOogCargoAndTarp(group, L, W, H) {
+            const hasCargo = state.oogHasCargo !== false;
+            const hasTarp = state.oogTarp !== false;
+            // Hard rule: cargo may exceed ROOF (Y) only — never past end doors (X) or side walls (Z)
+            const wallClear = 0.22;
+            const maxInnerL = Math.max(1.2, L - wallClear * 2);
+            const maxInnerW = Math.max(0.85, W - wallClear * 2);
+            const halfInnerL = maxInnerL * 0.5;
+            const halfInnerW = maxInnerW * 0.5;
+
+            const cL = THREE.MathUtils.clamp(state.oogCargoL || L * 0.86, 1.2, maxInnerL);
+            const cW = THREE.MathUtils.clamp(
+                state.oogCargoW || Math.min(0.95, maxInnerW * 0.72),
+                0.55,
+                maxInnerW
+            );
+            // Wanted over-height Ø — will be clamped so the circle still fits in length
+            const wantDia = THREE.MathUtils.clamp(state.oogCargoH || H * 1.22, 0.8, 4.8);
+
+            const floorTopY = measureCadDeckTopY(group, L, W, H, -H / 2 + 0.14);
+            const skidH = 0.10;
+
+            // Thickness along width (Z) — must stay inside side walls
+            const tireThickSafe = Math.min(cW * 0.92, maxInnerW - 0.10, halfInnerW * 2 - 0.06, 0.95);
+            const tireHalfZ = tireThickSafe * 0.5;
+            const halfThickMax = halfInnerW - 0.02;
+
+            // Fit N upright tires in length: each needs full Ø along X (circle), Ø may still rise above roof
+            let numTires = Math.max(1, Math.min(4, Math.round(cL / Math.max(1.0, wantDia * 1.05))));
+            let tireDia = wantDia;
+            const gap = 0.08;
+            const fitDia = (n) => (maxInnerL - gap * Math.max(0, n - 1)) / n;
+            while (numTires > 1 && fitDia(numTires) < Math.min(wantDia, H * 0.85)) {
+                numTires -= 1;
+            }
+            tireDia = Math.min(wantDia, fitDia(numTires));
+            // Absolute: one tire cannot be longer than the inner bay
+            tireDia = THREE.MathUtils.clamp(tireDia, 0.8, maxInnerL - 0.04);
+            const tireR = tireDia * 0.5;
+
+            // Centers: |tx| + tireR ≤ halfInnerL  (no poke past doors/front)
+            const maxCenterX = Math.max(0, halfInnerL - tireR - 0.02);
+            const tireXs = [];
+            if (numTires === 1) {
+                tireXs.push(0);
+            } else {
+                const span = Math.min(cL - tireDia, maxCenterX * 2);
+                for (let t = 0; t < numTires; t++) {
+                    const u = t / (numTires - 1);
+                    const tx = -span * 0.5 + u * span;
+                    tireXs.push(THREE.MathUtils.clamp(tx, -maxCenterX, maxCenterX));
+                }
+            }
+            const tireCenterY = floorTopY + skidH + tireR;
+            const cargoPeakY = hasCargo ? (tireCenterY + tireR) : (H / 2);
+
+            // Bay footprint actually occupied (inside walls)
+            const usedL = Math.min(maxInnerL, tireDia * numTires + gap * Math.max(0, numTires - 1));
+            state.oogCargoL = Math.round(Math.min(cL, Math.max(usedL, tireDia)) * 100) / 100;
+            state.oogCargoW = Math.round(Math.min(cW, tireThickSafe + 0.12, maxInnerW) * 100) / 100;
+            state.oogCargoH = Math.round(tireDia * 100) / 100;
+
+            // Hide CAD tarp / roof sheet / baked cargo that would pierce or sit flat at rim
+            group.updateMatrixWorld(true);
+            group.traverse(child => {
+                if (!child.isMesh || !child.geometry) return;
+                if (child.parent && (child.parent.name === 'openTopOogCargo' || child.parent.name === 'openTopTarpaulin')) return;
+                const n = `${child.name || ''} ${child.material?.name || ''}`.toLowerCase();
+                const isTarpish = n.includes('tarp') || n.includes('canvas') || n.includes('cover')
+                    || n.includes('awning') || n.includes('roof_bow') || n.includes('opentop_roof')
+                    || n.includes('rolled_tarpaulin') || n.includes('bow') || n.includes('sheet')
+                    || n.includes('tarpaulin') || n.includes('roofpanel') || n.includes('roof_panel');
+                const isCadCargo = n.includes('cargo') || n.includes('crate') || n.includes('payload')
+                    || n.includes('tyre') || n.includes('tire') || n.includes('oog');
+                if (isCadCargo && hasCargo) {
+                    child.visible = false;
+                    return;
+                }
+                // Nameless thin lid near top rail → treat as CAD tarp/roof sheet
+                let isFlatTopLid = false;
+                try {
+                    const bb = new THREE.Box3().setFromObject(child);
+                    const sz = new THREE.Vector3();
+                    bb.getSize(sz);
+                    const midY = (bb.min.y + bb.max.y) * 0.5;
+                    isFlatTopLid = sz.y < 0.18 && sz.x > L * 0.45 && sz.z > W * 0.45 && midY > H * 0.28;
+                } catch (_) { /* ignore */ }
+                if (isTarpish || isFlatTopLid) {
+                    child.visible = hasTarp && !hasCargo;
+                }
+            });
+
+            if (hasCargo) {
+                const cargoGroup = new THREE.Group();
+                cargoGroup.name = 'openTopOogCargo';
+                const tireMat = MATS.rubberTire ? MATS.rubberTire.clone() : new THREE.MeshStandardMaterial({
+                    color: 0x1c1917, roughness: 0.92, metalness: 0.05
+                });
+                const hubMat = MATS.darkSteel ? MATS.darkSteel.clone() : tireMat.clone();
+                const woodMat = MATS.timberWood ? MATS.timberWood.clone() : MATS.woodCrate.clone();
+
+                const skidW = Math.min(tireThickSafe + 0.28, maxInnerW - 0.04);
+                const skid = new THREE.Mesh(new THREE.BoxGeometry(cL * 0.96, skidH, skidW), woodMat);
+                skid.position.y = floorTopY + skidH / 2;
+                skid.receiveShadow = true;
+                cargoGroup.add(skid);
+
+                const rackH = Math.min(tireR * 0.45, H * 0.28);
+                const rack = new THREE.Mesh(
+                    new THREE.BoxGeometry(cL * 0.88, rackH, Math.min(tireThickSafe * 0.5, maxInnerW * 0.35)),
+                    woodMat
+                );
+                rack.position.y = floorTopY + skidH + rackH / 2;
+                rack.castShadow = true;
+                cargoGroup.add(rack);
+
+                tireXs.forEach((tx, t) => {
+                    const tireGroup = new THREE.Group();
+                    tireGroup.name = `OTR_Tire_${t + 1}`;
+                    // Upright on tread; cylinder axis = container width (Z). Diameter in X–Y only.
+                    tireGroup.position.set(tx, tireCenterY, 0);
+
+                    const carcass = new THREE.Mesh(
+                        new THREE.CylinderGeometry(tireR, tireR, tireThickSafe, 36),
+                        tireMat
+                    );
+                    carcass.rotation.x = Math.PI / 2;
+                    carcass.castShadow = true;
+                    carcass.receiveShadow = true;
+                    tireGroup.add(carcass);
+
+                    const lugCount = 20;
+                    for (let k = 0; k < lugCount; k++) {
+                        const ang = (k / lugCount) * Math.PI * 2;
+                        const lug = new THREE.Mesh(
+                            new THREE.BoxGeometry(tireR * 0.16, 0.05, tireThickSafe * 0.90),
+                            tireMat
+                        );
+                        lug.position.set(Math.cos(ang) * (tireR - 0.02), Math.sin(ang) * (tireR - 0.02), 0);
+                        lug.rotation.z = ang + Math.PI / 2;
+                        tireGroup.add(lug);
+                    }
+
+                    const hub = new THREE.Mesh(
+                        new THREE.CylinderGeometry(tireR * 0.42, tireR * 0.42, tireThickSafe + 0.02, 24),
+                        hubMat
+                    );
+                    hub.rotation.x = Math.PI / 2;
+                    tireGroup.add(hub);
+
+                    const rim = new THREE.Mesh(new THREE.TorusGeometry(tireR * 0.52, 0.035, 8, 28), hubMat);
+                    rim.rotation.y = Math.PI / 2;
+                    tireGroup.add(rim);
+
+                    cargoGroup.add(tireGroup);
+
+                    // Chocks — clamped inside side walls
+                    [-1, 1].forEach(sz => {
+                        const chockZ = THREE.MathUtils.clamp(
+                            sz * (tireHalfZ + 0.10),
+                            -halfThickMax + 0.08,
+                            halfThickMax - 0.08
+                        );
+                        const chock = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.12, 0.16), woodMat);
+                        chock.position.set(tx, floorTopY + skidH + 0.06, chockZ);
+                        cargoGroup.add(chock);
+                    });
+                });
+
+                cargoGroup.traverse(o => {
+                    o.userData.noLugWeld = true;
+                    if (o.isMesh) o.renderOrder = 0;
+                });
+                group.add(cargoGroup);
+            }
+
+            if (!hasTarp) return;
+
+            const tarpMat = new THREE.MeshStandardMaterial({
+                color: 0x3f6b4e, roughness: 0.78, metalness: 0.02, side: THREE.DoubleSide, depthWrite: true
+            });
+            const tarpGroup = new THREE.Group();
+            tarpGroup.name = 'openTopTarpaulin';
+            const rimY = H / 2 + 0.01;
+            const coverClearance = 0.10;
+            const tarpL = L - 0.04;
+            const tarpW = W - 0.04;
+
+            if (hasCargo) {
+                const topGeo = new THREE.PlaneGeometry(tarpL, tarpW, 64, 32);
+                topGeo.rotateX(-Math.PI / 2);
+                const pos = topGeo.attributes.position;
+                const halfTW = tarpW * 0.5;
+                const rEff = tireR + coverClearance;
+                for (let i = 0; i < pos.count; i++) {
+                    const vx = pos.getX(i);
+                    const vz = pos.getZ(i);
+                    const edgeX = Math.abs(vx) / (tarpL * 0.5);
+                    const edgeZ = Math.abs(vz) / halfTW;
+                    const edge = Math.max(edgeX, edgeZ);
+                    // Lock to top rail at perimeter; full lift in the bay
+                    const rimLock = Math.max(0, 1 - Math.pow(THREE.MathUtils.clamp(edge, 0, 1), 4.5));
+
+                    // Upper semicircle of each upright tire (crown above rim when OOG)
+                    let peak = rimY + 0.03;
+                    for (let t = 0; t < tireXs.length; t++) {
+                        const dx = vx - tireXs[t];
+                        if (Math.abs(dx) > rEff) continue;
+                        const yArc = tireCenterY + Math.sqrt(Math.max(0, rEff * rEff - dx * dx));
+                        // Keep cover high across tire thickness; tuck only near side rails
+                        const zKeep = Math.max(0, 1 - Math.pow(Math.abs(vz) / Math.max(0.35, halfTW * 0.92), 2.4));
+                        peak = Math.max(peak, THREE.MathUtils.lerp(rimY + 0.04, yArc + 0.04, zKeep));
+                    }
+                    // Soft valley between tires still above rails
+                    if (peak < cargoPeakY * 0.55 + rimY * 0.45) {
+                        peak = Math.max(peak, rimY + 0.05 + (1 - edge) * 0.08);
+                    }
+                    pos.setY(i, rimY + rimLock * Math.max(0.02, peak - rimY));
+                }
+                topGeo.computeVertexNormals();
+                const sheet = new THREE.Mesh(topGeo, tarpMat);
+                sheet.castShadow = true;
+                sheet.receiveShadow = true;
+                sheet.renderOrder = 4;
+                tarpGroup.add(sheet);
+            } else {
+                const flat = new THREE.Mesh(new THREE.BoxGeometry(tarpL, 0.03, tarpW), tarpMat);
+                flat.position.y = rimY + 0.02;
+                tarpGroup.add(flat);
+            }
+
+            const skirt = Math.min(0.34, H * 0.14);
+            [-1, 1].forEach(sz => {
+                const flap = new THREE.Mesh(new THREE.BoxGeometry(tarpL, skirt, 0.018), tarpMat);
+                flap.position.set(0, rimY - skirt / 2 + 0.02, sz * (W / 2 - 0.005));
+                tarpGroup.add(flap);
+            });
+            [-1, 1].forEach(sx => {
+                const eFlap = new THREE.Mesh(new THREE.BoxGeometry(0.018, skirt, tarpW - 0.08), tarpMat);
+                eFlap.position.set(sx * (L / 2 - 0.005), rimY - skirt / 2 + 0.02, 0);
+                tarpGroup.add(eFlap);
+            });
+            tarpGroup.traverse(o => {
+                o.userData.noLugWeld = true;
+                if (o.isMesh && o.material) {
+                    o.renderOrder = Math.max(o.renderOrder || 0, 3);
+                    o.material.depthWrite = true;
+                    o.material.polygonOffset = true;
+                    o.material.polygonOffsetFactor = -4;
+                    o.material.polygonOffsetUnits = -4;
+                }
+            });
+            group.add(tarpGroup);
+        }
+
+        /**
+         * ISO Tank: keep CAD/procedural frame, replace sparse barrel with pressure-vessel style tank
+         * (shell + stiffener rings + dished heads + nozzles + saddles) fitted inside the frame.
+         */
+        function installIsoTankPressureVesselBarrel(group, L, W, H) {
+            // Hide low-detail CAD barrel / catwalk scraps that conflict with the upgraded vessel
+            const toHide = [];
+            group.traverse(child => {
+                if (!child.isMesh) return;
+                const n = `${child.name || ''} ${child.material?.name || ''}`.toLowerCase();
+                if (n.includes('barrel') || n.includes('stainless') || n.includes('tank_barrel')
+                    || n.includes('catwalk') || n.includes('isotank_barrel') || n.includes('fallback')) {
+                    toHide.push(child);
+                }
+            });
+            toHide.forEach(m => { m.visible = false; });
+
+            const vessel = new THREE.Group();
+            vessel.name = 'ISOTank_PressureVesselBarrel';
+            const tankMat = (MATS.tankSteel || MATS.vesselSteel).clone();
+            tankMat.metalness = 0.82;
+            tankMat.roughness = 0.26;
+            tankMat.side = THREE.DoubleSide;
+            const ringMat = (MATS.gunmetal || MATS.darkSteel).clone();
+            const galvMat = MATS.galvSteel.clone();
+            const saddleMat = (MATS.orangeBeam || MATS.craneYellow || MATS.darkSteel).clone();
+
+            // Fit inside ISO frame with clearance to posts/rails
+            const radius = Math.min(W, H) * 0.38;
+            const cylLen = Math.max(2.2, L * 0.78);
+            const shellCenterY = -H * 0.02;
+
+            const body = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, cylLen, 48), tankMat);
+            body.rotation.z = Math.PI / 2;
+            body.position.y = shellCenterY;
+            body.castShadow = true;
+            body.receiveShadow = true;
+            vessel.add(body);
+
+            const ringGeo = new THREE.TorusGeometry(radius + 0.012, 0.024, 10, 40);
+            [-0.42, -0.14, 0.14, 0.42].forEach(xf => {
+                const ring = new THREE.Mesh(ringGeo, ringMat);
+                ring.rotation.y = Math.PI / 2;
+                ring.position.set(xf * cylLen, shellCenterY, 0);
+                vessel.add(ring);
+            });
+
+            const headGeo = new THREE.SphereGeometry(radius, 36, 22);
+            [-1, 1].forEach(sx => {
+                const head = new THREE.Mesh(headGeo, tankMat);
+                head.scale.set(0.55, 1, 1);
+                head.position.set(sx * (cylLen * 0.5), shellCenterY, 0);
+                head.castShadow = true;
+                vessel.add(head);
+            });
+
+            // Top manway / nozzles (like pressure vessel reference)
+            [-0.26, 0, 0.26].forEach((xf, idx) => {
+                const nozR = idx === 1 ? 0.20 : 0.13;
+                const neck = new THREE.Mesh(new THREE.CylinderGeometry(nozR, nozR, 0.28, 20), tankMat);
+                neck.position.set(xf * cylLen * 0.85, shellCenterY + radius + 0.08, 0);
+                const flange = new THREE.Mesh(new THREE.CylinderGeometry(nozR * 1.4, nozR * 1.4, 0.06, 22), galvMat);
+                flange.position.set(xf * cylLen * 0.85, shellCenterY + radius + 0.22, 0);
+                vessel.add(neck, flange);
+            });
+
+            // Contoured saddles on bottom rails (stay inside frame)
+            const saddleH = Math.max(0.35, shellCenterY + H / 2 - 0.12);
+            [-0.30, 0.30].forEach(xf => {
+                const sx = xf * L;
+                const web = new THREE.Mesh(new THREE.BoxGeometry(0.22, saddleH * 0.55, W * 0.72), saddleMat);
+                web.position.set(sx, -H / 2 + saddleH * 0.28, 0);
+                const base = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.07, W * 0.78), MATS.darkSteel.clone());
+                base.position.set(sx, -H / 2 + 0.05, 0);
+                // Curved cradle block under shell
+                const cradle = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.16, radius * 1.55), saddleMat);
+                cradle.position.set(sx, shellCenterY - radius + 0.02, 0);
+                vessel.add(web, base, cradle);
+            });
+
+            // Side walkway remnant + ladder hint (professional ISO tank cues)
+            const walk = new THREE.Mesh(new THREE.BoxGeometry(L * 0.72, 0.03, 0.36), galvMat);
+            walk.position.set(0, shellCenterY + radius + 0.04, W * 0.18);
+            vessel.add(walk);
+
+            vessel.traverse(o => { o.userData.noLugWeld = true; });
+            group.add(vessel);
+        }
+
+        /** Diagonal X-bracing on ISO tank side/end bays (classic T11 / 22K2 look). */
+        function addIsoTankXBracing(group, L, W, H, mat) {
+            const frameMat = mat || new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.38, metalness: 0.35 });
+            const hx = L / 2 - 0.08;
+            const hy = H / 2 - 0.08;
+            const hz = W / 2 - 0.08;
+            const braceThick = 0.078;
+
+            const addStrut = (p1, p2, thick) => {
+                const vec = p2.clone().sub(p1);
+                const len = vec.length();
+                if (len < 0.05) return;
+                const mesh = new THREE.Mesh(new THREE.BoxGeometry(thick, len, thick), frameMat);
+                mesh.name = 'ISOTank_XBrace';
+                mesh.position.copy(p1).lerp(p2, 0.5);
+                mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), vec.normalize());
+                mesh.castShadow = true;
+                mesh.userData.noLugWeld = true;
+                group.add(mesh);
+            };
+
+            // Side frames (±Z): full X braces in each end bay + mid upright
+            [-1, 1].forEach(sz => {
+                const z = sz * hz;
+                [-1, 1].forEach(sx => {
+                    const x0 = sx * hx;
+                    const x1 = sx * (L * 0.22);
+                    // Classic X (hai đường chéo giao nhau trong khoang góc)
+                    addStrut(new THREE.Vector3(x0, -hy, z), new THREE.Vector3(x1, hy, z), braceThick);
+                    addStrut(new THREE.Vector3(x0, hy, z), new THREE.Vector3(x1, -hy, z), braceThick);
+                    // Vertical mid post at bay inner edge
+                    addStrut(new THREE.Vector3(x1, -hy, z), new THREE.Vector3(x1, hy, z), braceThick * 0.92);
+                    // Short corner-to-saddle kickers (load path to tank saddles)
+                    addStrut(new THREE.Vector3(x0, -hy, z), new THREE.Vector3(sx * L * 0.28, -H * 0.08, z), braceThick * 0.9);
+                    addStrut(new THREE.Vector3(x0, hy, z), new THREE.Vector3(sx * L * 0.28, H * 0.08, z), braceThick * 0.9);
+                });
+            });
+
+            // End frames (±X): X braces left/right of tank heads
+            [-1, 1].forEach(sx => {
+                const x = sx * hx;
+                [-1, 1].forEach(sz => {
+                    const z0 = sz * hz;
+                    const z1 = sz * (W * 0.18);
+                    addStrut(new THREE.Vector3(x, -hy, z0), new THREE.Vector3(x, hy, z1), braceThick);
+                    addStrut(new THREE.Vector3(x, hy, z0), new THREE.Vector3(x, -hy, z1), braceThick);
+                    addStrut(new THREE.Vector3(x, -hy, z0), new THREE.Vector3(x, -0.12, z1 * 0.55), braceThick * 0.88);
+                    addStrut(new THREE.Vector3(x, hy, z0), new THREE.Vector3(x, 0.18, z1 * 0.55), braceThick * 0.88);
+                });
+            });
         }
 
         // 1C. ISO TANK CONTAINER 20FT (T11 / 22K2 with Diagonal Frame Bracing, Saddle Rings, Top Walkway, Ladder & Valves)
         function addIsoTankContainer3D(group, L, W, H) {
             const frameMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.38, metalness: 0.35 });
-            const tankMat = MATS.tankSteel ? MATS.tankSteel.clone() : MATS.vesselSteel.clone();
-            const darkMat = MATS.darkSteel.clone();
-            const galvMat = MATS.galvSteel.clone();
             const beamThick = 0.11;
-
-            const addStrut = (p1, p2, thick, mat) => {
-                const vec = p2.clone().sub(p1);
-                const len = vec.length();
-                if (len < 0.05) return;
-                const mesh = new THREE.Mesh(new THREE.BoxGeometry(thick, len, thick), mat);
-                mesh.position.copy(p1).lerp(p2, 0.5);
-                mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), vec.normalize());
-                mesh.castShadow = true;
-                group.add(mesh);
-            };
 
             const hx = L / 2 - 0.08;
             const hy = H / 2 - 0.08;
@@ -649,121 +1342,14 @@
                 group.add(endBeam);
             }));
 
-            // 2. Authentic Diagonal Load-Transfer Bracing Struts on Side Frames & End Frames
-            [-1, 1].forEach(sz => {
-                const z = sz * hz;
-                [-1, 1].forEach(sx => {
-                    // Corner to saddle diagonal struts
-                    addStrut(new THREE.Vector3(sx * hx, -hy, z), new THREE.Vector3(sx * L * 0.24, 0, z), 0.085, frameMat);
-                    addStrut(new THREE.Vector3(sx * hx,  hy, z), new THREE.Vector3(sx * L * 0.24, 0, z), 0.085, frameMat);
-                    addStrut(new THREE.Vector3(sx * L * 0.24, -hy, z), new THREE.Vector3(sx * L * 0.24, hy, z), 0.08, frameMat);
-                });
-            });
-            [-1, 1].forEach(sx => {
-                const x = sx * hx;
-                [-1, 1].forEach(sz => {
-                    addStrut(new THREE.Vector3(x, -hy, sz * hz), new THREE.Vector3(x, -0.15, sz * 0.22), 0.085, frameMat);
-                    addStrut(new THREE.Vector3(x,  hy, sz * hz), new THREE.Vector3(x,  0.22, sz * 0.28), 0.08, frameMat);
-                });
-            });
+            // 2. X-bracing at corner bays (side + end frames)
+            addIsoTankXBracing(group, L, W, H, frameMat);
 
             // 8 ISO 1161 Corner Castings
             addCornerCastings(group, L, W, H);
 
-            // 3. Cylindrical Stainless/Clad Pressure Tank Shell + 2:1 Ellipsoidal Dished Heads + End Saddle Rings
-            const radius = Math.min(W, H) * 0.425;
-            const cylLen = L * 0.78;
-            const shell = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, cylLen, 44), tankMat);
-            shell.rotation.z = Math.PI / 2;
-            shell.castShadow = true;
-            shell.receiveShadow = true;
-            group.add(shell);
-
-            // Circumferential Stainless Cladding Seam Bands & Black End Saddle Rings
-            [-0.48, -0.24, 0, 0.24, 0.48].forEach((xf, idx) => {
-                const isEndRing = idx === 0 || idx === 4;
-                const band = new THREE.Mesh(
-                    new THREE.TorusGeometry(radius + (isEndRing ? 0.018 : 0.008), isEndRing ? 0.032 : 0.012, 12, 44),
-                    isEndRing ? darkMat : galvMat
-                );
-                band.rotation.y = Math.PI / 2;
-                band.position.x = xf * cylLen;
-                group.add(band);
-            });
-
-            [-1, 1].forEach(sx => {
-                const head = new THREE.Mesh(new THREE.SphereGeometry(radius, 36, 20), tankMat);
-                head.scale.set(0.46, 1, 1);
-                head.position.x = sx * (cylLen * 0.5);
-                head.castShadow = true;
-                group.add(head);
-            });
-
-            // 4. Top Aluminum Non-Slip Catwalk Walkway Grating + Folding Safety Handrail
-            const walkY = radius + 0.055;
-            const walkway = new THREE.Mesh(new THREE.BoxGeometry(L * 0.84, 0.028, 0.46), galvMat);
-            walkway.position.set(0, walkY, 0.24);
-            group.add(walkway);
-            const crossWalk = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.028, W * 0.72), galvMat);
-            crossWalk.position.set(0, walkY, 0);
-            group.add(crossWalk);
-
-            // Top Folding Safety Handrail along walkway
-            const railTopY = Math.min(H / 2 + 0.16, walkY + 0.28);
-            const topHandrail = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, L * 0.78, 10), galvMat);
-            topHandrail.rotation.z = Math.PI / 2;
-            topHandrail.position.set(0, railTopY, 0.44);
-            group.add(topHandrail);
-            [-0.36, -0.12, 0.12, 0.36].forEach(xf => {
-                const stanchion = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, railTopY - walkY, 8), galvMat);
-                stanchion.position.set(xf * L, 0.5 * (walkY + railTopY), 0.44);
-                group.add(stanchion);
-            });
-
-            // 5. Recessed Top Manhole Dome, Spill Box & Safety Relief Valve
-            const spillBox = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.14, 0.58), galvMat);
-            spillBox.position.set(-0.15, radius - 0.01, 0);
-            const manholeNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.14, 24), tankMat);
-            manholeNeck.position.set(-0.15, radius + 0.04, 0);
-            const manholeLid = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.04, 24), darkMat);
-            manholeLid.position.set(-0.15, radius + 0.12, 0);
-            const safetyValve = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.18, 16), MATS.yellowHazard);
-            safetyValve.position.set(0.32, radius + 0.06, 0);
-            group.add(spillBox, manholeNeck, manholeLid, safetyValve);
-
-            // 6. Rear Access Ladder (+X End) & Bottom Discharge Valve Manifold Box
-            const ladderX = L / 2 - 0.04;
-            const ladderZ = 0.34;
-            [-0.16, 0.16].forEach(dz => {
-                const stile = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, H - 0.24, 8), galvMat);
-                stile.position.set(ladderX, 0, ladderZ + dz);
-                group.add(stile);
-            });
-            for (let r = 0; r < 8; r++) {
-                const ry = -H * 0.38 + (r / 7) * (H * 0.76);
-                const rung = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.32, 8), galvMat);
-                rung.rotation.x = Math.PI / 2;
-                rung.position.set(ladderX, ry, ladderZ);
-                group.add(rung);
-            }
-
-            // Bottom Discharge Valve Box & CSC Data Plate
-            const valveBox = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.34, 0.44), darkMat);
-            valveBox.position.set(L / 2 - 0.26, -H / 2 + 0.28, -0.05);
-            const valvePipe = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.28, 16), galvMat);
-            valvePipe.rotation.z = Math.PI / 2;
-            valvePipe.position.set(L / 2 - 0.12, -H / 2 + 0.28, -0.05);
-            const dataPlate = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.48, 0.03), darkMat);
-            dataPlate.position.set(-L * 0.28, -H * 0.18, W / 2 - 0.04);
-            group.add(valveBox, valvePipe, dataPlate);
-
-            // Hazmat Diamond Placards on both sides
-            [-1, 1].forEach(sz => {
-                const placard = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.28, 0.02), MATS.craneRed.clone());
-                placard.rotation.z = Math.PI / 4;
-                placard.position.set(L * 0.08, 0.08, sz * (radius + 0.015));
-                group.add(placard);
-            });
+            // 3. Pressure-vessel style barrel fitted inside ISO frame (learned from vessel cargo CAD)
+            installIsoTankPressureVesselBarrel(group, L, W, H);
         }
 
         // --- HIGH-FIDELITY 3D REFRIGERATION MACHINERY UNIT (CARRIER TRANSICOLD / THERMO KING) ---
@@ -1105,7 +1691,7 @@
                 addOpenTopContainer3D(group, L, W, H);
                 return;
             }
-            if (type === 'flatrack') {
+            if (type === 'flatrack' || type === 'flatrack20') {
                 addFlatRackContainer3D(group, L, W, H);
                 return;
             }
@@ -1113,9 +1699,11 @@
                 addIsoTankContainer3D(group, L, W, H);
                 return;
             }
-            if (type === 'platform') {
-                const deck = new THREE.Mesh(new THREE.BoxGeometry(L, Math.max(0.22, H * 0.55), W), MATS.darkSteel.clone());
-                deck.position.y = -H / 2 + Math.max(0.11, H * 0.28);
+            if (type === 'platform' || type === 'platform20') {
+                const deckH = Math.max(0.22, H * 0.55);
+                const deckTopY = -H / 2 + deckH;
+                const deck = new THREE.Mesh(new THREE.BoxGeometry(L, deckH, W), MATS.darkSteel.clone());
+                deck.position.y = -H / 2 + deckH * 0.5;
                 deck.castShadow = true;
                 group.add(deck);
                 [-0.55, 0.55].forEach(xf => [-1, 1].forEach(sz => {
@@ -1124,6 +1712,7 @@
                     group.add(pocket);
                 }));
                 addCornerCastings(group, L, W, H);
+                addDeckOogCargoOverlay(group, L, W, H, deckTopY);
                 return;
             }
             const mat = type === 'iso40' ? MATS.boxMaroon : (type === 'iso40hc' ? MATS.boxGreen : MATS.reeferWhite);
@@ -1455,14 +2044,24 @@
             const CARGO_MESH_NAMES = {
                 container: 'ISO_Container_20ft',
                 container_20ft_glb: 'ISO_Container_20ft',
+                iso20hc: 'ISO_Container_20ft_HC',
                 iso40: 'ISO_Container_40ft',
                 container_40ft_glb: 'ISO_Container_40ft',
                 iso40hc: 'ISO_Container_40ft_HC',
+                iso45hc: 'ISO_Container_45ft_HC',
+                container10: 'ISO_Container_10ft',
+                iso53hc: 'ISO_Container_53ft_HC',
                 flatrack: 'Flat_Rack_Container',
+                flatrack20: 'Flat_Rack_Container_20ft',
                 opentop: 'Open_Top_Container',
+                opentop40: 'Open_Top_Container_40ft',
                 isotank: 'Tank_Container_ISO_Tank',
                 reefer: 'Reefer_Container',
+                reefer20: 'Reefer_Container_20ft',
                 platform: 'Platform_Container',
+                platform20: 'Platform_Container_20ft',
+                halfheight: 'Half_Height_Container',
+                drybulk: 'Dry_Bulk_Container',
                 crate: 'Heavy_Lift_OOG_Cargo',
                 offshore_skid: 'Heavy_Lift_OOG_Cargo',
                 pipe: 'Heavy_Lift_OOG_Cargo',
@@ -1471,16 +2070,115 @@
                 wind_nacelle: 'Wind_Turbine_Nacelle',
                 excavator: 'Excavator_Heavy_Machinery',
                 boat: 'Tugboat_Vessel_Hull',
-                car: 'SUV_Vehicle'
+                car: 'Vehicle'
             };
             group.name = CARGO_MESH_NAMES[type] || `Cargo_${type}`;
 
-            // 1. Check if model prototype exists in customCargoMeshes (or reuse authentic 22G1 standard geometry for dry ISO, Reefer & Open Top containers)
-            const isStandardDryIso = (type === 'container' || type === 'container_20ft_glb' || type === 'iso40' || type === 'container_40ft_glb' || type === 'iso40hc');
-            const isReefer = (type === 'reefer');
-            const isOpenTop = (type === 'opentop');
-            const isIsoModelFamily = (isStandardDryIso || isReefer || isOpenTop);
-            const protoMesh = (customCargoMeshes && customCargoMeshes[type]) || (isIsoModelFamily && customCargoMeshes && customCargoMeshes['container_22g1']);
+            // CAD prototypes:
+            // - Dedicated Realistic V2 OBJ when present (preferred — no stretch)
+            // - 20ft 22G1 / CONTS20FT as fallback for 20ft dry van
+            // - Lengthen 22G1 only when open-top has no dedicated CAD
+            const isTrue20ftDry = (type === 'container' || type === 'container_20ft_glb');
+            const isStandardDryIso = (isTrue20ftDry || type === 'iso40' || type === 'container_40ft_glb'
+                || type === 'iso40hc' || type === 'iso20hc' || type === 'iso45hc'
+                || type === 'container10' || type === 'iso53hc');
+            const isReefer = (type === 'reefer' || type === 'reefer20');
+            const isOpenTop = (type === 'opentop' || type === 'opentop40');
+            const isIsoModelFamily = (isStandardDryIso || isReefer || isOpenTop
+                || type === 'flatrack' || type === 'flatrack20' || type === 'isotank'
+                || type === 'platform' || type === 'platform20' || type === 'halfheight' || type === 'drybulk');
+            const dedicatedProto = customCargoMeshes && customCargoMeshes[type];
+
+            // Fit a dedicated CAD root into L×W×H, preserving authored materials when marked.
+            const mountDedicatedIsoCad = (srcRoot, bodyColorFallback) => {
+                const src = srcRoot.clone(true);
+                const keepMats = !!(srcRoot.userData && (srcRoot.userData.keepMaterials || srcRoot.userData.isoRealisticV2));
+                if (!keepMats && bodyColorFallback != null) tintIsoCadClone(src, bodyColorFallback);
+                else {
+                    src.traverse(child => {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                        }
+                    });
+                }
+                const bbox = new THREE.Box3().setFromObject(src);
+                const sz = new THREE.Vector3();
+                bbox.getSize(sz);
+                const center = new THREE.Vector3();
+                bbox.getCenter(center);
+                src.position.sub(center);
+                if (sz.x > 0.01 && sz.y > 0.01 && sz.z > 0.01) {
+                    src.scale.multiply(new THREE.Vector3(L / sz.x, H / sz.y, W / sz.z));
+                }
+                src.updateMatrixWorld(true);
+                const box2 = new THREE.Box3().setFromObject(src);
+                const c2 = new THREE.Vector3();
+                box2.getCenter(c2);
+                src.position.sub(c2);
+                group.add(src);
+                return group;
+            };
+
+            // Dedicated Realistic V2 (or any keyed CAD) — never stretch another size into this type.
+            if (dedicatedProto && isIsoModelFamily) {
+                mountDedicatedIsoCad(dedicatedProto, null);
+                // Dry / OT / reefer: ensure top twistlock holes sit on ISO 1161 centres (match STS feet)
+                if (isStandardDryIso || isReefer || isOpenTop) {
+                    stampIsoTopTwistlockHoles(group, L, W, H);
+                }
+                if (isOpenTop) {
+                    addOpenTopOogCargoAndTarp(group, L, W, H);
+                }
+                if (type === 'flatrack' || type === 'flatrack20') {
+                    const deckTopY = measureCadDeckTopY(group, L, W, H, -H / 2 + Math.min(0.60, H * 0.205));
+                    addDeckOogCargoOverlay(group, L, W, H, deckTopY);
+                }
+                if (type === 'platform' || type === 'platform20') {
+                    const deckTopY = measureCadDeckTopY(group, L, W, H, H / 2 - 0.01);
+                    addDeckOogCargoOverlay(group, L, W, H, deckTopY);
+                }
+                if (type === 'isotank') {
+                    installIsoTankPressureVesselBarrel(group, L, W, H);
+                    // CAD frame is often rails-only — restore classic corner X-bracing
+                    const braceMat = new THREE.MeshStandardMaterial({
+                        color: 0x0369a1, roughness: 0.36, metalness: 0.42, side: THREE.DoubleSide
+                    });
+                    addIsoTankXBracing(group, L, W, H, braceMat);
+                }
+                return group;
+            }
+
+            // Fallback: 40ft DC CAD for iso40 / HC only when dedicated HC OBJ missing.
+            if ((type === 'iso40' || type === 'container_40ft_glb' || type === 'iso40hc')
+                && customCargoMeshes && (customCargoMeshes['iso40'] || customCargoMeshes['container_40ft_glb'])) {
+                const src40 = customCargoMeshes['iso40'] || customCargoMeshes['container_40ft_glb'];
+                const bodyColor = type === 'iso40hc' ? 0x065f46 : 0x881337;
+                mountDedicatedIsoCad(src40, src40.userData?.isoRealisticV2 ? null : bodyColor);
+                if (type === 'iso40hc' && !src40.userData?.isoRealisticV2) {
+                    const stripeGeo = new THREE.BoxGeometry(0.32, 0.12, 0.02);
+                    const stripeMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4, metalness: 0.2 });
+                    [-L / 2 + 0.20, L / 2 - 0.20].forEach(cx => {
+                        [-W / 2 - 0.01, W / 2 + 0.01].forEach(cz => {
+                            const stripe = new THREE.Mesh(stripeGeo, stripeMat);
+                            stripe.position.set(cx, H / 2 - 0.12, cz);
+                            group.add(stripe);
+                        });
+                    });
+                }
+                return group;
+            }
+
+            // Open-top (and only when no dedicated CAD): lengthen 20ft CAD preserving door/front.
+            if (!dedicatedProto && type === 'opentop' && customCargoMeshes && customCargoMeshes['container_22g1']) {
+                if (buildFrom20ftCadLengthened(group, type, L, W, H)) {
+                    return group;
+                }
+            }
+
+            const protoMesh = dedicatedProto
+                || (isTrue20ftDry && customCargoMeshes && customCargoMeshes['container_22g1'])
+                || null;
 
             if (protoMesh) {
                 const clone = protoMesh.clone(true);
@@ -1580,58 +2278,59 @@
                 // 1. Center strictly at (0, 0, 0)
                 clone.position.sub(center);
 
-                // 2. Proportionally scale to exactly match simulation dimensions (L, H, W)
+                // 2. Fit dims. Shared 22G1 is 20ft-only (never stretch into 40/HC).
+                //    Dedicated CAD may axis-fit; shared 20ft uses near-uniform W/H fit.
                 if (sz.x > 0.001 && sz.y > 0.001 && sz.z > 0.001 && L > 0 && H > 0 && W > 0) {
                     const sx = L / sz.x;
                     const sy = H / sz.y;
                     const szRate = W / sz.z;
-                    clone.scale.multiply(new THREE.Vector3(sx, sy, szRate));
+                    const isShared20ftProto = !dedicatedProto && protoMesh === (customCargoMeshes && customCargoMeshes['container_22g1']);
+                    if (isShared20ftProto && Math.abs(sx - 1) > 0.12) {
+                        // Refuse anisotropic stretch — fall through to procedural ISO shell below.
+                    } else {
+                        if (isShared20ftProto) {
+                            clone.scale.multiplyScalar((sy + szRate) * 0.5);
+                        } else {
+                            clone.scale.multiply(new THREE.Vector3(sx, sy, szRate));
+                        }
+                        clone.updateMatrixWorld(true);
+                        const postBox = new THREE.Box3().setFromObject(clone);
+                        const postCenter = new THREE.Vector3();
+                        postBox.getCenter(postCenter);
+                        clone.position.sub(postCenter);
+                        group.add(clone);
+
+                        const isDedicatedThermoKingModel = protoMesh === customCargoMeshes['reefer'] || protoMesh === customCargoMeshes['reefer_40hc'];
+                        if (isReefer && !isDedicatedThermoKingModel && !customCargoMeshes['reefer']) {
+                            addReeferMachineryUnit(group, L, W, H);
+                        }
+                        if (isOpenTop) {
+                            addOpenTopTopAssembly(group, L, W, H);
+                        }
+                        if (type === 'iso40hc') {
+                            const stripeGeo = new THREE.BoxGeometry(0.32, 0.12, 0.02);
+                            const stripeMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4, metalness: 0.2 });
+                            [-L / 2 + 0.20, L / 2 - 0.20].forEach(cx => {
+                                [-W / 2 - 0.01, W / 2 + 0.01].forEach(cz => {
+                                    const stripe = new THREE.Mesh(stripeGeo, stripeMat);
+                                    stripe.position.set(cx, H / 2 - 0.12, cz);
+                                    group.add(stripe);
+                                });
+                            });
+                        }
+                        return group;
+                    }
+                } else {
+                    clone.updateMatrixWorld(true);
+                    group.add(clone);
+                    return group;
                 }
-
-                clone.updateMatrixWorld(true);
-                // Ensure perfect geometric centering at (0, 0, 0) after scaling
-                const postBox = new THREE.Box3().setFromObject(clone);
-                const postCenter = new THREE.Vector3();
-                postBox.getCenter(postCenter);
-                clone.position.sub(postCenter);
-
-                // Add clone to root group
-                group.add(clone);
-
-                // Add Type-Specific Architectural Details directly to root group (ensures perfect alignment in world coordinate space):
-                // 1. Reefer: The authentic Carrier PrimeLINE 3D model ALREADY seamlessly integrates the machinery bay,
-                //    condenser fan, V-frame, controller, compressor, and cable tray directly into the front bulkhead geometry.
-                //    NEVER add detached external procedural blocks.
-                const isDedicatedThermoKingModel = protoMesh === customCargoMeshes['reefer'] || protoMesh === customCargoMeshes['reefer_40hc'];
-                if (isReefer && !isDedicatedThermoKingModel && !customCargoMeshes['reefer']) {
-                    addReeferMachineryUnit(group, L, W, H);
-                }
-
-                // 2. Open Top: Add Arched Roof Bows, Swinging Door Header & Tarpaulin Cover directly to group
-                if (isOpenTop) {
-                    addOpenTopTopAssembly(group, L, W, H);
-                }
-
-                // 3. For High Cube dry container (45G1), add ISO 6346 standard yellow-black corner caution stripes directly to group
-                if (type === 'iso40hc') {
-                    const stripeGeo = new THREE.BoxGeometry(0.32, 0.12, 0.02);
-                    const stripeMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4, metalness: 0.2 });
-                    [-L / 2 + 0.20, L / 2 - 0.20].forEach(cx => {
-                        [-W / 2 - 0.01, W / 2 + 0.01].forEach(cz => {
-                            const stripe = new THREE.Mesh(stripeGeo, stripeMat);
-                            stripe.position.set(cx, H / 2 - 0.12, cz);
-                            group.add(stripe);
-                        });
-                    });
-                }
-
-                return group;
             }
 
-            if (type === 'iso40' || type === 'iso40hc' || type === 'reefer' || type === 'opentop' || type === 'flatrack' || type === 'isotank' || type === 'platform') {
-                addIsoFamily(group, type, L, W, H);
-            } else if (type === 'container') {
-                // ISO 668 22G1 20ft — shared corrugated dry-van builder
+            // Procedural ISO family — fixed corner castings / posts / corrugation pitch; L only adds ribs.
+            if (type === 'iso40' || type === 'iso40hc' || type === 'reefer' || type === 'opentop' || type === 'flatrack' || type === 'isotank' || type === 'platform' || type === 'container_40ft_glb') {
+                addIsoFamily(group, type === 'container_40ft_glb' ? 'iso40' : type, L, W, H);
+            } else if (type === 'container' || type === 'container_20ft_glb') {
                 addCorrugatedShell(group, L, W, H, MATS.containerBlue.clone());
             } else if (type === 'crate') {
                 // 2. HEAVY ENGINEERING SKID CRATE (Steel I-Beam Skid Base, Angle-Iron Frame, X-Bracing & Bolted Gussets)
@@ -1874,6 +2573,8 @@
                 hudBeta: 'Góc β', hudTf: 'Hệ số TF', hudLeg: '% SWL Cáp', hudMbl: 'MBL Min',
                 hudRadius: 'Bán kính R', hudCog: 'Lệch CoG', hudTilt: 'Nghiêng', hudClear: 'Cách Sàn', hudSpan: 'Nhịp dầm',
                 gearAuto: 'Theo thông số chung', gearCut: 'Cắt cáp', gearRepair: 'Nối lại', gearClear: 'Bỏ chọn',
+                cutTool: 'Cắt',
+                cutToolTitle: 'Kéo cắt cáp: bật rồi bấm vào cáp/xích để cắt đúng chỗ',
                 memLen: 'Chiều dài làm việc', pickA: 'Điểm bắt cáp A (từ tâm)', pickB: 'Điểm bắt cáp B (từ tâm)',
                 memSwl: 'SWL thanh', memMass: 'Tự trọng thanh', beamSwl: 'SWL cả bộ dầm', beamSf: 'Hệ số an toàn SF',
                 autoVal: 'Tự động', mixedVal: 'Khác nhau',
@@ -1887,6 +2588,8 @@
                 hudBeta: 'Angle β', hudTf: 'TF Factor', hudLeg: '% Leg SWL', hudMbl: 'MBL Min',
                 hudRadius: 'Radius R', hudCog: 'CoG Off', hudTilt: 'Tilt', hudClear: 'Clearance', hudSpan: 'Span',
                 gearAuto: 'Use global', gearCut: 'Cut sling', gearRepair: 'Reeve', gearClear: 'Clear',
+                cutTool: 'Cut',
+                cutToolTitle: 'Cable scissors: turn on, then click a rope/chain to cut at that point',
                 memLen: 'Working length', pickA: 'Pick point A from centre', pickB: 'Pick point B from centre',
                 memSwl: 'Member SWL', memMass: 'Member self-weight', beamSwl: 'Assembly SWL', beamSf: 'Factor of safety',
                 autoVal: 'Automatic', mixedVal: 'Mixed',
@@ -1917,6 +2620,185 @@
             if (beam && beam.widthM != null) spanZ = Math.max(0.4, beam.widthM);
             return { spanX, spanZ };
         }
+
+        /** ISO 1161 / 668 twistlock centre pitch for STS telescopic spreader (ft). */
+        function isoTwistlockSpan(ft) {
+            const size = Number(ft) || (state.stsSizeFt || 40);
+            if (size <= 20) return { spanX: 5.853, spanZ: 2.259, outerL: 6.058, outerW: 2.438, outerH: 2.591, cargoId: 'container' };
+            if (size >= 45) return { spanX: 13.557, spanZ: 2.259, outerL: 13.716, outerW: 2.438, outerH: 2.896, cargoId: 'iso40hc' };
+            return { spanX: 11.985, spanZ: 2.259, outerL: 12.192, outerW: 2.438, outerH: 2.591, cargoId: 'iso40' };
+        }
+        if (typeof window !== 'undefined') window.isoTwistlockSpan = isoTwistlockSpan;
+
+        /** Pick STS ft class from cargo outer length so spreader corners match the box. */
+        function stsFtFromCargoLength(L) {
+            const len = L != null ? L : (state.L || 12.192);
+            if (len >= 13.0) return 45;
+            if (len >= 9.0) return 40;
+            return 20;
+        }
+
+        /**
+         * Resolve ISO pitch + outer envelope from current cargo (corners must match).
+         * Auto-upgrades stsSizeFt when cargo is longer than the selected spreader.
+         */
+        function resolveStsFitToCargo() {
+            let ft = Number(state.stsSizeFt) || 40;
+            if (!state.stsTwinLift) {
+                const need = stsFtFromCargoLength(state.L);
+                // Never keep a shorter telescopic size than the cargo on deck
+                if (need > ft) ft = need;
+                if (state.L < 9 && ft > 20) ft = 20;
+                state.stsSizeFt = ft;
+            }
+            const iso = isoTwistlockSpan(ft);
+            const outerL = state.L || iso.outerL;
+            const outerW = state.W || iso.outerW;
+            const holes = isoCornerHoleHalf(outerL, outerW);
+            return {
+                ft,
+                iso,
+                outerL,
+                outerW,
+                halfX: holes.hx,
+                halfZ: holes.hz,
+                spanX: holes.spanX,
+                spanZ: holes.spanZ
+            };
+        }
+        if (typeof window !== 'undefined') window.resolveStsFitToCargo = resolveStsFitToCargo;
+
+        /**
+         * Measure STS CAD main-frame plan size (exclude red flippers) → match container outer corners.
+         */
+        function measureStsCadFramePlanSpan(root) {
+            root.updateMatrixWorld(true);
+            const box = new THREE.Box3();
+            let any = false;
+            root.traverse(o => {
+                if (!o.isMesh) return;
+                const n = (o.name || '').toLowerCase();
+                if (n.includes('flipper')) return;
+                if (n.includes('guide_arm') || n.includes('guidearm')) return;
+                box.expandByObject(o);
+                any = true;
+            });
+            if (!any || box.isEmpty()) box.setFromObject(root);
+            const sz = new THREE.Vector3();
+            box.getSize(sz);
+            return { spanX: Math.max(0.5, sz.x), spanZ: Math.max(0.5, sz.z) };
+        }
+
+        /**
+         * Measure STS CAD twistlock pin centres (ISO group / DarkSteel_Twistlock meshes).
+         */
+        function measureStsCadTwistlockSpan(root) {
+            root.updateMatrixWorld(true);
+            const centers = [];
+            const pushCenter = (obj) => {
+                const b = new THREE.Box3().setFromObject(obj);
+                if (b.isEmpty()) return;
+                const c = new THREE.Vector3();
+                b.getCenter(c);
+                centers.push(c);
+            };
+            let twistGroup = null;
+            root.traverse(o => {
+                const n = (o.name || '').toLowerCase();
+                if (n.includes('corner_twistlock') || n.includes('twistlocks_iso') || n === '08_corner_twistlocks_iso') {
+                    twistGroup = o;
+                }
+            });
+            if (twistGroup) {
+                let meshCount = 0;
+                twistGroup.traverse(o => {
+                    if (!o.isMesh) return;
+                    meshCount += 1;
+                    pushCenter(o);
+                });
+                if (meshCount <= 1) {
+                    centers.length = 0;
+                    const quads = { pp: [], pm: [], mp: [], mm: [] };
+                    const _v = new THREE.Vector3();
+                    twistGroup.traverse(o => {
+                        if (!o.isMesh || !o.geometry) return;
+                        const pos = o.geometry.attributes && o.geometry.attributes.position;
+                        if (!pos) return;
+                        o.updateMatrixWorld(true);
+                        for (let i = 0; i < pos.count; i += Math.max(1, Math.floor(pos.count / 800))) {
+                            _v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld);
+                            const key = (_v.x >= 0 ? 'p' : 'm') + (_v.z >= 0 ? 'p' : 'm');
+                            quads[key].push(_v.clone());
+                        }
+                    });
+                    Object.keys(quads).forEach(k => {
+                        const arr = quads[k];
+                        if (!arr.length) return;
+                        const c = new THREE.Vector3();
+                        arr.forEach(p => c.add(p));
+                        c.multiplyScalar(1 / arr.length);
+                        centers.push(c);
+                    });
+                }
+            }
+            if (centers.length < 2) {
+                root.traverse(o => {
+                    if (!o.isMesh) return;
+                    const n = `${o.name || ''} ${o.material?.name || ''}`.toLowerCase();
+                    if (n.includes('twistlock')) pushCenter(o);
+                });
+            }
+            if (centers.length < 2) return null;
+            let maxX = 0, maxZ = 0;
+            centers.forEach(c => {
+                maxX = Math.max(maxX, Math.abs(c.x));
+                maxZ = Math.max(maxZ, Math.abs(c.z));
+            });
+            if (maxX < 0.4 || maxZ < 0.4) return null;
+            return { spanX: maxX * 2, spanZ: maxZ * 2, centers };
+        }
+
+        /** Procedural ISO twistlock feet at exact ±span/2 (guarantees hole alignment). */
+        function addIsoTwistlockFeet(parent, halfX, halfZ, yTop) {
+            const steel = MATS.darkSteel || MATS.gunmetal || new THREE.MeshStandardMaterial({ color: 0x374151 });
+            const pinMat = steel.clone ? steel.clone() : steel;
+            const housingMat = (MATS.spreaderYellow || MATS.yellowHazard || pinMat).clone
+                ? (MATS.spreaderYellow || MATS.yellowHazard || pinMat).clone()
+                : pinMat;
+            const feet = new THREE.Group();
+            feet.name = 'ISO_Twistlock_Feet';
+            [[1, 1], [-1, 1], [-1, -1], [1, -1]].forEach((s, i) => {
+                const g = new THREE.Group();
+                g.name = `Twistlock_${i}`;
+                g.position.set(s[0] * halfX, yTop, s[1] * halfZ);
+                // Housing pad above the pin
+                const pad = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.08, 0.16), housingMat);
+                pad.position.y = 0.02;
+                // Conical / stepped twistlock pin (ISO guide) pointing down into casting
+                const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.034, 0.12, 12), pinMat);
+                pin.position.y = -0.08;
+                const tip = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.028, 0.05, 10), pinMat);
+                tip.position.y = -0.165;
+                g.add(pad, pin, tip);
+                feet.add(g);
+            });
+            feet.traverse(o => {
+                if (!o.isMesh) return;
+                o.castShadow = true;
+                o.userData.gearKind = 'member';
+                o.userData.memberId = 'spreader_main';
+                o.userData.memberBody = true;
+            });
+            parent.add(feet);
+            return feet;
+        }
+
+        /** STS direct twistlock on roof vs cable/chain legs from spreader pick points. */
+        function isStsDirectAttach() {
+            return state.beamType === 'container_spreader'
+                && (state.stsAttachMode || 'direct') !== 'cable';
+        }
+        if (typeof window !== 'undefined') window.isStsDirectAttach = isStsDirectAttach;
 
         function memberCatalog() {
             const type = state.beamType;
@@ -2006,7 +2888,12 @@
                 const z = Math.max(gap(memberSpec('lowPlus')), gap(memberSpec('lowMinus')));
                 return { spanX: gap(top), spanZ: z };
             }
-            if (state.beamType === 'container_spreader') return base;
+            if (state.beamType === 'container_spreader') {
+                const fit = typeof resolveStsFitToCargo === 'function'
+                    ? resolveStsFitToCargo()
+                    : isoTwistlockSpan(state.stsSizeFt || 40);
+                return { spanX: fit.spanX || fit.iso?.spanX || 11.985, spanZ: fit.spanZ || fit.iso?.spanZ || 2.259 };
+            }
             if (state.beamType === 'frame') {
                 return {
                     spanX: Math.max(gap(memberSpec('railPos')), gap(memberSpec('railNeg'))),
@@ -2071,7 +2958,16 @@
         }
 
         // Computes physically grounded masses (in metric tonnes) for every component in the rigging load path
+        let _massBreakdownCache = null;
+        let _massBreakdownDirty = true;
+        function markMassBreakdownDirty() {
+            _massBreakdownDirty = true;
+            _massBreakdownCache = null;
+        }
+        if (typeof window !== 'undefined') window.markMassBreakdownDirty = markMassBreakdownDirty;
+
         function computeRiggingMassBreakdown() {
+            if (!_massBreakdownDirty && _massBreakdownCache) return _massBreakdownCache;
             const slingMassKg = (item, lenM) => {
                 if (item && item.massKg != null && item.massKg > 0) return item.massKg;
                 let look = typeof effectiveSlingType === 'function'
@@ -2081,6 +2977,18 @@
                 const parts = Math.max(1, Math.min(4, (item && item.parts) || 1));
                 const d = Math.max(8, (item && item.diaMm) || (look === 'web' || look === 'round_sling' ? 60 : 20));
                 const L = Math.max(0.4, lenM || 2.5);
+                const swl = (item && item.swlT) || state.wllPerLeg || 15.0;
+                const grade = (item && item.grade) || '';
+
+                const getSpec = (typeof CAE !== 'undefined' && CAE.getSlingPhysicalSpec)
+                    || (typeof window !== 'undefined' && window.CAE && window.CAE.getSlingPhysicalSpec);
+                if (getSpec) {
+                    const spec = getSpec(look, swl, d, grade);
+                    if (spec && typeof spec.computeMassKg === 'function') {
+                        return spec.computeMassKg(L, parts);
+                    }
+                }
+
                 let baseKg = 0;
                 if (look === 'chain') baseKg = 0.022 * d * d * L + 1.8;
                 else if (look === 'web') baseKg = 0.018 * d * L + 0.9;
@@ -2195,6 +3103,8 @@
                 grossCraneLoadT
             };
             phy.gearWeight = belowHookRiggingT;
+            _massBreakdownCache = phy.massBreakdown;
+            _massBreakdownDirty = false;
             return phy.massBreakdown;
         }
 
@@ -2218,18 +3128,24 @@
 
         function addModuliftEnd(x, y, memberId, outward, twinLowerEars) {
             const od = memberDiameter(memberId);
-            const flange = new THREE.Mesh(new THREE.CylinderGeometry(od * 0.68, od * 0.68, 0.028, 20), MATS.darkSteel);
+            // Collar sits on the pipe face (pipe ends ~0.30 m inboard of lug center)
+            const flange = new THREE.Mesh(new THREE.CylinderGeometry(od * 0.72, od * 0.72, 0.032, 24), MATS.darkSteel);
             flange.rotation.z = Math.PI / 2;
-            flange.position.set(x - outward * 0.34, y, 0);
+            flange.position.set(x - outward * 0.30, y, 0);
+            flange.userData.gearKind = 'member';
+            flange.userData.memberId = memberId;
+            flange.userData.memberBody = true;
+            flange.castShadow = true;
             spreaderRootGroup.add(flange);
 
-            const taper = new THREE.Mesh(new THREE.CylinderGeometry(od * 0.38, od * 0.56, 0.30, 18), MATS.yellowHazard);
+            // Taper sleeve overlaps pipe OD → drop-box (continuous steel, no floating end)
+            const taper = new THREE.Mesh(new THREE.CylinderGeometry(od * 0.42, od * 0.58, 0.32, 20), MATS.yellowHazard);
             taper.rotation.z = Math.PI / 2;
-            taper.position.set(x - outward * 0.18, y, 0);
+            taper.position.set(x - outward * 0.16, y, 0);
             tagMember(taper, memberId);
 
             // End drop box head
-            const dropBox = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.24, twinLowerEars ? 0.20 : 0.12), MATS.yellowHazard);
+            const dropBox = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.26, twinLowerEars ? 0.22 : 0.14), MATS.yellowHazard);
             dropBox.position.set(x, y, 0);
             tagMember(dropBox, memberId);
 
@@ -2303,7 +3219,51 @@
             spreaderRootGroup.add(g);
         }
 
+        // Coalesce rapid OD/length/type tweaks into one mesh rebuild (keeps 1080p UI responsive)
+        let _spreaderRebuildTimer = null;
+        function scheduleRebuildSpreaderVisuals(delayMs) {
+            const ms = delayMs == null ? 90 : delayMs;
+            if (_spreaderRebuildTimer) clearTimeout(_spreaderRebuildTimer);
+            _spreaderRebuildTimer = setTimeout(() => {
+                _spreaderRebuildTimer = null;
+                rebuildSpreaderVisuals();
+            }, ms);
+        }
+        function flushRebuildSpreaderVisuals() {
+            if (_spreaderRebuildTimer) {
+                clearTimeout(_spreaderRebuildTimer);
+                _spreaderRebuildTimer = null;
+                rebuildSpreaderVisuals();
+            }
+        }
+        if (typeof window !== 'undefined') {
+            window.scheduleRebuildSpreaderVisuals = scheduleRebuildSpreaderVisuals;
+            window.flushRebuildSpreaderVisuals = flushRebuildSpreaderVisuals;
+        }
+
+        function markRenderPerfBurst(ms) {
+            if (!state.renderPerf) state.renderPerf = { level: 2, emaMs: 16.7, burstUntil: 0 };
+            state.renderPerf.burstUntil = (typeof performance !== 'undefined' ? performance.now() : Date.now()) + (ms || 1600);
+            state.renderPerf.level = 0;
+            // Invalidate sling geometry caches so first frame after rebuild redraws seating
+            if (Array.isArray(sling3DPool)) {
+                sling3DPool.forEach(s => {
+                    s._cacheA = null;
+                    s._cacheB = null;
+                    s._cacheLen = null;
+                    s._cacheTaut = null;
+                });
+            }
+        }
+        if (typeof window !== 'undefined') window.markRenderPerfBurst = markRenderPerfBurst;
+
         function rebuildSpreaderVisuals() {
+            if (_spreaderRebuildTimer) {
+                clearTimeout(_spreaderRebuildTimer);
+                _spreaderRebuildTimer = null;
+            }
+            if (typeof markMassBreakdownDirty === 'function') markMassBreakdownDirty();
+            markRenderPerfBurst(1800);
             disposeBeamGroups();
             jointLinks.length = 0;
             while (spreaderRootGroup.children.length > 0) spreaderRootGroup.remove(spreaderRootGroup.children[0]);
@@ -2337,60 +3297,110 @@
             spreaderRootGroup.visible = true;
 
             if (beamType === 'container_spreader') {
-                const halfX = spanX / 2;
-                const halfZ = spanZ / 2;
+                // Fit spreader OUTER corners to container OUTER corners; pins → ISO holes
+                const fit = resolveStsFitToCargo();
+                const { outerL, outerW, halfX, halfZ, ft } = fit;
+                const halfOuterX = outerL * 0.5;
+                const halfOuterZ = outerW * 0.5;
 
-                // Central Telescopic Spreader Mainframe Body
-                const mainBodyW = Math.min(spanX * 0.72, 5.4);
-                const mainBox = new THREE.Mesh(new THREE.BoxGeometry(mainBodyW, 0.58, 0.78), MATS.spreaderYellow);
-                mainBox.position.set(0, 0, 0);
-                tagMember(mainBox, 'spreader_main');
+                // Keep gear beam dims in sync with live cargo footprint
+                if (state.gear && state.gear.beam) {
+                    state.gear.beam.lengthM = fit.spanX;
+                    state.gear.beam.widthM = fit.spanZ;
+                }
 
-                [-1, 1].forEach(sx => {
-                    const extLen = Math.max(0.8, halfX - mainBodyW / 4);
-                    const extArm = new THREE.Mesh(new THREE.BoxGeometry(extLen, 0.44, 0.62), MATS.darkSteel);
-                    extArm.position.set(sx * (mainBodyW / 4 + extLen / 2), 0, 0);
-                    spreaderRootGroup.add(extArm);
+                const stsKey = state.stsTwinLift
+                    ? 'sts_spreader_twin'
+                    : (ft <= 20 ? 'sts_spreader_20' : (ft >= 45 ? 'sts_spreader_45' : 'sts_spreader_40'));
+                const stsCad = customBeamMeshes && customBeamMeshes[stsKey];
 
-                    const endBeam = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.52, spanZ + 0.22), MATS.spreaderYellow);
-                    endBeam.position.set(sx * halfX, 0, 0);
-                    tagMember(endBeam, sx > 0 ? 'endPlus' : 'endMinus');
+                if (stsCad) {
+                    const cad = stsCad.clone(true);
+                    cad.updateMatrixWorld(true);
+                    const bbox = new THREE.Box3().setFromObject(cad);
+                    const center = new THREE.Vector3();
+                    bbox.getCenter(center);
+                    cad.position.sub(center);
+                    cad.updateMatrixWorld(true);
 
-                    [-1, 1].forEach(sz => {
-                        const cornerX = sx * halfX;
-                        const cornerZ = sz * halfZ;
-                        const housing = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.42, 0.35), MATS.darkSteel);
-                        housing.position.set(cornerX, -0.06, cornerZ);
-                        const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.048, 0.25, 12), MATS.galvSteel);
-                        pin.position.set(cornerX, -0.32, cornerZ);
-                        const ind = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.14, 0.14), MATS.lpHighlight);
-                        ind.position.set(cornerX + sx * 0.2, 0.1, cornerZ);
-                        const flipperArm = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.82, 0.2), MATS.yellowHazard);
-                        flipperArm.position.set(cornerX + sx * 0.24, -0.32, cornerZ + sz * 0.18);
-                        flipperArm.rotation.z = -sx * 0.42;
-                        flipperArm.rotation.x = sz * 0.42;
-                        spreaderRootGroup.add(housing, pin, ind, flipperArm);
+                    // Scale MAIN FRAME (no flippers) → container outer L×W so corners match
+                    const frame = measureStsCadFramePlanSpan(cad);
+                    const sx = outerL / Math.max(0.5, frame.spanX);
+                    const szs = outerW / Math.max(0.5, frame.spanZ);
+                    const sy = (sx + szs) * 0.5;
+                    cad.scale.multiply(new THREE.Vector3(sx, sy, szs));
+                    cad.updateMatrixWorld(true);
+
+                    const box2 = new THREE.Box3().setFromObject(cad);
+                    const c2 = new THREE.Vector3();
+                    box2.getCenter(c2);
+                    cad.position.sub(c2);
+
+                    // Hide CAD twistlocks — procedural feet sit on exact ISO hole centres
+                    cad.traverse(o => {
+                        const n = `${o.name || ''} ${o.material?.name || ''}`.toLowerCase();
+                        if (n.includes('twistlock')) {
+                            o.visible = false;
+                            return;
+                        }
+                        if (!o.isMesh) return;
+                        o.castShadow = true;
+                        o.receiveShadow = true;
+                        o.userData.gearKind = 'member';
+                        o.userData.memberId = 'spreader_main';
+                        o.userData.memberBody = true;
                     });
-                });
+
+                    const box3 = new THREE.Box3().setFromObject(cad);
+                    cad.position.y -= (box3.min.y + 0.34);
+
+                    cad.userData.gearKind = 'member';
+                    cad.userData.memberId = 'spreader_main';
+                    cad.userData.memberBody = true;
+                    spreaderRootGroup.add(cad);
+                } else {
+                    const yellow = MATS.spreaderYellow || MATS.yellowHazard;
+                    const bar = new THREE.Mesh(new THREE.BoxGeometry(outerL * 0.52, 0.55, 0.85), yellow);
+                    bar.userData.gearKind = 'member';
+                    bar.userData.memberId = 'spreader_main';
+                    bar.userData.memberBody = true;
+                    spreaderRootGroup.add(bar);
+                    [-1, 1].forEach(sx => {
+                        const end = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.5, outerW + 0.05), yellow);
+                        // End beams sit on outer corners of the container
+                        end.position.set(sx * (halfOuterX - 0.22), 0, 0);
+                        end.userData.gearKind = 'member';
+                        end.userData.memberId = sx > 0 ? 'endPlus' : 'endMinus';
+                        end.userData.memberBody = true;
+                        spreaderRootGroup.add(end);
+                    });
+                }
+
+                // Twistlock feet on ISO casting holes (inset from outer corners)
+                addIsoTwistlockFeet(spreaderRootGroup, halfX, halfZ, -0.22);
 
                 addPickMark(halfX, 0, halfZ, 'corner0');
                 addPickMark(-halfX, 0, halfZ, 'corner1');
                 addPickMark(-halfX, 0, -halfZ, 'corner2');
                 addPickMark(halfX, 0, -halfZ, 'corner3');
-                addJointShackle(halfX, 0.28, halfZ, 'corner0', { role: 'upper', index: 0 });
-                addJointShackle(-halfX, 0.28, halfZ, 'corner1', { role: 'upper', index: 1 });
-                addJointShackle(-halfX, 0.28, -halfZ, 'corner2', { role: 'upper', index: 2 });
-                addJointShackle(halfX, 0.28, -halfZ, 'corner3', { role: 'upper', index: 3 });
-                addJointShackle(halfX, -0.28, halfZ, 'corner0', { role: 'leg', index: 0 });
-                addJointShackle(-halfX, -0.28, halfZ, 'corner1', { role: 'leg', index: 1 });
-                addJointShackle(-halfX, -0.28, -halfZ, 'corner2', { role: 'leg', index: 2 });
-                addJointShackle(halfX, -0.28, -halfZ, 'corner3', { role: 'leg', index: 3 });
+
+                if (!isStsDirectAttach()) {
+                    [
+                        [halfX, halfZ, 0], [-halfX, halfZ, 1],
+                        [-halfX, -halfZ, 2], [halfX, -halfZ, 3]
+                    ].forEach(row => {
+                        addJointShackle(row[0], -0.28, row[1], 'spreader_main', { role: 'leg', index: row[2] });
+                    });
+                }
 
             } else if (beamType === 'spreader') {
                 // MODULIFT MODULAR TUBULAR COMPRESSION SPREADER STRUT
                 const main = memberSpec('main');
                 const od = memberDiameter('main');
-                const coreLen = Math.max(0.3, Math.abs(main.a - main.b) - 0.64);
+                // End fittings ~0.30 m each side; pipe must overlap taper so no air gap
+                const endInset = 0.30;
+                const spanAB = Math.abs(main.a - main.b);
+                const coreLen = Math.max(0.3, spanAB - endInset * 2);
                 const midX = (main.a + main.b) * 0.5;
                 const strutPipe = new THREE.Mesh(new THREE.CylinderGeometry(od / 2, od / 2, coreLen, 28));
                 strutPipe.rotation.z = Math.PI / 2;
@@ -2429,6 +3439,9 @@
                 [-main.length / 2, main.length / 2].forEach(ex => {
                     const endCap = new THREE.Mesh(new THREE.BoxGeometry(0.024, 0.34, 0.24), MATS.darkSteel);
                     endCap.position.x = ex;
+                    endCap.userData.gearKind = 'member';
+                    endCap.userData.memberId = 'main';
+                    endCap.userData.memberBody = true;
                     spreaderRootGroup.add(endCap);
                 });
                 const ribs = Math.max(4, Math.round(main.length / 0.65));
@@ -2437,6 +3450,9 @@
                     [-0.08, 0.08].forEach(rz => {
                         const rib = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.27, 0.075), MATS.darkSteel);
                         rib.position.set(rx, 0, rz);
+                        rib.userData.gearKind = 'member';
+                        rib.userData.memberId = 'main';
+                        rib.userData.memberBody = true;
                         spreaderRootGroup.add(rib);
                     });
                 }
@@ -2464,9 +3480,20 @@
             } else if (beamType === 'cascaded' || beamType === 'modular_truss') {
                 const topId = beamType === 'modular_truss' ? 'truss' : 'top';
                 const top = memberSpec(topId);
-                const yTop = beamType === 'modular_truss' ? 0.85 : 1.15;
+                // Must match physics beamRecipe yTop / hangerSlingLength or sub-beams float
+                const hangerM = (state.hangerSlingLength != null)
+                    ? state.hangerSlingLength
+                    : ((typeof getRigSpec === 'function' && getRigSpec().hanger) || 2.0);
+                const yTop = Math.max(beamType === 'modular_truss' ? 0.85 : 1.0, hangerM);
                 if (beamType === 'modular_truss') {
-                    const truss = createLatticeBoomMesh(top.length, 0.48, MATS.yellowHazard);
+                    const trussMat = (MATS.yellowHazard && MATS.yellowHazard.clone)
+                        ? MATS.yellowHazard.clone()
+                        : MATS.yellowHazard;
+                    if (trussMat && trussMat.metalness != null) {
+                        trussMat.metalness = 0.55;
+                        trussMat.roughness = 0.38;
+                    }
+                    const truss = createLatticeBoomMesh(top.length, 0.52, trussMat);
                     truss.rotation.z = -Math.PI / 2;
                     truss.position.set(-top.length / 2, yTop, 0);
                     truss.userData.memberId = topId;
@@ -2476,12 +3503,16 @@
                             o.userData.gearKind = 'member';
                             o.userData.memberId = topId;
                             o.userData.memberBody = true;
+                            o.castShadow = true;
+                            o.receiveShadow = true;
                         }
                     });
+                    if (typeof applyCADFeatureEdges === 'function') applyCADFeatureEdges(truss, false);
                     spreaderRootGroup.add(truss);
                 } else {
                     const od = memberDiameter(topId);
-                    const coreLen = Math.max(0.3, Math.abs(top.a - top.b) - 0.64);
+                    const endInset = 0.30;
+                    const coreLen = Math.max(0.3, Math.abs(top.a - top.b) - endInset * 2);
                     const mainPipe = new THREE.Mesh(new THREE.CylinderGeometry(od / 2, od / 2, coreLen, 24));
                     mainPipe.rotation.z = Math.PI / 2;
                     mainPipe.position.set((top.a + top.b) * 0.5, yTop, 0);
@@ -2492,8 +3523,8 @@
                 addModuliftEnd(top.b, yTop, topId, top.b >= 0 ? 1 : -1, false);
 
                 [{ spec: memberSpec('lowPlus'), x: top.a, hangerIndex: 0 }, { spec: memberSpec('lowMinus'), x: top.b, hangerIndex: 1 }].forEach(({ spec, x, hangerIndex }) => {
-                    const sod = Math.max(0.06, memberDiameter(spec.id));
-                    const sub = new THREE.Mesh(new THREE.CylinderGeometry(sod / 2, sod / 2, spec.length, 20));
+                    const sod = Math.max(0.08, memberDiameter(spec.id));
+                    const sub = new THREE.Mesh(new THREE.CylinderGeometry(sod / 2, sod / 2, spec.length, 22));
                     sub.rotation.x = Math.PI / 2;
                     sub.position.set(x, 0, 0);
                     tagMember(sub, spec.id);
@@ -2512,9 +3543,10 @@
                     addJointShackle(x,  0.18,       0, spec.id, { role: 'hangerB', index: hangerIndex });
                     addJointShackle(x, -0.18,  spec.a, spec.id, { role: 'leg',     index: legPos });
                     addJointShackle(x, -0.18,  spec.b, spec.id, { role: 'leg',     index: legNeg });
-                    const hangerLen = Math.max(0.2, yTop - 0.08);
-                    const hanger = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, hangerLen, 10), MATS.wireRope);
-                    hanger.position.set(x, 0.08 + hangerLen / 2, 0);
+                    // Placeholder only — mountBeamBodies strips these; XPBD hangers draw the live cable
+                    const hangerLen = Math.max(0.35, yTop - 0.40);
+                    const hanger = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, hangerLen, 10), MATS.wireRope);
+                    hanger.position.set(x, 0.18 + hangerLen / 2, 0);
                     hanger.userData.isHanger = true;
                     hanger.userData.gearKind = 'member';
                     hanger.userData.memberId = spec.id;
@@ -2798,38 +3830,78 @@
         }
 
         function setSymmetricLugsFromDimensions() {
-            while (state.lugs.length < 4) state.lugs.push(new THREE.Vector3());
+            const wantN = Math.max(2, Math.min(8, state.planLugCount || state.lugs.length || 4));
+            while (state.lugs.length < wantN) state.lugs.push(new THREE.Vector3());
+            state.lugs.length = wantN;
             while (state.lugNormals.length < state.lugs.length) state.lugNormals.push(new THREE.Vector3(0, 1, 0));
+            state.lugNormals.length = state.lugs.length;
             const { lugElevPreset, cargoType, L, W, H } = state;
             const signs = [[1, 1], [-1, 1], [-1, -1], [1, -1]];
 
-            if (customCargoMeshes && customCargoMeshes[cargoType]) {
+            // 2-leg: longitudinal pair only
+            if (wantN === 2) {
+                const ly = lugElevPreset === 'bottom' ? (-H / 2 + 0.12)
+                    : (lugElevPreset === 'mid' ? 0 : (H / 2 - 0.08));
+                state.lugs[0].set(L / 2 - 0.25, ly, 0);
+                state.lugs[1].set(-(L / 2 - 0.25), ly, 0);
+                state.lugNormals[0].set(0, lugElevPreset === 'bottom' ? -1 : 1, 0);
+                state.lugNormals[1].set(0, lugElevPreset === 'bottom' ? -1 : 1, 0);
+                return;
+            }
+
+            const isoTypes = [
+                'opentop', 'opentop40', 'flatrack', 'flatrack20', 'isotank',
+                'container', 'container_20ft_glb', 'iso20hc', 'iso40', 'container_40ft_glb',
+                'iso40hc', 'iso45hc', 'container10', 'iso53hc',
+                'reefer', 'reefer20', 'platform', 'platform20', 'halfheight', 'drybulk'
+            ];
+
+            if (customCargoMeshes && customCargoMeshes[cargoType] && !isoTypes.includes(cargoType)) {
+                if (cargoType === 'car') {
+                    const ly = lugElevPreset === 'bottom' ? (-H / 2 + 0.16)
+                        : (lugElevPreset === 'mid' ? (-H * 0.08) : (H / 2 - 0.08));
+                    for (let i = 0; i < Math.min(4, wantN); i++) {
+                        state.lugs[i].set(signs[i][0] * (L * 0.38), ly, signs[i][1] * (W * 0.52));
+                        state.lugNormals[i].set(0, lugElevPreset === 'bottom' ? -1 : 1, 0);
+                    }
+                    return;
+                }
                 const ly = lugElevPreset === 'bottom' ? -H / 2 + 0.12 : (lugElevPreset === 'mid' ? 0 : H / 2 - 0.05);
-                for (let i = 0; i < 4; i++) {
+                for (let i = 0; i < Math.min(4, wantN); i++) {
                     state.lugs[i].set(signs[i][0] * (L / 2 - 0.18), ly, signs[i][1] * (W / 2 - 0.14));
                     state.lugNormals[i].set(0, 1, 0);
                 }
                 return;
             }
 
-            const isoTypes = ['opentop', 'flatrack', 'isotank', 'container', 'iso40', 'iso40hc', 'reefer', 'platform'];
             if (isoTypes.includes(cargoType) && lugElevPreset !== 'mid') {
-                const topY = cargoType === 'platform' ? (-H / 2 + Math.min(H * 0.24, 0.36)) : (H / 2);
+                const topY = (cargoType === 'platform' || cargoType === 'platform20')
+                    ? (-H / 2 + Math.min(H * 0.24, 0.36))
+                    : (H / 2);
                 const ly = lugElevPreset === 'bottom' ? (-H / 2 + 0.08) : topY;
                 const ny = lugElevPreset === 'bottom' ? -1 : 1;
+                // STS / ISO boxes: lug points = corner casting hole centres (match spreader feet)
+                const useIsoHoles = (state.beamType === 'container_spreader' || isoTypes.includes(cargoType))
+                    && lugElevPreset !== 'bottom';
+                const holes = useIsoHoles ? isoCornerHoleHalf(L, W) : null;
+                const hx = holes ? holes.hx : (L / 2 - 0.09);
+                const hz = holes ? holes.hz : (W / 2 - 0.09);
                 for (let i = 0; i < 4; i++) {
-                    state.lugs[i].set(signs[i][0] * (L / 2 - 0.09), ly, signs[i][1] * (W / 2 - 0.09));
+                    state.lugs[i].set(signs[i][0] * hx, ly, signs[i][1] * hz);
                     state.lugNormals[i].set(0, ny, 0);
                 }
                 return;
             }
             if (cargoType === 'car' || cargoType === 'boat') {
-                const ly = cargoType === 'car' ? (-H / 2 + 0.14) : (-H * 0.42);
-                const lx = cargoType === 'car' ? (L * 0.30) : (L * 0.25);
+                // Vehicle: chassis mounts just outside the body flanks so lower legs wrap the exterior
+                const ly = cargoType === 'car'
+                    ? (lugElevPreset === 'bottom' ? (-H / 2 + 0.16) : (lugElevPreset === 'mid' ? (-H * 0.08) : (H / 2 - 0.08)))
+                    : (-H * 0.42);
+                const lx = cargoType === 'car' ? (L * 0.38) : (L * 0.25);
                 const lz = cargoType === 'car' ? (W * 0.52) : (W * 0.46);
                 for (let i = 0; i < 4; i++) {
                     state.lugs[i].set(signs[i][0] * lx, ly, signs[i][1] * lz);
-                    state.lugNormals[i].set(0, 1, 0);
+                    state.lugNormals[i].set(0, lugElevPreset === 'bottom' ? -1 : 1, 0);
                 }
                 return;
             }
@@ -2916,20 +3988,80 @@
             group.quaternion.copy(q);
         }
 
+        /** Twin-lift: two ISO 20ft dry vans end-to-end under a 40ft twin STS spreader. */
+        function buildStsTwinTwentyVisual(H) {
+            const group = new THREE.Group();
+            group.name = 'ISO_Twin_20ft_Pair';
+            const cL = 6.058;
+            const cW = 2.438;
+            const cH = H || 2.591;
+            const gap = 0.076; // quay cell gap between ends
+            const halfSep = (cL + gap) * 0.5;
+            [-1, 1].forEach((sx, idx) => {
+                const box = buildCargoMesh('container', cL, cW, cH);
+                box.position.set(sx * halfSep, 0, 0);
+                box.name = idx === 0 ? 'Twin_20ft_A' : 'Twin_20ft_B';
+                // Clone + tint body panels so the pair reads as two distinct units
+                box.traverse(o => {
+                    if (!o.isMesh || !o.material) return;
+                    const src = Array.isArray(o.material) ? o.material : [o.material];
+                    const cloned = src.map(m => {
+                        if (!m || !m.clone) return m;
+                        const mm = m.clone();
+                        if (mm.color && typeof mm.color.getHex === 'function') {
+                            const hex = mm.color.getHex();
+                            if (hex > 0x222222 && hex < 0xe8e8e8) {
+                                if (idx === 0) mm.color.offsetHSL(0.02, 0.06, -0.05);
+                                else mm.color.offsetHSL(-0.05, 0.08, 0.03);
+                            }
+                        }
+                        return mm;
+                    });
+                    o.material = Array.isArray(o.material) ? cloned : cloned[0];
+                });
+                group.add(box);
+            });
+            return group;
+        }
+        if (typeof window !== 'undefined') window.buildStsTwinTwentyVisual = buildStsTwinTwentyVisual;
+
         function rebuildCargoAndRig(resetSymmetricLugs = false) {
             const { cargoType, L, W, H, hwType, cogX, cogY, cogZ } = state;
+            const twinLift = !!(state.stsTwinLift && state.beamType === 'container_spreader');
 
-            const oogKey = (cargoType === 'opentop' || cargoType === 'flatrack')
+            const oogKey = (cargoType === 'opentop' || cargoType === 'opentop40'
+                || cargoType === 'flatrack' || cargoType === 'flatrack20'
+                || cargoType === 'platform' || cargoType === 'platform20')
                 ? `|${state.oogHasCargo ? 1 : 0}|${state.oogTarp ? 1 : 0}|${(state.oogCargoL || 0).toFixed(2)}|${(state.oogCargoW || 0).toFixed(2)}|${(state.oogCargoH || 0).toFixed(2)}`
                 : '';
-            const meshKey = cargoType + '|' + L.toFixed(3) + '|' + W.toFixed(3) + '|' + H.toFixed(3) + '|' + (state.xrayCargo ? 'x' : 's') + oogKey;
+            // Include custom OBJ readiness so late-loaded prototypes (e.g. bus.obj / Realistic V2) force a visual rebuild
+            const hasOwnCad = !!(customCargoMeshes && customCargoMeshes[cargoType]);
+            const has40Cad = !!(customCargoMeshes && (customCargoMeshes['iso40'] || customCargoMeshes['container_40ft_glb']));
+            const has22g1 = !!(customCargoMeshes && customCargoMeshes['container_22g1']);
+            const uses40Cad = (cargoType === 'iso40' || cargoType === 'container_40ft_glb' || cargoType === 'iso40hc');
+            const lengthensFrom20 = (cargoType === 'opentop' && !hasOwnCad);
+            const protoKey = hasOwnCad ? '|cad'
+                : (uses40Cad && has40Cad ? '|cad40'
+                    : (lengthensFrom20 && has22g1 ? '|cad20L' : '|proc'));
+            const meshKey = cargoType + '|' + L.toFixed(3) + '|' + W.toFixed(3) + '|' + H.toFixed(3)
+                + '|' + (state.xrayCargo ? 'x' : 's') + oogKey + protoKey
+                + (twinLift ? '|twin20' : '');
             if (!activeCargoVisual || activeCargoVisual.userData.meshKey !== meshKey) {
                 if (activeCargoVisual) cargoRootGroup.remove(activeCargoVisual);
                 const scars = cargoRootGroup.children.filter(ch => ch.name === 'impactScar');
                 scars.forEach(ch => cargoRootGroup.remove(ch));
-                activeCargoVisual = buildCargoMesh(cargoType, L, W, H);
+                activeCargoVisual = twinLift
+                    ? buildStsTwinTwentyVisual(H || 2.591)
+                    : buildCargoMesh(cargoType, L, W, H);
                 activeCargoVisual.userData.meshKey = meshKey;
-                if (pbrFactory) pbrFactory.enforcePBRMaterials(activeCargoVisual);
+                // Keep authored MTL / CAD materials on Realistic V2 containers, reefers, vehicles
+                const cadProto = customCargoMeshes && customCargoMeshes[cargoType];
+                const keepCadMaterials = !!(cadProto && (
+                    cargoType === 'car'
+                    || cadProto.userData?.keepMaterials
+                    || cadProto.userData?.isoRealisticV2
+                ));
+                if (pbrFactory && !keepCadMaterials) pbrFactory.enforcePBRMaterials(activeCargoVisual);
                 cargoRootGroup.add(activeCargoVisual);
                 if (Array.isArray(sling3DPool)) {
                     sling3DPool.forEach(s => { s.ropeSim = null; });
@@ -2945,7 +4077,13 @@
             if (typeof resetFlatRackPayloadState === 'function') resetFlatRackPayloadState();
             cargoRootGroup.updateMatrixWorld(true);
 
-            const hasExactMountPreset = ['opentop', 'flatrack', 'isotank', 'container', 'iso40', 'iso40hc', 'reefer', 'platform', 'car', 'boat'].includes(cargoType) && state.lugElevPreset !== 'mid';
+            const hasExactMountPreset = [
+                'opentop', 'opentop40', 'flatrack', 'flatrack20', 'isotank',
+                'container', 'container_20ft_glb', 'iso20hc', 'iso40', 'container_40ft_glb',
+                'iso40hc', 'iso45hc', 'container10', 'iso53hc',
+                'reefer', 'reefer20', 'platform', 'platform20', 'halfheight', 'drybulk',
+                'car', 'boat'
+            ].includes(cargoType) && state.lugElevPreset !== 'mid';
             if (placeRigLugs()) {
                 for (let i = 0; i < state.lugs.length; i++) conformLugToShell(i, 'nearest');
             } else if (resetSymmetricLugs || state.pendingConform === 'structural') {
@@ -3002,8 +4140,10 @@
                     if (padEyeMeshes[i]) hwMeshes[i].quaternion.copy(padEyeMeshes[i].quaternion);
                 }
             });
+            // STS direct twistlock: no pad-eyes / shackles on container corners — pins lock into ISO castings.
+            const stsDirectHideLp = typeof isStsDirectAttach === 'function' && isStsDirectAttach();
             for (let i = 0; i < padEyeMeshes.length; i++) {
-                const on = i < state.lugs.length;
+                const on = i < state.lugs.length && !stsDirectHideLp;
                 padEyeMeshes[i].visible = on;
                 if (hwMeshes[i]) hwMeshes[i].visible = on;
                 if (!on && forceArrows[i]) forceArrows[i].visible = false;

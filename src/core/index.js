@@ -19,7 +19,9 @@ export { HullOptimizer } from './HullOptimizer.js';
 export { AssemblyEngine, COMPOSITE_PRESETS } from './AssemblyEngine.js';
 export { CraneLoadChartEngine, CRANE_MODELS } from './CraneLoadChartEngine.js';
 export { GroundPressureEngine, SOIL_BEARING_LIBRARY, COMMERCIAL_MAT_PRESETS } from './GroundPressureEngine.js';
-export { ElasticSlingEngine, SLING_MATERIALS } from './ElasticSlingEngine.js';
+export { ElasticSlingEngine, SLING_MATERIALS, EN1492_COLOR_TABLE, getEN1492ColorSpec, getSlingPhysicalSpec } from './ElasticSlingEngine.js';
+export { PhysicalCableSolver } from './PhysicalCableSolver.js';
+export { DeformableSteelStructure } from './DeformableSteelStructure.js';
 export { RIGGING_DICTIONARY, getDictionaryEntry } from './RiggingDictionary.js';
 export { RIGGING_EQUIPMENT_CATALOG, getRiggingEquipmentGroup } from './RiggingEquipmentCatalog.js';
 
@@ -42,3 +44,27 @@ export {
 export { CornerProtectorModel } from '../rigging/constraints/CornerProtectorModel.js';
 export { DestructionSolver } from '../simulation/destruction-manager/DestructionSolver.js';
 export { SensorEngine } from '../telemetry/sensor-engine/SensorEngine.js';
+
+// International Standards & Engineering Rule Engine
+export * as Standards from './standards/index.js';
+export {
+    resolveSling,
+    migrateSlingRecord,
+    normalizeGrade,
+    normalizeSlingType,
+    getSlingDiameterCatalog,
+    computeWireRopeSpec,
+    computeChainSpec,
+    computeSyntheticSlingSpec,
+    computeShackleSideDerate,
+    computeShackleMassKg,
+    validateShackleGeometry,
+    checkLiftingBeam,
+    checkSpreaderBar,
+    evaluateAngleStatus,
+    lafOf,
+    STEEL_GRADES,
+    DESIGN_CATEGORIES,
+    CHAIN_GRADES,
+    BLOCKED_CHAIN_GRADES
+} from './standards/index.js';

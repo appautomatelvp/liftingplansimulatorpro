@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { EngineeringEngine } from '../src/core/EngineeringEngine.js';
+import { ElasticSlingEngine } from '../src/core/ElasticSlingEngine.js';
 
 describe('EngineeringEngine Analytical Formulation (ASME / ISO)', () => {
     it('1. Symmetrical 4-point lift tension matches analytical formula T = W / (4 * sin(beta))', () => {
@@ -314,5 +315,96 @@ describe('EngineeringEngine Analytical Formulation (ASME / ISO)', () => {
         expect(() => EngineeringEngine.evaluateRiggingSafety({ grossWeight: -5 })).toThrow();
         expect(() => EngineeringEngine.evaluateRiggingSafety({ grossWeight: 10, nominalLegs: 0 })).toThrow();
         expect(() => EngineeringEngine.evaluateRiggingSafety({ grossWeight: 10, nominalLegs: 4, alphaDeg: -5 })).toThrow();
+    });
+
+    it('18. getEN1492ColorSpec correctly maps WLL to international color standards and stripe counts', () => {
+        // 1t -> Purple (#9333ea, 1 stripe)
+        const c1 = ElasticSlingEngine.getEN1492ColorSpec(1.0);
+        expect(c1.colorHex).toBe('#9333ea');
+        expect(c1.stripeCount).toBe(1);
+
+        // 2t -> Green (#16a34a, 2 stripes)
+        const c2 = ElasticSlingEngine.getEN1492ColorSpec(2.0);
+        expect(c2.colorHex).toBe('#16a34a');
+        expect(c2.stripeCount).toBe(2);
+
+        // 3t -> Yellow (#eab308, 3 stripes)
+        const c3 = ElasticSlingEngine.getEN1492ColorSpec(3.0);
+        expect(c3.colorHex).toBe('#eab308');
+        expect(c3.stripeCount).toBe(3);
+
+        // 4t -> Grey (#64748b, 4 stripes)
+        const c4 = ElasticSlingEngine.getEN1492ColorSpec(4.0);
+        expect(c4.colorHex).toBe('#64748b');
+        expect(c4.stripeCount).toBe(4);
+
+        // 5t -> Red (#dc2626, 5 stripes)
+        const c5 = ElasticSlingEngine.getEN1492ColorSpec(5.0);
+        expect(c5.colorHex).toBe('#dc2626');
+        expect(c5.stripeCount).toBe(5);
+
+        // 8t -> Blue (#2563eb, 8 stripes)
+        const c8 = ElasticSlingEngine.getEN1492ColorSpec(8.0);
+        expect(c8.colorHex).toBe('#2563eb');
+        expect(c8.stripeCount).toBe(8);
+
+        // 10t+ -> Orange (#ea580c)
+        const c12 = ElasticSlingEngine.getEN1492ColorSpec(12.0);
+        expect(c12.colorHex).toBe('#ea580c');
+    });
+
+    it('19. getSlingPhysicalSpec calculates authentic dimensions, mass per meter, and total mass for all 5 sling types', () => {
+        // 1. Wire Rope (6x36 IWRC)
+        const wire = ElasticSlingEngine.getSlingPhysicalSpec('wire', 15.0, 28);
+        expect(wire.slingType).toBe('wire');
+        expect(wire.diaMm).toBe(28);
+        expect(wire.linearMassKgPerM).toBeCloseTo(3.14, 1);
+        // 6m wire sling (M=0.0040): 6m * 3.136 kg/m + 2.2 kg terminations ≈ 21.0 kg
+        const wireMass = wire.computeMassKg(6.0, 1);
+        expect(wireMass).toBeCloseTo(21.0, 0);
+
+        // 2. Chain Sling (G80)
+        const chain = ElasticSlingEngine.getSlingPhysicalSpec('chain', 12.0, 16, 'g80');
+        expect(chain.slingType).toBe('chain');
+        expect(chain.diaMm).toBe(16);
+        expect(chain.linearMassKgPerM).toBeCloseTo(5.63, 1);
+        const chainMass = chain.computeMassKg(4.0, 1);
+        expect(chainMass).toBeGreaterThan(20);
+
+        // 3. Web Sling (EN 1492-1 Flat Polyester)
+        const web = ElasticSlingEngine.getSlingPhysicalSpec('web', 3.0);
+        expect(web.slingType).toBe('web');
+        expect(web.colorHex).toBe('#eab308'); // Yellow 3T
+        expect(web.stripeCount).toBe(3);
+        expect(web.linearMassKgPerM).toBeGreaterThan(0.5);
+
+        // 4. Round Sling (EN 1492-2 Endless Tubular Polyester)
+        const round = ElasticSlingEngine.getSlingPhysicalSpec('round_sling', 4.0);
+        expect(round.slingType).toBe('round_sling');
+        expect(round.colorHex).toBe('#64748b'); // Grey 4T
+        expect(round.stripeCount).toBe(0); // Round slings do NOT have black capacity stripes
+
+        // 5. Grommet (Seamless continuous wire loop)
+        const grommet = ElasticSlingEngine.getSlingPhysicalSpec('grommet', 20.0, 32);
+        expect(grommet.slingType).toBe('grommet');
+        expect(grommet.linearMassKgPerM).toBeCloseTo(0.0085 * 32 * 32, 1);
+    });
+
+    it('20. calculateElongation supports both parameter formats with zero NaN bugs', () => {
+        // Positional call
+        const r1 = ElasticSlingEngine.calculateElongation(10.0, 6.0, 'wire', 28);
+        expect(r1.nominalLengthM).toBe(6.0);
+        expect(r1.deltaL_mm).toBeGreaterThan(0);
+        expect(isNaN(r1.deltaL_mm)).toBe(false);
+
+        // Object call
+        const r2 = ElasticSlingEngine.calculateElongation({
+            tensionT: 10.0,
+            lengthM: 6.0,
+            material: 'wire',
+            diaMm: 28
+        });
+        expect(r2.nominalLengthM).toBe(6.0);
+        expect(r2.deltaL_mm).toBeCloseTo(r1.deltaL_mm, 2);
     });
 });

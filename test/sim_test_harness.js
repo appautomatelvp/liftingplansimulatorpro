@@ -88,6 +88,7 @@ export function createHeadlessSim() {
         'scene.js',
         'rigging.js',
         'cargo.js',
+        'dynamics.js',
         'physics.js',
         'telemetry.js',
         'gear.js',
@@ -120,6 +121,7 @@ export function createHeadlessSim() {
                 state.legDeltaL = [...deltaL];
                 state.upperSlingLength = null;
                 state.lowerSlingLength = null;
+                state.hangerSlingLength = null;
                 state.slingUserSet = false;
                 rebuildCargoAndRig(false);
             },

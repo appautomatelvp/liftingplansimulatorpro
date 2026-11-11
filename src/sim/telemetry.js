@@ -7,7 +7,59 @@
             const { H, beamType, slingType, slingLength, wllPerLeg } = state;
             const { spanX, spanZ } = getLPBoundingSpan();
 
-            hookAssemblyGroup.position.copy(phy.hookPos);
+            // STS mode: hide forged J-hook + master link — hoist falls land on headblock.
+            const stsMode = state.beamType === 'container_spreader';
+            const dualHooks = (state.hookCount || 1) >= 2 && !stsMode;
+            {
+                const swivel = hookAssemblyGroup.getObjectByName('Swivel_Hook');
+                const master = hookAssemblyGroup.getObjectByName('Master_Link');
+                if (swivel) swivel.visible = !stsMode;
+                if (master) master.visible = !stsMode;
+            }
+            // Ensure tandem second hook exists when needed
+            if (dualHooks && typeof scene !== 'undefined' && !window._hookAssemblyB) {
+                if (typeof createForgedCraneHookGroup === 'function' && hookAssemblyGroup) {
+                    const clone = hookAssemblyGroup.clone(true);
+                    clone.name = 'Crane_Hook_Block_B';
+                    clone.traverse(o => { if (o.isMesh) { o.castShadow = true; } });
+                    scene.add(clone);
+                    window._hookAssemblyB = clone;
+                }
+            }
+            if (window._hookAssemblyB) {
+                window._hookAssemblyB.visible = dualHooks;
+            }
+
+            const hookOffA = dualHooks && typeof dualHookOffsetX === 'function' ? dualHookOffsetX(1) : 0;
+            const hookOffB = dualHooks && typeof dualHookOffsetX === 'function' ? dualHookOffsetX(-1) : 0;
+            hookAssemblyGroup.position.set(phy.hookPos.x + hookOffA, phy.hookPos.y, phy.hookPos.z);
+            if (window._hookAssemblyB && dualHooks) {
+                window._hookAssemblyB.position.set(phy.hookPos.x + hookOffB, phy.hookPos.y, phy.hookPos.z);
+                window._hookAssemblyB.rotation.y = hookAssemblyGroup.rotation.y;
+            }
+            // Hook yaw: swivel follows upper-gear plane; locked hook stays on crane heading
+            {
+                let wantYaw = 0;
+                if (state.hookSwivelEnabled !== false) {
+                    const top = phy.beams && phy.beams[0];
+                    if (top && top.q) {
+                        const e = new THREE.Euler().setFromQuaternion(top.q, 'YXZ');
+                        wantYaw = e.y;
+                    } else if (typeof nominalSpreaderYawDeg === 'function') {
+                        wantYaw = THREE.MathUtils.degToRad(nominalSpreaderYawDeg());
+                    }
+                } else {
+                    // Fixed hook: face boom / trolley (hook target from crane origin)
+                    wantYaw = Math.atan2(phy.hookPos.x, phy.hookPos.z);
+                }
+                const cur = hookAssemblyGroup.rotation.y;
+                let d = wantYaw - cur;
+                while (d > Math.PI) d -= Math.PI * 2;
+                while (d < -Math.PI) d += Math.PI * 2;
+                const k = state.hookSwivelEnabled !== false ? 0.18 : 0.08;
+                hookAssemblyGroup.rotation.y = cur + d * k;
+                if (window._hookAssemblyB && dualHooks) window._hookAssemblyB.rotation.y = hookAssemblyGroup.rotation.y;
+            }
             cargoRootGroup.position.copy(phy.cargoPos);
             cargoRootGroup.quaternion.copy(phy.cargoQuat);
             applyCornerYieldVisual();
@@ -56,6 +108,12 @@
             if (phy.cables && phy.cables.length) {
                 let poolIdx = 0;
                 phy.cables.forEach((c) => {
+                    // Direct STS: twistlocks are solid pins — no flexible lower slings.
+                    // Cable STS: draw normal legs (wire/chain + shackles) to cargo lugs.
+                    const stsDirect = stsMode && (typeof isStsDirectAttach === 'function'
+                        ? isStsDirectAttach()
+                        : (state.stsAttachMode || 'direct') !== 'cable');
+                    if (stsDirect && c.role === 'leg') return;
                     const A = attachWorld(c.a);
                     const B = attachWorld(c.b);
                     const role = c.role === 'leg' ? 'leg' : (c.role === 'upper' ? 'upper' : (c.role === 'extra' ? 'extra' : 'hanger'));
@@ -124,10 +182,26 @@
                     });
                 }
             }
-            alignLinkedHardware(rigNow, masterLinkWorld);
-            refreshFitMarks();
-            updateGearSelectionRings();
-            refreshGearLive();
+            // Align shackles every frame normally; every other frame when FPS is low
+            const perfLevel = (state.renderPerf && state.renderPerf.level != null) ? state.renderPerf.level : 2;
+            if (!updateSceneAndTelemetry._alignTick) updateSceneAndTelemetry._alignTick = 0;
+            updateSceneAndTelemetry._alignTick++;
+            if (perfLevel >= 1 || (updateSceneAndTelemetry._alignTick % 2 === 0)) {
+                alignLinkedHardware(rigNow, masterLinkWorld);
+            }
+            // DOM / fit-marks: ~12 Hz; selection rings still track camera when needed
+            const nowUi = (typeof performance !== 'undefined') ? performance.now() : Date.now();
+            const lastUi = updateSceneAndTelemetry._lastUiMs || 0;
+            const uiInterval = perfLevel < 1 ? 120 : 80;
+            const doUi = (nowUi - lastUi) >= uiInterval;
+            if (doUi) {
+                updateSceneAndTelemetry._lastUiMs = nowUi;
+                refreshFitMarks();
+                updateGearSelectionRings();
+                refreshGearLive();
+            } else if (state.gear && state.gear.selection && state.gear.selection.length) {
+                updateGearSelectionRings();
+            }
 
             const tautHoriz = phy.legAngleDeg.filter((_, i) => state.gear.legs[i] && !phy.legSlacks[i] && !state.gear.legs[i].broken);
             phy.maxAngleVert = tautHoriz.length ? (90 - Math.min(...tautHoriz)) : maxAngleVertDeg;
@@ -183,7 +257,12 @@
             const upVec = new THREE.Vector3(0, 1, 0).applyQuaternion(phy.cargoQuat);
             phy.tiltDeg = Math.acos(THREE.MathUtils.clamp(upVec.y, -1, 1)) * (180 / Math.PI);
 
-            updateUITelemetry(hwWorldPos, masterLinkWorld, rigNow);
+            const nowTel = (typeof performance !== 'undefined') ? performance.now() : Date.now();
+            const lastTel = updateSceneAndTelemetry._lastTelMs || 0;
+            if ((nowTel - lastTel) >= 80) {
+                updateSceneAndTelemetry._lastTelMs = nowTel;
+                updateUITelemetry(hwWorldPos, masterLinkWorld, rigNow);
+            }
         }
 
         function updateUITelemetry(hwWorldPos, masterLinkWorld, rigNow) {
@@ -236,6 +315,14 @@
             setTxt('ded-total', `${mb.grossCraneLoadT.toFixed(2)} T`);
             setTxt('ded-comp', state.beamType === 'none' ? '0.00 T' : `${(phy.beamCompression || 0).toFixed(2)} T`);
 
+            const sd = phy.structuralDeformation;
+            if (sd) {
+                setTxt('out-structural-deflection', `${sd.cargoDeflectionMm.toFixed(1)} mm`);
+                setTxt('out-beam-deflection', `${sd.beamDeflectionMm.toFixed(1)} mm`);
+                setTxt('out-structural-twist', `${sd.cargoTwistDeg.toFixed(2)}°`);
+                setTxt('hud-deflection', `${(sd.cargoDeflectionMm > 0.05 ? sd.cargoDeflectionMm : sd.beamDeflectionMm).toFixed(1)} mm`);
+            }
+
             const hudLoad = document.getElementById('hud-load');
             if (hudLoad) {
                 const hookSwl = Math.max(0.1, state.gear.hook.swlT || 65);
@@ -285,6 +372,33 @@
                 document.getElementById('hud-clear').textContent = phy.groundClearance.toFixed(2) + ' m';
                 const dmg = document.getElementById('hud-damage');
                 if (dmg) dmg.textContent = (phy.damagePct || 0).toFixed(0) + '%';
+                // Live hoist-rope dynamics (elastic hoist, dynamics.js) and measured aerodynamics
+                const dafEl = document.getElementById('hud-daf');
+                if (dafEl) {
+                    const h = phy.hoist;
+                    if (h && typeof hoistElasticEnabled === 'function' && hoistElasticEnabled()) {
+                        const daf = h.daf || 0;
+                        dafEl.textContent = `${daf.toFixed(2)} (đỉnh ${(h.dafPeak || 1).toFixed(2)}) · ${(h.tensionN / 9806.65).toFixed(1)} t · giãn ${(h.stretchMm || 0).toFixed(0)} mm`;
+                        dafEl.className = 'hud-val font-mono font-bold ' + (daf > 1.35 ? 'text-red-400' : (daf > 1.15 ? 'text-amber-300' : 'text-amber-200'));
+                    } else {
+                        dafEl.textContent = state.lang === 'en' ? 'rigid hook (select a crane)' : 'móc cứng (chọn cẩu)';
+                        dafEl.className = 'hud-val font-mono font-bold text-slate-500';
+                    }
+                }
+                const windEl = document.getElementById('hud-wind');
+                if (windEl && phy.wind) {
+                    const w = phy.wind;
+                    const live = w.vector ? w.vector.length() : 0;
+                    windEl.textContent = `${(w.forceN / 1000).toFixed(2)} kN · ${live.toFixed(1)} m/s · dạt ${(w.driftDeg || 0).toFixed(1)}°`;
+                    windEl.className = 'hud-val font-mono font-bold ' + ((w.driftDeg || 0) > 3 ? 'text-amber-300' : 'text-sky-300');
+                    // Site panel: once airborne, show the measured values next to the design estimate
+                    if (phy.groundClearance > 0.05 && phy.windDesign) {
+                        const fEl = document.getElementById('val-wind-force');
+                        if (fEl) fEl.textContent = `${(w.forceN / 1000).toFixed(2)} kN thực (tk ${phy.windDesign.forceKN.toFixed(2)} kN)`;
+                        const dEl = document.getElementById('val-wind-drift');
+                        if (dEl) dEl.textContent = `${(w.driftDeg || 0).toFixed(2)}° đo (tk ${phy.windDesign.driftDeg.toFixed(2)}°)`;
+                    }
+                }
                 let risk = Math.min(40, (maxT / Math.max(0.1, wllPerLeg)) * 40);
                 risk += Math.min(30, Math.max(0, vertAng - 25) * 0.8);
                 if (phy.groundClearance > 0.05) risk += Math.min(25, phy.tiltDeg * 1.4);
@@ -769,6 +883,19 @@
                 selRigid.addEventListener('change', e => {
                     state.isRigidPayload = (e.target.value === 'rigid');
                     if (typeof updateSceneAndTelemetry === 'function') updateSceneAndTelemetry();
+                });
+            }
+
+            const inpExagg = document.getElementById('inp-visual-exaggeration');
+            if (inpExagg) {
+                inpExagg.value = String(state.visualExaggerationScale || 5.0);
+                inpExagg.addEventListener('input', e => {
+                    const val = parseFloat(e.target.value);
+                    if (Number.isFinite(val)) {
+                        state.visualExaggerationScale = val;
+                        const lbl = document.getElementById('val-visual-exaggeration');
+                        if (lbl) lbl.textContent = val.toFixed(1) + 'x';
+                    }
                 });
             }
         }

@@ -72,11 +72,15 @@ window.UI = window.UI || {};
             modal.classList.add('open');
             modal.style.display = 'flex';
             activeModal = modal;
-            is3DHotkeysSuspended = true;
+            // Dock-style plan wizard keeps the main 3D viewport interactive
+            is3DHotkeysSuspended = modalId !== 'plan-wizard-modal';
 
             // Trigger modal content rendering if applicable
             if (modalId === 'liftplan-modal' && typeof renderLiftPlanModalContent === 'function') {
                 renderLiftPlanModalContent();
+            }
+            if (modalId === 'plan-wizard-modal' && window.PlanWizard && typeof window.PlanWizard.render === 'function') {
+                window.PlanWizard.render();
             }
         },
 
@@ -88,7 +92,7 @@ window.UI = window.UI || {};
             if (activeModal === modal) {
                 activeModal = null;
             }
-            if (!document.querySelector('.modal-backdrop.open, #library-studio-modal.open, #liftplan-modal.open')) {
+            if (!document.querySelector('.modal-backdrop.open, #library-studio-modal.open, #liftplan-modal.open, #plan-wizard-modal.open')) {
                 is3DHotkeysSuspended = false;
             }
         },
@@ -122,23 +126,32 @@ window.UI = window.UI || {};
                 compHud.classList.add('hidden');
                 document.getElementById('btn-open-compliance')?.classList.remove('active');
             }
-            const gearEd = document.getElementById('gear-editor');
-            if (gearEd && gearEd.style.display !== 'none' && gearEd.style.display !== '') {
-                gearEd.style.display = 'none';
+            if (typeof closeGearEditor === 'function') {
+                closeGearEditor();
+            } else {
+                const gearEd = document.getElementById('gear-editor');
+                if (gearEd && gearEd.style.display !== 'none' && gearEd.style.display !== '') {
+                    gearEd.style.display = 'none';
+                    document.body.classList.remove('gear-editor-open');
+                }
             }
+            if (typeof closeRightDrawer === 'function') this.closeDrawer();
+            document.body.classList.remove('show-hud', 'show-cam');
         },
 
         // Check if 3D hotkeys should be suspended
         shouldSuspend3DHotkeys() {
+            if (activeModal && activeModal.id === 'plan-wizard-modal') return false;
             return is3DHotkeysSuspended || !!activeModal;
         },
 
         // Centralized Escape key dispatcher
         handleEscape() {
             // 1. If any modal is open, dismiss it
-            if (activeModal || document.querySelector('#library-studio-modal.open, #liftplan-modal.open')) {
+            if (activeModal || document.querySelector('#library-studio-modal.open, #liftplan-modal.open, #plan-wizard-modal.open')) {
                 this.closeModal('library-studio-modal');
                 this.closeModal('liftplan-modal');
+                this.closeModal('plan-wizard-modal');
                 return true;
             }
 
@@ -159,6 +172,7 @@ window.UI = window.UI || {};
             const gearEd = document.getElementById('gear-editor');
             if (gearEd && gearEd.style.display !== 'none' && gearEd.style.display !== '') {
                 gearEd.style.display = 'none';
+                document.body.classList.remove('gear-editor-open');
                 return true;
             }
 

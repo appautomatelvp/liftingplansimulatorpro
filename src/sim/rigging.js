@@ -252,13 +252,28 @@
             forgedHook.name = 'Swivel_Hook';
             hookAssemblyGroup.add(forgedHook);
 
-            // 6. Interlocked Forged Red Oval Master Link
-            // Top inner crown = -0.450 + (0.268/2 - 0.024) = -0.340 (rests flush in hook saddle!)
-            // Bottom inner crown = -0.450 - (0.268/2 - 0.024) = -0.560 === HOOK_MASTER_OFFSET_Y
-            masterLinkMesh = createOvalMasterLink(0.268, 0.156, 0.024);
+            // 6. Interlocked Forged Red Oval Master Link — so le / vuông góc with the J-hook
+            // plane (hook spine in XY, link opening in YZ). Hook stock passes through the
+            // oblong hole; top inner crown tì đè on the saddle instead of coplanar mesh-weld.
+            // Hook saddle inner ≈ y=-0.340; top inner crown = centerY + (H/2 - r).
+            // Inner width (ML_W - 2*ML_R ≈ 136 mm) clears saddle stock (~Ø92 mm).
+            const ML_H = 0.300, ML_W = 0.180, ML_R = 0.022;
+            const mlInnerHalf = ML_H * 0.5 - ML_R; // 0.128
+            const hookSaddleY = -0.340;
+            // Seat crown on saddle; keep bottom crown at HOOK_MASTER_OFFSET_Y (-0.608)
+            const mlCenterY = hookSaddleY - mlInnerHalf - 0.012;
+            masterLinkMesh = createOvalMasterLink(ML_H, ML_W, ML_R);
             masterLinkMesh.name = 'Master_Link';
-            masterLinkMesh.position.set(0, -0.450, 0);
-            masterLinkMesh.rotation.y = Math.PI / 2;
+            masterLinkMesh.position.set(0, mlCenterY, 0);
+            masterLinkMesh.rotation.set(0, Math.PI / 2, 0); // opening in YZ — so le with hook
+            masterLinkMesh.userData.bearing = {
+                topY: mlCenterY + mlInnerHalf,
+                bottomY: mlCenterY - mlInnerHalf,
+                tubeR: ML_R,
+                height: ML_H,
+                width: ML_W,
+                planeNormal: new THREE.Vector3(1, 0, 0) // after +90° Y: link plane = YZ
+            };
             hookAssemblyGroup.add(masterLinkMesh);
 
             // Invisible Hit Sphere for Dragging Hook
@@ -357,9 +372,9 @@
             spreaderRootGroup.userData.gearIndex = 0;
             scene.add(spreaderRootGroup);
 
-            // Pool: dense chain link budget so long uppers stay interlocked end-to-end
+            // Pool: denser tube samples + chain link budget for soft bends (not long broken sticks)
             for (let i = 0; i < 48; i++) {
-                const slingObj = createArticulated3DSling(28, 200);
+                const slingObj = createArticulated3DSling(48, 280);
                 slingObj.group.name = `Wire_Rope_Sling_${i + 1}`;
                 scene.add(slingObj.group);
                 sling3DPool.push(slingObj);
@@ -479,6 +494,61 @@
             if (type === 'ferrule') return 0.150 * s;
             if (type === 'load_cell') return 0.220 * s;
             return 0.142 * s; // bow_shackle default
+        }
+
+        // Stock radius of the bearing bar the sling nests against (m, unscaled mesh)
+        function hardwareTubeRadius(type, scale) {
+            const s = scale == null ? 1.0 : scale;
+            if (type === 'wide_shackle') return 0.020 * s;
+            if (type === 'd_shackle') return 0.018 * s;
+            if (type === 'master_link') return 0.020 * s;
+            if (type === 'hook' || type === 'clevis_hook' || type === 'eye_hook' || type === 'swivel_hook') return 0.016 * s;
+            return 0.0185 * s; // bow_shackle default
+        }
+
+        // Wire-eye local Y where the rope body must begin (inside the swaged tip + stub overlap)
+        function wireEyeFerruleExit(scale) {
+            const s = scale == null ? 1.0 : scale;
+            // Stub center 0.208, half-height 0.0275 → tip ≈ 0.235; start path mid-stub
+            return 0.218 * s;
+        }
+
+        // Hook-block master link: pin is the BOTTOM inner crown. Eyes/chain tops hang from it.
+        function masterLinkHookBearingInset(scale) {
+            const s = scale == null ? 1.0 : scale;
+            // Bearing is at the pin; path starts after the full eye+ferrule so rope meets the sleeve
+            return wireEyeFerruleExit(s);
+        }
+
+        // Red đốt cuối: near inner crown → far inner crown (black links nest through the far eye)
+        function chainEndLinkTubeRadius(scale) {
+            const s = scale == null ? 1.0 : scale;
+            return 0.014 * s; // must match createChainEndHardwareGroup subR
+        }
+        function chainTopAssemblyLength(scale) {
+            const s = scale == null ? 1.0 : scale;
+            // 2 * innerHalf = subH - 2*subR = 0.115 - 0.028 = 0.087
+            return 0.087 * s;
+        }
+        // Leave-distance from parent bearing plane to path start (far eye), after thickness seating
+        function chainEndPathInset(scale, parentKind) {
+            const s = scale == null ? 1.0 : scale;
+            const childR = chainEndLinkTubeRadius(s);
+            const parentR = (parentKind === 'hook' || parentKind === 'master_link')
+                ? 0.022 * s
+                : ((typeof hardwareTubeRadius === 'function')
+                    ? hardwareTubeRadius(state.hwType || 'bow_shackle', s)
+                    : 0.0185 * s);
+            // seat = crown − (parentR+childR); far crown = seat + 2*innerHalf
+            return Math.max(0.02, chainTopAssemblyLength(s) - (parentR + childR));
+        }
+
+        // Same eyeScale used by update3DSlingGeometry — keep path inset ↔ ferrule tip in sync
+        function slingEyeScaleFromMeta(meta, look) {
+            const dia = Math.max(6, (meta && meta.diaMm) || (look === 'web' ? 50 : (look === 'chain' ? 16 : 20)));
+            const diaScale = THREE.MathUtils.clamp(dia / (look === 'web' ? 50 : 18), 0.55, 2.6)
+                * ((meta && meta.selected) ? 1.35 : 1);
+            return THREE.MathUtils.clamp(diaScale, 0.72, 1.45);
         }
 
         function buildHardwareMesh(type) {
@@ -757,6 +827,124 @@
             return group;
         }
 
+        // Helper: Realistic 6-Strand Helical Twisted Wire Rope Cylinder Geometry
+        function createHelicalWireStrandGeometry(radius = 0.018, length = 1.0, radialSegs = 18, heightSegs = 6) {
+            const geo = new THREE.CylinderGeometry(radius, radius, length, radialSegs, heightSegs, false);
+            const pos = geo.attributes.position;
+            for (let i = 0; i < pos.count; i++) {
+                const x = pos.getX(i);
+                const y = pos.getY(i);
+                const z = pos.getZ(i);
+                const phi = Math.atan2(z, x);
+                const v = (y / length) + 0.5;
+                const psi = 6 * (phi + v * (Math.PI * 0.75));
+                const lobe = 1.0 - 0.14 * Math.pow(1 - Math.abs(Math.cos(psi * 0.5)), 1.6);
+                pos.setX(i, x * lobe);
+                pos.setZ(i, z * lobe);
+            }
+            geo.computeVertexNormals();
+            return geo;
+        }
+
+        // Helper: Natural Bunched Wrinkle Geometry for Round Sling Protective Sleeve
+        function createRoundSlingWrinkleGeometry(radius = 0.018, length = 1.0, radialSegs = 16, heightSegs = 6) {
+            const geo = new THREE.CylinderGeometry(radius, radius, length, radialSegs, heightSegs, false);
+            const pos = geo.attributes.position;
+            for (let i = 0; i < pos.count; i++) {
+                const x = pos.getX(i);
+                const y = pos.getY(i);
+                const z = pos.getZ(i);
+                const theta = Math.atan2(z, x);
+                const v = y / length;
+                const wrinkle = 1.0 + 0.075 * Math.sin(v * 22) + 0.04 * Math.cos(v * 40 + 2 * theta);
+                pos.setX(i, x * wrinkle);
+                pos.setZ(i, z * wrinkle);
+            }
+            geo.computeVertexNormals();
+            return geo;
+        }
+
+        // Helper: Red chain end-link (đốt cuối) that nests through a master-link or shackle bow.
+        // Contract: local origin = INNER hole-edge; +Y into the chain body (tube stock on +Y).
+        // Caller seats origin at parentCrown − 2·tubeR so child stock fills the OPENING side of
+        // the bearing plane and tì đè the parent bar (so le) — not a mid-tube weld.
+        // Orientation: plane ⊥ parent via orientEndLink.
+        function createChainEndHardwareGroup(isTop = true) {
+            const g = new THREE.Group();
+            g.name = isTop ? 'Chain_End_Link_Top' : 'Chain_End_Link_Bottom';
+            const redMat = MATS.chainPowderRed || MATS.redMaster;
+
+            // Eye must clear bow Ø≈37 mm with so-le nest; stock thick enough to read tì đè.
+            // Inner width = 0.090-0.028 = 0.062; stock Ø28 mm.
+            const subH = 0.115, subW = 0.090, subR = 0.014;
+            const innerHalf = subH * 0.5 - subR; // 0.0435
+            const sub = createOvalMasterLink(subH, subW, subR);
+            sub.name = 'Chain_End_Link';
+            // Origin = near inner crown; +Y along sling. Flip so crown faces the parent pin.
+            sub.rotation.x = Math.PI;
+            sub.position.y = innerHalf;
+            sub.traverse(m => {
+                if (m.isMesh) m.material = redMat;
+            });
+
+            // Pure oblong — black Grade-80 links nest through the far eye (no fake hammerlock weld)
+            g.userData.bearingLength = 2 * innerHalf; // ≈0.087
+            g.userData.tubeR = subR;
+            g.userData.innerHalf = innerHalf;
+            g.add(sub);
+            g.traverse(m => { if (m.isMesh) m.castShadow = true; });
+            return g;
+        }
+
+        // Helper: Heavy-Duty Orange/White Warning Label Tag for Round Sling
+        function createRoundSlingTagGroup() {
+            const g = new THREE.Group();
+            g.name = 'Round_Sling_Safety_Tag';
+            const tagMat = new THREE.MeshStandardMaterial({ color: 0xea580c, roughness: 0.75, metalness: 0.05 });
+            const whiteMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.85, metalness: 0.02 });
+
+            const mainTag = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.11, 0.004), tagMat);
+            const flapTag = new THREE.Mesh(new THREE.BoxGeometry(0.032, 0.07, 0.002), whiteMat);
+            flapTag.position.set(0.016, -0.012, 0.003);
+            flapTag.rotation.z = 0.10;
+
+            g.add(mainTag, flapTag);
+            return g;
+        }
+
+        // Helper: Seamless Endless Grommet Eye with Metallic Wire Seizing Sleeve
+        function createGrommetSeizingEyeGroup() {
+            const g = new THREE.Group();
+            g.name = 'Grommet_Seizing_Eye';
+            const wireMat = MATS.wireRope;
+            const seizingMat = MATS.galvSteel || MATS.forgedAlloy;
+
+            const loopCurveA = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(-0.018, 0.088, 0),
+                new THREE.Vector3(-0.032, 0.042, 0),
+                new THREE.Vector3( 0.000, -0.006, 0),
+                new THREE.Vector3( 0.032, 0.042, 0),
+                new THREE.Vector3( 0.018, 0.088, 0)
+            ], false, 'centripetal', 0.4);
+            const loopA = new THREE.Mesh(new THREE.TubeGeometry(loopCurveA, 18, 0.011, 8, false), wireMat);
+
+            const loopCurveB = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(-0.008, 0.088, 0.016),
+                new THREE.Vector3(-0.022, 0.042, 0.016),
+                new THREE.Vector3( 0.000, -0.006, 0.016),
+                new THREE.Vector3( 0.022, 0.042, 0.016),
+                new THREE.Vector3( 0.008, 0.088, 0.016)
+            ], false, 'centripetal', 0.4);
+            const loopB = new THREE.Mesh(new THREE.TubeGeometry(loopCurveB, 18, 0.011, 8, false), wireMat);
+
+            const seizingSleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.065, 14), seizingMat);
+            seizingSleeve.position.y = 0.115;
+
+            g.add(loopA, loopB, seizingSleeve);
+            g.traverse(m => { if (m.isMesh) m.castShadow = true; });
+            return g;
+        }
+
         // Helper: Teardrop Wire-Rope Eye + Forged Steel Thimble + Swaged Aluminum Ferrule
         // Local origin (0,0,0) is the exact inner bearing contact point; +Y points inward along the sling!
         function createSlingEyeTerminationGroup() {
@@ -794,21 +982,56 @@
             ferruleBody.name = 'Ferrule_Wire_Rope_Sleeve';
             const ferruleCone = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.023, 0.026, 16), MATS.ferruleSilver);
             ferruleCone.position.y = 0.182;
+            ferruleCone.name = 'Ferrule_Wire_Rope_Tip';
+            // Rope stub that exits the swaged tip and overlaps the first path segment
+            const ropeStub = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.014, 0.013, 0.055, 10),
+                MATS.wireRope
+            );
+            ropeStub.position.y = 0.208; // extends well past tip face into the rope body
+            ropeStub.name = 'Ferrule_Rope_Stub';
 
-            termGroup.add(wireEye, thimbleMesh, ferruleBody, ferruleCone);
+            termGroup.add(wireEye, thimbleMesh, ferruleBody, ferruleCone, ropeStub);
             termGroup.traverse(m => { if (m.isMesh) m.castShadow = true; });
             return termGroup;
         }
 
-        // Helper: Stitched Web-Sling Eye Sleeve for synthetic slings
+        // Helper: Stitched Web-Sling Eye Sleeve for synthetic slings with EN 1492-1 Becket Eye, Cross-Stitch & Tag
         function createWebEyeSleeveGroup() {
             const g = new THREE.Group();
             g.name = 'Synthetic_Web_Eye_Sleeve';
-            const loop = new THREE.Mesh(new THREE.TorusGeometry(0.028, 0.011, 8, 16), MATS.darkSteel);
-            loop.position.y = 0.026;
-            const cuff = new THREE.Mesh(new THREE.BoxGeometry(0.068, 0.095, 0.024), MATS.webGreen);
-            cuff.position.y = 0.092;
-            g.add(loop, cuff);
+
+            // Soft becket eye — flattened tube so it reads as folded webbing, not a hose
+            const eyeCurve = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(-0.018, 0.095, 0),
+                new THREE.Vector3(-0.034, 0.048, 0),
+                new THREE.Vector3( 0.000, -0.002, 0),
+                new THREE.Vector3( 0.034, 0.048, 0),
+                new THREE.Vector3( 0.018, 0.095, 0)
+            ], false, 'centripetal', 0.35);
+            const loop = new THREE.Mesh(new THREE.TubeGeometry(eyeCurve, 24, 0.007, 8, false), MATS.webGreen);
+            loop.name = 'Web_Eye_Loop';
+            const wearLiner = new THREE.Mesh(new THREE.TubeGeometry(eyeCurve, 16, 0.0045, 8, false), MATS.darkSteel);
+
+            const cuff = new THREE.Mesh(new THREE.BoxGeometry(0.078, 0.10, 0.012), MATS.webGreen);
+            cuff.position.y = 0.100;
+            cuff.name = 'Web_Cuff';
+
+            const stitchMat = new THREE.MeshBasicMaterial({ color: 0x111827 });
+            const stitchX1 = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.003, 0.025), stitchMat);
+            stitchX1.position.y = 0.095;
+            stitchX1.rotation.z = 0.785;
+            const stitchX2 = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.003, 0.025), stitchMat);
+            stitchX2.position.y = 0.095;
+            stitchX2.rotation.z = -0.785;
+
+            const tagMat = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.82, metalness: 0.05 });
+            const tag = new THREE.Mesh(new THREE.BoxGeometry(0.038, 0.075, 0.003), tagMat);
+            tag.position.set(0.036, 0.092, 0);
+            tag.rotation.z = -0.22;
+
+            g.add(loop, wearLiner, cuff, stitchX1, stitchX2, tag);
+            g.traverse(m => { if (m.isMesh) m.castShadow = true; });
             return g;
         }
 
@@ -853,7 +1076,7 @@
                 topEye.rotation.z = Math.PI;
                 const botEye = createSlingEyeTerminationGroup();
                 botEye.position.set(0, -1.35, 0);
-                const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 2.32, 16), MATS.wireRope);
+                const rope = new THREE.Mesh(createHelicalWireStrandGeometry(0.022, 2.32, 18, 12), MATS.wireRope);
                 const shTop = buildHardwareMesh('bow_shackle');
                 shTop.position.set(0, 1.49, 0);
                 shTop.rotation.z = Math.PI;
@@ -864,42 +1087,54 @@
             }
             if (presetId === 'sling_chain') {
                 g.name = 'Chain_Sling';
-                const ml = createOvalMasterLink(0.28, 0.16, 0.024);
-                ml.position.set(0, 1.35, 0);
-                g.add(ml);
+                // +Y of end-link = into chain; rotate so bearing faces outward, body toward mid-span
+                const topAssembly = createChainEndHardwareGroup(true);
+                topAssembly.position.set(0, 1.38, 0);
+                topAssembly.rotation.z = Math.PI; // +Y downward into chain
+                g.add(topAssembly);
+                const topFar = 1.38 - chainTopAssemblyLength(1);
                 for (let i = 0; i < 32; i++) {
                     const lk = createOvalChainLinkGroup();
-                    lk.position.set(0, 1.20 - i * CHAIN_NEST_PITCH, 0);
+                    // Nest first links back into the red far eye
+                    lk.position.set(0, topFar - CHAIN_NEST_PITCH * 0.45 - i * CHAIN_NEST_PITCH, 0);
                     if (i % 2) lk.rotation.y = Math.PI / 2;
-                    lk.scale.set(1.1, 1.1 * CHAIN_LINK_ELONG, 1.1);
+                    lk.scale.set(1.1, 1.1, 1.1);
                     g.add(lk);
                 }
-                const hk = buildHardwareMesh('clevis_hook');
-                hk.position.set(0, -1.25, 0);
-                g.add(hk);
+                const botHook = createChainEndHardwareGroup(false);
+                botHook.position.set(0, -1.38, 0); // +Y upward into chain
+                g.add(botHook);
                 return g;
             }
             if (presetId === 'sling_web') {
                 g.name = 'Synthetic_Web_Sling';
-                const flatBand = new THREE.Mesh(new THREE.BoxGeometry(0.14, 2.30, 0.024), MATS.webGreen);
+                const webMat = (typeof window !== 'undefined' && window.getDynamicSlingMaterial)
+                    ? window.getDynamicSlingMaterial('web', 2.0)
+                    : MATS.webGreen;
+                const flatBand = new THREE.Mesh(new THREE.BoxGeometry(0.12, 2.30, 0.02), webMat);
                 const eyeA = createWebEyeSleeveGroup();
                 eyeA.position.set(0, 1.25, 0);
                 eyeA.rotation.z = Math.PI;
                 const eyeB = createWebEyeSleeveGroup();
                 eyeB.position.set(0, -1.25, 0);
+                eyeA.traverse(m => { if (m.isMesh && (m.name === 'Web_Eye_Loop' || m.name === 'Web_Cuff')) m.material = webMat; });
+                eyeB.traverse(m => { if (m.isMesh && (m.name === 'Web_Eye_Loop' || m.name === 'Web_Cuff')) m.material = webMat; });
                 g.add(flatBand, eyeA, eyeB);
                 return g;
             }
             if (presetId === 'sling_round') {
                 g.name = 'Round_Sling';
+                const roundMat = (typeof window !== 'undefined' && window.getDynamicSlingMaterial)
+                    ? window.getDynamicSlingMaterial('round_sling', 4.0)
+                    : (MATS.webGreen || MATS.wireRope);
                 const roundLoop = new THREE.Mesh(
-                    new THREE.TorusGeometry(0.85, 0.052, 18, 48),
-                    new THREE.MeshStandardMaterial({ color: 0x9333ea, roughness: 0.65, metalness: 0.05 })
+                    new THREE.TorusGeometry(0.85, 0.046, 18, 48),
+                    roundMat
                 );
                 roundLoop.scale.set(0.42, 1.45, 1.0);
-                const wearPad = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.45, 16), MATS.darkSteel);
-                wearPad.position.set(0.35, 0, 0);
-                g.add(roundLoop, wearPad);
+                const tagGroup = createRoundSlingTagGroup();
+                tagGroup.position.set(0.35, 0, 0);
+                g.add(roundLoop, tagGroup);
                 return g;
             }
             if (presetId === 'sling_grommet') {
@@ -909,9 +1144,12 @@
                     MATS.wireRope
                 );
                 grommetLoop.scale.set(0.45, 1.45, 1.0);
-                const markSleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.054, 0.054, 0.28, 16), MATS.redMaster);
-                markSleeve.position.set(-0.42, 0, 0);
-                g.add(grommetLoop, markSleeve);
+                const topSeize = createGrommetSeizingEyeGroup();
+                topSeize.position.set(0, 1.35, 0);
+                topSeize.rotation.z = Math.PI;
+                const botSeize = createGrommetSeizingEyeGroup();
+                botSeize.position.set(0, -1.35, 0);
+                g.add(grommetLoop, topSeize, botSeize);
                 return g;
             }
             if (presetId === 'sling_tagline') {
@@ -958,26 +1196,110 @@
             return g;
         }
 
-        // Grade-80 oval link, true proportions for 16 mm stock (EN 818-2 style): pitch p = 3d = 48 mm,
-        // inside width ~1.4d, so centerline half-width = (22 + 16) / 2 = 19 mm. Scales linearly with d / 16.
-        // Torus in XY, long axis = +Y after scale — matches path tangent via setFromUnitVectors(up, dir).
-        const CHAIN_LINK_MAJOR = 0.019;   // centerline half-width (m) @ 16 mm stock
-        const CHAIN_LINK_TUBE = 0.008;    // stock radius (m) @ 16 mm stock
-        const CHAIN_LINK_ELONG = 1.55;    // stretch → long oval
-        const CHAIN_LINK_GEO = new THREE.TorusGeometry(CHAIN_LINK_MAJOR, CHAIN_LINK_TUBE, 8, 18);
-        // Outer length along tangent at unit scale
-        const CHAIN_LINK_OUTER = 2 * (CHAIN_LINK_MAJOR + CHAIN_LINK_TUBE) * CHAIN_LINK_ELONG;
-        // Real link-to-link center pitch: 3 x stock diameter
-        const CHAIN_NEST_PITCH = 0.048;
+        // Helper: Stadium Curve for Grade-80 Oval Links (EN 818-2 Standard)
+        // straightHalf default = 13 mm → inside length 2*(sH+R-tubeR) = 3d @ 16 mm stock
+        class StadiumCurve extends THREE.Curve {
+            constructor(straightHalf = 0.013, radius = 0.019) {
+                super();
+                this.sH = straightHalf;
+                this.R = radius;
+                this.arcLen = Math.PI * radius;
+                this.straightLen = 2 * straightHalf;
+                this.totalLen = 2 * this.straightLen + 2 * this.arcLen;
+            }
+            getPoint(t, optionalTarget = new THREE.Vector3()) {
+                const s = t * this.totalLen;
+                const R = this.R;
+                const sH = this.sH;
+                if (s <= this.straightLen) {
+                    const u = s / this.straightLen;
+                    return optionalTarget.set(R, -sH + u * 2 * sH, 0);
+                }
+                const s2 = s - this.straightLen;
+                if (s2 <= this.arcLen) {
+                    const ang = (s2 / this.arcLen) * Math.PI;
+                    return optionalTarget.set(R * Math.cos(ang), sH + R * Math.sin(ang), 0);
+                }
+                const s3 = s2 - this.arcLen;
+                if (s3 <= this.straightLen) {
+                    const u = s3 / this.straightLen;
+                    return optionalTarget.set(-R, sH - u * 2 * sH, 0);
+                }
+                const s4 = s3 - this.straightLen;
+                const ang = Math.PI + (s4 / this.arcLen) * Math.PI;
+                return optionalTarget.set(R * Math.cos(ang), -sH + R * Math.sin(ang), 0);
+            }
+        }
+
+        function mergeBufferGeometries(geos) {
+            let totalPos = 0, totalIdx = 0;
+            geos.forEach(g => {
+                totalPos += g.attributes.position.count;
+                totalIdx += g.index ? g.index.count : 0;
+            });
+            const positions = new Float32Array(totalPos * 3);
+            const normals = new Float32Array(totalPos * 3);
+            const uvs = new Float32Array(totalPos * 2);
+            const indices = totalIdx > 0 ? (totalPos > 65535 ? new Uint32Array(totalIdx) : new Uint16Array(totalIdx)) : null;
+
+            let posOffset = 0, idxOffset = 0, vertexOffset = 0;
+            geos.forEach(g => {
+                positions.set(g.attributes.position.array, posOffset * 3);
+                if (g.attributes.normal) normals.set(g.attributes.normal.array, posOffset * 3);
+                if (g.attributes.uv) uvs.set(g.attributes.uv.array, posOffset * 2);
+                if (indices && g.index) {
+                    for (let i = 0; i < g.index.count; i++) {
+                        indices[idxOffset + i] = g.index.array[i] + vertexOffset;
+                    }
+                    idxOffset += g.index.count;
+                }
+                vertexOffset += g.attributes.position.count;
+                posOffset += g.attributes.position.count;
+            });
+            const merged = new THREE.BufferGeometry();
+            merged.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            merged.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+            merged.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+            if (indices) merged.setIndex(new THREE.BufferAttribute(indices, 1));
+            return merged;
+        }
+
+        function createGrommetDoubleStrandGeometry(radius = 0.013, length = 1.0, sep = 0.024) {
+            const geo1 = createHelicalWireStrandGeometry(radius, length, 12, 4);
+            geo1.translate(-sep * 0.5, 0, 0);
+            const geo2 = createHelicalWireStrandGeometry(radius, length, 12, 4);
+            geo2.translate(sep * 0.5, 0, 0);
+            return mergeBufferGeometries([geo1, geo2]);
+        }
+
+        // Grade-80 oval link, EN 818-2 @ 16 mm stock:
+        //   d = 16 mm, inside length p = 3d = 48 mm, inside width ≈ 1.25d–1.4d ≈ 22 mm
+        //   centerline half-width R = (inside_w + d) / 2 = 19 mm
+        //   straightHalf sH = p/2 - (R - tubeR) = 24 - 11 = 13 mm
+        // Nest pitch = sH + R = 32 mm (centers sit on the partner end-arc) so each oval
+        // ngoắc through the previous opening — stock fills the hole (not tip-welded rims).
+        const CHAIN_LINK_MAJOR = 0.019;     // centerline half-width (m) @ 16 mm stock
+        const CHAIN_LINK_TUBE = 0.008;      // stock radius (m) @ 16 mm stock
+        const CHAIN_LINK_STRAIGHT = 0.013;  // stadium straight half → inside length = 48 mm
+        const CHAIN_LINK_GEO = new THREE.TubeGeometry(
+            new StadiumCurve(CHAIN_LINK_STRAIGHT, CHAIN_LINK_MAJOR), 28, CHAIN_LINK_TUBE, 12, true
+        );
+        const CHAIN_NEST_PITCH = CHAIN_LINK_STRAIGHT + CHAIN_LINK_MAJOR; // 0.032 m
 
         function createOvalChainLinkGroup() {
             const mesh = new THREE.Mesh(CHAIN_LINK_GEO, MATS.chainDark);
-            mesh.scale.set(1, CHAIN_LINK_ELONG, 1);
             mesh.castShadow = false;
             mesh.receiveShadow = false;
             mesh.userData.linkPitch = CHAIN_NEST_PITCH;
             return mesh;
         }
+
+        // Shared reusable geometries for high-performance 60fps rendering across all 5 sling types
+        const WIRE_SEG_GEO = createHelicalWireStrandGeometry(0.018, 1.0, 18, 6);
+        const ROUND_SEG_GEO = createRoundSlingWrinkleGeometry(0.018, 1.0, 16, 6);
+        // Unit webbing strap: local Y = length, X = width, Z = thickness (thin fabric)
+        const WEB_SEG_GEO = new THREE.BoxGeometry(1.0, 1.0, 1.0);
+        const GROMMET_SEG_GEO = createGrommetDoubleStrandGeometry(0.013, 1.0, 0.024);
 
         function createArticulated3DSling(numSegments, numLinks) {
             const group = new THREE.Group();
@@ -989,10 +1311,15 @@
             const endEyeB = createSlingEyeTerminationGroup();
             const webEyeA = createWebEyeSleeveGroup();
             const webEyeB = createWebEyeSleeveGroup();
+            const chainTopA = createChainEndHardwareGroup(true);
+            const chainBotB = createChainEndHardwareGroup(false);
+            const roundTag = createRoundSlingTagGroup();
+            const grommetEyeA = createGrommetSeizingEyeGroup();
+            const grommetEyeB = createGrommetSeizingEyeGroup();
             const turnbuckle = createInlineTurnbuckleGroup();
-            group.add(endEyeA, endEyeB, webEyeA, webEyeB, turnbuckle);
+            group.add(endEyeA, endEyeB, webEyeA, webEyeB, chainTopA, chainBotB, roundTag, grommetEyeA, grommetEyeB, turnbuckle);
 
-            const segGeo = new THREE.CylinderGeometry(0.018, 0.018, 1.0, 8);
+            const segGeo = WIRE_SEG_GEO;
             for (let i = 0; i < nSeg; i++) {
                 const segMesh = new THREE.Mesh(segGeo, MATS.wireRope);
                 segMesh.castShadow = (i % 4 === 0);
@@ -1013,7 +1340,6 @@
                 link.visible = false;
                 link.castShadow = false;
                 link.receiveShadow = false;
-                link.scale.set(1, CHAIN_LINK_ELONG, 1);
                 group.add(link);
                 links.push(link);
             }
@@ -1024,6 +1350,11 @@
                 endEyeB,
                 webEyeA,
                 webEyeB,
+                chainTopA,
+                chainBotB,
+                roundTag,
+                grommetEyeA,
+                grommetEyeB,
                 turnbuckle,
                 links,
                 numSegments: nSeg,
@@ -1255,9 +1586,13 @@
             }
 
             if (cargoType === 'car') {
-                // Lifting frame + lower vehicle body + tapered greenhouse cabin
-                releaseLocalBox(q, 0, -H * 0.5 + H * 0.28, 0, L * 0.49 + p, H * 0.28 + p, W * 0.48 + p, up);
-                releaseLocalBox(q, -L * 0.05, H * 0.16, 0, L * 0.28 + p, H * 0.24 + p, W * 0.41 + p, up);
+                // Full bus / vehicle envelope — ropes must hug the outer shell, never chord through cabin glass
+                const bodyHx = L * 0.495 + p;
+                const bodyHy = H * 0.48 + p;
+                const bodyHz = W * 0.48 + p;
+                releaseLocalBox(q, 0, H * 0.02, 0, bodyHx, bodyHy, bodyHz, up);
+                // Slightly narrower roof crown so side-hug paths stay on the exterior flanks
+                releaseLocalBox(q, 0, H * 0.28, 0, L * 0.46 + p, H * 0.22 + p, W * 0.44 + p, up);
                 return q;
             }
 
@@ -1622,45 +1957,47 @@
             const invQ = phy.cargoQuat.clone().invert();
             const loc = q.clone().sub(phy.cargoPos).applyQuaternion(invQ);
 
-            if (!solid || loc.y < solid.bottomY - 0.15) return q;
+            if (!solid || loc.y < -state.H * 0.5 - 0.15) return q;
 
-            // Side-hug: below the lid and near/outside a vertical face → push OUT the wall, do NOT climb to roof
-            if (loc.y < solid.roofY - 0.05) {
-                const ax = Math.abs(loc.x - solid.ox);
-                const az = Math.abs(loc.z - solid.oz);
-                const inX = ax <= solid.hx + p * 1.25;
-                const inZ = az <= solid.hz + p * 1.25;
-                const nearFaceX = inZ && ax >= solid.hx - p * 2.2;
-                const nearFaceZ = inX && az >= solid.hz - p * 2.2;
+            const ax = Math.abs(loc.x - solid.ox);
+            const az = Math.abs(loc.z - solid.oz);
+            const inSolidXZ = ax <= solid.hx - p * 0.25 && az <= solid.hz - p * 0.25;
+
+            // Side-hug: below the top bevel of the main solid → eject out the nearest side/shell face, do NOT teleport to roof!
+            if (loc.y < solid.roofY - 0.22) {
+                const nearFaceX = az <= solid.hz + p * 1.25 && ax >= solid.hx - p * 2.4 && ax <= solid.hx + p * 1.25;
+                const nearFaceZ = ax <= solid.hx + p * 1.25 && az >= solid.hz - p * 2.4 && az <= solid.hz + p * 1.25;
                 if (nearFaceX || nearFaceZ) {
                     if (nearFaceX && (!nearFaceZ || (solid.hx - ax) <= (solid.hz - az))) {
-                        loc.x = solid.ox + Math.sign(loc.x - solid.ox || 1) * (solid.hx + p * 0.55);
+                        loc.x = solid.ox + Math.sign(loc.x - solid.ox || 1) * (solid.hx + p * 0.45);
                     } else {
-                        loc.z = solid.oz + Math.sign(loc.z - solid.oz || 1) * (solid.hz + p * 0.55);
+                        loc.z = solid.oz + Math.sign(loc.z - solid.oz || 1) * (solid.hz + p * 0.45);
                     }
-                    loc.y = Math.max(loc.y, solid.bottomY);
-                    return loc.applyQuaternion(phy.cargoQuat).add(phy.cargoPos);
                 }
+                // Always resolve against true 3D cargo shell (deck, bulkheads, OOG box) without forced upward roof teleport
+                const pushed = pushOutOfCargoShellLocal(loc, p, false);
+                return pushed.applyQuaternion(phy.cargoQuat).add(phy.cargoPos);
             }
 
-            const roofY = cargoRoofAtXZ(q.x, q.z, p);
-            if (roofY != null && q.y < roofY) q.y = roofY;
-            const loc2 = q.clone().sub(phy.cargoPos).applyQuaternion(invQ);
-            const nearVol = Math.abs(loc2.x - solid.ox) <= solid.hx + 1.2
-                && Math.abs(loc2.z - solid.oz) <= solid.hz + 1.2;
-            if (nearVol) {
-                loc2.copy(pushOutOfCargoShellLocal(loc2, p, true));
-                const w2 = loc2.clone().applyQuaternion(phy.cargoQuat).add(phy.cargoPos);
-                if (roofY != null && w2.y < roofY) w2.y = roofY;
-                return w2;
+            // Near or above the roof surface and inside the solid XZ footprint → rest on top of the roof
+            if (inSolidXZ) {
+                const roofY = cargoRoofAtXZ(q.x, q.z, p);
+                if (roofY != null && q.y < roofY) q.y = roofY;
             }
-            return q;
+            const loc2 = q.clone().sub(phy.cargoPos).applyQuaternion(invQ);
+            const pushed2 = pushOutOfCargoShellLocal(loc2, p, inSolidXZ);
+            const w2 = pushed2.applyQuaternion(phy.cargoQuat).add(phy.cargoPos);
+            if (inSolidXZ) {
+                const roofY = cargoRoofAtXZ(w2.x, w2.z, p);
+                if (roofY != null && w2.y < roofY) w2.y = roofY;
+            }
+            return w2;
         }
 
         function pushPointClear(p, rad, skip) {
             const q = p.clone();
             const skipSet = skip || new Set();
-            const ropePad = Math.max(0.028, rad || 0.024);
+            const ropePad = Math.max(0.024, rad || 0.024);
             for (let n = 0; n < 2; n++) {
                 if (!skipSet.has('cargo')) q.copy(liftRopeOntoCargoRoof(q, ropePad));
                 (phy.beams || []).forEach(b => {
@@ -1679,14 +2016,6 @@
                 }
                 const floor = supportY(q.x, q.z) + ropePad;
                 if (q.y < floor) q.y = floor;
-                if (!skipSet.has('cargo')) {
-                    const solid = cargoWrapSolid(ropePad);
-                    const loc = cargoLocalFromWorld(q);
-                    if (solid && loc.y >= solid.bottomY - 0.15) {
-                        const roofY = cargoRoofAtXZ(q.x, q.z, ropePad);
-                        if (roofY != null && q.y < roofY) q.y = roofY;
-                    }
-                }
             }
             return q;
         }
@@ -1744,6 +2073,134 @@
             pts[0].copy(ends[0]);
             pts[pts.length - 1].copy(ends[1]);
             return pts;
+        }
+
+        // Taut wrap: climb the flank to the roof-edge corner, then go straight to
+        // the high pin. Leave point sits ON the cargo corner — no outward bulge.
+        function seedTautCornerWrap(pointA, pointB, solid, pad, minBendR) {
+            const locA = cargoLocalFromWorld(pointA);
+            const locB = cargoLocalFromWorld(pointB);
+            // Only a hair of clearance so the leave point reads as the true corner
+            const p = Math.max(0.008, Math.min(0.018, (pad || 0.028) * 0.45));
+            const highIsA = locA.y >= locB.y;
+            const locHigh = highIsA ? locA : locB;
+            const locLow = highIsA ? locB : locA;
+            const wHigh = highIsA ? pointA.clone() : pointB.clone();
+            const wLow = highIsA ? pointB.clone() : pointA.clone();
+
+            const faceScoreZ = Math.abs(locLow.z - solid.oz) / Math.max(1e-4, solid.hz);
+            const faceScoreX = Math.abs(locLow.x - solid.ox) / Math.max(1e-4, solid.hx);
+            const useZFace = faceScoreZ >= faceScoreX * 0.85;
+
+            // Geodesic leave point = projection of the high pin onto the contacted roof edge
+            // (clamped). That makes free-air run straight into the corner, not loop outside.
+            let edgeLocal;
+            let outN;
+            if (useZFace) {
+                const sz = Math.sign(locLow.z - solid.oz) || 1;
+                const edgeX = THREE.MathUtils.clamp(locHigh.x, solid.ox - solid.hx, solid.ox + solid.hx);
+                edgeLocal = new THREE.Vector3(edgeX, solid.roofY, solid.oz + sz * (solid.hz + p));
+                outN = new THREE.Vector3(0, 0, sz);
+            } else {
+                const sx = Math.sign(locLow.x - solid.ox) || 1;
+                const edgeZ = THREE.MathUtils.clamp(locHigh.z, solid.oz - solid.hz, solid.oz + solid.hz);
+                edgeLocal = new THREE.Vector3(solid.ox + sx * (solid.hx + p), solid.roofY, edgeZ);
+                outN = new THREE.Vector3(sx, 0, 0);
+            }
+
+            const wCorner = cargoWorldFromLocal(edgeLocal);
+            const ctrl = [wLow];
+
+            // Climb on the exterior face from lug up to the roof-edge corner
+            for (let i = 1; i <= 6; i++) {
+                const t = i / 6;
+                const loc = new THREE.Vector3(
+                    THREE.MathUtils.lerp(locLow.x, edgeLocal.x, t),
+                    THREE.MathUtils.lerp(locLow.y, edgeLocal.y, t),
+                    THREE.MathUtils.lerp(locLow.z, edgeLocal.z, t)
+                );
+                if (useZFace) {
+                    loc.z = solid.oz + Math.sign(outN.z) * (solid.hz + p);
+                    loc.x = THREE.MathUtils.clamp(loc.x, solid.ox - solid.hx, solid.ox + solid.hx);
+                } else {
+                    loc.x = solid.ox + Math.sign(outN.x) * (solid.hx + p);
+                    loc.z = THREE.MathUtils.clamp(loc.z, solid.oz - solid.hz, solid.oz + solid.hz);
+                }
+                // Last climb sample snaps exactly onto the corner
+                if (i === 6) loc.copy(edgeLocal);
+                ctrl.push(cargoWorldFromLocal(loc));
+            }
+
+            // Free-air taut segment starts AT the corner and goes straight to the high pin
+            for (let i = 1; i <= 10; i++) {
+                ctrl.push(wCorner.clone().lerp(wHigh, i / 10));
+            }
+            ctrl[ctrl.length - 1].copy(wHigh);
+
+            if (highIsA) ctrl.reverse();
+            return ctrl;
+        }
+
+        // If a rendered segment still cuts the cargo solid, push the crest to the
+        // nearest exterior flank / roof-edge — never drag mid-span across the lid.
+        function routeRopeAroundCargo(pts, pad) {
+            if (!pts || pts.length < 2) return pts || [];
+            const solid = cargoWrapSolid(pad);
+            if (!solid) return pts.map(p => p.clone());
+            const ropePad = Math.max(0.02, pad || 0.028);
+            let out = pts.map(p => p.clone());
+            const ends = [out[0].clone(), out[out.length - 1].clone()];
+
+            for (let pass = 0; pass < 2; pass++) {
+                const next = [out[0].clone()];
+                let changed = false;
+                for (let i = 0; i < out.length - 1; i++) {
+                    const a = out[i];
+                    const b = out[i + 1];
+                    let deepest = null;
+                    for (let s = 1; s <= 10; s++) {
+                        const t = s / 11;
+                        const w = a.clone().lerp(b, t);
+                        const loc = cargoLocalFromWorld(w);
+                        const dx = Math.abs(loc.x - solid.ox) - solid.hx;
+                        const dy = Math.abs(loc.y - solid.oy) - solid.hy;
+                        const dz = Math.abs(loc.z - solid.oz) - solid.hz;
+                        if (dx < 0 && dy < 0 && dz < 0) {
+                            const depth = Math.min(-dx, -dy, -dz);
+                            if (!deepest || depth > deepest.depth) deepest = { loc, depth };
+                        }
+                    }
+                    if (deepest) {
+                        const loc = deepest.loc.clone();
+                        const toX = solid.hx - Math.abs(loc.x - solid.ox);
+                        const toZ = solid.hz - Math.abs(loc.z - solid.oz);
+                        const toRoof = solid.roofY - loc.y;
+                        const clear = Math.min(0.014, ropePad * 0.55);
+                        const crestLocal = loc.clone();
+                        // Snap to the nearest exterior face / roof-edge corner — no outward loop
+                        if (toRoof + 0.06 < Math.min(toX, toZ)) {
+                            crestLocal.y = solid.roofY + clear * 0.5;
+                            if (toX <= toZ) crestLocal.x = solid.ox + Math.sign(loc.x - solid.ox || 1) * (solid.hx + clear);
+                            else crestLocal.z = solid.oz + Math.sign(loc.z - solid.oz || 1) * (solid.hz + clear);
+                        } else if (toX <= toZ) {
+                            crestLocal.x = solid.ox + Math.sign(loc.x - solid.ox || 1) * (solid.hx + clear);
+                        } else {
+                            crestLocal.z = solid.oz + Math.sign(loc.z - solid.oz || 1) * (solid.hz + clear);
+                        }
+                        next.push(cargoWorldFromLocal(crestLocal));
+                        changed = true;
+                    }
+                    next.push(b.clone());
+                }
+                out = next;
+                for (let i = 1; i < out.length - 1; i++) {
+                    out[i] = ejectFromCargoSolid(out[i], ropePad, solid);
+                }
+                out[0].copy(ends[0]);
+                out[out.length - 1].copy(ends[1]);
+                if (!changed) break;
+            }
+            return out;
         }
 
         // Node-only tests miss a common failure mode: a rendered segment can pass
@@ -1829,7 +2286,7 @@
         }
 
         // Force polyline arc length ≈ L0 with ends pinned (inextensible sling).
-        // Too long → take up toward chord; too short → deepen catenary belly.
+        // Too long → take up toward chord; too short → deepen vertical gravity belly ONLY (never scale horizontal X/Z!).
         function fitPathToFixedLength(pts, pointA, pointB, L0, solid, pad) {
             if (!pts || pts.length < 3) return pts || [];
             const N = pts.length - 1;
@@ -1845,28 +2302,40 @@
                 return a;
             };
 
-            // Straight reference (clear of lid if needed)
-            const str = [];
-            for (let i = 0; i <= N; i++) {
-                const p = new THREE.Vector3().lerpVectors(pointA, pointB, i / N);
-                if (solid) {
+            const clampSolidRoof = (p) => {
+                if (!solid) return;
+                const loc = cargoLocalFromWorld(p);
+                if (Math.abs(loc.x - solid.ox) <= solid.hx && Math.abs(loc.z - solid.oz) <= solid.hz && loc.y >= solid.bottomY - 0.10) {
                     const roofY = cargoRoofAtXZ(p.x, p.z, pad * 0.35);
                     if (roofY != null && p.y < roofY) p.y = roofY;
                 }
+            };
+
+            // Straight reference (clear of lid only where actually crossing solid footprint)
+            const str = [];
+            for (let i = 0; i <= N; i++) {
+                const p = new THREE.Vector3().lerpVectors(pointA, pointB, i / N);
+                clampSolidRoof(p);
                 str.push(p);
             }
             str[0].copy(pointA);
             str[N].copy(pointB);
 
             let len = measure(out);
-            // Path longer than L0: blend toward straight until arc ≈ L0
-            if (len > target + 0.02) {
+            // Path longer than L0: blend toward straight reference until arc === L0 within < 0.2 mm
+            if (len > target + 0.0002) {
+                const pureStr = [];
+                for (let i = 0; i <= N; i++) {
+                    pureStr.push(new THREE.Vector3().lerpVectors(pointA, pointB, i / N));
+                }
+                const strLen = measure(str);
+                const ref = (strLen <= target + 0.0001) ? str : pureStr;
                 let lo = 0;
                 let hi = 1;
-                for (let k = 0; k < 14; k++) {
+                for (let k = 0; k < 28; k++) {
                     const mid = 0.5 * (lo + hi);
                     for (let i = 1; i < N; i++) {
-                        out[i].copy(pts[i]).lerp(str[i], mid);
+                        out[i].copy(pts[i]).lerp(ref[i], mid);
                     }
                     out[0].copy(pointA);
                     out[N].copy(pointB);
@@ -1875,21 +2344,20 @@
                     else hi = mid;
                 }
                 const blend = 0.5 * (lo + hi);
-                for (let i = 1; i < N; i++) out[i].copy(pts[i]).lerp(str[i], blend);
-            } else if (len < target - 0.02) {
-                // Path shorter than L0: deepen gravity belly until arc ≈ L0
+                for (let i = 1; i < N; i++) out[i].copy(pts[i]).lerp(ref[i], blend);
+            } else if (len < target - 0.0002) {
+                // Path shorter than L0: deepen vertical gravity belly (-Y) ONLY.
+                // NEVER scale horizontal (X, Z) offsets!
+                const base = out.map(p => p.clone());
                 let lo = 0;
-                let hi = Math.max(0.15, (target - chord) * 0.85);
-                for (let k = 0; k < 12; k++) {
+                let hi = Math.max(0.35, (target - chord) * 1.45);
+                for (let k = 0; k < 28; k++) {
                     const sag = 0.5 * (lo + hi);
                     for (let i = 1; i < N; i++) {
                         const t = i / N;
-                        out[i].copy(pts[i]);
+                        out[i].copy(base[i]);
                         out[i].y -= sag * Math.sin(t * Math.PI);
-                        if (solid) {
-                            const roofY = cargoRoofAtXZ(out[i].x, out[i].z, pad * 0.35);
-                            if (roofY != null && out[i].y < roofY) out[i].y = roofY;
-                        }
+                        clampSolidRoof(out[i]);
                     }
                     out[0].copy(pointA);
                     out[N].copy(pointB);
@@ -1900,33 +2368,6 @@
             }
             out[0].copy(pointA);
             out[N].copy(pointB);
-            // Final equalize: pull/push mid points along chain to hit L0 within ~1 cm
-            len = measure(out);
-            if (Math.abs(len - target) > 0.015 && len > 1e-4) {
-                const scale = target / len;
-                // Radial scale of offsets from chord — preserves shape family, hits length
-                for (let i = 1; i < N; i++) {
-                    const onChord = new THREE.Vector3().lerpVectors(pointA, pointB, i / N);
-                    out[i].sub(onChord).multiplyScalar(scale).add(onChord);
-                    if (solid) {
-                        const roofY = cargoRoofAtXZ(out[i].x, out[i].z, pad * 0.35);
-                        if (roofY != null && out[i].y < roofY) out[i].y = roofY;
-                    }
-                }
-                out[0].copy(pointA);
-                out[N].copy(pointB);
-                // One more blend if still long (roof glue can re-lengthen)
-                len = measure(out);
-                if (len > target + 0.02) {
-                    const t = THREE.MathUtils.clamp(1 - target / len, 0, 0.85);
-                    for (let i = 1; i < N; i++) {
-                        const onChord = new THREE.Vector3().lerpVectors(pointA, pointB, i / N);
-                        out[i].lerp(onChord, t * 0.65);
-                    }
-                    out[0].copy(pointA);
-                    out[N].copy(pointB);
-                }
-            }
             return out;
         }
 
@@ -1953,17 +2394,20 @@
         }
 
         // 0 = fully slack (drape/hang), 1 = pulled to working length (straight)
+        // Driven by chord→L0 take-up only. Tension must NOT make a short chord look taut
+        // (that caused "straight then stretch like rubber" while the hook rose).
         function ropeTautness(chord, L0, tension, swl) {
             const rest = Math.max(0.2, L0 || chord);
             const c = Math.max(0.001, chord);
-            if (c >= rest - 0.018) return 1.0;
-            // Length-driven: sag vanishes only as chord approaches L0
-            const slackFrac = THREE.MathUtils.clamp((rest - c) / Math.max(0.12, rest * 0.42), 0, 1);
+            if (c >= rest - 0.012) return 1.0;
+            const slackFrac = THREE.MathUtils.clamp((rest - c) / Math.max(0.1, rest * 0.5), 0, 1);
             const lengthTaut = 1 - slackFrac;
-            // Load-driven: tension gradually takes up remaining belly (never beyond length allow)
-            const loadTaut = THREE.MathUtils.clamp((tension || 0) / Math.max(0.06, (swl || 5) * 0.1), 0, 1);
-            const t = THREE.MathUtils.clamp(lengthTaut * (0.55 + 0.45 * loadTaut), 0, 1);
-            // Smoothstep for "từ từ căng"
+            // Tiny load hint only in the last ~8% of take-up
+            const near = c >= rest * 0.92;
+            const loadTaut = near
+                ? THREE.MathUtils.clamp((tension || 0) / Math.max(0.08, (swl || 5) * 0.12), 0, 0.25)
+                : 0;
+            const t = THREE.MathUtils.clamp(lengthTaut * 0.92 + loadTaut * 0.08, 0, 1);
             return t * t * (3 - 2 * t);
         }
 
@@ -2223,7 +2667,7 @@
 
         // Soft inextensible rope/chain: drapes under gravity, conforms to solids, straightens only as tautness→1
         function solveDrapedRopePath(pointA, pointB, fixedLen, ropeR, allowA, allowB, meta) {
-            const N = 28;
+            const N = 40;
             const down = new THREE.Vector3(0, -1, 0);
             const m = meta || {};
             if (m.broken) {
@@ -2267,36 +2711,69 @@
                 return pts;
             }
 
-            let nearCargo = false;
+            // Check whether the A→B span actually crosses over/into the main solid footprint in local (X, Z)
+            let spanCrossesSolid = false;
+            let endsNearRoof = false;
             if (solid) {
-                const margin = Math.max(solid.hx, solid.hz, solid.hy) + 1.8;
-                const nearEnd = (p) => {
-                    const loc = cargoLocalFromWorld(p);
-                    return Math.abs(loc.x - solid.ox) <= solid.hx + margin
-                        && Math.abs(loc.z - solid.oz) <= solid.hz + margin
-                        && loc.y <= solid.roofY + margin
-                        && loc.y >= solid.bottomY - margin;
-                };
-                nearCargo = nearEnd(pointA) || nearEnd(pointB);
-            }
-            // Only attempt surface drape if L0 can actually reach a short corner path
-            // (approx A→edge→B). If L0 is too short for a roof tour, use free-air catenary of L0.
-            let minCorner = chord;
-            if (solid && nearCargo) {
                 const locA = cargoLocalFromWorld(pointA);
                 const locB = cargoLocalFromWorld(pointB);
-                const edgeDist = Math.min(
-                    Math.abs(Math.abs(locA.x - solid.ox) - solid.hx) + Math.abs(Math.abs(locB.x - solid.ox) - solid.hx),
-                    Math.abs(Math.abs(locA.z - solid.oz) - solid.hz) + Math.abs(Math.abs(locB.z - solid.oz) - solid.hz)
-                );
-                minCorner = Math.min(chord * 1.15, chord + edgeDist * 0.5 + minR);
+                const marginY = 1.5;
+                const nearY = (Math.max(locA.y, locB.y) >= solid.bottomY - marginY) && (Math.min(locA.y, locB.y) <= solid.roofY + 4.0);
+                endsNearRoof = (Math.max(locA.y, locB.y) >= solid.roofY - 0.45);
+
+                if (nearY) {
+                    const bothOutsidePosX = (locA.x - solid.ox > solid.hx + pad * 0.5) && (locB.x - solid.ox > solid.hx + pad * 0.5);
+                    const bothOutsideNegX = (locA.x - solid.ox < -solid.hx - pad * 0.5) && (locB.x - solid.ox < -solid.hx - pad * 0.5);
+                    const bothOutsidePosZ = (locA.z - solid.oz > solid.hz + pad * 0.5) && (locB.z - solid.oz > solid.hz + pad * 0.5);
+                    const bothOutsideNegZ = (locA.z - solid.oz < -solid.hz - pad * 0.5) && (locB.z - solid.oz < -solid.hz - pad * 0.5);
+
+                    if (!bothOutsidePosX && !bothOutsideNegX && !bothOutsidePosZ && !bothOutsideNegZ) {
+                        for (let s = 0; s <= 16; s++) {
+                            const t = s / 16;
+                            const lx = locA.x + (locB.x - locA.x) * t;
+                            const lz = locA.z + (locB.z - locA.z) * t;
+                            if (Math.abs(lx - solid.ox) <= solid.hx + pad * 0.5 && Math.abs(lz - solid.oz) <= solid.hz + pad * 0.5) {
+                                spanCrossesSolid = true;
+                                break;
+                            }
+                        }
+                    }
+                }
             }
+
+            // If the free chord would pierce the shell: taut legs wrap the flank→corner
+            // then go straight up to the high pin. Slack legs may still drape on the lid.
+            let minCorner = chord;
+            let sideWrapLen = chord;
+            if (solid && (spanCrossesSolid || needsRoof)) {
+                const locA = cargoLocalFromWorld(pointA);
+                const locB = cargoLocalFromWorld(pointB);
+                const locHigh = locA.y >= locB.y ? locA : locB;
+                const locLow = locA.y >= locB.y ? locB : locA;
+                const climb = Math.max(0, solid.roofY - locLow.y);
+                const freeAir = Math.hypot(
+                    locHigh.x - THREE.MathUtils.clamp(locLow.x, solid.ox - solid.hx, solid.ox + solid.hx),
+                    Math.max(0, locHigh.y - solid.roofY),
+                    locHigh.z - (Math.abs(locLow.z - solid.oz) >= Math.abs(locLow.x - solid.ox)
+                        ? solid.oz + Math.sign(locLow.z - solid.oz || 1) * solid.hz
+                        : locLow.z)
+                );
+                sideWrapLen = climb + freeAir + minR * 0.5;
+                minCorner = Math.max(chord + minR * 0.35, sideWrapLen);
+            }
+            const mustWrapExterior = !!(solid && (needsRoof || spanCrossesSolid) && chordNeedsRoofDrape(pointA, pointB, 24, pad));
+            const tautWrap = mustWrapExterior && (tautness >= 0.55 || slack <= 0.12);
             const canDrape = L0 >= minCorner - 0.05;
-            const useSurface = !!(solid && canDrape && (needsRoof || (slack > 0.06 && nearCargo)));
+            const useLidDrape = !!(solid && spanCrossesSolid && !tautWrap
+                && canDrape && (needsRoof || (slack > 0.06 && endsNearRoof)));
+            const wrapTarget = mustWrapExterior ? Math.max(targetLen, minCorner + pad) : targetLen;
 
             let pts;
-            if (useSurface) {
-                const seed = seedSurfaceDrape(pointA, pointB, solid, pad, targetLen, minR);
+            if (tautWrap) {
+                const seed = seedTautCornerWrap(pointA, pointB, solid, pad, minR);
+                pts = resamplePolyline(seed, N);
+            } else if (useLidDrape) {
+                const seed = seedSurfaceDrape(pointA, pointB, solid, pad, wrapTarget, minR);
                 pts = resamplePolyline(seed, N);
             } else {
                 const cat = catenaryPoints(pointA, pointB, targetLen, N);
@@ -2318,40 +2795,45 @@
             pts[0].copy(pointA);
             pts[pts.length - 1].copy(pointB);
 
-            if (useSurface && tautness < 0.92) {
+            if (useLidDrape && tautness < 0.92) {
                 const grav = (1 - tautness) * (0.7 + Math.min(1.0, slack / Math.max(0.2, targetLen * 0.15)));
-                settleSoftRope(pts, targetLen, pad, ends, allowA, allowB, grav, solid, minR);
+                settleSoftRope(pts, wrapTarget, pad, ends, allowA, allowB, grav, solid, minR);
             }
 
-            // HARD RULE: arc length must equal L0 (võng OK, dài thêm thì không)
-            pts = fitPathToFixedLength(pts, pointA, pointB, targetLen, useSurface ? solid : null, pad);
-
-            // Light surface glue after fit (must not re-lengthen past L0)
-            if (useSurface && solid) {
+            if (tautWrap && solid) {
+                // Keep the corner-wrap silhouette; never blend back toward a piercing chord
+                // or glue free-air nodes onto the roof lid (that made the false 90° kink).
                 for (let i = 1; i < pts.length - 1; i++) {
-                    const roofY = cargoRoofAtXZ(pts[i].x, pts[i].z, pad * 0.35);
-                    if (roofY != null && pts[i].y < roofY) pts[i].y = roofY;
-                }
-                pts = fitPathToFixedLength(pts, pointA, pointB, targetLen, solid, pad);
-            }
-
-            const solidCheck = cargoWrapSolid(pad);
-            if (solidCheck) {
-                const locA2 = cargoLocalFromWorld(pointA);
-                const locB2 = cargoLocalFromWorld(pointB);
-                const bothEndsAbove = (Math.min(locA2.y, locB2.y) >= solidCheck.roofY - 0.35);
-                for (let i = 1; i < pts.length - 1; i++) {
-                    const roofY = cargoRoofAtXZ(pts[i].x, pts[i].z, pad * 0.5);
                     const locI = cargoLocalFromWorld(pts[i]);
-                    const isInsideRoof = (locI.y >= solidCheck.bottomY - 0.10)
-                        && Math.abs(locI.x - solidCheck.ox) <= Math.max(0.1, solidCheck.hx - 0.12)
-                        && Math.abs(locI.z - solidCheck.oz) <= Math.max(0.1, solidCheck.hz - 0.12);
-                    if (roofY != null && (bothEndsAbove || isInsideRoof)) {
-                        if (pts[i].y < roofY) pts[i].y = roofY;
+                    const belowCrest = locI.y < solid.roofY + pad;
+                    const onFlankBand = Math.abs(locI.z - solid.oz) >= solid.hz - pad * 2
+                        || Math.abs(locI.x - solid.ox) >= solid.hx - pad * 2;
+                    if (belowCrest && onFlankBand) {
+                        pts[i] = ejectFromCargoSolid(pts[i], pad, solid);
+                    } else {
+                        const dx = Math.abs(locI.x - solid.ox) - solid.hx;
+                        const dy = Math.abs(locI.y - solid.oy) - solid.hy;
+                        const dz = Math.abs(locI.z - solid.oz) - solid.hz;
+                        if (dx < 0 && dy < 0 && dz < 0) pts[i] = ejectFromCargoSolid(pts[i], pad, solid);
                     }
                 }
+            } else if (useLidDrape && solid) {
+                pts = fitPathToFixedLength(pts, pointA, pointB, wrapTarget, solid, pad);
+                for (let i = 1; i < pts.length - 1; i++) {
+                    const locI = cargoLocalFromWorld(pts[i]);
+                    if (Math.abs(locI.x - solid.ox) <= solid.hx && Math.abs(locI.z - solid.oz) <= solid.hz) {
+                        const roofY = cargoRoofAtXZ(pts[i].x, pts[i].z, pad * 0.35);
+                        if (roofY != null && pts[i].y < roofY) pts[i].y = roofY;
+                    } else {
+                        pts[i] = ejectFromCargoSolid(pts[i], pad, solid);
+                    }
+                }
+                pts = fitPathToFixedLength(pts, pointA, pointB, wrapTarget, solid, pad);
+            } else if (!mustWrapExterior) {
+                pts = fitPathToFixedLength(pts, pointA, pointB, targetLen, null, pad);
             }
 
+            pts = routeRopeAroundCargo(pts, pad);
             pts[0].copy(pointA);
             pts[pts.length - 1].copy(pointB);
             return pts;
@@ -2359,6 +2841,75 @@
 
         function slingPathPoints(pointA, pointB, fixedLen, meta) {
             return solveDrapedRopePath(pointA, pointB, fixedLen, 0.024, ['hook'], [], meta || { role: 'leg', broken: false });
+        }
+
+        // Broken stub path: whip may swing the tip, but the settled shape is a
+        // near-vertical hang under the pin — tip points straight down (no fishhook).
+        function buildBrokenStubHangPath(pin, tip, ropeLen, N, settleAmt) {
+            const n = Math.max(4, N | 0);
+            const L = Math.max(0.12, ropeLen || pin.distanceTo(tip));
+            const settle = THREE.MathUtils.clamp(settleAmt != null ? settleAmt : 0, 0, 1);
+            // Blend tip toward vertical hang under pin as settle → 1
+            const floorY = (typeof supportY === 'function') ? supportY(pin.x, pin.z) + 0.03 : (pin.y - L);
+            const hangTip = new THREE.Vector3(
+                pin.x,
+                pin.y - Math.min(L * 0.995, Math.max(0.12, pin.y - floorY)),
+                pin.z
+            );
+            if (typeof pushPointClear === 'function') {
+                hangTip.copy(pushPointClear(hangTip, 0.03, new Set()));
+                if (hangTip.y > pin.y - 0.05) {
+                    hangTip.set(pin.x, pin.y - Math.min(L * 0.9, 0.35), pin.z);
+                }
+            }
+            const end = tip.clone().lerp(hangTip, settle * 0.92);
+            // Keep tip at/below pin and within rest length
+            if (end.y > pin.y - 0.02) end.y = pin.y - 0.06;
+            const rel = end.clone().sub(pin);
+            const dist = rel.length();
+            if (dist > L && dist > 1e-6) end.copy(pin).addScaledVector(rel.multiplyScalar(1 / dist), L);
+
+            const pts = [];
+            for (let i = 0; i <= n; i++) {
+                const t = i / n;
+                // Mostly straight hang; tiny pendulum bow only while still swinging
+                const swing = (1 - settle) * 0.18;
+                const bow = Math.sin(Math.PI * t) * swing;
+                const p = pin.clone().lerp(end, t);
+                // Lateral bow in the pin→tip horizontal direction (not upward)
+                const latx = end.x - pin.x;
+                const latz = end.z - pin.z;
+                const latLen = Math.hypot(latx, latz);
+                if (latLen > 1e-5 && swing > 0.01) {
+                    p.x += (-latz / latLen) * bow * latLen;
+                    p.z += (latx / latLen) * bow * latLen;
+                }
+                // Force monotonic drop — never climb toward the tip
+                if (i > 0 && p.y > pts[i - 1].y - 0.001) {
+                    p.y = pts[i - 1].y - Math.max(0.004, (pin.y - end.y) / n);
+                }
+                pts.push(p);
+            }
+            pts[0].copy(pin);
+            pts[pts.length - 1].copy(end);
+            // Last segment always faces down
+            if (pts.length >= 2) {
+                const last = pts[pts.length - 1];
+                const prev = pts[pts.length - 2];
+                if (last.y >= prev.y) last.y = prev.y - 0.02;
+                // When settled, straighten last third onto the vertical
+                if (settle > 0.35) {
+                    for (let i = Math.floor(pts.length * 0.55); i < pts.length; i++) {
+                        const t = (i - Math.floor(pts.length * 0.55)) / Math.max(1, pts.length - 1 - Math.floor(pts.length * 0.55));
+                        const y = THREE.MathUtils.lerp(pts[Math.floor(pts.length * 0.55)].y, end.y, t);
+                        pts[i].x = THREE.MathUtils.lerp(pts[i].x, end.x, settle);
+                        pts[i].z = THREE.MathUtils.lerp(pts[i].z, end.z, settle);
+                        pts[i].y = Math.min(pts[i].y, y);
+                    }
+                    pts[pts.length - 1].copy(end);
+                }
+            }
+            return pts;
         }
 
         // True hanging-cable (catenary) curve for a rope of exact length ropeLen between A and B.
@@ -2403,22 +2954,39 @@
             if (!(ropeLen > straight + 0.004)) return null;
             const trueCat = trueCatenaryPoints(A, B, ropeLen, N);
             if (trueCat) return trueCat;
+
+            // Near-vertical span (h < 0.06m): form a natural vertical U-loop with tiny lateral separation
+            // so the downward and upward strands do not fold 180° onto the exact same line.
+            const dx = B.x - A.x, dz = B.z - A.z;
+            const h = Math.hypot(dx, dz);
+            const spreadDir = new THREE.Vector3();
+            if (h > 1e-4) {
+                spreadDir.set(dx / h, 0, dz / h);
+            } else {
+                const mid = A.clone().add(B).multiplyScalar(0.5).sub(phy.cargoPos || new THREE.Vector3());
+                mid.y = 0;
+                if (mid.lengthSq() > 1e-4) spreadDir.copy(mid.normalize());
+                else spreadDir.set(1, 0, 0);
+            }
+            const spreadAmp = h < 0.06 ? Math.min(0.035, 0.5 * (0.06 - h) + 0.015) : 0;
+
             const dyBias = THREE.MathUtils.clamp((A.y - B.y) / Math.max(0.5, ropeLen), -0.35, 0.35);
             const buildSag = sag => {
                 const pts = [A.clone()];
                 for (let i = 1; i < N; i++) {
                     const t = i / N;
-                    // Classic catenary belly — asymmetric when ends differ in height
                     const s = Math.sin(t * Math.PI) * (1 + 0.22 * dyBias * (t - 0.5));
                     const p = new THREE.Vector3().lerpVectors(A, B, t);
                     p.y -= sag * s;
+                    if (spreadAmp > 0) {
+                        p.addScaledVector(spreadDir, spreadAmp * Math.sin(t * Math.PI));
+                    }
                     pts.push(p);
                 }
                 pts.push(B.clone());
                 return pts;
             };
             const arcLen = pts => polylineLength(pts);
-            // Allow deep belly so slack heavy rope shows clear độ trũng
             let lo = 0;
             let hi = Math.max(ropeLen - straight, ropeLen * 0.85);
             for (let k = 0; k < 14; k++) {
@@ -2463,6 +3031,28 @@
             return pts;
         }
 
+        /** Chaikin corner-cutting — softens long gãy-đốt polylines into fluid bends. */
+        function smoothSlingPolyline(pts, passes) {
+            if (!pts || pts.length < 3) return pts || [];
+            let cur = pts.map(p => p.clone());
+            const nPass = Math.max(1, Math.min(3, passes | 0));
+            for (let pass = 0; pass < nPass; pass++) {
+                const next = [cur[0].clone()];
+                for (let i = 0; i < cur.length - 1; i++) {
+                    const a = cur[i];
+                    const b = cur[i + 1];
+                    next.push(a.clone().lerp(b, 0.25));
+                    next.push(a.clone().lerp(b, 0.75));
+                }
+                next.push(cur[cur.length - 1].clone());
+                // Keep endpoints exact; trim if explosion of points
+                next[0].copy(pts[0]);
+                next[next.length - 1].copy(pts[pts.length - 1]);
+                cur = next;
+            }
+            return cur;
+        }
+
         function resampleSlingPath(pts, segments) {
             const count = Math.max(1, segments);
             if (!pts || pts.length < 2) return pts || [];
@@ -2505,132 +3095,182 @@
             const tmp = new THREE.Vector3();
             const loc = new THREE.Vector3();
 
+            const isUpperRole = !!(slingObj.drawMeta && slingObj.drawMeta.role === 'upper');
             const solid = cargoWrapSolid(pad);
             const locA = cargoLocalFromWorld(A);
             const locB = cargoLocalFromWorld(B);
             const minEndLocalY = Math.min(locA.y, locB.y);
             const bothEndsAboveRoof = solid && (minEndLocalY >= solid.roofY - 0.65);
 
+            // True 3D roof interior check: ONLY true when the point is actually inside the XZ footprint of `solid`
             const isOverRoofInterior = (w) => {
                 if (!solid) return false;
                 loc.copy(w).sub(phy.cargoPos).applyQuaternion(invQ);
-                return (loc.y >= solid.bottomY - 0.10)
-                    && Math.abs(loc.x - solid.ox) <= solid.hx + pad * 0.6
-                    && Math.abs(loc.z - solid.oz) <= solid.hz + pad * 0.6;
+                return (loc.y >= solid.bottomY - 0.15)
+                    && Math.abs(loc.x - solid.ox) <= solid.hx + pad * 0.5
+                    && Math.abs(loc.z - solid.oz) <= solid.hz + pad * 0.5;
             };
 
-            const shouldClampToRoof = (w) => bothEndsAboveRoof || isOverRoofInterior(w);
+            // Only clamp to `solid.roofY` when the node is over the solid's XZ interior AND approaching from above
+            const shouldClampToRoof = (w) => {
+                if (!solid) return false;
+                loc.copy(w).sub(phy.cargoPos).applyQuaternion(invQ);
+                if (state.cargoType === 'container' || state.cargoType === 'crate') {
+                    return Math.abs(loc.x) <= state.L * 0.5 + pad * 0.5 && Math.abs(loc.z) <= state.W * 0.5 + pad * 0.5;
+                }
+                if (state.cargoType === 'flatrack') {
+                    const hasCargo = state.oogHasCargo !== false;
+                    if (hasCargo && isOverRoofInterior(w)) {
+                        return isUpperRole || bothEndsAboveRoof || (loc.y >= solid.roofY - 0.25);
+                    }
+                    return false;
+                }
+                if (state.cargoType === 'opentop') {
+                    return isOverRoofInterior(w) && (isUpperRole || bothEndsAboveRoof || loc.y >= solid.roofY - 0.25);
+                }
+                return isOverRoofInterior(w) && (bothEndsAboveRoof || loc.y >= solid.roofY - 0.25);
+            };
 
             const outsideShell = (w) => {
                 loc.copy(w).sub(phy.cargoPos).applyQuaternion(invQ);
-                const o = pushOutOfCargoShellLocal(loc, pad, true);
+                const o = pushOutOfCargoShellLocal(loc, pad, false);
                 return o.distanceToSquared(loc) < 1e-10;
             };
-            // Collision with ground + cargo shell. `from` = last valid (outside) position of this node:
-            // when the node has crossed into the solid we put it back where it entered (it lands ON the
-            // surface it fell onto) instead of ejecting it through the nearest face, which could be the
-            // opposite side of the cargo (rope tunnelling underneath).
-            // Resolve contacts while the PBD solver is running.  Do not add visual
-            // waypoints after the fact: that turns one physical contact into a row of
-            // sharp loops when the path is resampled for chain links.
+
             const clearExternalSolids = (p) => {
                 const skip = ropeSkip(p, [A, B], allowA, allowB);
                 const cleared = pushPointClear(p, pad, skip);
                 p.copy(cleared);
             };
+
             const collide = (p, from) => {
-                if (p.y < pad) p.y = pad;
-                const roofY = cargoRoofAtXZ(p.x, p.z, pad);
-                if (roofY != null && shouldClampToRoof(p)) {
-                    if (p.y < roofY) p.y = roofY;
+                const prevPos = from ? from.clone() : null;
+                let onHorizontalSurface = false;
+                const floorY = supportY(p.x, p.z) + pad;
+                if (p.y <= floorY + 0.004) {
+                    p.y = floorY;
+                    onHorizontalSurface = true;
                 }
-                if (outsideShell(p)) {
-                    clearExternalSolids(p);
-                    return;
-                }
-                if (from && outsideShell(from)) {
-                    const STEPS = 10;
-                    let lastOut = from;
-                    for (let s = 1; s <= STEPS; s++) {
-                        tmp.lerpVectors(from, p, s / STEPS);
-                        if (tmp.y < pad) tmp.y = pad;
-                        if (outsideShell(tmp)) { lastOut = tmp.clone(); } else break;
-                    }
-                    p.copy(lastOut);
-                    if (p.y < pad) p.y = pad;
-                    if (roofY != null && shouldClampToRoof(p)) {
-                        if (p.y < roofY) p.y = roofY;
+                if (shouldClampToRoof(p)) {
+                    const roofY = cargoRoofAtXZ(p.x, p.z, pad);
+                    if (roofY != null && p.y <= roofY + 0.004) {
+                        p.y = roofY;
+                        onHorizontalSurface = true;
                     }
                 }
-                // Fallback / final clean-up: nearest-face ejection (biased up to roof)
-                tmp.copy(p).sub(phy.cargoPos).applyQuaternion(invQ);
-                const out = pushOutOfCargoShellLocal(tmp.clone(), pad, true);
-                if (out.distanceToSquared(tmp) > 1e-10) {
-                    p.copy(out).applyQuaternion(phy.cargoQuat).add(phy.cargoPos);
-                    if (p.y < pad) p.y = pad;
-                    if (roofY != null && shouldClampToRoof(p)) {
-                        if (p.y < roofY) p.y = roofY;
+                if (!outsideShell(p)) {
+                    if (from && outsideShell(from)) {
+                        const STEPS = 8;
+                        let lastOut = from;
+                        for (let s = 1; s <= STEPS; s++) {
+                            tmp.lerpVectors(from, p, s / STEPS);
+                            if (tmp.y < floorY) tmp.y = floorY;
+                            if (outsideShell(tmp)) { lastOut = tmp.clone(); } else break;
+                        }
+                        p.copy(lastOut);
+                    }
+                    tmp.copy(p).sub(phy.cargoPos).applyQuaternion(invQ);
+                    const biasUp = shouldClampToRoof(p);
+                    const out = pushOutOfCargoShellLocal(tmp.clone(), pad, biasUp);
+                    if (out.distanceToSquared(tmp) > 1e-10) {
+                        if (out.y > tmp.y + 0.002) onHorizontalSurface = true;
+                        p.copy(out).applyQuaternion(phy.cargoQuat).add(phy.cargoPos);
+                    }
+                }
+                if (p.y < floorY) {
+                    p.y = floorY;
+                    onHorizontalSurface = true;
+                }
+                if (shouldClampToRoof(p)) {
+                    const roofY = cargoRoofAtXZ(p.x, p.z, pad);
+                    if (roofY != null && p.y < roofY) {
+                        p.y = roofY;
+                        onHorizontalSurface = true;
                     }
                 }
                 clearExternalSolids(p);
+                // Surface Coulomb friction damping when resting on a roof, deck, or ground
+                if (onHorizontalSurface && prevPos) {
+                    p.x = THREE.MathUtils.lerp(p.x, prevPos.x, 0.32);
+                    p.z = THREE.MathUtils.lerp(p.z, prevPos.z, 0.32);
+                }
             };
-            // A single rope segment can otherwise tunnel through a thin rail while
-            // both of its nodes are clear.  Spread the contact correction over the
-            // two neighbouring nodes; the following distance/bend passes turn this
-            // into one smooth bearing arc instead of a kinked detour.
+
             const resolveSegmentContacts = (p) => {
                 for (let i = 0; i < N; i++) {
                     const mid = p[i].clone().lerp(p[i + 1], 0.5);
                     const cleared = pushPointClear(mid, pad, ropeSkip(mid, [A, B], allowA, allowB));
                     const correction = cleared.sub(mid);
                     if (correction.lengthSq() < 1e-10) continue;
-                    if (i > 0) p[i].addScaledVector(correction, 0.52);
-                    if (i + 1 < N) p[i + 1].addScaledVector(correction, 0.52);
+                    if (i > 0) p[i].addScaledVector(correction, 0.50);
+                    if (i + 1 < N) p[i + 1].addScaledVector(correction, 0.50);
                 }
             };
-            const relax = (p, iters, withCollide, ref) => {
-                const minR = Math.max(0.32, stiffR || 0.32);
-                for (let it = 0; it < iters; it++) {
-                    p[0].copy(A);
-                    p[N].copy(B);
-                    // 1) Distance constraints (Gauss-Seidel sweeps)
+
+            // Respect material bending stiffness: 0 for chain/web slings, >0 for steel wire rope
+            const minR = (stiffR != null && stiffR >= 0) ? stiffR : 0.16;
+            const kBend = minR > 0.05 ? 0.08 : 0.015;
+
+            const projectDistanceConstraints = (p) => {
+                p[0].copy(A);
+                p[N].copy(B);
+                // Symmetric forward + backward Gauss-Seidel sweep so both pins pull equally
+                for (let dir = 0; dir < 2; dir++) {
                     for (let s = 0; s < N; s++) {
-                        const i = (it & 1) ? (N - 1 - s) : s;
+                        const i = dir === 0 ? s : (N - 1 - s);
                         const a = p[i], b = p[i + 1];
                         const dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z;
                         const d = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-9;
                         const k = (d - segLen) / d;
-                        const wa = i === 0 ? 0 : 0.5, wb = (i + 1) === N ? 0 : 0.5;
+                        const wa = i === 0 ? 0 : 0.5;
+                        const wb = (i + 1) === N ? 0 : 0.5;
                         const ws = wa + wb || 1;
-                        const factor = k > 0 ? 1.0 : 0.75;
-                        a.x += dx * k * factor * (wa / ws); a.y += dy * k * factor * (wa / ws); a.z += dz * k * factor * (wa / ws);
-                        b.x -= dx * k * factor * (wb / ws); b.y -= dy * k * factor * (wb / ws); b.z -= dz * k * factor * (wb / ws);
+                        a.x += dx * k * (wa / ws); a.y += dy * k * (wa / ws); a.z += dz * k * (wa / ws);
+                        b.x -= dx * k * (wb / ws); b.y -= dy * k * (wb / ws); b.z -= dz * k * (wb / ws);
                     }
-                    // 2) Laplacian curvature smoothing: suppresses high-frequency zig-zag spatial modes (k >= 2)
-                    // while preserving the fundamental catenary / C-arc (k = 1)
-                    const kBend = 0.30;
-                    for (let i = 1; i < N; i++) {
-                        const mid = p[i - 1].clone().add(p[i + 1]).multiplyScalar(0.5);
-                        p[i].lerp(mid, kBend);
-                    }
-                    // 3) Minimum bend radius enforcement: prevents sharp switchbacks or saw-tooth kinks
-                    enforceMinBendRadius(p, minR);
+                }
+                p[0].copy(A);
+                p[N].copy(B);
+            };
 
-                    // 4) Collision with surface / cargo shell
-                    if (withCollide && (it % 2 === 0)) {
+            const relax = (p, iters, withCollide, ref, gStep) => {
+                const grav = gStep != null ? gStep : 0.0045;
+                for (let it = 0; it < iters; it++) {
+                    // 1) Gravity pull (-Y) inside every relaxation substep so free spans always hang straight down
+                    if (grav > 0) {
+                        for (let i = 1; i < N; i++) {
+                            p[i].y -= grav;
+                        }
+                    }
+                    // 2) Light curvature smoothing + material bend radius BEFORE distance projection
+                    if (kBend > 0) {
+                        for (let i = 1; i < N; i++) {
+                            const mid = p[i - 1].clone().add(p[i + 1]).multiplyScalar(0.5);
+                            p[i].lerp(mid, kBend);
+                        }
+                    }
+                    if (minR > 0.05) {
+                        enforceMinBendRadius(p, minR);
+                    }
+                    // 3) Exact inextensible segment length projection (segLen = L / N)
+                    projectDistanceConstraints(p);
+
+                    // 4) 3D solid & ground contact resolution
+                    if (withCollide && (it % 2 === 0 || it === iters - 1)) {
                         for (let i = 1; i < N; i++) {
                             collide(p[i], ref ? ref[i] : null);
                             if (ref) ref[i].copy(p[i]);
                         }
                         resolveSegmentContacts(p);
+                        projectDistanceConstraints(p);
                     }
                 }
                 for (let i = 1; i < N; i++) {
                     collide(p[i], ref ? ref[i] : null);
+                    if (ref) ref[i].copy(p[i]);
                 }
                 resolveSegmentContacts(p);
-                p[0].copy(A);
-                p[N].copy(B);
+                projectDistanceConstraints(p);
             };
 
             if (reseed) {
@@ -2639,38 +3279,13 @@
                     seed = [];
                     for (let i = 0; i <= N; i++) {
                         const q = new THREE.Vector3().lerpVectors(A, B, i / N);
-                        q.y -= 0.25 * L * Math.sin(Math.PI * i / N);
+                        q.y -= 0.35 * Math.max(0.05, L - A.distanceTo(B)) * Math.sin(Math.PI * i / N);
                         seed.push(q);
                     }
                 }
-                // Mode 1 outward elastica pre-bias: when cable hits roof/ground, excess length
-                // must bow outward in a single smooth C-arc rather than buckling into 1D saw-tooth wiggles
-                const chordHoriz = new THREE.Vector3(B.x - A.x, 0, B.z - A.z);
-                const chordHorizLen = chordHoriz.length();
-                if (chordHorizLen > 0.1 && L > chordHorizLen) {
-                    const uChord = chordHoriz.clone().multiplyScalar(1 / chordHorizLen);
-                    let latN = new THREE.Vector3(-uChord.z, 0, uChord.x);
-                    const midHoriz = A.clone().add(B).multiplyScalar(0.5);
-                    const toOut = midHoriz.clone().sub(phy.cargoPos || new THREE.Vector3());
-                    toOut.y = 0;
-                    if (latN.dot(toOut) < 0) latN.negate();
-
-                    const excess = Math.max(0, L - chordHorizLen);
-                    const maxSag = solid ? Math.min(0.40, solid.hz * 0.32) : 0.40;
-                    const latSag = Math.min(maxSag, 0.22 * Math.sqrt(excess * (L + chordHorizLen)));
-                    for (let i = 1; i < N; i++) {
-                        const t = i / N;
-                        const roofY = cargoRoofAtXZ(seed[i].x, seed[i].z, pad);
-                        if (roofY != null && seed[i].y <= roofY + 0.15) {
-                            seed[i].addScaledVector(latN, latSag * Math.sin(t * Math.PI));
-                        }
-                    }
-                }
-                // ref = last valid (outside-the-solid) position per node. Start from the straight chord
-                // (always above the cargo for a hanging rig) so the first contact is found on the surface.
                 const ref = seed.map((_, i) => new THREE.Vector3().lerpVectors(A, B, i / N));
                 for (let i = 1; i < N; i++) { collide(seed[i], ref[i]); ref[i].copy(seed[i]); }
-                relax(seed, 28, true, ref);
+                relax(seed, 24, true, ref, 0.008);
                 rs = slingObj.ropeSim = {
                     N,
                     L,
@@ -2691,17 +3306,16 @@
                 rs.prevA = A.clone();
                 rs.prevB = B.clone();
 
-                // Overdamped Verlet integration: carries endpoints smoothly without whipping or phantom bounce
+                // Overdamped Verlet integration with strong downward gravity
                 const dt2 = (1 / 60) * (1 / 60);
                 for (let i = 1; i < N; i++) {
                     const t = i / N;
                     const q = p[i], o = prev[i];
-                    // Follow endpoint motion smoothly so moving hook/beam doesn't shock interior nodes
                     q.addScaledVector(dA, 1 - t).addScaledVector(dB, t);
                     o.addScaledVector(dA, 1 - t).addScaledVector(dB, t);
-                    let vx = (q.x - o.x) * 0.48;
+                    let vx = (q.x - o.x) * 0.42;
                     let vy = (q.y - o.y) * 0.48;
-                    let vz = (q.z - o.z) * 0.48;
+                    let vz = (q.z - o.z) * 0.42;
                     const vMag = Math.hypot(vx, vy, vz);
                     if (vMag > 0.025) {
                         const sc = 0.025 / vMag;
@@ -2709,51 +3323,23 @@
                     }
                     o.copy(q);
                     q.x += vx;
-                    q.y += vy - G_EARTH * dt2 * 2.6;
+                    q.y += vy - G_EARTH * dt2 * 3.2;
                     q.z += vz;
                 }
-                // Mode 1 outward bias on flat surfaces: keeps excess slack bowed smoothly outward
-                const chordHoriz = new THREE.Vector3(B.x - A.x, 0, B.z - A.z);
-                const chordHorizLen = chordHoriz.length();
-                if (chordHorizLen > 0.1 && L > chordHorizLen + 0.05) {
-                    const uChord = chordHoriz.clone().multiplyScalar(1 / chordHorizLen);
-                    let latN = new THREE.Vector3(-uChord.z, 0, uChord.x);
-                    const midHoriz = A.clone().add(B).multiplyScalar(0.5);
-                    const toOut = midHoriz.clone().sub(phy.cargoPos || new THREE.Vector3());
-                    toOut.y = 0;
-                    if (latN.dot(toOut) < 0) latN.negate();
-                    for (let i = 1; i < N; i++) {
-                        const t = i / N;
-                        const roofY = cargoRoofAtXZ(p[i].x, p[i].z, pad);
-                        if (roofY != null && p[i].y <= roofY + 0.08) {
-                            p[i].addScaledVector(latN, 0.003 * Math.sin(t * Math.PI));
-                        }
-                    }
-                }
-                relax(p, 12, true, ref);
+                relax(p, 12, true, ref, 0.0045);
                 prev[0].copy(p[0]); prev[N].copy(p[N]);
             }
 
-            // Smooth out kinks & high-frequency zig-zags so draped cable curves naturally
             let pOut = rs.p.map(v => v.clone());
-            const minBendR = Math.max(0.32, stiffR || 0.32);
-            for (let pass = 0; pass < 3; pass++) {
-                enforceMinBendRadius(pOut, minBendR);
-                for (let i = 1; i < N; i++) {
-                    const mid = pOut[i - 1].clone().add(pOut[i + 1]).multiplyScalar(0.5);
-                    pOut[i].lerp(mid, 0.28);
-                    collide(pOut[i], null);
-                }
-                resolveSegmentContacts(pOut);
+            if (minR > 0.05) {
+                enforceMinBendRadius(pOut, minR);
+                projectDistanceConstraints(pOut);
             }
-            enforceMinBendRadius(pOut, minBendR);
-            // Smoothing, roof clamping and the temporal filter above can subtly
-            // lengthen a path.  Re-project the final drawn rope back to its
-            // manufactured length before placing any links/tube segments.  Never
-            // manufacture metres of steel just to join two temporarily bad pins.
-            if (A.distanceTo(B) <= L + 0.004) {
-                pOut = fitPathToFixedLength(pOut, A, B, L, solid, pad);
+            for (let i = 1; i < N; i++) {
+                collide(pOut[i], rs.ref ? rs.ref[i] : null);
             }
+            projectDistanceConstraints(pOut);
+
             if (!rs.rendered || rs.rendered.length !== N + 1) {
                 rs.rendered = pOut.map(v => v.clone());
             }
@@ -2764,13 +3350,11 @@
                 if (roofY != null && shouldClampToRoof(pOut[i])) {
                     if (pOut[i].y < roofY) pOut[i].y = roofY;
                 }
-                // Temporal low-pass filter eliminates any frame-to-frame micro-oscillation
-                rs.rendered[i].lerp(pOut[i], 0.42);
-                collide(rs.rendered[i], null);
+                rs.rendered[i].lerp(pOut[i], 0.48);
+                collide(rs.rendered[i], rs.ref ? rs.ref[i] : null);
                 if (roofY != null && shouldClampToRoof(rs.rendered[i])) {
                     if (rs.rendered[i].y < roofY) rs.rendered[i].y = roofY;
                 }
-                // Write back stabilized positions and sync prev to prevent collision ejection from becoming velocity!
                 rs.p[i].copy(rs.rendered[i]);
                 rs.prev[i].lerp(rs.p[i], 0.65);
                 pOut[i].copy(rs.rendered[i]);
@@ -2830,45 +3414,133 @@
             // Every intact upper leg terminates at a beam/frame with non-zero
             // self-weight. It is therefore a loaded tension path even while the
             // editor is showing the convenient pose-locked placement preview.
-            const upperNominalLength = (cable && cable.L0 > 0.2) ? cable.L0 : fixedLen;
-            const suspendedUpper = meta.role === 'upper' && !meta.broken && cable
-                && !cableIsBroken(cable)
-                // A lifted load has consumed the upper support path even if a
-                // numerical substep is exactly at L0.  On the ground, however,
-                // a deliberately long upper sling must remain free to drape.
-                && ((phy.groundClearance || 0) > 0.04 || !!phy.autoHoistActive || chord >= upperNominalLength - 0.012);
-            const nominalL0 = (cable && cable.L0 > 0.2) ? cable.L0 : fixedLen;
-            const geometricallyTaut = chord >= nominalL0 - 0.022;
-            const forceFree = !!(cable && cable.slack && actualTension < 0.015 && !suspendedUpper && !geometricallyTaut);
-            const freeAllowance = isChainNow ? Math.min(0.18, Math.max(0.035, chord * 0.025))
-                : Math.min(0.10, Math.max(0.018, chord * (isFlatNow ? 0.008 : 0.012)));
-            const renderLen = forceFree && fixedLen <= chord + 0.012
-                ? chord + freeAllowance
-                : fixedLen;
+            // Manufactured working length — NEVER grows with pin distance (that looks like rubber)
+            const workLen = Math.max(0.16, (fixedLen != null && fixedLen > 0.15) ? fixedLen : ((cable && cable.L0 > 0.2) ? cable.L0 : chord));
+
+            // Take-up / set-down order (gravity):
+            //  HOIST:  uppers (near hook) taut first under gear weight → then lowers → then cargo
+            //  LOWER:  lowers (near cargo) go slack first → beam seats on cargo → then uppers slack
+            const beamBody = (cable && cable.a && cable.a.kind === 'body') ? cable.a.body
+                : (cable && cable.b && cable.b.kind === 'body' ? cable.b.body : null);
+            const cargoRoofY = (typeof cargoCeilingUnderBeam === 'function' && beamBody)
+                ? cargoCeilingUnderBeam(beamBody.x.x, beamBody.x.z, (typeof getRigSpec === 'function') ? getRigSpec() : null, beamBody)
+                : ((phy.cargoPos ? phy.cargoPos.y : 0) + (state.H || 2.6) * 0.5);
+            const beamOffCargo = !!(beamBody && !beamBody.isRestingOnCargo
+                && beamBody.x.y > cargoRoofY + 0.06);
+            const beamOnCargo = !!(beamBody && (
+                beamBody.isRestingOnCargo
+                || !beamOffCargo
+                || (typeof beamIsSuspended === 'function' && !beamIsSuspended(beamBody))
+            ));
+            const beamResting = !!(meta.role === 'leg' && beamOnCargo && !beamOffCargo);
+            const cargoSuspended = !state.poseLock && (phy.groundClearance || 0) > 0.05;
+
+            const geometricallyTaut = !meta.broken && chord >= workLen - 0.015;
+            // Uppers look taut when they reach workLen while the beam is off the lid or when carrying suspended cargo
+            const upperCarryingGear = meta.role === 'upper' && !meta.broken && (
+                (beamOffCargo && chord >= workLen - 0.04)
+                || (cargoSuspended && actualTension > 0.05)
+            );
+            const lowerCarryingSuspendedLoad = meta.role === 'leg' && !meta.broken
+                && cargoSuspended && actualTension > 0.05
+                && !(cable && typeof lowerLegIsUnloadedByTopFailure === 'function' && lowerLegIsUnloadedByTopFailure(cable));
+            const physicallyTaut = !meta.broken && (
+                upperCarryingGear
+                || lowerCarryingSuspendedLoad
+                || (geometricallyTaut && !beamResting
+                    && !(meta.role === 'leg' && beamOnCargo && actualTension < 0.15))
+            );
+
+            // Manufactured length is immutable this frame — NEVER inflate for resting belly
+            // (that looked like rubber: same UI L0, longer drawn cable).
+            const renderLen = workLen;
+            if (upperCarryingGear || lowerCarryingSuspendedLoad) {
+                pathMeta.tautness = 1;
+            } else if (!physicallyTaut) {
+                pathMeta.tautness = beamResting ? 0 : Math.min(pathMeta.tautness || 0, 0.35);
+            }
             let rawPts;
-            // Length alone does not mean that a sling is slack.  The physics solver
-            // supplies tautness from L0 and actual load; only a non-taut sling gets
-            // the gravity-driven hanging solve.
-            const physicallyTaut = !meta.broken && !forceFree
-                && (suspendedUpper || geometricallyTaut || pathMeta.tautness >= 0.97);
-            // A severed half is still a real piece of flexible material.  Render
-            // it through the same PBD/contact solve as a slack rope so it lies on
-            // the roof, slides across a tilted surface and falls off an edge.
+            const SLING_DRAW_CACHE_VER = 10;
+            const flashBusy = !!(cable && (cable._isFlashing || cable._angleDanger));
+            if (!meta.broken && !meta.selected && !isOverloaded && !flashBusy
+                && slingObj.ropeSim == null && physicallyTaut
+                && slingObj._cacheVer === SLING_DRAW_CACHE_VER
+                && slingObj._cacheA && slingObj._cacheB
+                && slingObj._cacheA.distanceToSquared(pointA) < 2.5e-5
+                && slingObj._cacheB.distanceToSquared(end) < 2.5e-5
+                && Math.abs((slingObj._cacheLen || 0) - renderLen) < 0.003
+                && slingObj._cacheTaut === physicallyTaut
+                && slingObj._cacheRest === beamResting) {
+                slingObj.group.visible = true;
+                return;
+            }
+            slingObj._cacheVer = SLING_DRAW_CACHE_VER;
+            slingObj._cacheA = pointA.clone();
+            slingObj._cacheB = end.clone();
+            slingObj._cacheLen = renderLen;
+            slingObj._cacheTaut = physicallyTaut;
+            slingObj._cacheRest = beamResting;
+
             const isBrokenStub = !!meta.broken && !!meta.brokenHalf;
-            if ((!meta.broken && !physicallyTaut && renderLen > chord + 0.012)
-                || (isBrokenStub && renderLen > chord + 0.004)) {
-                // Slack: real hanging rope that rests on (never inside) the cargo shell / ground
-                rawPts = simulateSlackRope(slingObj, pointA, end, renderLen, simPad, simStiffR, allowA, allowB);
+            const drapeOntoSolids = (pts) => {
+                let out = pts;
+                out = routeRopeAroundCargo(out, Math.max(simPad, simPad));
+                if (typeof routeRopeAroundBeams === 'function') {
+                    out = routeRopeAroundBeams(out, Math.max(simPad, 0.028), allowA, allowB);
+                }
+                return out;
+            };
+
+            if (isBrokenStub) {
+                slingObj.ropeSim = null;
+                const br = cable && cable.break;
+                const settleAmt = br
+                    ? (meta.brokenHalf === 'upper' ? (br.settleU || 0) : (br.settleL || 0))
+                    : 0;
+                const ageSettle = br ? THREE.MathUtils.clamp(((br.age || 0) - (br.wasTaut ? 0.45 : 0.12)) / 0.7, 0, 1) : 1;
+                const settle = Math.max(settleAmt, ageSettle);
+                rawPts = buildBrokenStubHangPath(pointA, end, renderLen, slingObj.numSegments, settle);
+                for (let i = 1; i < rawPts.length - 1; i++) {
+                    if (typeof pushPointClear === 'function') {
+                        const cleared = pushPointClear(rawPts[i], 0.028, new Set());
+                        if (cleared.y <= rawPts[i].y + 0.01) rawPts[i].copy(cleared);
+                    }
+                }
+            } else if (physicallyTaut || upperCarryingGear) {
+                // Straight when tensioned / carrying suspended load — never draw a floppy S-curve in mid-air
+                slingObj.ropeSim = null;
+                rawPts = [pointA.clone(), end.clone()];
+            } else if (!meta.broken && renderLen > chord + 0.005) {
+                rawPts = simulateSlackRope(
+                    slingObj, pointA, end, renderLen,
+                    Math.max(simPad, simPad),
+                    simStiffR, allowA, allowB
+                );
+                rawPts = drapeOntoSolids(rawPts);
             } else {
                 slingObj.ropeSim = null;
                 rawPts = solveDrapedRopePath(pointA, end, renderLen, ropeR, allowA, allowB, pathMeta);
+                rawPts = drapeOntoSolids(rawPts);
             }
-            let pts = resampleSlingPath(rawPts, slingObj.numSegments);
-            // Keep the renderer's fixed segment count. The smooth physical path is
-            // resampled only for visual link/strand placement; no extra zig-zag nodes.
-            // Intact: pin→pin. Broken stub: attachment pin → free tip (both endpoints matter)
+            // Soften jagged polylines, then FORCE arc length back to exact workLen (inextensible)
+            if (!physicallyTaut && rawPts && rawPts.length > 3) {
+                rawPts = smoothSlingPolyline(rawPts, isChainNow ? 2 : 1);
+                rawPts = drapeOntoSolids(rawPts);
+            }
+            const segCount = slingObj.numSegments;
+            let pts = resampleSlingPath(rawPts, segCount);
+            if (!isBrokenStub && !physicallyTaut && pts && pts.length >= 3 && typeof fitPathToFixedLength === 'function') {
+                const solid = typeof cargoWrapSolid === 'function' ? cargoWrapSolid(simPad) : null;
+                pts = fitPathToFixedLength(pts, pointA, end, workLen, solid, simPad);
+            }
             pts[0].copy(pointA);
-            pts[pts.length - 1].copy(end);
+            if (isBrokenStub) {
+                end.copy(pts[pts.length - 1]);
+                if (end.y > pointA.y - 0.02) end.y = pointA.y - 0.06;
+                pts[pts.length - 1].copy(end);
+            } else {
+                pts[pts.length - 1].copy(end);
+            }
             const reached = !meta.broken;
 
             const slingMeshNameMap = {
@@ -2880,22 +3552,42 @@
             };
             slingObj.group.name = slingMeshNameMap[look] || 'Wire_Rope_Sling';
 
+            const wllNow = (cable && cable.swlT) || meta.swlT || state.wllPerLeg || 15.0;
             let mat = MATS.wireRope;
-            if (look === 'chain') mat = MATS.chainDark;
-            else if (look === 'web' || look === 'round_sling') mat = MATS.webGreen;
+            if (look === 'chain') {
+                mat = MATS.chainDark;
+            } else if (look === 'web' || look === 'round_sling') {
+                const getDynMat = (typeof window !== 'undefined' && window.getDynamicSlingMaterial)
+                    || (typeof MATS !== 'undefined' && MATS.getDynamicSlingMaterial);
+                if (getDynMat) {
+                    mat = getDynMat(look, wllNow);
+                } else {
+                    mat = MATS.webGreen;
+                }
+                // Thin fabric must render from both faces
+                if (mat && mat.side !== THREE.DoubleSide) {
+                    mat = mat.clone();
+                    mat.side = THREE.DoubleSide;
+                }
+            } else if (look === 'grommet') {
+                mat = MATS.wireRope;
+            }
             if (meta.broken || isOverloaded) mat = MATS.redMaster;
             else if (meta.selected) mat = MATS.lpSelected;
 
-            // International Sling Angle Warning: 3-flash red pulse on dangerous sling
+            // International Sling Angle Warning / cut-hover enter: red pulse
             if (cable && cable._isFlashing && cable._flashStartTime) {
                 const elapsed = performance.now() - cable._flashStartTime;
-                if (elapsed < 1080) { // 3 pulses of 360ms each (180ms ON / 180ms OFF)
-                    const isRedPhase = (Math.floor(elapsed / 180) % 2) === 0;
+                // Cut-tool hover = one quick blink (~0.36s); angle danger = 3 pulses
+                const flashWindow = cable._cutHoverFlash ? 360 : 1080;
+                if (elapsed < flashWindow) {
+                    const isRedPhase = (Math.floor(elapsed / 120) % 2) === 0;
                     if (isRedPhase) {
                         mat = MATS.flashRed || MATS.redMaster;
                     }
                 } else {
                     cable._isFlashing = false;
+                    cable._cutHoverFlash = false;
                 }
             } else if (cable && cable._angleDanger) {
                 mat = MATS.redMaster;
@@ -2907,63 +3599,138 @@
             // bodyK: true-to-scale factor for the rope body. Base cylinder radius is 0.018 m,
             // so scale = (dia_mm / 2000) / 0.018 = dia_mm / 36 gives the real diameter.
             const bodyK = (Math.max(dia, 10) / 36) * (meta.selected ? 1.15 : 1);
-            const N = slingObj.numSegments;
+            // stockScale: sizing for chain links and end hardware (16mm stock -> 1.0)
+            const stockScale = THREE.MathUtils.clamp((dia || 16) / 16, 0.5, 3.5);
+            const N = Math.max(1, pts.length - 1);
             const upY = new THREE.Vector3(0, 1, 0);
             const chain = look === 'chain';
 
-            // Trim cylindrical rope body slightly at both ends when wire eye-thimbles are visible so rope starts inside ferrule
-            const showWireEye = (look === 'wire' || look === 'grommet') && !meta.broken && chord > 0.35;
-            const showWebEye = (look === 'web' || look === 'round_sling') && !meta.broken && chord > 0.35;
+            // Termination visibility flags for 5 rigging types
+            const showWireEye = (look === 'wire') && !meta.broken && chord > 0.35;
+            const showWebEye = (look === 'web') && !meta.broken && chord > 0.35;
+            // Intact: both ends. Cut stub is painted pin→tip so attached hardware is always end A.
+            const showChainEnds = (look === 'chain') && chord > 0.35
+                && (!meta.broken || !!meta.brokenHalf);
+            const showChainEndA = showChainEnds;
+            const showChainEndB = showChainEnds && !meta.brokenHalf && reached;
+            const showRoundTag = (look === 'round_sling') && !meta.broken && chord > 0.35;
+            const showGrommetEye = (look === 'grommet') && !meta.broken && chord > 0.35;
+
+            // Select specialized CAD-grade geometry for segments
+            let targetGeo = WIRE_SEG_GEO;
+            if (look === 'web') targetGeo = WEB_SEG_GEO;
+            else if (look === 'round_sling') targetGeo = ROUND_SEG_GEO;
+            else if (look === 'grommet') targetGeo = GROMMET_SEG_GEO;
+
+            // Hide unused segment meshes when drawing with reduced sample count
+            for (let i = N; i < slingObj.segments.length; i++) {
+                slingObj.segments[i].visible = false;
+                if (slingObj.links && slingObj.links[i]) slingObj.links[i].visible = false;
+            }
 
             for (let i = 0; i < N; i++) {
                 const seg = slingObj.segments[i];
+                if (seg.geometry !== targetGeo) {
+                    seg.geometry = targetGeo;
+                }
                 seg.material = mat;
-                const hideTipForEye = showWireEye && (i === 0 || (reached && i === N - 1));
-                // Chain: hide tube body, show articulated oval links; wire: continuous stiff tube
+                // Keep first/last wire segments visible so they meet the ferrule tip (hiding them
+                // made cables look severed from the swaged sleeve).
+                const hideTipForEye = false;
+                // Chain: hide tube body, show articulated oval links; others: continuous body
                 seg.visible = !chain && !hideTipForEye;
                 const segVec = new THREE.Vector3().subVectors(pts[i + 1], pts[i]);
                 const segLen = Math.max(0.001, segVec.length());
                 const mid = pts[i].clone().lerp(pts[i + 1], 0.5);
                 seg.position.copy(mid);
                 const dir = segVec.clone().normalize();
-                seg.quaternion.setFromUnitVectors(upY, dir);
-                // Overlap segment ends slightly so curved drapes look continuous
-                const overlapLen = segLen + (i > 0 && i < N - 1 ? 0.018 * bodyK : 0.004);
-                // True-to-scale bodies: web = flat strap (width = dia, ~8 mm thick); round sling tube ~0.6 x nominal;
-                // wire / grommet = real rope diameter.
-                if (look === 'web') seg.scale.set(bodyK, overlapLen, 0.22);
-                else if (look === 'round_sling') seg.scale.set(bodyK * 0.6, overlapLen, bodyK * 0.6);
-                else if (look === 'grommet') seg.scale.set(bodyK, overlapLen, bodyK);
-                else seg.scale.set(bodyK, overlapLen, bodyK);
+                // Overlap segment ends; tip segments dig into ferrule/stub so the join is solid
+                const tipDig = (!chain && (i === 0 || i === N - 1) && (showWireEye || showGrommetEye))
+                    ? 0.022 * Math.max(1, bodyK) : 0;
+                const overlapLen = segLen + tipDig + (i > 0 && i < N - 1 ? 0.018 * bodyK : 0.004);
+
+                if (look === 'web') {
+                    // Flat polyester webbing (EN 1492-1): wide × thin fabric — not a rigid plank
+                    const widthM = Math.max(0.045, Math.min(0.30, dia / 1000));
+                    const thickM = Math.max(0.0022, Math.min(0.008, widthM * 0.045));
+                    seg.scale.set(widthM, overlapLen, thickM);
+                    // Flat face lies in the vertical plane of the leg
+                    const side = new THREE.Vector3().crossVectors(dir, upY);
+                    if (side.lengthSq() < 1e-8) side.set(1, 0, 0);
+                    side.normalize();
+                    const nrm = new THREE.Vector3().crossVectors(dir, side).normalize();
+                    seg.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(side, dir, nrm));
+                } else {
+                    seg.quaternion.setFromUnitVectors(upY, dir);
+                    if (look === 'round_sling') {
+                        // Dynamic cross-sectional flattening under load & pin contact
+                        const tensionRatio = THREE.MathUtils.clamp(actualTension / Math.max(1, wllNow), 0, 1);
+                        const pinSquash = (i === 0 || i === N - 1) ? 0.35 : ((i === 1 || i === N - 2) ? 0.18 : 0);
+                        const flatFactor = THREE.MathUtils.clamp(tensionRatio * 0.28 + pinSquash, 0, 0.48);
+                        const sx = bodyK * 0.72 * (1 + flatFactor * 0.65);
+                        const sz = bodyK * 0.72 * (1 - flatFactor * 0.55);
+                        seg.scale.set(sx, overlapLen, sz);
+                    } else if (look === 'grommet') {
+                        seg.scale.set(bodyK * 0.85, overlapLen, bodyK * 0.85);
+                    } else {
+                        seg.scale.set(bodyK, overlapLen, bodyK);
+                    }
+                }
                 if (slingObj.links && slingObj.links[i]) {
                     const link = slingObj.links[i];
                     link.visible = false;
                 }
             }
 
-            // Interlocked Grade-80 chain: pitch locked to link size so ovals always nest (no floating rings)
-            if (chain && slingObj.links && !meta.broken) {
-                const arc = Math.max(0.05, polylineLength(pts));
-                // Size from sling diameter (16 mm stock → scale 1)
+            // Interlocked Grade-80 chain: pitch = end-arc nest so each oval ngoắc through the last.
+            // Broken stubs keep articulated links so a cut half still looks like real chain.
+            // NEVER enlarge stock when the path gets longer (slack / set-down) — that made
+            // chain diameter "phóng to" as soon as the hook lowered.
+            if (chain && slingObj.links && (!meta.broken || meta.brokenHalf)) {
+                const arcRaw = Math.max(0.05, polylineLength(pts));
+                // Manufactured length caps the run — drape detours must not inflate stock size
+                const arc = Math.min(arcRaw, Math.max(workLen, chord) * 1.06 + 0.04);
                 const stockScale = THREE.MathUtils.clamp((dia || 16) / 16, 0.5, 3.5);
                 const pitch = CHAIN_NEST_PITCH * stockScale;
                 const maxLinks = slingObj.numLinks || slingObj.links.length;
-                // Cover full A→B; if arc is long, use every slot and grow links so they still overlap
-                let linkCount = Math.max(4, Math.ceil(arc / pitch));
-                let nest = 1;
-                if (linkCount > maxLinks) {
-                    linkCount = maxLinks;
-                    nest = (arc / linkCount) / pitch; // >1 when packing sparse — grow mesh to close gaps
-                }
-                const step = arc / linkCount;
-                const ls = stockScale * Math.max(1, nest);
-                // True proportions: links keep their real size (no artificial inflation)
+                let linkCount = Math.max(3, Math.ceil(arc / pitch));
+                if (linkCount > maxLinks) linkCount = maxLinks;
+                // Keep true diameter always — prefer slightly wider nest spacing over fat links
+                const ls = stockScale;
                 const sx = ls;
-                const sy = ls * CHAIN_LINK_ELONG;
+                const sy = ls;
+
+                // First black link so le to the red end-link / parent ring (same basis as orientEndLink)
+                const nParentA = (slingObj.parentNormalA && slingObj.parentNormalA.isVector3
+                    && slingObj.parentNormalA.lengthSq() > 1e-8)
+                    ? slingObj.parentNormalA.clone().normalize()
+                    : new THREE.Vector3(0, 0, 1);
+                const leave0 = new THREE.Vector3().subVectors(pts[Math.min(1, pts.length - 1)], pts[0]);
+                if (leave0.lengthSq() < 1e-8) leave0.copy(upY).negate();
+                else leave0.normalize();
+                let zEnd = new THREE.Vector3().crossVectors(nParentA, leave0);
+                if (zEnd.lengthSq() < 1e-8) {
+                    zEnd = Math.abs(leave0.y) < 0.92
+                        ? new THREE.Vector3(0, 1, 0).cross(leave0)
+                        : new THREE.Vector3(1, 0, 0).cross(leave0);
+                }
+                zEnd.normalize(); // red end-link plane normal
+                // Black link 0 plane ⊥ end-link: normal ≈ zEnd × leave (so le / ngoắc, not coplanar weld)
+                let zLink0 = new THREE.Vector3().crossVectors(zEnd, leave0);
+                if (zLink0.lengthSq() < 1e-8) zLink0 = nParentA.clone();
+                zLink0.normalize();
 
                 const acc = [0];
                 for (let k = 1; k < pts.length; k++) acc.push(acc[k - 1] + pts[k].distanceTo(pts[k - 1]));
                 const total = acc[acc.length - 1] || 1;
+                // Pull first/last centers back into the red end-link eyes by ~half pitch − tube
+                // so stock fills the far aperture (ngoắc), instead of tip-welding at the rim.
+                // Free cut tip has no end-link — don't pull nest into empty air.
+                const nestB = !meta.brokenHalf;
+                const endNestA = Math.min(pitch * 0.55, total * 0.12);
+                const endNestB = nestB ? Math.min(pitch * 0.55, total * 0.12) : pitch * 0.15;
+                const usable = Math.max(pitch * 2, total - endNestA - endNestB);
+                const step = usable / linkCount;
                 let kCursor = 1;
                 for (let i = 0; i < slingObj.links.length; i++) {
                     const link = slingObj.links[i];
@@ -2972,8 +3739,7 @@
                         link.visible = false;
                         continue;
                     }
-                    // Sit first/last links close to the pins (no floating gap above shackle)
-                    const d = Math.min(total - 1e-4, step * (i + 0.5));
+                    const d = Math.min(total - 1e-4, endNestA + step * (i + 0.5));
                     while (kCursor < acc.length - 1 && acc[kCursor] < d) kCursor++;
                     const span = Math.max(1e-6, acc[kCursor] - acc[kCursor - 1]);
                     const t = THREE.MathUtils.clamp((d - acc[kCursor - 1]) / span, 0, 1);
@@ -2986,9 +3752,21 @@
                     link.visible = true;
                     link.material = mat;
                     link.position.copy(mid);
-                    link.quaternion.setFromUnitVectors(upY, dir);
-                    // Alternate plane 90° about chain axis = classic weave / interlock
-                    if (i % 2) link.rotateY(Math.PI / 2);
+                    // Build basis: Y = chain dir, Z = link plane normal (alternating weave)
+                    const yAxis = dir.clone();
+                    let zAxis = (i % 2 === 0) ? zLink0.clone() : zEnd.clone();
+                    // Re-orthogonalize along the local tangent so curves stay nested
+                    let xAxis = new THREE.Vector3().crossVectors(yAxis, zAxis);
+                    if (xAxis.lengthSq() < 1e-8) {
+                        zAxis = Math.abs(yAxis.y) < 0.92
+                            ? new THREE.Vector3(0, 1, 0).cross(yAxis)
+                            : new THREE.Vector3(1, 0, 0).cross(yAxis);
+                        zAxis.normalize();
+                        xAxis = new THREE.Vector3().crossVectors(yAxis, zAxis);
+                    }
+                    xAxis.normalize();
+                    zAxis.crossVectors(xAxis, yAxis).normalize();
+                    link.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis));
                     link.scale.set(sx, sy, sx);
                 }
             } else if (slingObj.links) {
@@ -3013,31 +3791,165 @@
             if (slingObj.drawMeta) slingObj.drawMeta.renderedLength = polylineLength(pts);
 
             const eyeScale = THREE.MathUtils.clamp(diaScale, 0.72, 1.45);
+            const ferruleExit = typeof wireEyeFerruleExit === 'function' ? wireEyeFerruleExit(eyeScale) : (0.195 * eyeScale);
+            // 1. Wire Rope Eyes (Thimble + Ferrule)
+            // Path pts[0]/pts[N] are just inside the swaged tip. Pull the eye back so the
+            // ferrule cone + rope stub swallow the first rope segment (no severed-cable gap).
+            // Eye loop is so le / vuông góc to the parent master/shackle plane (same rule as chain ends).
             if (slingObj.endEyeA && slingObj.endEyeB) {
                 slingObj.endEyeA.visible = showWireEye;
                 slingObj.endEyeB.visible = showWireEye && reached;
+                const tipOverlap = 0.028 * eyeScale;
+                const orientWireEye = (mesh, seat, leave, parentNormal) => {
+                    const yAxis = leave.clone().normalize();
+                    const nParent = (parentNormal && parentNormal.lengthSq() > 1e-8)
+                        ? parentNormal.clone().normalize()
+                        : new THREE.Vector3(0, 0, 1);
+                    let zAxis = new THREE.Vector3().crossVectors(nParent, yAxis);
+                    if (zAxis.lengthSq() < 1e-8) {
+                        zAxis = Math.abs(yAxis.y) < 0.92
+                            ? new THREE.Vector3(0, 1, 0).cross(yAxis)
+                            : new THREE.Vector3(1, 0, 0).cross(yAxis);
+                    }
+                    zAxis.normalize();
+                    const xAxis = new THREE.Vector3().crossVectors(yAxis, zAxis).normalize();
+                    zAxis.crossVectors(xAxis, yAxis).normalize();
+                    mesh.position.copy(seat);
+                    mesh.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis));
+                    mesh.scale.setScalar(eyeScale);
+                };
                 if (showWireEye) {
-                    slingObj.endEyeA.position.copy(pts[0]);
-                    slingObj.endEyeA.quaternion.copy(tensionQuaternion(pts[0], pts[0].clone().add(dirFromA)));
-                    slingObj.endEyeA.scale.setScalar(eyeScale);
+                    const eyeOriginA = pts[0].clone();
+                    const nA = (slingObj.parentNormalA && slingObj.parentNormalA.isVector3)
+                        ? slingObj.parentNormalA : new THREE.Vector3(0, 0, 1);
+                    orientWireEye(slingObj.endEyeA, eyeOriginA, dirFromA, nA);
                 }
                 if (showWireEye && reached) {
-                    slingObj.endEyeB.position.copy(pts[N]);
-                    slingObj.endEyeB.quaternion.copy(tensionQuaternion(pts[N], pts[N].clone().add(dirFromB)));
-                    slingObj.endEyeB.scale.setScalar(eyeScale);
+                    const eyeOriginB = pts[N].clone();
+                    const nB = (slingObj.parentNormalB && slingObj.parentNormalB.isVector3)
+                        ? slingObj.parentNormalB : new THREE.Vector3(0, 0, 1);
+                    orientWireEye(slingObj.endEyeB, eyeOriginB, dirFromB, nB);
                 }
             }
 
+            // 2. Web Sling Becket Eyes (Folded Eye + Cross-Stitch + Safety Tag)
             if (slingObj.webEyeA && slingObj.webEyeB) {
                 slingObj.webEyeA.visible = showWebEye;
                 slingObj.webEyeB.visible = showWebEye && reached;
-                if (showWebEye) {
-                    slingObj.webEyeA.position.copy(pts[0]);
-                    slingObj.webEyeA.quaternion.copy(tensionQuaternion(pts[0], pts[0].clone().add(dirFromA)));
+                const webWidthM = Math.max(0.045, Math.min(0.30, dia / 1000));
+                const webEyeScale = THREE.MathUtils.clamp(webWidthM / 0.072, 0.7, 2.4);
+                const orientWebEye = (mesh, seat, leave) => {
+                    const yAxis = leave.clone().normalize();
+                    const side = new THREE.Vector3().crossVectors(yAxis, upY);
+                    if (side.lengthSq() < 1e-8) side.set(1, 0, 0);
+                    side.normalize();
+                    const nrm = new THREE.Vector3().crossVectors(yAxis, side).normalize();
+                    mesh.position.copy(seat);
+                    mesh.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(side, yAxis, nrm));
+                    mesh.scale.set(webEyeScale, webEyeScale, Math.max(0.55, webEyeScale * 0.35));
+                    mesh.traverse(m => {
+                        if (m.isMesh && (m.name === 'Web_Eye_Loop' || m.name === 'Web_Cuff')) m.material = mat;
+                    });
+                };
+                if (showWebEye) orientWebEye(slingObj.webEyeA, pts[0], dirFromA);
+                if (showWebEye && reached) orientWebEye(slingObj.webEyeB, pts[N], dirFromB);
+            }
+
+            // 3. Chain End Hardware — red đốt cuối so le / vuông góc with parent master/shackle.
+            // Parent plane normal N; child oval normal = N × leave ⇒ child plane ⊥ parent plane.
+            // Thickness seating: child tube stays on the OPENING side of the parent bearing plane
+            // (seat = crown − 2·tubeR) so bars tì đè — not mid-tube weld.
+            if (slingObj.chainTopA && slingObj.chainBotB) {
+                slingObj.chainTopA.visible = !!showChainEndA;
+                slingObj.chainBotB.visible = !!showChainEndB;
+                // Keep end-links smaller than the parent master/shackle so the so-le nest reads clearly
+                const endScale = THREE.MathUtils.clamp(stockScale * 0.82, 0.72, 1.12);
+                const topLen = typeof chainTopAssemblyLength === 'function'
+                    ? chainTopAssemblyLength(endScale) : (0.072 * endScale);
+                const childTubeR = typeof chainEndLinkTubeRadius === 'function'
+                    ? chainEndLinkTubeRadius(endScale) : (0.014 * endScale);
+                const shackleTubeR = (typeof hardwareTubeRadius === 'function')
+                    ? hardwareTubeRadius(state.hwType || 'bow_shackle', endScale)
+                    : (0.0185 * endScale);
+                const masterTubeR = 0.022 * endScale;
+                const orientEndLink = (mesh, seat, leave, parentNormal) => {
+                    const yAxis = leave.clone().normalize();
+                    const nParent = (parentNormal && parentNormal.lengthSq() > 1e-8)
+                        ? parentNormal.clone().normalize()
+                        : new THREE.Vector3(0, 0, 1);
+                    let zAxis = new THREE.Vector3().crossVectors(nParent, yAxis);
+                    if (zAxis.lengthSq() < 1e-8) {
+                        zAxis = Math.abs(yAxis.y) < 0.92
+                            ? new THREE.Vector3(0, 1, 0).cross(yAxis)
+                            : new THREE.Vector3(1, 0, 0).cross(yAxis);
+                    }
+                    zAxis.normalize();
+                    const xAxis = new THREE.Vector3().crossVectors(yAxis, zAxis).normalize();
+                    zAxis.crossVectors(xAxis, yAxis).normalize();
+                    mesh.position.copy(seat);
+                    mesh.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis));
+                    mesh.scale.setScalar(endScale);
+                };
+                if (showChainEndA) {
+                    // Prefer hwLeave (pin→through bow); never draped belly tangent
+                    const leaveA = (slingObj.hwLeaveA && slingObj.hwLeaveA.lengthSq() > 1e-8)
+                        ? slingObj.hwLeaveA.clone().normalize()
+                        : ((slingObj.shackleDirA && slingObj.shackleDirA.lengthSq() > 1e-8)
+                            ? slingObj.shackleDirA.clone().normalize() : dirFromA.clone());
+                    const crownA = (typeof slingObj.bearingInsetA === 'number') ? slingObj.bearingInsetA : 0;
+                    // Hook master crown (inset 0) uses master tube; otherwise shackle bow stock
+                    const parentRA = (crownA < 1e-6) ? masterTubeR : shackleTubeR;
+                    const pullA = childTubeR + parentRA;
+                    const seatA = (slingObj.pinA && slingObj.pinA.isVector3)
+                        ? slingObj.pinA.clone().addScaledVector(leaveA, crownA - pullA)
+                        : pts[0].clone().addScaledVector(leaveA, -(topLen - pullA));
+                    const nA = (slingObj.parentNormalA && slingObj.parentNormalA.isVector3)
+                        ? slingObj.parentNormalA : new THREE.Vector3(0, 0, 1);
+                    orientEndLink(slingObj.chainTopA, seatA, leaveA, nA);
                 }
-                if (showWebEye && reached) {
-                    slingObj.webEyeB.position.copy(pts[N]);
-                    slingObj.webEyeB.quaternion.copy(tensionQuaternion(pts[N], pts[N].clone().add(dirFromB)));
+                if (showChainEndB) {
+                    const leaveB = (slingObj.hwLeaveB && slingObj.hwLeaveB.lengthSq() > 1e-8)
+                        ? slingObj.hwLeaveB.clone().normalize()
+                        : ((slingObj.shackleDirB && slingObj.shackleDirB.lengthSq() > 1e-8)
+                            ? slingObj.shackleDirB.clone().normalize() : dirFromB.clone());
+                    const crownB = (typeof slingObj.bearingInsetB === 'number') ? slingObj.bearingInsetB : 0;
+                    const parentRB = (crownB < 1e-6) ? masterTubeR : shackleTubeR;
+                    const pullB = childTubeR + parentRB;
+                    const seatB = (slingObj.pinB && slingObj.pinB.isVector3)
+                        ? slingObj.pinB.clone().addScaledVector(leaveB, crownB - pullB)
+                        : pts[N].clone().addScaledVector(leaveB, -(topLen - pullB));
+                    const nB = (slingObj.parentNormalB && slingObj.parentNormalB.isVector3)
+                        ? slingObj.parentNormalB : new THREE.Vector3(0, 0, 1);
+                    orientEndLink(slingObj.chainBotB, seatB, leaveB, nB);
+                }
+            }
+
+            // 4. Round Sling Tag (Orange/White Capacity Tag at 25% of span)
+            if (slingObj.roundTag) {
+                slingObj.roundTag.visible = showRoundTag;
+                if (showRoundTag) {
+                    const tagIdx = Math.max(1, Math.min(N - 1, Math.round(N * 0.25)));
+                    const pPrev = pts[tagIdx - 1];
+                    const pNext = pts[tagIdx + 1] || pts[tagIdx];
+                    slingObj.roundTag.position.copy(pts[tagIdx]);
+                    slingObj.roundTag.quaternion.copy(tensionQuaternion(pPrev, pNext));
+                    slingObj.roundTag.scale.setScalar(bodyK * 0.9);
+                }
+            }
+
+            // 5. Grommet Seizing Eyes (Double-strand loop + Wire Seizing Sleeve)
+            if (slingObj.grommetEyeA && slingObj.grommetEyeB) {
+                slingObj.grommetEyeA.visible = showGrommetEye;
+                slingObj.grommetEyeB.visible = showGrommetEye && reached;
+                if (showGrommetEye) {
+                    slingObj.grommetEyeA.position.copy(pts[0]);
+                    slingObj.grommetEyeA.quaternion.copy(tensionQuaternion(pts[0], pts[0].clone().add(dirFromA)));
+                    slingObj.grommetEyeA.scale.setScalar(eyeScale);
+                }
+                if (showGrommetEye && reached) {
+                    slingObj.grommetEyeB.position.copy(pts[N]);
+                    slingObj.grommetEyeB.quaternion.copy(tensionQuaternion(pts[N], pts[N].clone().add(dirFromB)));
+                    slingObj.grommetEyeB.scale.setScalar(eyeScale);
                 }
             }
 
@@ -3072,6 +3984,11 @@
             tagSling(slingObj.endEyeB);
             tagSling(slingObj.webEyeA);
             tagSling(slingObj.webEyeB);
+            tagSling(slingObj.chainTopA);
+            tagSling(slingObj.chainBotB);
+            tagSling(slingObj.roundTag);
+            tagSling(slingObj.grommetEyeA);
+            tagSling(slingObj.grommetEyeB);
             tagSling(slingObj.turnbuckle);
             if (slingObj.pickers) {
                 slingObj.pickers.forEach((picker, k) => {

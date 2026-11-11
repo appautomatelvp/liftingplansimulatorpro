@@ -3,7 +3,7 @@
  * These files are assembled into one module so they share state, physics and the scene.
  */
         const DUNNAGE_H = 0.18; // Timber cribbing height on testbed floor (m)
-        const HOOK_MASTER_OFFSET_Y = -0.56; // Exact vertical offset from hook block origin to Master Link lower bearing crown (m)
+        const HOOK_MASTER_OFFSET_Y = -0.56; // Hook-block origin → master-link LOWER bearing crown (m)
 
         // --- 1. ENGINEERING CONFIGURATION STATE ---
         const state = {
@@ -56,16 +56,25 @@
 
             // Crane & Rigging Gear Selection
             craneType: 'hook_only', // 'hook_only', 'mobile_telescopic', 'crawler', 'gantry'
+            hookCount: 1,           // 1 = single hook, 2 = tandem / dual-crane hooks
+            planLugCount: 4,        // guided wizard: 2 / 4 / 8 lift points on cargo
+            stsSizeFt: 40,          // STS telescopic container spreader: 20 | 40 | 45
+            stsTwinLift: false,     // true → 2×20ft twin-lift CAD spreader
+            stsAttachMode: 'direct', // 'direct' = twistlock on container roof; 'cable' = shackles + sling/chain to cargo lugs
             beamType: 'spreader',   // 'spreader' (Modular Spreader Beam), 'lifting_beam', 'cascaded', 'frame', 'modular_truss', 'basket', 'container_spreader', 'none'
             slingType: 'chain',             // 'wire', 'chain', 'web'
             slingUserSet: true,             // false = auto calculated from span; true = explicit length
             weightUserSet: true,            // false = industrial band from type and size
             hwType: 'bow_shackle',          // 'bow_shackle', 'd_shackle', 'hook'
-            slingLength: 2.00,
-            upperSlingLength: null,
-            lowerSlingLength: null,
+            slingLength: 8.00,
+            upperSlingLength: 8.00,
+            lowerSlingLength: 2.00,
+            hangerSlingLength: 2.00, // cascaded / truss middle tier (even int)
+            cableAdjustMode: false, // show Auto-balance after user edits cable params
             unitSystem: 'metric', // 'metric' (m, mm, kg, t) | 'imperial' (ft, in, lbs)
             wllPerLeg: 15.0,
+            // Scissors cut tool: click a sling in the 3D view to sever it at the hit point
+            cutToolActive: false,
             gear: {
                 selection: [],
                 legs: [0, 1, 2, 3, 4, 5, 6, 7].map(() => ({ lengthM: null, swlT: null, diaMm: 22, massKg: null, sf: 5, grade: 'chain_g80', broken: false, slingType: null, parts: 1 })),
@@ -106,9 +115,30 @@
 
             // Camera Tracking & Follow Mechanism
             cameraFollow: {
-                enabled: false,
-                mode: 'cog', // 'cog' | 'center' | 'top' | 'hook' | 'lp1' | 'lp2' | 'lp3' | 'lp4' | 'custom'
-                customOffset: new THREE.Vector3(0, 0, 0)
+                enabled: true,
+                // Boot cinema (stable) — drawer opens on startup; Fly button starts orbit when wanted
+                // Buttons: cinema=Auto | lock=Giữ | angleCycle=Góc | flycam=Fly
+                behavior: 'cinema', // 'cinema' | 'lock' | 'angleCycle' | 'flycam'
+                mode: 'auto', // focus subject: 'auto' | 'cog' | 'center' | 'top' | 'hook' | 'lp*' | 'custom'
+                smart: true,
+                customOffset: new THREE.Vector3(0, 0, 0),
+                lockedOffset: null, // Vector3 camera−target when locked/cycled
+                angleIndex: 0, // 0..11 for clockwise orbit shots
+                flycamPhase: 0, // continuous orbit angle (rad)
+                flycamPitch: 0.34,
+                flycamDist: 22,
+                flycamSeeded: false,
+                flycamYawRate: 0.12, // rad/s clockwise (~52s / rev) — calm cinematic
+                orbiting: false,
+                paused: false,
+                // Menu settle: pause spin / tab reframes (buttons still work)
+                suppressUiReframe: true,
+                stableView: true,
+                // True after user mouse-drags the view — all auto modes off until a cam button is pressed
+                userManual: false,
+                // One-shot: after first drawer open, play left-third boot framing
+                bootThirdsPending: true,
+                focusOverride: null
             },
 
             // Detailed Orientation, Rotation & Pulling Vector State
@@ -119,7 +149,13 @@
             pullRadius: 0.0,
             spreaderYawDeg: 0,
             spreaderAlignWithCargo: false,
+            // true = móc/master có thể xoay theo mặt phẳng cáp trên (swivel);
+            // false = khóa hướng móc theo boom, dao động xoắn truyền xuống cáp
+            hookSwivelEnabled: true,
             showGroundAngleIndicator: true,
+
+            // Adaptive render budget for ~60 FPS @ 1080p (level: 0=low, 1=mid, 2=high)
+            renderPerf: { level: 2, emaMs: 16.7, burstUntil: 0 },
 
             sceneId: 'studio',
             groundId: 'flat',
@@ -135,7 +171,24 @@
             soilType: 'compacted_gravel', // 'concrete_slab', 'compacted_gravel', 'hard_clay', 'soft_soil'
             craneMatPresetId: 'steel_mat_2x2', // mat under outriggers
             slingMaterialType: 'wire', // 'wire', 'chain', 'poly', 'dyneema'
-            isRigidPayload: true
+            isRigidPayload: true,
+            visualExaggerationScale: 5.0,
+
+            // Site wind field (drives real aerodynamic forces in the solver, see dynamics.js)
+            wind: {
+                enabled: true,
+                speedMps: 3.5,             // mean speed at 10 m reference height (UI: rng-wind-speed)
+                dirDeg: 0,                 // 0° blows along +X (cargo length), 90° along +Z
+                gust: false,               // coherent +30 % gust envelope (UI: chk-wind-gust)
+                turbulenceIntensity: 0.16  // σ_u / V
+            },
+            // Elastic hoist (wire rope EA + boom compliance + hook block mass) — see dynamics.js
+            hoistDynamics: {
+                elastic: 'auto',           // rope + boom compliance on real cranes; hook_only = rigid test crown (true/false to force)
+                sway: 'auto',              // pendulum sway under the boom nose on real cranes only
+                dampingRatio: 0.06,
+                swayDampingRatio: 0.05
+            }
         };
 
         // --- 1B. EXTENSIBLE 3D ASSET LIBRARY REGISTRY (Built-in + User Uploaded STL/OBJ/GLB & Image-to-3D) ---
@@ -146,13 +199,24 @@
 
         const libraryCatalog = {
             cargo: [
-                { id: 'container', meshName: 'ISO_Container_20ft', name: 'ISO Container 20ft — Container tiêu chuẩn 20ft', sub: 'ISO 668 22G1 · 6058×2438×2591 mm · Tare 2.23 t · Payload 21.77 t · MGW 24.00 t', L: 6.058, W: 2.438, H: 2.591, weight: 21.0, tareT: 2.23, maxPayloadT: 21.77, maxGrossT: 24.00, isoCode: '22G1', cogX: 0, cogY: -0.1, cogZ: 0, badge: 'ISO 668' },
-                { id: 'iso40', meshName: 'ISO_Container_40ft', name: 'ISO Container 40ft — Container tiêu chuẩn 40ft', sub: 'ISO 668 42G1 · 12192×2438×2591 mm · Tare 3.80 t · Payload 26.68 t · MGW 30.48 t', L: 12.192, W: 2.438, H: 2.591, weight: 28.3, tareT: 3.80, maxPayloadT: 26.68, maxGrossT: 30.48, isoCode: '42G1', cogX: 0, cogY: -0.1, cogZ: 0, badge: 'ISO 668' },
-                { id: 'iso40hc', meshName: 'ISO_Container_40ft_HC', name: 'ISO Container 40ft HC — Container tiêu chuẩn cao', sub: 'ISO 668 45G1 High Cube · 12192×2438×2896 mm · Tare 3.95 t · Payload 26.53 t · MGW 30.48 t', L: 12.192, W: 2.438, H: 2.896, weight: 28.3, tareT: 3.95, maxPayloadT: 26.53, maxGrossT: 30.48, isoCode: '45G1', cogX: 0, cogY: -0.05, cogZ: 0, badge: 'ISO 668' },
-                { id: 'flatrack', meshName: 'Flat_Rack_Container', name: 'Flat Rack Container — Container mặt bằng (không vách)', sub: 'ISO 1496-5 42P1 · Khung 12192×2438×2591 · Tare 4.80 t · Payload 40.20 t · MGW 45.00 t', L: 12.192, W: 2.438, H: 2.591, weight: 22.0, tareT: 4.80, maxPayloadT: 40.20, maxGrossT: 45.00, isoCode: '42P1', cogX: 0, cogY: -0.55, cogZ: 0, badge: 'ISO 1496-5' },
-                { id: 'opentop', meshName: 'Open_Top_Container', name: 'Open Top Container — Container hở mái', sub: 'ISO 1496-1 22U1 · 6058×2438×2591 · Tare 2.40 t · Payload 21.60 t · MGW 24.00 t', L: 6.058, W: 2.438, H: 2.591, weight: 16.0, tareT: 2.40, maxPayloadT: 21.60, maxGrossT: 24.00, isoCode: '22U1', cogX: 0, cogY: -0.15, cogZ: 0, badge: 'ISO 1496-1' },
-                { id: 'isotank', meshName: 'Tank_Container_ISO_Tank', name: 'Tank Container (ISO Tank) — Container bồn chứa', sub: 'ISO 1496-3 22T1/T11 · Khung 20ft · Tare 3.50 t · Payload 26.00 t · MGW 36.00 t', L: 6.058, W: 2.438, H: 2.591, weight: 29.0, tareT: 3.50, maxPayloadT: 26.00, maxGrossT: 36.00, isoCode: '22T1', cogX: 0, cogY: 0.05, cogZ: 0, badge: 'ISO 1496-3' },
-                { id: 'reefer', meshName: 'Reefer_Container', name: 'Reefer Container — Container lạnh', sub: 'ISO 1496-2 45R1 · 40ft HC · Tare 4.60 t · Payload 25.88 t · MGW 30.48 t', L: 12.192, W: 2.438, H: 2.896, weight: 28.3, tareT: 4.60, maxPayloadT: 25.88, maxGrossT: 30.48, isoCode: '45R1', cogX: -0.35, cogY: 0.05, cogZ: 0, badge: 'ISO 1496-2' },
+                { id: 'container', meshName: 'ISO_Container_20ft', name: 'ISO Container 20ft DC — Dry Standard 22G1', sub: 'ISO 668 22G1 · 6058×2438×2591 · CAD Realistic V2 · Twistlock 5853×2259', L: 6.058, W: 2.438, H: 2.591, weight: 21.0, tareT: 2.23, maxPayloadT: 21.77, maxGrossT: 24.00, isoCode: '22G1', cogX: 0, cogY: -0.1, cogZ: 0, badge: 'ISO 22G1' },
+                { id: 'iso20hc', meshName: 'ISO_Container_20ft_HC', name: 'ISO Container 20ft HC — High Cube 25G1', sub: 'ISO 668 25G1 · 6058×2438×2896 · CAD Realistic V2', L: 6.058, W: 2.438, H: 2.896, weight: 22.0, tareT: 2.35, maxPayloadT: 28.13, maxGrossT: 30.48, isoCode: '25G1', cogX: 0, cogY: -0.08, cogZ: 0, badge: 'ISO 25G1' },
+                { id: 'iso40', meshName: 'ISO_Container_40ft', name: 'ISO Container 40ft DC — Dry Standard 42G1', sub: 'ISO 668 42G1 · 12192×2438×2591 · CAD Realistic V2 · Twistlock 11985×2259', L: 12.192, W: 2.438, H: 2.591, weight: 28.3, tareT: 3.80, maxPayloadT: 26.68, maxGrossT: 30.48, isoCode: '42G1', cogX: 0, cogY: -0.1, cogZ: 0, badge: 'ISO 42G1' },
+                { id: 'iso40hc', meshName: 'ISO_Container_40ft_HC', name: 'ISO Container 40ft HC — High Cube 45G1', sub: 'ISO 668 45G1 · 12192×2438×2896 · CAD Realistic V2', L: 12.192, W: 2.438, H: 2.896, weight: 28.3, tareT: 3.95, maxPayloadT: 26.53, maxGrossT: 30.48, isoCode: '45G1', cogX: 0, cogY: -0.05, cogZ: 0, badge: 'ISO 45G1' },
+                { id: 'iso45hc', meshName: 'ISO_Container_45ft_HC', name: 'ISO Container 45ft HC — High Cube L5G1', sub: 'ISO 668 L5G1 · 13716×2438×2896 · 16 castings (40+45 pitch)', L: 13.716, W: 2.438, H: 2.896, weight: 29.0, tareT: 4.80, maxPayloadT: 25.68, maxGrossT: 30.48, isoCode: 'L5G1', cogX: 0, cogY: -0.08, cogZ: 0, badge: 'ISO L5G1' },
+                { id: 'container10', meshName: 'ISO_Container_10ft', name: 'ISO Container 10ft Mini — Dry 12G1', sub: 'ISO 668 12G1 · 2991×2438×2591 · Offshore / mini box', L: 2.991, W: 2.438, H: 2.591, weight: 8.5, tareT: 1.30, maxPayloadT: 8.86, maxGrossT: 10.16, isoCode: '12G1', cogX: 0, cogY: -0.1, cogZ: 0, badge: 'ISO 12G1' },
+                { id: 'iso53hc', meshName: 'ISO_Container_53ft_HC', name: '53ft HC Intermodal — Overhang', sub: '16154×2591×2896 · 40ft spreader castings 11985×2259', L: 16.154, W: 2.591, H: 2.896, weight: 30.0, tareT: 6.20, maxPayloadT: 24.28, maxGrossT: 30.48, isoCode: '53HC', cogX: 0, cogY: -0.1, cogZ: 0, badge: '53ft HC' },
+                { id: 'opentop', meshName: 'Open_Top_Container', name: 'Open Top 20ft — 22U1', sub: 'ISO 1496-1 22U1 · 6058×2438×2591 · CAD Realistic V2', L: 6.058, W: 2.438, H: 2.591, weight: 16.0, tareT: 2.40, maxPayloadT: 21.60, maxGrossT: 24.00, isoCode: '22U1', cogX: 0, cogY: -0.15, cogZ: 0, badge: 'ISO 22U1' },
+                { id: 'opentop40', meshName: 'Open_Top_Container_40ft', name: 'Open Top 40ft — 42U1', sub: 'ISO 1496-1 42U1 · 12192×2438×2591 · CAD Realistic V2', L: 12.192, W: 2.438, H: 2.591, weight: 22.0, tareT: 4.00, maxPayloadT: 26.48, maxGrossT: 30.48, isoCode: '42U1', cogX: 0, cogY: -0.15, cogZ: 0, badge: 'ISO 42U1' },
+                { id: 'flatrack', meshName: 'Flat_Rack_Container', name: 'Flat Rack 40ft HC — 45P3', sub: 'ISO 1496-5 45P3 · 12192×2438×2896 · CAD Realistic V2', L: 12.192, W: 2.438, H: 2.896, weight: 22.0, tareT: 5.20, maxPayloadT: 39.80, maxGrossT: 45.00, isoCode: '45P3', cogX: 0, cogY: -0.55, cogZ: 0, badge: 'ISO 45P3' },
+                { id: 'flatrack20', meshName: 'Flat_Rack_Container_20ft', name: 'Flat Rack 20ft — 22P3', sub: 'ISO 1496-5 22P3 · 6058×2438×2591 · CAD Realistic V2', L: 6.058, W: 2.438, H: 2.591, weight: 14.0, tareT: 2.75, maxPayloadT: 31.25, maxGrossT: 34.00, isoCode: '22P3', cogX: 0, cogY: -0.55, cogZ: 0, badge: 'ISO 22P3' },
+                { id: 'isotank', meshName: 'Tank_Container_ISO_Tank', name: 'ISO Tank 20ft — 22K2 Liquid/Gas', sub: 'ISO 1496-3 22K2 · 6058×2438×2591 · CAD Realistic V2', L: 6.058, W: 2.438, H: 2.591, weight: 29.0, tareT: 3.80, maxPayloadT: 32.20, maxGrossT: 36.00, isoCode: '22K2', cogX: 0, cogY: 0.05, cogZ: 0, badge: 'ISO 22K2' },
+                { id: 'reefer', meshName: 'Reefer_Container', name: 'Reefer 40ft HC — 45R1', sub: 'ISO 1496-2 45R1 · 12192×2438×2896 · CAD Realistic V2', L: 12.192, W: 2.438, H: 2.896, weight: 28.3, tareT: 4.60, maxPayloadT: 25.88, maxGrossT: 30.48, isoCode: '45R1', cogX: -0.35, cogY: 0.05, cogZ: 0, badge: 'ISO 45R1' },
+                { id: 'reefer20', meshName: 'Reefer_Container_20ft', name: 'Reefer 20ft — 22R1', sub: 'ISO 1496-2 22R1 · 6058×2438×2591 · CAD Realistic V2', L: 6.058, W: 2.438, H: 2.591, weight: 18.0, tareT: 3.00, maxPayloadT: 27.48, maxGrossT: 30.48, isoCode: '22R1', cogX: -0.25, cogY: 0.05, cogZ: 0, badge: 'ISO 22R1' },
+                { id: 'platform', meshName: 'Platform_Container', name: 'Platform 40ft — 49P0', sub: 'ISO 1496-5 49P0 · 12192×2438×610 · CAD Realistic V2', L: 12.192, W: 2.438, H: 0.610, weight: 8.0, tareT: 5.50, maxPayloadT: 24.98, maxGrossT: 30.48, isoCode: '49P0', cogX: 0, cogY: 0, cogZ: 0, badge: 'ISO 49P0' },
+                { id: 'platform20', meshName: 'Platform_Container_20ft', name: 'Platform 20ft — 29P0', sub: 'ISO 1496-5 29P0 · 6058×2438×335 · CAD Realistic V2', L: 6.058, W: 2.438, H: 0.335, weight: 5.0, tareT: 2.20, maxPayloadT: 28.28, maxGrossT: 30.48, isoCode: '29P0', cogX: 0, cogY: 0, cogZ: 0, badge: 'ISO 29P0' },
+                { id: 'halfheight', meshName: 'Half_Height_Container', name: 'Half-Height 20ft — 28U1', sub: 'ISO 1496-1 28U1 · 6058×2438×1295 · Heavy bulk', L: 6.058, W: 2.438, H: 1.295, weight: 18.0, tareT: 2.40, maxPayloadT: 28.08, maxGrossT: 30.48, isoCode: '28U1', cogX: 0, cogY: -0.05, cogZ: 0, badge: 'ISO 28U1' },
+                { id: 'drybulk', meshName: 'Dry_Bulk_Container', name: 'Dry Bulk 20ft — 22B0 Top Hatches', sub: 'ISO 1496-4 22B0 · 6058×2438×2591 · CAD Realistic V2', L: 6.058, W: 2.438, H: 2.591, weight: 20.0, tareT: 2.80, maxPayloadT: 27.68, maxGrossT: 30.48, isoCode: '22B0', cogX: 0, cogY: -0.05, cogZ: 0, badge: 'ISO 22B0' },
                 { id: 'crate', meshName: 'Heavy_Lift_OOG_Cargo', name: 'Heavy Lift / Out of Gauge (OOG) — Hàng siêu trường siêu trọng', sub: 'Kiện máy công nghiệp đóng khung dầm thép gia cường', L: 4.5, W: 2.8, H: 2.6, weight: 16.0, cogX: 0, cogY: 0, cogZ: 0, badge: 'OOG Heavy' },
                 { id: 'transformer', meshName: 'Transformer', name: 'Transformer — Máy biến áp', sub: 'Máy biến áp lực 110kV có cánh tản nhiệt & sứ cách điện', L: 5.2, W: 2.8, H: 3.2, weight: 65.0, cogX: 0.65, cogY: 0.15, cogZ: 0.20, badge: 'IEC 60076' },
                 { id: 'vessel', meshName: 'Pressure_Vessel', name: 'Pressure Vessel — Bồn áp lực', sub: 'Bồn trụ ngang ASME có tai cẩu hàn trên thân vỏ tròn', L: 7.5, W: 2.6, H: 2.6, weight: 41.5, cogX: 0, cogY: 0.05, cogZ: 0, badge: 'ASME VIII' },
@@ -160,10 +224,9 @@
                 { id: 'excavator', meshName: 'Excavator_Heavy_Machinery', name: 'Excavator / Heavy Machinery — Máy xúc / Xe cơ giới nặng', sub: 'Máy xúc đào bánh xích công trường, cần gầu vươn', L: 6.4, W: 3.0, H: 3.1, weight: 29.5, cogX: -0.35, cogY: -0.1, cogZ: 0.0, badge: 'ISO 6016' },
                 { id: 'boat', meshName: 'Tugboat_Vessel_Hull', name: 'Tugboat / Vessel Hull — Tàu kéo / Vỏ tàu thủy', sub: 'Thân tàu chữ V có sống mũi, cabin lái & đệm chống va', L: 12.0, W: 3.4, H: 3.2, weight: 33.5, cogX: -0.55, cogY: -0.2, cogZ: 0, badge: 'DNV Marine' },
                 { id: 'offshore_skid', meshName: 'Heavy_Lift_OOG_Cargo', name: 'Offshore Process Skid (OOG) — Cụm bơm dầu khí siêu trọng', sub: 'Khung skid thép I-beam, đường ống mặt bích & cụm bơm đôi', L: 6.2, W: 3.2, H: 2.8, weight: 36.0, cogX: 0.30, cogY: -0.15, cogZ: -0.20, badge: 'DNV 2.7-3' },
-                { id: 'platform', meshName: 'Platform_Container', name: 'Platform Container — Sàn phẳng không vách', sub: 'Sàn thép phẳng 40ft chịu tải điểm cao cho hàng OOG', L: 12.19, W: 2.44, H: 0.70, weight: 8.0, cogX: 0, cogY: 0, cogZ: 0, badge: 'ISO' },
-                { id: 'car', meshName: 'SUV_Vehicle', name: 'Heavy Utility Vehicle / SUV — Xe cơ giới / Bán tải', sub: 'Khung gầm 4 bánh độc lập, trọng tâm lệch khoang động cơ', L: 5.2, W: 1.95, H: 1.85, weight: 2.8, cogX: 0.15, cogY: -0.12, cogZ: 0, badge: 'Automotive' },
-                { id: 'container_20ft_glb', meshName: 'ISO_Container_20ft', name: 'ISO Container 20ft (GLB) — Container tiêu chuẩn 20ft', sub: 'Digital Twin GLB: Sóng tôn thật, góc đúc ISO 1161', L: 6.058, W: 2.438, H: 2.591, weight: 21.0, cogX: 0, cogY: -0.1, cogZ: 0, badge: 'Digital Twin', verified: true },
-                { id: 'container_40ft_glb', meshName: 'ISO_Container_40ft', name: 'ISO Container 40ft (GLB) — Container tiêu chuẩn 40ft', sub: 'Digital Twin GLB: Thép PBR hàng hải, góc đúc ISO 1161', L: 12.192, W: 2.438, H: 2.591, weight: 28.3, cogX: 0, cogY: -0.1, cogZ: 0, badge: 'Digital Twin', verified: true }
+                { id: 'car', meshName: 'Vehicle', name: 'Vehicle — Xe bus / Xe cơ giới', sub: 'Mô hình 3D CAD 1:1 thân xe bus, trọng tâm thấp gần sàn', L: 9.0, W: 2.38, H: 2.80, weight: 9.0, cogX: 0.0, cogY: -0.35, cogZ: 0, badge: '3D CAD 1:1' },
+                { id: 'container_20ft_glb', meshName: 'ISO_Container_20ft', name: 'ISO Container 20ft (alias)', sub: 'Maps to Realistic V2 22G1 CAD', L: 6.058, W: 2.438, H: 2.591, weight: 21.0, cogX: 0, cogY: -0.1, cogZ: 0, badge: 'CAD V2', verified: true },
+                { id: 'container_40ft_glb', meshName: 'ISO_Container_40ft', name: 'ISO Container 40ft (alias)', sub: 'Maps to Realistic V2 42G1 CAD', L: 12.192, W: 2.438, H: 2.591, weight: 28.3, cogX: 0, cogY: -0.1, cogZ: 0, badge: 'CAD V2', verified: true }
             ],
             crane: [
                 { id: 'hook_only', meshName: 'Crane_Hook_Block', name: 'Overhead Hook Block — Chế độ cụm móc cẩu thuần túy', sub: 'Tập trung 100% thiết kế bắt cáp, ma ní, tăng đơ & dầm ngáng', badge: 'Rigging Focus', verified: true },
@@ -175,7 +238,7 @@
                 { id: 'spreader', meshName: 'Modular_Spreader_Beam', name: 'Modular Spreader Beam — Dầm ngáng lắp ghép (Modulift)', sub: 'Thiết kế chịu lực nén (Compression), kết hợp cáp trên và cáp dưới', weight: 0.52, badge: 'ASME B30.20', verified: true },
                 { id: 'lifting_beam', meshName: 'Lifting_Beam', name: 'Lifting Beam — Dầm nâng (chịu lực uốn - Bending)', sub: 'Móc cẩu móc trực tiếp vào tai treo giữa dầm, tiết kiệm chiều cao', weight: 0.85, badge: 'ASME B30.20' },
                 { id: 'frame', meshName: 'H_Beam_Spreader', name: 'H-Beam Spreader — Dầm ngáng chữ H / Khung 4 điểm', sub: 'Phân tải 4 góc thẳng đứng, triệt tiêu lực ép ngang lên kiện hàng', weight: 1.80, badge: 'H-Spreader' },
-                { id: 'container_spreader', meshName: 'ISO_Container_Spreader', name: 'ISO Container Spreader — Khung chụp cẩu Container', sub: 'Khung chụp tự động có 4 gù ngàm xoay (Twistlocks) chuẩn ISO 3874', weight: 9.50, badge: 'ISO Twistlock' },
+                { id: 'container_spreader', meshName: 'ISO_Container_Spreader', name: 'STS Container Spreader — Ngáng chụp cẩu STS/RTG', sub: 'Telescopic ISO 20/40/45ft · Headblock + twistlock · Không móc/cáp bridle', weight: 9.50, badge: 'STS ISO' },
                 { id: 'cascaded', meshName: 'Cascaded_Spreader_System', name: 'Cascaded Spreader System — Hệ dầm ngáng nhiều tầng', sub: '1 dầm chính tầng trên + 2 dầm phụ tầng dưới phân đều tải các nhánh', weight: 1.40, badge: 'Cascaded' },
                 { id: 'modular_truss', meshName: 'Spreader_Beam', name: 'Spreader Beam (Lattice Truss) — Dầm ngáng giàn không gian', sub: 'Dầm ngáng chịu lực nén tải trọng lớn 100T cho hàng siêu trường', weight: 1.60, badge: 'Compression' },
                 { id: 'none', meshName: 'Bridle_Sling', name: 'Bridle Sling (Direct 4-Leg) — Chùm cáp đa nhánh trực tiếp', sub: 'Gom trực tiếp 4 nhánh cáp vào vòng khuyên chính (Master Link)', weight: 0.08, badge: 'ASME B30.9' },
@@ -186,17 +249,17 @@
                 { id: 'modulift_spreader_glb', meshName: 'Modular_Spreader_Beam', name: 'Modular Spreader Beam (GLB) — Dầm ngáng lắp ghép 1:1', sub: 'ASME B30.20 Digital Twin Spreader Asset', weight: 2.20, badge: 'Digital Twin', verified: true }
             ],
             rig_preset: [
-                { id: 'sling_wire_rope', meshName: 'Wire_Rope_Sling', name: 'Wire Rope Sling — Dây cáp thép', sub: 'Cáp thép 6x36 IWRC ép ống chì (Ferrule) & lót bẹn cáp (Thimble)', beam: 'spreader', sling: 'wire', hw: 'bow_shackle', slingL: 4.5, elev: 'top', badge: 'ASME B30.9', verified: true },
-                { id: 'sling_chain', meshName: 'Chain_Sling', name: 'Chain Sling — Dây xích cẩu', sub: 'Xích thép hợp kim Grade 80 / Grade 100 chịu mài mòn & nhiệt độ cao', beam: 'none', sling: 'chain', hw: 'clevis_hook', slingL: 4.8, elev: 'top', badge: 'EN 818-4', verified: true },
-                { id: 'sling_web', meshName: 'Synthetic_Web_Sling', name: 'Synthetic Web Sling — Dây cáp vải bản dẹt (Polyester)', sub: 'Cáp vải dẹt hai đầu mắt mềm bảo vệ bề mặt sơn thiết bị', beam: 'spreader', sling: 'web', hw: 'bow_shackle', slingL: 4.5, elev: 'top', badge: 'EN 1492-1', verified: true },
-                { id: 'sling_round', meshName: 'Round_Sling', name: 'Round Sling — Dây cáp vải bản tròn', sub: 'Cáp vải tròn sợi tổng hợp chịu tải siêu trọng, mềm dẻo ôm sát', beam: 'basket', sling: 'round_sling', hw: 'bow_shackle', slingL: 4.8, elev: 'bottom', badge: 'EN 1492-2', verified: true },
-                { id: 'sling_grommet', meshName: 'Grommet_Sling', name: 'Grommet Sling — Cáp thép vòng tròn khép kín', sub: 'Cáp thép bện vòng tròn không mối nối (Endless Grommet) cho Heavy Lift', beam: 'spreader', sling: 'grommet', hw: 'bow_shackle', slingL: 4.5, elev: 'top', badge: 'IMCA M179', verified: true },
-                { id: 'preset_direct_4leg', meshName: 'Bridle_Sling', name: 'Bridle Sling (2-Leg, 3-Leg, 4-Leg) — Chùm cáp / Xích đa nhánh', sub: 'Chùm 4 nhánh gom vào vòng khuyên chính (Master Link) trên đầu Hook', beam: 'none', sling: 'wire', hw: 'bow_shackle', slingL: 5.2, elev: 'top', badge: 'ASME B30.9', verified: true },
-                { id: 'sling_tagline', meshName: 'Tagline', name: 'Tagline — Dây mồi / Dây thừng neo chống xoay lắc', sub: 'Buộc ở góc kiện hàng, do công nhân cầm kéo dưới đất để định hướng', beam: 'spreader', sling: 'wire', hw: 'bow_shackle', slingL: 4.5, elev: 'top', badge: 'Field Control', verified: true },
-                { id: 'preset_modulift_iso', meshName: 'Modular_Spreader_Beam', name: 'Modular Spreader + Wire Rope + Bow Shackle — Bộ ngáng ống chuẩn', sub: 'Phương án tiêu chuẩn: Dầm ngáng Modulift + Cáp thép + Ma ní móng ngựa', beam: 'spreader', sling: 'wire', hw: 'bow_shackle', slingL: 4.5, elev: 'top', badge: 'ASME B30.20' },
-                { id: 'preset_cascaded_iso', meshName: 'Cascaded_Spreader_System', name: 'Cascaded Spreader System — Hệ dầm ngáng nhiều tầng 4 góc', sub: 'Ngáng ống 2 tầng SB1/SB2/SB3 + Cáp thép + Ma ní móng ngựa', beam: 'cascaded', sling: 'wire', hw: 'bow_shackle', slingL: 4.5, elev: 'top', badge: 'ASME B30.20' },
-                { id: 'preset_hbeam_low', meshName: 'Lifting_Beam', name: 'Lifting Beam + Turnbuckle — Dầm nâng trần thấp & Tăng đơ cân CoG', sub: 'Dầm nâng chịu uốn + Tăng đơ (Turnbuckle) tự động cân bằng trọng tâm', beam: 'lifting_beam', sling: 'wire', hw: 'bow_shackle', slingL: 3.8, elev: 'top', autoLevel: true, badge: 'Low Headroom' },
-                { id: 'preset_basket_cradle', meshName: 'Round_Sling', name: 'Basket Cradle + Web/Round Sling — Cáp vải ôm đáy bồn tròn', sub: 'Ngáng đôi + Cáp vải bản dẹt/tròn ôm đáy bảo vệ vỏ bồn áp lực', beam: 'basket', sling: 'web', hw: 'd_shackle', slingL: 4.8, elev: 'bottom', badge: 'Basket Rig' }
+                { id: 'sling_wire_rope', meshName: 'Wire_Rope_Sling', name: 'Wire Rope Sling — Dây cáp thép', sub: 'Cáp thép 6x36 IWRC ép ống chì (Ferrule) & lót bẹn cáp (Thimble)', beam: 'spreader', sling: 'wire', hw: 'bow_shackle', slingL: 8.0, elev: 'top', badge: 'ASME B30.9', verified: true },
+                { id: 'sling_chain', meshName: 'Chain_Sling', name: 'Chain Sling — Dây xích cẩu', sub: 'Xích thép hợp kim Grade 80 / Grade 100 chịu mài mòn & nhiệt độ cao', beam: 'none', sling: 'chain', hw: 'clevis_hook', slingL: 8.0, elev: 'top', badge: 'EN 818-4', verified: true },
+                { id: 'sling_web', meshName: 'Synthetic_Web_Sling', name: 'Synthetic Web Sling — Dây cáp vải bản dẹt (Polyester)', sub: 'Cáp vải dẹt hai đầu mắt mềm bảo vệ bề mặt sơn thiết bị', beam: 'spreader', sling: 'web', hw: 'bow_shackle', slingL: 8.0, elev: 'top', badge: 'EN 1492-1', verified: true },
+                { id: 'sling_round', meshName: 'Round_Sling', name: 'Round Sling — Dây cáp vải bản tròn', sub: 'Cáp vải tròn sợi tổng hợp chịu tải siêu trọng, mềm dẻo ôm sát', beam: 'basket', sling: 'round_sling', hw: 'bow_shackle', slingL: 8.0, elev: 'bottom', badge: 'EN 1492-2', verified: true },
+                { id: 'sling_grommet', meshName: 'Grommet_Sling', name: 'Grommet Sling — Cáp thép vòng tròn khép kín', sub: 'Cáp thép bện vòng tròn không mối nối (Endless Grommet) cho Heavy Lift', beam: 'spreader', sling: 'grommet', hw: 'bow_shackle', slingL: 8.0, elev: 'top', badge: 'IMCA M179', verified: true },
+                { id: 'preset_direct_4leg', meshName: 'Bridle_Sling', name: 'Bridle Sling (2-Leg, 3-Leg, 4-Leg) — Chùm cáp / Xích đa nhánh', sub: 'Chùm 4 nhánh gom vào vòng khuyên chính (Master Link) trên đầu Hook', beam: 'none', sling: 'wire', hw: 'bow_shackle', slingL: 8.0, elev: 'top', badge: 'ASME B30.9', verified: true },
+                { id: 'sling_tagline', meshName: 'Tagline', name: 'Tagline — Dây mồi / Dây thừng neo chống xoay lắc', sub: 'Buộc ở góc kiện hàng, do công nhân cầm kéo dưới đất để định hướng', beam: 'spreader', sling: 'wire', hw: 'bow_shackle', slingL: 8.0, elev: 'top', badge: 'Field Control', verified: true },
+                { id: 'preset_modulift_iso', meshName: 'Modular_Spreader_Beam', name: 'Modular Spreader + Wire Rope + Bow Shackle — Bộ ngáng ống chuẩn', sub: 'Phương án tiêu chuẩn: Dầm ngáng Modulift + Cáp thép + Ma ní móng ngựa', beam: 'spreader', sling: 'wire', hw: 'bow_shackle', slingL: 8.0, elev: 'top', badge: 'ASME B30.20' },
+                { id: 'preset_cascaded_iso', meshName: 'Cascaded_Spreader_System', name: 'Cascaded Spreader System — Hệ dầm ngáng nhiều tầng 4 góc', sub: 'Ngáng ống 3 tầng + Cáp thép + Ma ní móng ngựa', beam: 'cascaded', sling: 'wire', hw: 'bow_shackle', slingL: 8.0, elev: 'top', badge: 'ASME B30.20' },
+                { id: 'preset_hbeam_low', meshName: 'Lifting_Beam', name: 'Lifting Beam + Turnbuckle — Dầm nâng trần thấp & Tăng đơ cân CoG', sub: 'Dầm nâng chịu uốn + Tăng đơ (Turnbuckle) tự động cân bằng trọng tâm', beam: 'lifting_beam', sling: 'wire', hw: 'bow_shackle', slingL: 8.0, elev: 'top', autoLevel: true, badge: 'Low Headroom' },
+                { id: 'preset_basket_cradle', meshName: 'Round_Sling', name: 'Basket Cradle + Web/Round Sling — Cáp vải ôm đáy bồn tròn', sub: 'Ngáng đôi + Cáp vải bản dẹt/tròn ôm đáy bảo vệ vỏ bồn áp lực', beam: 'basket', sling: 'web', hw: 'd_shackle', slingL: 8.0, elev: 'bottom', badge: 'Basket Rig' }
             ],
             hardware: [
                 { id: 'bow_shackle', meshName: 'Bow_Shackle', name: 'Bow Shackle / Anchor Shackle — Ma ní móng ngựa / Ma ní chữ O', sub: 'Crosby G-2130 dùng chốt an toàn (Safety bolt, nut & cotter pin)', badge: 'ASME B30.26', verified: true },
@@ -239,7 +302,7 @@
             tensionImpulse: [0, 0, 0, 0, 0, 0, 0, 0],
             legSlacks: [true, true, true, true, true, true, true, true],
             legAngleDeg: [90, 90, 90, 90, 90, 90, 90, 90],
-            upperAngleDeg: [60, 60, 60, 60],
+            upperAngleDeg: [42.5, 42.5, 42.5, 42.5],
             legFactor: [1, 1, 1, 1, 1, 1, 1, 1],
             breakHold: [0, 0, 0, 0, 0, 0, 0, 0],
             upperBreakHold: [0, 0, 0, 0],
@@ -272,7 +335,15 @@
             supportLocals: [],
             legForceN: [0, 0, 0, 0],
             cornerSag: [0, 0, 0, 0],
-            yieldApplied: false
+            yieldApplied: false,
+            structuralDeformation: {
+                cargoDeflectionMm: 0,
+                cargoTwistDeg: 0,
+                beamDeflectionMm: 0,
+                beamTwistDeg: 0,
+                spreaderAmplification: 1.0,
+                eccentricTorqueNm: 0
+            }
         };
 
         const replay = { recording: false, playing: false, t0: 0, cursor: 0, frames: [] };
@@ -311,8 +382,10 @@
             if (pct) pct.textContent = Math.round(percent) + '%';
         }
 
-        function finishLoadingScreen() {
-            updateLoadingProgress(100, 'Sàn mô phỏng Rigging & Lift Plan đã sẵn sàng!');
+        function finishLoadingScreen(opts) {
+            const holdMs = (opts && opts.holdMs != null) ? opts.holdMs : 520;
+            const fadeMs = (opts && opts.fadeMs != null) ? opts.fadeMs : 700;
+            updateLoadingProgress(100, (opts && opts.message) || 'Sàn mô phỏng sẵn sàng — khung hình cinematic đã khóa!');
             setTimeout(() => {
                 document.body.classList.add('app-ready');
                 const loader = document.getElementById('app-loading-screen');
@@ -320,9 +393,9 @@
                     loader.classList.add('loaded');
                     setTimeout(() => {
                         if (loader.parentNode) loader.parentNode.removeChild(loader);
-                    }, 600);
+                    }, fadeMs);
                 }
-            }, 260);
+            }, holdMs);
         }
 
         function applyStartupAssemblyPreset() {
@@ -337,7 +410,9 @@
             state.slingLength = 8.00;
             state.upperSlingLength = 8.00;
             state.lowerSlingLength = 2.00;
+            state.hangerSlingLength = 2.00;
             state.slingUserSet = true;
+            state.cableAdjustMode = false;
             state.oogHasCargo = true;
             state.oogTarp = true;
             state.oogCargoL = 10.50;
@@ -386,14 +461,63 @@
             applyStartupAssemblyPreset();
             buildCraneVehicle();
             rebuildCargoAndRig(true);
-            updateLoadingProgress(90, 'Đồng bộ kiểm định an toàn ASME B30.9 / B30.20 / P30.1...');
+            updateLoadingProgress(88, 'Đồng bộ kiểm định an toàn ASME B30.9 / B30.20 / P30.1...');
             init3DLibraryStudio();
             initComplianceUI();
             setupUIEvents();
             resetToInitialPreLiftState();
             if (typeof pretensionRig === 'function') pretensionRig();
             if (typeof saveUserInitialBaselineState === 'function') saveUserInitialBaselineState();
+            if (typeof window.bootstrapCameraFollow === 'function') {
+                window.bootstrapCameraFollow();
+            } else if (state.cameraFollow && camera && controls) {
+                state.cameraFollow.behavior = 'cinema';
+                state.cameraFollow.stableView = true;
+                state.cameraFollow.suppressUiReframe = true;
+                state.cameraFollow.lockedOffset = camera.position.clone().sub(controls.target);
+            }
             if (typeof openRightDrawer === 'function') openRightDrawer('rig');
-            finishLoadingScreen();
-            animate();
+
+            // Keep the loading screen up while drawer layout settles and the hero
+            // camera is snapped under the overlay — first visible frame must already be cinematic.
+            updateLoadingProgress(92, 'Canh khung hình cinematic (rule of thirds)...');
+            const warmAndReveal = () => {
+                updateLoadingProgress(96, 'Ổn định góc máy & làm nóng khung hình...');
+                if (typeof window.invalidateUiSafeNdcCache === 'function') {
+                    window.invalidateUiSafeNdcCache();
+                }
+                if (typeof window.frameCinematicHeroShot === 'function') {
+                    window.frameCinematicHeroShot({ immediate: true, force: true });
+                }
+                if (state.cameraFollow) state.cameraFollow.bootThirdsPending = false;
+
+                // Warm a few renders behind the loader so shaders/shadows don't hitch on reveal
+                let warmLeft = 4;
+                const warmTick = () => {
+                    try {
+                        if (typeof updateSceneAndTelemetry === 'function') updateSceneAndTelemetry();
+                        if (controls) controls.update();
+                        if (sceneRenderer && typeof sceneRenderer.render === 'function') {
+                            sceneRenderer.render(1 / 60);
+                        } else if (renderer && scene && camera) {
+                            renderer.render(scene, camera);
+                        }
+                    } catch (e) { /* ignore warm errors */ }
+                    warmLeft -= 1;
+                    if (warmLeft > 0) {
+                        requestAnimationFrame(warmTick);
+                        return;
+                    }
+                    updateLoadingProgress(100, 'Sẵn sàng — góc nhìn cinematic đã khóa!');
+                    animate();
+                    finishLoadingScreen({
+                        holdMs: 640,
+                        fadeMs: 850,
+                        message: 'Sẵn sàng — góc nhìn cinematic đã khóa!'
+                    });
+                };
+                requestAnimationFrame(warmTick);
+            };
+            // Allow CSS drawer slide + layout to finish before measuring free-stage 1/3
+            setTimeout(() => requestAnimationFrame(warmAndReveal), 520);
         }

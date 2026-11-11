@@ -9,12 +9,14 @@ const simParts = [
   'scene.js',
   'rigging.js',
   'cargo.js',
+  'dynamics.js',
   'physics.js',
   'telemetry.js',
   'gear.js',
   'session.js',
   'library.js',
-  'compliance.js'
+  'compliance.js',
+  'plan_wizard.js'
 ];
 
 function liftingSim() {

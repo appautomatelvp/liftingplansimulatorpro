@@ -4,6 +4,7 @@ dist
 *.log
 .firebase
 .wrangler
+.vercel
 .env
 .env.*
 playwright-report

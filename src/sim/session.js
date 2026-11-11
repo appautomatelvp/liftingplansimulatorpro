@@ -9,12 +9,21 @@
             if (phy.hookVel) phy.hookVel.set(0, 0, 0);
             if (phy.cargoVel) phy.cargoVel.set(0, 0, 0);
             if (phy.cargoOmega) phy.cargoOmega.set(0, 0, 0);
+            if (phy.cargoQuat) phy.cargoQuat.identity();
+            if (phy.cargoPos) { phy.cargoPos.x = 0; phy.cargoPos.z = 0; }
+            if (Array.isArray(phy.beams)) {
+                phy.beams.forEach(b => {
+                    if (b.v) b.v.set(0, 0, 0);
+                    if (b.w) b.w.set(0, 0, 0);
+                });
+            }
             resetFlatRackPayloadState();
-            phy.cargoPos.set(0, 3, 0);
+            // Keep plan position — NEVER teleport to y=3 (that made cargo "nảy lên" before set-down)
             state.poseLock = true;
             applyLockedPose();
-            phy.legTensions = [0, 0, 0, 0];
-            phy.legSlacks = [true, true, true, true];
+            phy.legTensions = [0, 0, 0, 0, 0, 0, 0, 0];
+            phy.legSlacks = [true, true, true, true, true, true, true, true];
+            phy.upperTensions = [0, 0, 0, 0];
             phy.groundClearance = 0;
             syncPoseLockUI();
             parkHookSlack();
@@ -28,12 +37,21 @@
         function pretensionRig() {
             phy.autoHoistActive = false;
             phy.hoistSpeed = 0;
+            state.holdCableLength = false;
+            state.heldCableL0 = null;
             if (phy.hookVel) phy.hookVel.set(0, 0, 0);
             if (phy.cargoVel) phy.cargoVel.set(0, 0, 0);
             if (phy.cargoOmega) phy.cargoOmega.set(0, 0, 0);
+            if (phy.cargoQuat) phy.cargoQuat.identity();
+            if (phy.cargoPos) { phy.cargoPos.x = 0; phy.cargoPos.z = 0; }
 
-            // Giữ kiện hàng ổn định trên mặt đất / đà kê
-            if (typeof supportY === 'function') {
+            // Giữ kiện hàng ổn định trên mặt đất / đà kê (cùng điểm tiếp xúc với XPBD)
+            if (typeof applyLockedPose === 'function') {
+                const keepLock = state.poseLock;
+                state.poseLock = true;
+                applyLockedPose();
+                state.poseLock = keepLock;
+            } else if (typeof supportY === 'function') {
                 const sY = supportY(phy.cargoPos.x, phy.cargoPos.z);
                 phy.cargoPos.y = sY + state.H * 0.5;
             }
@@ -43,6 +61,22 @@
             if (typeof syncHookToRigTaut === 'function') {
                 syncHookToRigTaut();
             }
+            // Snug pose starts with an unloaded hoist rope — clear any leftover
+            // elastic stretch / operator compensation from a previous lift so the
+            // next "Hạ" pays out instead of hauling the hook up.
+            if (phy.hoist && typeof resetHoistDynamicState === 'function') {
+                resetHoistDynamicState(phy.hoist);
+                phy.hoist.kin.copy(phy.hookPos);
+            } else if (phy.hoist) {
+                phy.hoist.off.set(0, 0, 0);
+                phy.hoist.offLP.set(0, 0, 0);
+                phy.hoist.vel.set(0, 0, 0);
+                phy.hoist.tensionN = 0;
+                phy.hoist.tensionLP = 0;
+                phy.hoist.kin.copy(phy.hookPos);
+            }
+            state.poseLock = true;
+            if (typeof syncPoseLockUI === 'function') syncPoseLockUI();
 
             // Cân bằng dầm ngáng nằm ngang trên kiện ở cao độ căng cáp
             const spec = (typeof getRigSpec === 'function') ? getRigSpec() : null;
@@ -73,13 +107,15 @@
             else if (state.beamType === 'container_spreader') yLugLow = 0.28;
             const beamTautY = worldLugY + 0.12 + lowerDrop + yLugLow;
             if (Array.isArray(phy.beams)) {
+                // Seed from kinematic pose so skewed cargo already leans the upper gear
+                // (do NOT force identity — that wiped askew take-up physics).
+                if (typeof seedBeamsFromKinematic === 'function') {
+                    seedBeamsFromKinematic();
+                }
                 phy.beams.forEach(b => {
-                    b.x.y = beamTautY;
-                    b.x.x = phy.hookPos.x;
-                    b.x.z = phy.hookPos.z;
+                    b.x.y = Math.max(b.x.y, beamTautY);
                     b.v.set(0, 0, 0);
                     b.w.set(0, 0, 0);
-                    b.q.identity();
                 });
             }
 
@@ -168,11 +204,16 @@
                 oogCargoH: state.oogCargoH,
 
                 beamType: state.beamType,
+                hookCount: state.hookCount || 1,
+                stsSizeFt: state.stsSizeFt || 40,
+                stsTwinLift: !!state.stsTwinLift,
+                stsAttachMode: state.stsAttachMode || 'direct',
                 slingType: state.slingType,
                 hwType: state.hwType,
                 slingLength: state.slingLength,
                 upperSlingLength: state.upperSlingLength,
                 lowerSlingLength: state.lowerSlingLength,
+                hangerSlingLength: state.hangerSlingLength,
                 unitSystem: state.unitSystem,
                 slingUserSet: state.slingUserSet,
                 wllPerLeg: state.wllPerLeg,
@@ -195,6 +236,7 @@
                 pullRadius: state.pullRadius,
                 spreaderYawDeg: state.spreaderYawDeg,
                 spreaderAlignWithCargo: Boolean(state.spreaderAlignWithCargo),
+                hookSwivelEnabled: state.hookSwivelEnabled !== false,
                 displayOptions: JSON.parse(JSON.stringify(state.displayOptions || {})),
 
                 // Mid-air suspended state persistence
@@ -286,11 +328,16 @@
 
             // 4. Restore Rigging Gear & Beam
             state.beamType = b.beamType;
+            if (b.hookCount != null) state.hookCount = b.hookCount;
+            if (b.stsSizeFt != null) state.stsSizeFt = b.stsSizeFt;
+            if (b.stsTwinLift != null) state.stsTwinLift = !!b.stsTwinLift;
+            if (b.stsAttachMode) state.stsAttachMode = b.stsAttachMode;
             state.slingType = b.slingType;
             state.hwType = b.hwType;
             state.slingLength = b.slingLength;
             state.upperSlingLength = b.upperSlingLength !== undefined ? b.upperSlingLength : null;
             state.lowerSlingLength = b.lowerSlingLength !== undefined ? b.lowerSlingLength : null;
+            state.hangerSlingLength = b.hangerSlingLength !== undefined ? b.hangerSlingLength : 2.00;
             if (b.unitSystem) state.unitSystem = b.unitSystem;
             state.slingUserSet = b.slingUserSet;
             state.wllPerLeg = b.wllPerLeg;
@@ -332,6 +379,7 @@
             state.pullRadius = b.pullRadius;
             state.spreaderYawDeg = b.spreaderYawDeg || 0;
             state.spreaderAlignWithCargo = Boolean(b.spreaderAlignWithCargo);
+            state.hookSwivelEnabled = b.hookSwivelEnabled !== false;
             if (b.displayOptions) {
                 state.displayOptions = { ...b.displayOptions };
                 if (typeof syncDisplayOptionsUI === 'function') syncDisplayOptionsUI();
@@ -342,6 +390,8 @@
             phy.damagePct = 0;
             if (phy.cargoVel) phy.cargoVel.set(0, 0, 0);
             if (phy.cargoOmega) phy.cargoOmega.set(0, 0, 0);
+            if (phy.cargoQuat) phy.cargoQuat.identity();
+            if (phy.cargoPos) { phy.cargoPos.x = 0; phy.cargoPos.z = 0; }
             if (phy.hookVel) phy.hookVel.set(0, 0, 0);
             phy.autoHoistActive = false;
             phy.hoistSpeed = 0;
@@ -409,13 +459,30 @@
         function resetAllToFactoryDefaults() {
             state.slingType = 'wire';
             state.hwType = 'bow_shackle';
-            state.slingLength = 3.8;
-            state.upperSlingLength = null;
-            state.lowerSlingLength = null;
+            state.slingLength = 8.0;
+            state.upperSlingLength = 8.0;
+            state.lowerSlingLength = 2.0;
+            state.hangerSlingLength = 2.0;
+            state.cableAdjustMode = false;
             state.unitSystem = 'metric';
-            state.slingUserSet = false;
+            state.slingUserSet = true;
             state.weightUserSet = false;
             phy.damagePct = 0;
+            phy.hookPos.set(0, 10.87, 0);
+            phy.hookTarget.set(0, 10.87, 0);
+            phy.hookVel.set(0, 0, 0);
+            phy.hoistSpeed = 0;
+            if (phy.cargoVel) phy.cargoVel.set(0, 0, 0);
+            if (phy.cargoOmega) phy.cargoOmega.set(0, 0, 0);
+            if (phy.cargoQuat) phy.cargoQuat.identity();
+            if (phy.cargoPos) { phy.cargoPos.x = 0; phy.cargoPos.z = 0; }
+            // Elastic hoist / wind field start from rest
+            if (phy.hoist && typeof resetHoistDynamicState === 'function') {
+                resetHoistDynamicState(phy.hoist);
+                phy.hoist.kin.copy(phy.hookPos);
+                phy.hoist.dafPeak = 1;
+            }
+            if (phy.windField) { phy.windField.u = 0; phy.windField.v = 0; phy.windField.w = 0; }
             state.wllPerLeg = 15.0;
             state.gear = freshGear();
             closeGearEditor();
@@ -483,7 +550,10 @@
                 horizU = Math.max(0.35, Math.hypot(lug.spanX / 2, lug.spanZ / 2));
             } else if (beamType === 'basket') {
                 horizU = Math.max(0.35, spanZ / 2);
-            } else if (beamType === 'frame' || beamType === 'container_spreader' || customBeamMeshes[beamType]) {
+            } else if (beamType === 'container_spreader') {
+                // Headblock sheave landings — NOT full twistlock span (that made upperDrop = 0).
+                horizU = Math.max(0.35, Math.hypot(0.55, 0.35));
+            } else if (beamType === 'frame' || customBeamMeshes[beamType]) {
                 horizU = Math.max(0.35, Math.hypot(spanX / 2, spanZ / 2));
             }
 
@@ -491,16 +561,20 @@
             const legCables = (phy.cables || []).filter(c => c.role === 'leg');
             const upperCables = (phy.cables || []).filter(c => c.role === 'upper');
             const hangerCables = (phy.cables || []).filter(c => c.role === 'hanger');
+            const stsDirectLift = beamType === 'container_spreader'
+                && (typeof isStsDirectAttach === 'function' ? isStsDirectAttach() : (state.stsAttachMode || 'direct') !== 'cable');
 
             let lowerDropActual = spec.lowerDrop;
             if (legCables.length) {
                 lowerDropActual = 0;
                 legCables.forEach(c => {
                     const hL = beamType === 'none' ? horizU : lowerPlanOffset(c.index || 0);
-                    const d = Math.sqrt(Math.max(0.04, c.L0 * c.L0 - hL * hL));
+                    const floor = stsDirectLift ? 0.002 : 0.04;
+                    const d = Math.sqrt(Math.max(floor, c.L0 * c.L0 - hL * hL));
                     if (d > lowerDropActual) lowerDropActual = d;
                 });
             }
+            if (stsDirectLift) lowerDropActual = Math.min(lowerDropActual, 0.08);
 
             let upperDropActual = 0;
             let beamStructuralSep = 0;
@@ -518,7 +592,7 @@
                 else if (beamType === 'lifting_beam') beamStructuralSep = 0.72;
                 else if (beamType === 'frame') beamStructuralSep = 0.60;
                 else if (beamType === 'basket') beamStructuralSep = 0.52;
-                else if (beamType === 'container_spreader') beamStructuralSep = 0.80;
+                else if (beamType === 'container_spreader') beamStructuralSep = stsDirectLift ? 0.55 : 0.80;
                 else if (beamType === 'cascaded' || beamType === 'modular_truss') {
                     let hangerDrop = spec.mast || 1.0;
                     if (hangerCables.length) {
@@ -597,6 +671,18 @@
                 }
             }
 
+            const btnSwivelOn = document.getElementById('btn-hook-swivel-on');
+            const btnSwivelOff = document.getElementById('btn-hook-swivel-off');
+            if (btnSwivelOn && btnSwivelOff) {
+                const swivel = state.hookSwivelEnabled !== false;
+                btnSwivelOn.className = swivel
+                    ? 'py-0.5 px-2 rounded text-[10px] font-bold bg-sky-600 text-white border border-sky-400 shadow transition'
+                    : 'py-0.5 px-2 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700 hover:text-white transition';
+                btnSwivelOff.className = !swivel
+                    ? 'py-0.5 px-2 rounded text-[10px] font-bold bg-sky-600 text-white border border-sky-400 shadow transition'
+                    : 'py-0.5 px-2 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700 hover:text-white transition';
+            }
+
             const inpCargoPitch = document.getElementById('inp-cargoPitch');
             if (inpCargoPitch) inpCargoPitch.value = state.cargoPitchTrimDeg;
             const vCargoPitch = document.getElementById('v-cargoPitch');
@@ -643,9 +729,11 @@
         function autoLevelTurnbuckles() {
             const { cogX, cogZ, lugs, beamType, slingLength } = state;
             const { spanX, spanZ } = getLPBoundingSpan();
+            const spec = (typeof getRigSpec === 'function') ? getRigSpec() : null;
 
-            // When Cargo is horizontal (0 deg tilt) and Master Link sits directly over (cogX, cogZ):
-            const nominalV = slingLength * 0.80;
+            // Target a level cargo: equalize geometric path lengths, then write
+            // per-leg L0 (not only turnbuckle delta) so tilted loads rebalance.
+            const nominalV = (state.lowerSlingLength != null ? state.lowerSlingLength : (spec ? spec.lower : slingLength)) * 0.80;
             const dists = lugs.map((p, i) => {
                 if (beamType === 'none') {
                     const dx = p.x - cogX;
@@ -665,11 +753,71 @@
             const avgD = dists.reduce((a, b) => a + b, 0) / Math.max(1, dists.length);
             state.legDeltaL = dists.map(d => THREE.MathUtils.clamp(d - avgD, -1.5, 1.5));
 
+            // Recalculate leg cable lengths so the shortest/longest match geometry
+            const baseLower = state.lowerSlingLength != null
+                ? state.lowerSlingLength
+                : (spec ? spec.lower : Math.max(2, avgD));
+            if (state.gear && state.gear.legs) {
+                state.gear.legs.forEach((leg, i) => {
+                    if (!leg) return;
+                    const len = Math.max(0.4, +(baseLower + (state.legDeltaL[i] || 0)).toFixed(2));
+                    leg.lengthM = len;
+                    leg.userSet = true;
+                });
+            }
+            // Keep tier mean as the tier setpoint (even integer when near band)
+            const meanLeg = dists.length
+                ? dists.reduce((a, b) => a + b, 0) / dists.length
+                : baseLower;
+            if (beamType !== 'none') {
+                let evenMean = Math.round(meanLeg / 2) * 2;
+                if (evenMean < 2) evenMean = 2;
+                if (Math.abs(meanLeg - evenMean) < 0.35) state.lowerSlingLength = evenMean;
+                else state.lowerSlingLength = +meanLeg.toFixed(2);
+            } else {
+                state.upperSlingLength = +meanLeg.toFixed(2);
+                state.slingLength = state.upperSlingLength;
+            }
+            if (state.heldCableL0) {
+                state.heldCableL0.leg = [];
+                state.heldCableL0.upper = [];
+            }
+            state.slingUserSet = true;
+
+            // Clear cargo trim so solver starts from a level attitude
+            state.cargoPitchTrimDeg = 0;
+            state.cargoRollTrimDeg = 0;
+
             computeRiggingMassBreakdown();
+            if (typeof syncCableRest === 'function') syncCableRest(false);
             rebuildSpreaderVisuals();
             syncLPSlidersFromState();
+            if (typeof syncSlingSlidersFromState === 'function') syncSlingSlidersFromState();
             autoPositionHookForLift(0.85);
-            document.getElementById('sim-status-text').textContent = '⚖️ Đã cân bằng tăng đơ theo CoG';
+            const status = document.getElementById('sim-status-text');
+            if (status) {
+                status.textContent = state.lang === 'en'
+                    ? '⚖️ Auto-balanced: cable lengths recalculated for level cargo'
+                    : '⚖️ Auto cân bằng: đã tính lại chiều dài các sợi cáp theo kiện ngang';
+            }
+        }
+
+        function markCableAdjustMode() {
+            state.cableAdjustMode = true;
+            const row = document.getElementById('row-cable-auto-balance');
+            if (row) row.classList.remove('hidden');
+        }
+
+        function syncCableAutoBalanceVisibility() {
+            const row = document.getElementById('row-cable-auto-balance');
+            if (!row) return;
+            if (state.cableAdjustMode) row.classList.remove('hidden');
+            else row.classList.add('hidden');
+        }
+
+        function hasCascadedHangerTier() {
+            const t = state.beamType;
+            return t === 'cascaded' || t === 'modular_truss' || t === 'inline4' || t === 'inline8' || t === 'spatial8';
         }
 
         // --- 12. UI EVENT BINDINGS & COLLAPSIBLE PANELS ---
@@ -721,9 +869,10 @@
         function syncOogCargoUI(initDefaults = false) {
             const panel = document.getElementById('oog-cargo-panel');
             if (!panel) return;
-            const isOpenTop = state.cargoType === 'opentop';
-            const isFlatRack = state.cargoType === 'flatrack';
-            if (!isOpenTop && !isFlatRack) {
+            const isOpenTop = state.cargoType === 'opentop' || state.cargoType === 'opentop40';
+            const isFlatRack = state.cargoType === 'flatrack' || state.cargoType === 'flatrack20';
+            const isPlatform = state.cargoType === 'platform' || state.cargoType === 'platform20';
+            if (!isOpenTop && !isFlatRack && !isPlatform) {
                 panel.classList.add('hidden');
                 return;
             }
@@ -733,9 +882,18 @@
                 state.oogHasCargo = true;
                 if (isOpenTop) {
                     state.oogTarp = true;
-                    state.oogCargoL = Math.round(state.L * 0.84 * 20) / 20;
-                    state.oogCargoW = Math.round(state.W * 0.88 * 20) / 20;
-                    state.oogCargoH = Math.round((state.H * 1.15) * 20) / 20;
+                    // OTR upright: L/W inside bay; H=Ø may exceed roof but must still fit in length
+                    state.oogCargoL = Math.round(state.L * 0.86 * 20) / 20;
+                    state.oogCargoW = Math.round(Math.min(state.W - 0.42, 0.95) * 20) / 20;
+                    // ~2 tires in 20ft / 3 in 40ft, slight over-height, never past ends
+                    const fitN = state.L > 9 ? 3 : 2;
+                    const maxDiaByL = (state.L - 0.44 - 0.08 * (fitN - 1)) / fitN;
+                    state.oogCargoH = Math.round(Math.min(state.H * 1.18, maxDiaByL) * 20) / 20;
+                } else if (isPlatform) {
+                    state.oogTarp = false;
+                    state.oogCargoL = Math.round(state.L * 0.72 * 10) / 10;
+                    state.oogCargoW = Math.round(Math.max(state.W * 1.15, 2.8) * 20) / 20;
+                    state.oogCargoH = Math.round(Math.max(1.8, state.H * 3.2) * 20) / 20;
                 } else {
                     state.oogTarp = false;
                     state.oogCargoL = Math.round(state.L * 0.72 * 10) / 10;
@@ -748,7 +906,9 @@
             if (titleEl) {
                 titleEl.textContent = isOpenTop
                     ? L('2B. Open Top Cargo & Tarpaulin', '2B. Hàng Open Top & Vải Bạt Nóc')
-                    : L('2B. Flat Rack OOG Cargo', '2B. Hàng Quá Khổ Flat Rack (OOG)');
+                    : (isPlatform
+                        ? L('2B. Platform Deck Cargo (OOG)', '2B. Hàng Trên Sàn Platform (OOG)')
+                        : L('2B. Flat Rack OOG Cargo', '2B. Hàng Quá Khổ Flat Rack (OOG)'));
             }
 
             const btnCargo = document.getElementById('btn-oog-has-cargo');
@@ -782,18 +942,27 @@
             const inpW = document.getElementById('inp-oogW');
             const inpL = document.getElementById('inp-oogL');
             if (inpH) {
+                // OT: Ø may exceed roof, but circular tire still must fit inside bay length
+                if (isOpenTop) {
+                    const fitN = state.L > 9 ? 3 : 2;
+                    const maxDiaByL = (state.L - 0.44 - 0.08 * (fitN - 1)) / fitN;
+                    inpH.max = Math.max(state.H * 1.35, maxDiaByL).toFixed(2);
+                    if (state.oogCargoH > maxDiaByL) state.oogCargoH = Math.round(maxDiaByL * 100) / 100;
+                }
                 inpH.value = state.oogCargoH;
                 document.getElementById('v-oogH').textContent = state.oogCargoH.toFixed(2);
             }
             if (inpW) {
-                inpW.max = isOpenTop ? (state.W - 0.14).toFixed(2) : '5.20';
-                if (isOpenTop && state.oogCargoW > state.W - 0.14) state.oogCargoW = Math.max(1.0, state.W - 0.16);
+                // Open Top: never over-width (side walls). FR/Platform may go OOG width.
+                const otMaxW = Math.max(0.85, state.W - 0.40);
+                inpW.max = isOpenTop ? otMaxW.toFixed(2) : '5.20';
+                if (isOpenTop && state.oogCargoW > otMaxW) state.oogCargoW = Math.min(0.95, otMaxW);
                 inpW.value = state.oogCargoW;
                 document.getElementById('v-oogW').textContent = state.oogCargoW.toFixed(2);
             }
             if (inpL) {
-                inpL.max = isOpenTop ? (state.L - 0.24).toFixed(1) : '14.5';
-                if (isOpenTop && state.oogCargoL > state.L - 0.24) state.oogCargoL = Math.max(1.5, state.L - 0.26);
+                inpL.max = isOpenTop ? (state.L - 0.40).toFixed(1) : '14.5';
+                if (isOpenTop && state.oogCargoL > state.L - 0.40) state.oogCargoL = Math.max(1.5, state.L - 0.40);
                 inpL.value = state.oogCargoL;
                 document.getElementById('v-oogL').textContent = state.oogCargoL.toFixed(2);
             }
@@ -804,7 +973,7 @@
                     badge.textContent = L('EMPTY TARE', 'CONT RỖNG');
                     badge.className = 'text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-700 text-slate-300 border border-slate-500';
                 } else {
-                    const deckOffset = isOpenTop ? 0.18 : 0.40;
+                    const deckOffset = isOpenTop ? 0.18 : (isPlatform ? Math.max(0.12, state.H) : 0.40);
                     const overH = (state.oogCargoH + deckOffset) - state.H;
                     const overW = state.oogCargoW - state.W;
                     const overL = state.oogCargoL - state.L;
@@ -924,7 +1093,8 @@
             const isNone = type === 'none';
             const isBasket = type === 'basket';
             const isFrame = type === 'frame' || type === 'container_spreader';
-            const isCascade = type === 'cascaded' || type === 'modular_truss';
+            const isCascade = type === 'cascaded' || type === 'modular_truss'
+                || type === 'inline4' || type === 'inline8' || type === 'spatial8';
             const nLugs = (state.lugs && state.lugs.length) ? state.lugs.length : 4;
 
             const tier1 = [];
@@ -974,8 +1144,12 @@
                 }
 
                 if (isCascade) {
-                    hangers.push({ id: 'H1', code: 'H1', role: 'hanger', index: 0, tier: 1.5, titleVi: 'Cáp treo dầm H1 (Dầm Chính ➔ Dầm Phụ Trước)', titleEn: 'Hanger H1 (Top Beam ➔ Front Sub-beam)', shortLabel: 'H1', branch: 'Dầm Phụ 1' });
-                    hangers.push({ id: 'H2', code: 'H2', role: 'hanger', index: 1, tier: 1.5, titleVi: 'Cáp treo dầm H2 (Dầm Chính ➔ Dầm Phụ Sau)', titleEn: 'Hanger H2 (Top Beam ➔ Rear Sub-beam)', shortLabel: 'H2', branch: 'Dầm Phụ 2' });
+                    hangers.push({ id: 'H1', code: 'H1', role: 'hanger', index: 0, tier: 2, titleVi: 'Cáp treo dầm H1 (Dầm Chính ➔ Dầm Phụ 1)', titleEn: 'Hanger H1 (Top Beam ➔ Sub-beam 1)', shortLabel: 'H1', branch: 'Dầm Phụ 1' });
+                    hangers.push({ id: 'H2', code: 'H2', role: 'hanger', index: 1, tier: 2, titleVi: 'Cáp treo dầm H2 (Dầm Chính ➔ Dầm Phụ 2)', titleEn: 'Hanger H2 (Top Beam ➔ Sub-beam 2)', shortLabel: 'H2', branch: 'Dầm Phụ 2' });
+                    if (type === 'spatial8' || type === 'inline8') {
+                        hangers.push({ id: 'H3', code: 'H3', role: 'hanger', index: 2, tier: 2, titleVi: 'Cáp treo dầm H3', titleEn: 'Hanger H3', shortLabel: 'H3', branch: 'Dầm Phụ 3' });
+                        hangers.push({ id: 'H4', code: 'H4', role: 'hanger', index: 3, tier: 2, titleVi: 'Cáp treo dầm H4', titleEn: 'Hanger H4', shortLabel: 'H4', branch: 'Dầm Phụ 4' });
+                    }
                 }
 
                 // Tier 2: Lower Legs (Beam ➔ Cargo Lugs)
@@ -1011,12 +1185,13 @@
             const isNone = type === 'none';
             const isBasket = type === 'basket';
             const isFrame = type === 'frame' || type === 'container_spreader';
-            const isCascade = type === 'cascaded' || type === 'modular_truss';
+            const isCascade = type === 'cascaded' || type === 'modular_truss'
+                || type === 'inline4' || type === 'inline8' || type === 'spatial8';
             const nLugs = (state.lugs && state.lugs.length) ? state.lugs.length : 4;
 
             const tier1Count = isNone ? nLugs : (isBasket || isFrame ? 4 : 2);
             const tier2Count = isNone ? 0 : nLugs;
-            const hangerCount = isCascade ? 2 : 0;
+            const hangerCount = !isCascade ? 0 : ((type === 'spatial8' || type === 'inline8') ? 4 : 2);
             const totalSlings = tier1Count + tier2Count + hangerCount;
 
             const topShackles = isNone ? nLugs : (isBasket || isFrame ? 4 : 2);
@@ -1066,12 +1241,39 @@
             const elBeamDesc = document.getElementById('bom-beam-desc');
 
             if (elHookCount) {
-                elHookCount.textContent = isEn ? '1 Hook · 1 Link' : '1 Móc · 1 Khuyên';
+                if (state.beamType === 'container_spreader') {
+                    elHookCount.textContent = isEn
+                        ? `STS ${state.stsSizeFt || 40}ft Spreader`
+                        : `Ngáng STS ${state.stsSizeFt || 40}ft`;
+                } else {
+                    const nHook = (state.hookCount || 1) >= 2 ? 2 : 1;
+                    elHookCount.textContent = isEn
+                        ? `${nHook} Hook${nHook > 1 ? 's' : ''} · 1 Link`
+                        : `${nHook} Móc · 1 Khuyên`;
+                }
             }
             if (elHookDesc) {
-                elHookDesc.textContent = isEn
-                    ? (bom.tier1Count > 2 ? '1 Crane Hook · 1 Master Link Quad Assembly' : '1 Crane Hook · 1 Oblong Master Link')
-                    : (bom.tier1Count > 2 ? '1 Móc cẩu Liebherr · 1 Vòng khuyên chính (Quad/Sub-links)' : '1 Móc cẩu Liebherr · 1 Vòng khuyên chính Master Link');
+                if (state.beamType === 'container_spreader') {
+                    const direct = (typeof isStsDirectAttach === 'function')
+                        ? isStsDirectAttach()
+                        : (state.stsAttachMode || 'direct') !== 'cable';
+                    elHookDesc.textContent = isEn
+                        ? (direct
+                            ? 'Headblock + twistlock direct on container (no lower slings)'
+                            : 'Headblock + underside shackles + cable/chain to cargo lugs')
+                        : (direct
+                            ? 'Headblock + twistlock gắp trực tiếp nóc container (không cáp dưới)'
+                            : 'Headblock + ma ní dưới ngáng + cáp/xích xuống tai kiện');
+                } else {
+                    const nHook = (state.hookCount || 1) >= 2 ? 2 : 1;
+                    elHookDesc.textContent = isEn
+                        ? (nHook > 1
+                            ? '2 Crane Hooks (tandem / dual crane) · Master Link Assembly'
+                            : (bom.tier1Count > 2 ? '1 Crane Hook · 1 Master Link Quad Assembly' : '1 Crane Hook · 1 Oblong Master Link'))
+                        : (nHook > 1
+                            ? '2 Móc · 2 cần cẩu làm hàng cùng lúc · Cụm vòng khuyên chính'
+                            : (bom.tier1Count > 2 ? '1 Móc cẩu Liebherr · 1 Vòng khuyên chính (Quad/Sub-links)' : '1 Móc cẩu Liebherr · 1 Vòng khuyên chính Master Link'));
+                }
             }
 
             if (elSlingCount) {
@@ -1152,6 +1354,7 @@
             };
 
             renderPills('tier1-quick-selector', topo.tier1);
+            renderPills('hanger-quick-selector', topo.hangers);
             renderPills('tier2-quick-selector', topo.tier2);
 
             const legacyCont = document.getElementById('cable-quick-selector');
@@ -1165,7 +1368,7 @@
             const sel = (state.gear && state.gear.selection) ? state.gear.selection.find(s => s.kind === 'sling') : null;
             if (!sel) {
                 box.classList.add('hidden');
-                document.querySelectorAll('#tier1-quick-selector button, #tier2-quick-selector button').forEach(p => {
+                document.querySelectorAll('#tier1-quick-selector button, #tier2-quick-selector button, #hanger-quick-selector button').forEach(p => {
                     p.classList.remove('bg-sky-500', 'text-white', 'border-sky-300', 'shadow-sm', 'ring-1', 'ring-sky-300');
                     p.classList.add('bg-slate-800', 'text-slate-300', 'border-slate-700');
                 });
@@ -1217,11 +1420,13 @@
             if (rec && rec.lengthM != null) {
                 lenM = rec.lengthM;
             } else if (sel.role === 'upper') {
-                lenM = state.upperSlingLength != null ? state.upperSlingLength : (spec ? spec.topLeg : (state.slingLength || 4.5));
+                lenM = state.upperSlingLength != null ? state.upperSlingLength : (spec ? spec.topLeg : (state.slingLength || 8.0));
             } else if (sel.role === 'leg') {
-                lenM = state.lowerSlingLength != null ? state.lowerSlingLength : (spec ? spec.lower : 2.8);
+                lenM = state.lowerSlingLength != null ? state.lowerSlingLength : (spec ? spec.lower : 2.0);
+            } else if (sel.role === 'hanger') {
+                lenM = state.hangerSlingLength != null ? state.hangerSlingLength : (spec ? (spec.hanger || 2.0) : 2.0);
             } else {
-                lenM = 3.0;
+                lenM = 2.0;
             }
 
             const dispVal = toDisplayLen(lenM);
@@ -1231,7 +1436,7 @@
             if (numSel) numSel.value = dispVal.toFixed(2);
 
             // Highlight pills
-            document.querySelectorAll('#tier1-quick-selector button, #tier2-quick-selector button').forEach(p => {
+            document.querySelectorAll('#tier1-quick-selector button, #tier2-quick-selector button, #hanger-quick-selector button').forEach(p => {
                 const isCurrent = matched && p.textContent.trim() === matched.shortLabel;
                 if (isCurrent) {
                     p.classList.add('bg-sky-500', 'text-white', 'border-sky-300', 'shadow-sm', 'ring-1', 'ring-sky-300');
@@ -1250,11 +1455,13 @@
             }
             updateUnitDisplayElements();
 
-            const upperM = state.upperSlingLength != null ? state.upperSlingLength : (spec ? spec.topLeg : 4.5);
-            const lowerM = state.lowerSlingLength != null ? state.lowerSlingLength : (spec ? spec.lower : 2.8);
+            const upperM = state.upperSlingLength != null ? state.upperSlingLength : (spec ? spec.topLeg : 8.0);
+            const lowerM = state.lowerSlingLength != null ? state.lowerSlingLength : (spec ? spec.lower : 2.0);
+            const hangerM = state.hangerSlingLength != null ? state.hangerSlingLength : (spec ? (spec.hanger || 2.0) : 2.0);
 
             const dispUpper = toDisplayLen(upperM);
             const dispLower = toDisplayLen(lowerM);
+            const dispHanger = toDisplayLen(hangerM);
 
             const inpUpper = document.getElementById('inp-upperL');
             const numUpper = document.getElementById('num-upperL');
@@ -1270,9 +1477,20 @@
             if (numLower) numLower.value = dispLower.toFixed(2);
             if (vLower) vLower.textContent = dispLower.toFixed(2);
 
+            const inpHanger = document.getElementById('inp-hangerL');
+            const numHanger = document.getElementById('num-hangerL');
+            const vHanger = document.getElementById('v-hangerL');
+            if (inpHanger) inpHanger.value = dispHanger.toFixed(2);
+            if (numHanger) numHanger.value = dispHanger.toFixed(2);
+            if (vHanger) vHanger.textContent = dispHanger.toFixed(2);
+            const lblHangerLen = document.getElementById('lbl-hanger-len-indicator');
+            if (lblHangerLen) lblHangerLen.textContent = `${dispHanger.toFixed(2)} m`;
+
             // 0. Spreader Beam Length & Mass Sync
             let beamLenM = 12.2;
-            if (typeof memberSpec === 'function') {
+            if (state.beamType === 'container_spreader' && typeof isoTwistlockSpan === 'function') {
+                beamLenM = isoTwistlockSpan(state.stsSizeFt || 40).spanX;
+            } else if (typeof memberSpec === 'function') {
                 const m = memberSpec('main');
                 if (m && m.length) beamLenM = m.length;
             } else if (state.gear && state.gear.members && state.gear.members.main && state.gear.members.main.lengthM) {
@@ -1291,6 +1509,7 @@
                 const massKg = Math.round(400 + beamLenM * 55);
                 vBeamMass.textContent = `Tự trọng: ~${massKg} kg`;
             }
+            if (typeof updateStsBeamDimUI === 'function') updateStsBeamDimUI();
 
             // Sync Tier 1 Angle Readouts (β to horizontal, α to vertical, LAF factor)
             const horizU = spec ? spec.horizU : Math.max(0.5, (state.L || 6.0) / 4);
@@ -1341,27 +1560,72 @@
             if (numWll) numWll.value = (state.wllPerLeg || 15.0).toFixed(1);
             if (vWll) vWll.textContent = (state.wllPerLeg || 15.0).toFixed(1);
 
-            const rowLower = document.getElementById('row-lower-sling');
-            const lblUpperTitle = document.getElementById('lbl-upper-title');
-            const lblLowerTitle = document.getElementById('lbl-lower-title');
-            const angleUpper = spec ? spec.betaDeg : 60.0;
-            const angleLower = (phy.legAngleDeg && phy.legAngleDeg[0] != null) ? phy.legAngleDeg[0] : 90.0;
-
-            if (state.beamType === 'none') {
-                if (rowLower) rowLower.classList.add('hidden');
-                if (lblUpperTitle) lblUpperTitle.textContent = state.lang === 'en'
-                    ? `Tier 1 (Direct Bridle: Hook ➔ Cargo) [α: ${angleUpper.toFixed(0)}°]:`
-                    : `Tầng 1 (Cáp chùm trực tiếp — Móc ➔ Tai cẩu) [α: ${angleUpper.toFixed(0)}°]:`;
-            } else {
-                if (rowLower) rowLower.classList.remove('hidden');
-                if (lblUpperTitle) lblUpperTitle.textContent = state.lang === 'en'
-                    ? `Tier 1 (Top Bridle: Hook ➔ Beam) [α: ${angleUpper.toFixed(0)}°]:`
-                    : `Tầng 1 (Top Bridle — Móc ➔ Dầm) [α: ${angleUpper.toFixed(0)}°]:`;
-                if (lblLowerTitle) lblLowerTitle.textContent = state.lang === 'en'
-                    ? `Tier 2 (Lower Legs: Beam ➔ Cargo) [α: ${angleLower.toFixed(0)}°]:`
-                    : `Tầng 2 (Lower Legs — Dầm ➔ Tai Cẩu) [α: ${angleLower.toFixed(0)}°]:`;
+            const inpSlingDia = document.getElementById('inp-sling-dia');
+            const numSlingDia = document.getElementById('num-sling-dia');
+            const badgeSlingSize = document.getElementById('badge-sling-size');
+            const readoutMass = document.getElementById('readout-sling-unit-mass');
+            const getPhysSpec = (typeof CAE !== 'undefined' && CAE.getSlingPhysicalSpec)
+                || (typeof window !== 'undefined' && window.CAE && window.CAE.getSlingPhysicalSpec);
+            if (getPhysSpec) {
+                const spec = getPhysSpec(state.slingType || 'wire', state.wllPerLeg || 15.0, state.slingDiaMm);
+                if (badgeSlingSize) badgeSlingSize.textContent = spec.specText;
+                if (inpSlingDia && document.activeElement !== inpSlingDia) inpSlingDia.value = spec.diaMm;
+                if (numSlingDia && document.activeElement !== numSlingDia) numSlingDia.value = spec.diaMm;
+                if (readoutMass) {
+                    const singleMassKg = spec.computeMassKg(upperM, 1);
+                    readoutMass.textContent = `~${spec.linearMassKgPerM.toFixed(2)} kg/m · ${singleMassKg.toFixed(1)} kg/sợi`;
+                }
             }
 
+            const rowLower = document.getElementById('row-lower-sling');
+            const rowHanger = document.getElementById('row-hanger-sling');
+            const lblUpperTitle = document.getElementById('lbl-upper-title');
+            const lblLowerTitle = document.getElementById('lbl-lower-title');
+            const lblHangerTitle = document.getElementById('lbl-hanger-title');
+            const angleUpper = spec ? spec.betaDeg : 42.5;
+            const angleLower = (phy.legAngleDeg && phy.legAngleDeg[0] != null) ? phy.legAngleDeg[0] : 90.0;
+            const showHanger = hasCascadedHangerTier();
+
+            const stsDirectUi = state.beamType === 'container_spreader'
+                && (typeof isStsDirectAttach === 'function'
+                    ? isStsDirectAttach()
+                    : (state.stsAttachMode || 'direct') !== 'cable');
+            if (state.beamType === 'none' || stsDirectUi) {
+                if (rowLower) rowLower.classList.add('hidden');
+                if (rowHanger) rowHanger.classList.add('hidden');
+                if (lblUpperTitle) {
+                    if (stsDirectUi) {
+                        lblUpperTitle.textContent = state.lang === 'en'
+                            ? `Hoist falls (Headblock) [β: ${angleUpper.toFixed(0)}°]:`
+                            : `Cáp tời → Headblock [β: ${angleUpper.toFixed(0)}°]:`;
+                    } else {
+                        lblUpperTitle.textContent = state.lang === 'en'
+                            ? `Tier 1 (Direct Bridle: Hook ➔ Cargo) [β: ${angleUpper.toFixed(0)}°]:`
+                            : `Tầng 1 (Cáp chùm trực tiếp — Móc ➔ Tai cẩu) [β: ${angleUpper.toFixed(0)}°]:`;
+                    }
+                }
+            } else {
+                if (rowLower) rowLower.classList.remove('hidden');
+                if (rowHanger) {
+                    if (showHanger) rowHanger.classList.remove('hidden');
+                    else rowHanger.classList.add('hidden');
+                }
+                if (lblUpperTitle) lblUpperTitle.textContent = state.lang === 'en'
+                    ? `Tier 1 (Top Bridle: Hook ➔ Beam) [β: ${angleUpper.toFixed(0)}°]:`
+                    : `Tầng 1 (Top Bridle — Móc ➔ Dầm) [β: ${angleUpper.toFixed(0)}°]:`;
+                if (lblLowerTitle) lblLowerTitle.textContent = state.lang === 'en'
+                    ? (showHanger
+                        ? `Tier 3 (Lower Legs: Sub-beam ➔ Cargo) [α: ${angleLower.toFixed(0)}°]:`
+                        : `Tier 2 (Lower Legs: Beam ➔ Cargo) [α: ${angleLower.toFixed(0)}°]:`)
+                    : (showHanger
+                        ? `Tầng 3 (Lower Legs — Dầm phụ ➔ Tai Cẩu) [α: ${angleLower.toFixed(0)}°]:`
+                        : `Tầng 2 (Lower Legs — Dầm ➔ Tai Cẩu) [α: ${angleLower.toFixed(0)}°]:`);
+                if (lblHangerTitle) lblHangerTitle.textContent = state.lang === 'en'
+                    ? `Tier 2 (Hanger: Main beam ➔ Sub-beam) [L: ${hangerM.toFixed(1)}m]:`
+                    : `Tầng 2 (Hanger — Dầm chính ➔ Dầm phụ) [L: ${hangerM.toFixed(1)}m]:`;
+            }
+
+            syncCableAutoBalanceVisibility();
             updateCableQuickSelector();
             syncCableControlsSelection();
             updateRiggingBOMUI();
@@ -1375,11 +1639,235 @@
         window.syncSlingSlidersFromState = syncSlingSlidersFromState;
         window.updateCableQuickSelector = updateCableQuickSelector;
 
+        /** Toggle §3.2: STS ISO twistlock pitches vs generic beam L slider. */
+        function updateStsBeamDimUI() {
+            const isSts = state.beamType === 'container_spreader';
+            const stsPanel = document.getElementById('sts-size-panel');
+            const genPanel = document.getElementById('generic-beam-dim-panel');
+            const autoFit = document.getElementById('btn-beam-auto-fit');
+            const title = document.getElementById('lbl-beam-dim-title');
+            if (stsPanel) {
+                stsPanel.classList.toggle('hidden', !isSts);
+                stsPanel.classList.toggle('flex', isSts);
+            }
+            if (genPanel) genPanel.classList.toggle('hidden', isSts);
+            if (autoFit) autoFit.classList.toggle('hidden', isSts);
+            if (title) {
+                title.textContent = isSts
+                    ? '3.2 Cỡ Ngáng STS — Pitch Twistlock ISO'
+                    : '3.2 Kích Thước Dầm Ngáng (Spreader Span)';
+            }
+            if (!isSts) return;
+
+            const ft = state.stsTwinLift ? 40 : (Number(state.stsSizeFt) || 40);
+            const iso = (typeof isoTwistlockSpan === 'function')
+                ? isoTwistlockSpan(ft)
+                : { spanX: 11.985, spanZ: 2.259 };
+            const pitchEl = document.getElementById('v-sts-pitch');
+            const ftLbl = document.getElementById('v-sts-ft-label');
+            const massEl = document.getElementById('v-sts-mass');
+            if (pitchEl) pitchEl.textContent = `${iso.spanX.toFixed(3)} × ${iso.spanZ.toFixed(3)} m`;
+            if (ftLbl) {
+                ftLbl.textContent = state.stsTwinLift
+                    ? '· Twin 2×20 ft'
+                    : `· ${ft} ft`;
+            }
+            if (massEl) {
+                const massT = ft <= 20 ? 8.5 : (ft >= 45 ? 11.2 : 9.5);
+                massEl.textContent = `Tự trọng: ~${massT.toFixed(1)} t`;
+            }
+            document.querySelectorAll('.btn-sts-size').forEach(btn => {
+                const btnFt = parseInt(btn.dataset.stsFt, 10);
+                const on = !state.stsTwinLift && btnFt === ft;
+                btn.classList.toggle('border-amber-500/80', on);
+                btn.classList.toggle('bg-amber-950/50', on);
+                btn.classList.toggle('shadow-sm', on);
+                btn.classList.toggle('border-slate-700', !on);
+                btn.classList.toggle('bg-slate-950/90', !on);
+                const first = btn.querySelector('div');
+                if (first) {
+                    first.classList.toggle('text-amber-200', on);
+                    first.classList.toggle('text-white', !on);
+                }
+            });
+            const attach = state.stsAttachMode === 'cable' ? 'cable' : 'direct';
+            document.querySelectorAll('.btn-sts-attach').forEach(btn => {
+                const on = btn.dataset.stsAttach === attach;
+                const isDirect = btn.dataset.stsAttach === 'direct';
+                btn.classList.toggle('border-amber-500/80', on && isDirect);
+                btn.classList.toggle('bg-amber-950/50', on && isDirect);
+                btn.classList.toggle('border-sky-500/80', on && !isDirect);
+                btn.classList.toggle('bg-sky-950/40', on && !isDirect);
+                btn.classList.toggle('shadow-sm', on);
+                btn.classList.toggle('border-slate-700', !on);
+                btn.classList.toggle('bg-slate-950/90', !on);
+                const first = btn.querySelector('div');
+                if (first) {
+                    first.classList.toggle('text-amber-200', on && isDirect);
+                    first.classList.toggle('text-sky-200', on && !isDirect);
+                    first.classList.toggle('text-white', !on);
+                }
+            });
+            const chkTwin = document.getElementById('chk-sts-twin');
+            if (chkTwin) chkTwin.checked = !!state.stsTwinLift;
+        }
+        window.updateStsBeamDimUI = updateStsBeamDimUI;
+
+        /** STS attach: direct twistlock on roof vs cable/chain legs from underside pick points. */
+        function applyStsAttachMode(mode) {
+            const next = mode === 'cable' ? 'cable' : 'direct';
+            state.stsAttachMode = next;
+            state.beamType = 'container_spreader';
+            state.hookCount = 1;
+            state.hookSwivelEnabled = false;
+            if (phy) {
+                phy._stsYawLockRad = THREE.MathUtils.degToRad(
+                    state.spreaderAlignWithCargo ? (state.cargoYawDeg || 0) : (state.spreaderYawDeg || 0)
+                );
+            }
+            if (next === 'direct') {
+                state.lowerSlingLength = 0.06;
+                state.upperSlingLength = Math.max(1.2, state.upperSlingLength || 2.4);
+                state.slingLength = state.upperSlingLength;
+                state.slingUserSet = true;
+                state.lugElevPreset = 'top';
+                state.pendingConform = 'structural';
+                // Drop any stale per-leg lengths / held L0 so twistlock gap stays flush
+                if (state.gear && state.gear.legs) {
+                    state.gear.legs.forEach(leg => {
+                        if (!leg) return;
+                        leg.lengthM = null;
+                        leg.userSet = false;
+                    });
+                }
+                if (state.heldCableL0 && state.heldCableL0.leg) state.heldCableL0.leg = [];
+                state.legDeltaL = [0, 0, 0, 0];
+            } else {
+                // Normal flexible legs with shackle pick points under the spreader
+                if (state.lowerSlingLength == null || state.lowerSlingLength < 0.8) {
+                    state.lowerSlingLength = 2.0;
+                }
+                state.upperSlingLength = Math.max(1.2, state.upperSlingLength || 2.4);
+                state.slingLength = state.upperSlingLength;
+                state.slingUserSet = true;
+                state.pendingConform = 'structural';
+            }
+            if (typeof setSymmetricLugsFromDimensions === 'function') setSymmetricLugsFromDimensions();
+            updateStsBeamDimUI();
+            if (typeof flushRebuildSpreaderVisuals === 'function') flushRebuildSpreaderVisuals();
+            if (typeof rebuildCargoAndRig === 'function') rebuildCargoAndRig(false);
+            else if (typeof rebuildSpreaderVisuals === 'function') rebuildSpreaderVisuals();
+            if (typeof syncHookToRigTaut === 'function') syncHookToRigTaut();
+            syncSlingSlidersFromState();
+            if (typeof updateRiggingBOMUI === 'function') updateRiggingBOMUI();
+        }
+        window.applyStsAttachMode = applyStsAttachMode;
+
+        /**
+         * Apply STS telescopic size: ISO 1161 twistlock centres (not outer / phủ bì).
+         * @param {20|40|45|'twin'} size
+         */
+        function applyStsSpreaderSize(size, opts) {
+            const syncCargo = !(opts && opts.skipCargo === true);
+            let ft = 40;
+            const isTwin = (size === 'twin' || size === 'Twin');
+            if (isTwin) {
+                state.stsTwinLift = true;
+                state.stsSizeFt = 40;
+                ft = 40;
+            } else {
+                state.stsTwinLift = false;
+                ft = Number(size) || 40;
+                if (ft <= 20) ft = 20;
+                else if (ft >= 45) ft = 45;
+                else ft = 40;
+                state.stsSizeFt = ft;
+            }
+
+            const iso = (typeof isoTwistlockSpan === 'function')
+                ? isoTwistlockSpan(ft)
+                : { spanX: ft <= 20 ? 5.853 : (ft >= 45 ? 13.557 : 11.985), spanZ: 2.259, outerL: ft <= 20 ? 6.058 : (ft >= 45 ? 13.716 : 12.192), outerW: 2.438, outerH: ft >= 45 ? 2.896 : 2.591, cargoId: ft <= 20 ? 'container' : (ft >= 45 ? 'iso40hc' : 'iso40') };
+
+            if (!state.gear) state.gear = {};
+            if (!state.gear.beam) state.gear.beam = {};
+            // Beam span = twistlock pin centres (ISO), never outer envelope
+            state.gear.beam.lengthM = iso.spanX;
+            state.gear.beam.widthM = iso.spanZ;
+            state.customBeamLengthMode = true;
+
+            if (!state.gear.members) state.gear.members = {};
+            if (!state.gear.members.spreader_main) state.gear.members.spreader_main = {};
+            state.gear.members.spreader_main.lengthM = iso.spanX;
+            if (!state.gear.members.main) state.gear.members.main = {};
+            state.gear.members.main.lengthM = iso.spanX;
+
+            state.beamType = 'container_spreader';
+            state.hookCount = 1;
+            // STS trolley headblock does not free-swivel like a hook block
+            state.hookSwivelEnabled = false;
+            if (phy) phy._stsYawLockRad = THREE.MathUtils.degToRad(
+                state.spreaderAlignWithCargo ? (state.cargoYawDeg || 0) : (state.spreaderYawDeg || 0)
+            );
+            if (!state.stsAttachMode) state.stsAttachMode = 'direct';
+            state.upperSlingLength = Math.max(1.2, state.upperSlingLength || 2.4);
+            if (state.stsAttachMode === 'cable') {
+                if (state.lowerSlingLength == null || state.lowerSlingLength < 0.8) state.lowerSlingLength = 2.0;
+            } else {
+                state.lowerSlingLength = 0.06;
+                state.lugElevPreset = 'top';
+            }
+            state.slingLength = state.upperSlingLength;
+            state.slingUserSet = true;
+            state.pendingConform = 'structural';
+
+            if (syncCargo) {
+                if (isTwin) {
+                    // Twin-lift: two 20ft dry vans end-to-end (~40ft cell), CAD twin spreader
+                    state.L = 12.192;
+                    state.W = 2.438;
+                    state.H = 2.591;
+                    state.cargoType = 'container';
+                    state.weight = Math.max(36, state.weight || 40);
+                    state.weightUserSet = true;
+                    document.querySelectorAll('#cargo-library .card-btn').forEach(c => {
+                        c.classList.toggle('active', c.dataset.cargo === 'container');
+                    });
+                } else if (iso.outerL) {
+                    state.L = iso.outerL;
+                    state.W = iso.outerW || 2.438;
+                    state.H = iso.outerH || 2.591;
+                    if (iso.cargoId) {
+                        state.cargoType = iso.cargoId;
+                        document.querySelectorAll('#cargo-library .card-btn').forEach(c => {
+                            c.classList.toggle('active', c.dataset.cargo === iso.cargoId);
+                        });
+                    }
+                }
+            }
+
+            if (typeof setSymmetricLugsFromDimensions === 'function') setSymmetricLugsFromDimensions();
+            updateStsBeamDimUI();
+
+            // Highlight STS card in store
+            document.querySelectorAll('#beam-store .card-btn').forEach(c => {
+                c.classList.toggle('active', c.dataset.beam === 'container_spreader');
+            });
+
+            if (typeof flushRebuildSpreaderVisuals === 'function') flushRebuildSpreaderVisuals();
+            if (typeof rebuildCargoAndRig === 'function') rebuildCargoAndRig(true);
+            else if (typeof rebuildSpreaderVisuals === 'function') rebuildSpreaderVisuals();
+            if (typeof syncHookToRigTaut === 'function') syncHookToRigTaut();
+            syncSlingSlidersFromState();
+            if (typeof updateRiggingBOMUI === 'function') updateRiggingBOMUI();
+        }
+        window.applyStsSpreaderSize = applyStsSpreaderSize;
+
         function initSlingControls() {
             // 0. Spreader Beam Length Controls (Thanh kéo ngang Chiều dài Dầm)
             const inpBeamL = document.getElementById('inp-beamL');
             const numBeamL = document.getElementById('num-beamL');
             const onBeamLengthChange = (valRaw, source) => {
+                if (state.beamType === 'container_spreader') return; // STS: ISO pitches only
                 const val = parseFloat(valRaw);
                 if (isNaN(val) || val <= 0) return;
                 const minL = 1.0;
@@ -1413,6 +1901,7 @@
 
             document.querySelectorAll('.btn-step-beam').forEach(btn => {
                 btn.addEventListener('click', () => {
+                    if (state.beamType === 'container_spreader') return;
                     const delta = parseFloat(btn.dataset.delta || 0);
                     const cur = parseFloat(numBeamL ? numBeamL.value : (inpBeamL ? inpBeamL.value : 12.2));
                     const next = Math.max(1.0, +(cur + delta).toFixed(2));
@@ -1422,14 +1911,35 @@
 
             document.querySelectorAll('.btn-preset-beam').forEach(btn => {
                 btn.addEventListener('click', () => {
+                    if (state.beamType === 'container_spreader') return;
                     const val = parseFloat(btn.dataset.val);
                     if (!isNaN(val)) onBeamLengthChange(val, 'number');
                 });
             });
 
+            document.querySelectorAll('.btn-sts-size').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const ft = parseInt(btn.dataset.stsFt, 10);
+                    if (!ft) return;
+                    applyStsSpreaderSize(ft);
+                });
+            });
+            document.querySelectorAll('.btn-sts-attach').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    applyStsAttachMode(btn.dataset.stsAttach || 'direct');
+                });
+            });
+            const chkTwin = document.getElementById('chk-sts-twin');
+            if (chkTwin) {
+                chkTwin.addEventListener('change', () => {
+                    applyStsSpreaderSize(chkTwin.checked ? 'twin' : (state.stsSizeFt || 40));
+                });
+            }
+
             const btnBeamAutoFit = document.getElementById('btn-beam-auto-fit');
             if (btnBeamAutoFit) {
                 btnBeamAutoFit.addEventListener('click', () => {
+                    if (state.beamType === 'container_spreader') return;
                     if (state.gear && state.gear.members && state.gear.members.main) {
                         state.gear.members.main.lengthM = null; // restore auto-fit to cargo width/span
                     }
@@ -1467,6 +1977,7 @@
                 state.upperSlingLength = mVal;
                 state.slingLength = mVal;
                 state.slingUserSet = true;
+                markCableAdjustMode();
                 if (state.heldCableL0) state.heldCableL0.upper = [];
 
                 // Cập nhật đồng bộ tức thì cho TẤT CẢ các sợi cáp Tầng 1 (L1-1, L1-2, L1-3, L1-4)
@@ -1562,6 +2073,7 @@
                 const mVal = fromInputLen(clampedVal);
                 state.lowerSlingLength = mVal;
                 state.slingUserSet = true;
+                markCableAdjustMode();
                 if (state.heldCableL0) state.heldCableL0.leg = [];
 
                 // Cập nhật đồng bộ tức thì cho TẤT CẢ các sợi cáp Tầng 2 (L2-1, L2-2, L2-3, L2-4)
@@ -1611,6 +2123,9 @@
                     } else if (sel.role === 'leg') {
                         minDisp = toDisplayLen(spec.minLower);
                         maxDisp = toDisplayLen(spec.maxLower);
+                    } else if (sel.role === 'hanger') {
+                        minDisp = toDisplayLen(spec.minHanger || 0.5);
+                        maxDisp = toDisplayLen(spec.maxHanger || 12);
                     }
                 }
                 const clampedVal = Math.min(maxDisp, Math.max(minDisp, val));
@@ -1627,7 +2142,15 @@
                     state.upperSlingLength = lenM;
                 } else if (sel.role === 'leg') {
                     state.lowerSlingLength = lenM;
+                } else if (sel.role === 'hanger') {
+                    state.hangerSlingLength = lenM;
+                    if (state.gear && state.gear.hangers) {
+                        state.gear.hangers.forEach(h => {
+                            if (h) { h.lengthM = lenM; h.userSet = true; }
+                        });
+                    }
                 }
+                markCableAdjustMode();
 
                 if (typeof syncHookToRigTaut === 'function') syncHookToRigTaut();
                 if (typeof syncCableRest === 'function') syncCableRest(false);
@@ -1637,6 +2160,60 @@
             };
             if (inpSel) inpSel.addEventListener('input', e => onSelectedChange(e.target.value, 'slider'));
             if (numSel) numSel.addEventListener('input', e => onSelectedChange(e.target.value, 'number'));
+
+            // Mid-tier hanger controls (cascaded / truss 3-level)
+            const inpHanger = document.getElementById('inp-hangerL');
+            const numHanger = document.getElementById('num-hangerL');
+            const onHangerChange = (valDisplay, source) => {
+                const val = parseFloat(valDisplay);
+                if (isNaN(val) || val <= 0) return;
+                const minH = toDisplayLen(0.5);
+                const maxH = toDisplayLen(20.0);
+                const clampedVal = Math.min(maxH, Math.max(minH, val));
+                if (source === 'slider' && numHanger) numHanger.value = clampedVal.toFixed(2);
+                if (source === 'number' && inpHanger) inpHanger.value = clampedVal.toFixed(2);
+                const vHanger = document.getElementById('v-hangerL');
+                if (vHanger) vHanger.textContent = clampedVal.toFixed(2);
+                const lblH = document.getElementById('lbl-hanger-len-indicator');
+                if (lblH) lblH.textContent = `${clampedVal.toFixed(2)} m`;
+
+                const mVal = fromInputLen(clampedVal);
+                state.hangerSlingLength = mVal;
+                state.slingUserSet = true;
+                markCableAdjustMode();
+                if (state.heldCableL0) state.heldCableL0.hanger = [];
+                if (state.gear && state.gear.hangers) {
+                    state.gear.hangers.forEach(h => {
+                        if (h) { h.lengthM = mVal; h.userSet = true; }
+                    });
+                }
+                if (typeof syncHookToRigTaut === 'function') syncHookToRigTaut();
+                rebuildCargoAndRig(false);
+                syncCableControlsSelection();
+                updateRiggingBOMUI();
+            };
+            if (inpHanger) inpHanger.addEventListener('input', e => onHangerChange(e.target.value, 'slider'));
+            if (numHanger) numHanger.addEventListener('input', e => onHangerChange(e.target.value, 'number'));
+            document.querySelectorAll('.btn-step-hanger').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const delta = parseFloat(btn.dataset.delta || 0);
+                    const cur = parseFloat(numHanger ? numHanger.value : (inpHanger ? inpHanger.value : state.hangerSlingLength));
+                    onHangerChange(Math.max(0.5, +(cur + delta).toFixed(2)), 'number');
+                });
+            });
+            document.querySelectorAll('.btn-preset-hanger').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const val = parseFloat(btn.dataset.val);
+                    if (!isNaN(val)) onHangerChange(val, 'number');
+                });
+            });
+
+            const btnCableAutoBal = document.getElementById('btn-cable-auto-balance');
+            if (btnCableAutoBal) {
+                btnCableAutoBal.addEventListener('click', () => {
+                    autoLevelTurnbuckles();
+                });
+            }
 
             // Step & Preset Buttons for Tier 1
             document.querySelectorAll('.btn-step-tier1').forEach(btn => {
@@ -1697,8 +2274,12 @@
                     } else if (sel.role === 'leg') {
                         state.lowerSlingLength = targetLenM;
                         (state.gear.legs || []).forEach(l => { l.lengthM = null; l.userSet = false; });
+                    } else if (sel.role === 'hanger') {
+                        state.hangerSlingLength = targetLenM;
+                        (state.gear.hangers || []).forEach(h => { h.lengthM = null; h.userSet = false; });
                     }
                     state.slingUserSet = true;
+                    markCableAdjustMode();
                     if (typeof syncHookToRigTaut === 'function') syncHookToRigTaut();
                     syncSlingSlidersFromState();
                     rebuildCargoAndRig(false);
@@ -1719,6 +2300,8 @@
                         state.upperSlingLength = null;
                     } else if (sel.role === 'leg') {
                         state.lowerSlingLength = null;
+                    } else if (sel.role === 'hanger') {
+                        state.hangerSlingLength = null;
                     }
                     state.slingUserSet = false;
                     if (typeof syncHookToRigTaut === 'function') syncHookToRigTaut();
@@ -1754,11 +2337,65 @@
                 if (vWll) vWll.textContent = val.toFixed(1);
 
                 state.wllPerLeg = val;
+                if (!state._manualSlingDia) {
+                    const getSpec = (typeof CAE !== 'undefined' && CAE.getSlingPhysicalSpec)
+                        || (typeof window !== 'undefined' && window.CAE && window.CAE.getSlingPhysicalSpec);
+                    if (getSpec) {
+                        const spec = getSpec(state.slingType || 'wire', val);
+                        state.slingDiaMm = spec.diaMm;
+                        if (state.gear) {
+                            (state.gear.uppers || []).forEach(u => { u.diaMm = spec.diaMm; });
+                            (state.gear.legs || []).forEach(l => { l.diaMm = spec.diaMm; });
+                        }
+                    }
+                }
                 computeRiggingMassBreakdown();
+                syncSlingSlidersFromState();
                 updateRiggingBOMUI();
             };
             if (inpWll) inpWll.addEventListener('input', e => onWllChange(e.target.value, 'slider'));
             if (numWll) numWll.addEventListener('input', e => onWllChange(e.target.value, 'number'));
+
+            // 5.1. Sling Diameter / Width Controls
+            const inpSlingDia = document.getElementById('inp-sling-dia');
+            const numSlingDia = document.getElementById('num-sling-dia');
+            const btnAutoSlingDia = document.getElementById('btn-auto-sling-dia');
+            const onSlingDiaChange = (valRaw, source) => {
+                const val = parseFloat(valRaw);
+                if (isNaN(val) || val <= 0) return;
+                state._manualSlingDia = true;
+                state.slingDiaMm = val;
+                if (source === 'slider' && numSlingDia) numSlingDia.value = val;
+                if (source === 'number' && inpSlingDia) inpSlingDia.value = val;
+                if (state.gear) {
+                    (state.gear.uppers || []).forEach(u => { u.diaMm = val; });
+                    (state.gear.legs || []).forEach(l => { l.diaMm = val; });
+                }
+                computeRiggingMassBreakdown();
+                syncSlingSlidersFromState();
+                updateRiggingBOMUI();
+            };
+            if (inpSlingDia) inpSlingDia.addEventListener('input', e => onSlingDiaChange(e.target.value, 'slider'));
+            if (numSlingDia) numSlingDia.addEventListener('input', e => onSlingDiaChange(e.target.value, 'number'));
+            if (btnAutoSlingDia) {
+                btnAutoSlingDia.addEventListener('click', () => {
+                    state._manualSlingDia = false;
+                    state.slingDiaMm = null;
+                    const getSpec = (typeof CAE !== 'undefined' && CAE.getSlingPhysicalSpec)
+                        || (typeof window !== 'undefined' && window.CAE && window.CAE.getSlingPhysicalSpec);
+                    if (getSpec) {
+                        const spec = getSpec(state.slingType || 'wire', state.wllPerLeg || 15.0);
+                        state.slingDiaMm = spec.diaMm;
+                        if (state.gear) {
+                            (state.gear.uppers || []).forEach(u => { u.diaMm = spec.diaMm; });
+                            (state.gear.legs || []).forEach(l => { l.diaMm = spec.diaMm; });
+                        }
+                    }
+                    computeRiggingMassBreakdown();
+                    syncSlingSlidersFromState();
+                    updateRiggingBOMUI();
+                });
+            }
 
             // 6. Metric ⇄ Imperial Unit System Switcher
             const toggleUnitSystem = () => {
@@ -1788,40 +2425,44 @@
         // --- ASME B30.9 RIGGING SAFETY PRESET ENGINES ---
         function applyMinSafeRiggingPreset() {
             const spec = (typeof getRigSpec === 'function') ? getRigSpec() : null;
-            const horizU = spec ? spec.horizU : Math.max(0.5, (state.L || 6.0) / 4);
-            // ASME B30.9: α = 45° (LAF = 1.414, Headroom Saving)
-            const cos45 = Math.cos(45 * Math.PI / 180);
-            const minSafeUpper = Math.max(0.5, Math.round((horizU / cos45) * 100) / 100);
+            const evenInt = (raw, lo, hi) => {
+                let e = Math.round(raw / 2) * 2;
+                if (e < lo) e = lo;
+                if (e > hi) e = Math.ceil(raw / 2) * 2;
+                return Math.max(lo, e);
+            };
+            // Working band: pull angle β ≈ 45°, even-integer lengths
+            const minSafeUpper = evenInt(spec ? spec.recUpper : 8, 8, 10);
+            const minSafeLower = evenInt(spec ? spec.recLower : 2, 2, 4);
+            const minSafeHanger = evenInt(spec ? (spec.recHanger || 2) : 2, 2, 4);
 
             state.upperSlingLength = minSafeUpper;
             state.slingLength = minSafeUpper;
             state.slingUserSet = true;
+            markCableAdjustMode();
             if (state.heldCableL0) state.heldCableL0.upper = [];
 
             if (state.gear && state.gear.uppers) {
                 state.gear.uppers.forEach(u => {
-                    if (u) {
-                        u.lengthM = minSafeUpper;
-                        u.userSet = true;
-                    }
+                    if (u) { u.lengthM = minSafeUpper; u.userSet = true; }
                 });
             }
 
             if (state.beamType !== 'none') {
-                const horizL = spec ? (spec.horizL || 0) : 0;
-                const maxVDrop = spec ? (spec.maxVDrop || 1.0) : 1.0;
-                let minSafeLower = Math.max(0.5, Math.round(Math.hypot(horizL, maxVDrop) * 100) / 100);
-                if (horizL > 0.1) {
-                    minSafeLower = Math.max(minSafeLower, Math.round((horizL / cos45) * 100) / 100);
-                }
                 state.lowerSlingLength = minSafeLower;
                 if (state.heldCableL0) state.heldCableL0.leg = [];
                 if (state.gear && state.gear.legs) {
                     state.gear.legs.forEach(l => {
-                        if (l) {
-                            l.lengthM = minSafeLower;
-                            l.userSet = true;
-                        }
+                        if (l) { l.lengthM = minSafeLower; l.userSet = true; }
+                    });
+                }
+            }
+            if (hasCascadedHangerTier()) {
+                state.hangerSlingLength = minSafeHanger;
+                if (state.heldCableL0) state.heldCableL0.hanger = [];
+                if (state.gear && state.gear.hangers) {
+                    state.gear.hangers.forEach(h => {
+                        if (h) { h.lengthM = minSafeHanger; h.userSet = true; }
                     });
                 }
             }
@@ -1835,43 +2476,44 @@
             const status = document.getElementById('sim-status-text');
             if (status) {
                 status.textContent = state.lang === 'en'
-                    ? '🛡️ Preset Applied: Minimum Safe Lift (ASME B30.9 α ≥ 45°, LAF = 1.414, Headroom Saving).'
-                    : '🛡️ Đã áp dụng: Phương án Nâng Tối thiểu An toàn (ASME B30.9: α ≥ 45°, LAF = 1.414, Tiết kiệm Chiều cao).';
+                    ? '🛡️ Preset: β ≈ 45°, upper 8/10 m, lower 2/4 m (even integers).'
+                    : '🛡️ Đã áp dụng: góc kéo β ≈ 45°, cáp trên 8/10 m, cáp dưới 2/4 m (số chẵn).';
             }
         }
 
         function applyAbsoluteSafeRiggingPreset() {
             const spec = (typeof getRigSpec === 'function') ? getRigSpec() : null;
-            const horizU = spec ? spec.horizU : Math.max(0.5, (state.L || 6.0) / 4);
-            // ASME B30.9: α = 60° (LAF = 1.155, Ideal bridle angle)
-            const idealUpper = Math.max(0.8, Math.round((horizU / 0.50) * 100) / 100);
+            const idealUpper = (spec && spec.recUpper) ? spec.recUpper : 8;
+            const idealLower = (spec && spec.recLower) ? spec.recLower : 2;
+            const idealHanger = (spec && spec.recHanger) ? spec.recHanger : 2;
 
             state.upperSlingLength = idealUpper;
             state.slingLength = idealUpper;
             state.slingUserSet = true;
+            markCableAdjustMode();
             if (state.heldCableL0) state.heldCableL0.upper = [];
 
             if (state.gear && state.gear.uppers) {
                 state.gear.uppers.forEach(u => {
-                    if (u) {
-                        u.lengthM = idealUpper;
-                        u.userSet = true;
-                    }
+                    if (u) { u.lengthM = idealUpper; u.userSet = true; }
                 });
             }
 
             if (state.beamType !== 'none') {
-                // Tier 2: α = 90° (Vertical drop, zero horizontal shear force)
-                const maxVDrop = spec ? (spec.maxVDrop || 1.2) : 1.2;
-                const idealLower = Math.max(1.2, Math.round((maxVDrop + 0.5) * 100) / 100);
                 state.lowerSlingLength = idealLower;
                 if (state.heldCableL0) state.heldCableL0.leg = [];
                 if (state.gear && state.gear.legs) {
                     state.gear.legs.forEach(l => {
-                        if (l) {
-                            l.lengthM = idealLower;
-                            l.userSet = true;
-                        }
+                        if (l) { l.lengthM = idealLower; l.userSet = true; }
+                    });
+                }
+            }
+            if (hasCascadedHangerTier()) {
+                state.hangerSlingLength = idealHanger;
+                if (state.heldCableL0) state.heldCableL0.hanger = [];
+                if (state.gear && state.gear.hangers) {
+                    state.gear.hangers.forEach(h => {
+                        if (h) { h.lengthM = idealHanger; h.userSet = true; }
                     });
                 }
             }
@@ -1885,8 +2527,8 @@
             const status = document.getElementById('sim-status-text');
             if (status) {
                 status.textContent = state.lang === 'en'
-                    ? '⭐ Preset Applied: Absolute Safe Lift (ASME B30.9 Tier 1 α = 60° [LAF 1.155], Tier 2 α = 90° [LAF 1.000, 0 Shear Force]).'
-                    : '⭐ Đã áp dụng: Phương án Nâng Tuyệt đối An toàn (ASME B30.9: Tầng 1 α = 60° [LAF 1.155], Tầng 2 α = 90° [LAF 1.000, Triệt tiêu lực xé]).';
+                    ? `⭐ Default plan: β ≈ 42.5°, upper ${idealUpper} m, lower ${idealLower} m` + (hasCascadedHangerTier() ? `, hanger ${idealHanger} m` : '') + '.'
+                    : `⭐ Mặc định: góc kéo ~42.5°, cáp trên ${idealUpper} m, cáp dưới ${idealLower} m` + (hasCascadedHangerTier() ? `, treo ${idealHanger} m` : '') + '.';
             }
         }
 
@@ -1960,11 +2602,31 @@
             state.leftCollapsed = (currentDrawerTab !== 'cargo' && currentDrawerTab !== 'lugs');
             state.rightCollapsed = !state.leftCollapsed;
             syncSheetButtons();
+            // Settle Auto framing into free-stage LEFT third (boot snap is handled under loader)
+            requestAnimationFrame(() => {
+                if (typeof window.invalidateUiSafeNdcCache === 'function') {
+                    window.invalidateUiSafeNdcCache();
+                }
+                if (typeof window.markCameraViewSettled === 'function') {
+                    window.markCameraViewSettled();
+                } else if (state.cameraFollow) {
+                    state.cameraFollow.suppressUiReframe = true;
+                    state.cameraFollow.stableView = true;
+                    if (state.cameraFollow.behavior === 'flycam') state.cameraFollow.behavior = 'cinema';
+                    if (typeof window.syncCameraFollowUI === 'function') window.syncCameraFollowUI();
+                }
+                // Skip visible boot tween here — bootSimulator pre-frames under the loading screen
+                if (state.cameraFollow && state.cameraFollow.bootThirdsPending) return;
+                if (typeof window.reframeAutoToUiSafeCenter === 'function') {
+                    window.reframeAutoToUiSafeCenter({ duration: 0.65, delay: 320 });
+                }
+            });
         }
 
         function closeRightDrawer() {
             const drawer = document.getElementById('right-side-drawer');
             if (!drawer) return;
+            const wasOpen = isDrawerOpen || drawer.classList.contains('drawer-open');
             drawer.classList.add('drawer-closed');
             drawer.classList.remove('drawer-open');
             if (typeof document !== 'undefined' && document.body) {
@@ -1976,6 +2638,9 @@
             state.leftCollapsed = true;
             state.rightCollapsed = true;
             syncSheetButtons();
+            if (wasOpen && typeof window.reframeAutoToUiSafeCenter === 'function') {
+                window.reframeAutoToUiSafeCenter({ duration: 0.4, delay: 300 });
+            }
         }
 
         function toggleRightDrawer(tabName) {
@@ -2168,7 +2833,8 @@
             'Móc Clevis': 'Clevis hook',
             'Chiều dài nhánh trên (L):': 'Upper leg length (L):',
             'WLL mỗi nhánh:': 'WLL per leg:',
-            'Nhấp đúp dây cáp, ma ní, dầm hoặc móc trên mô hình để nhập SWL, chiều dài, kích thước và khối lượng. Giữ Ctrl và chọn nhiều món cùng loại để sửa một lúc. Góc cáp là đường thẳng giữa hai ma ní; mặc định 60° so với phương ngang (TF 1,15). Đổi chiều dài thì góc đổi theo khẩu độ.': 'Double-click a rope, shackle, beam or the hook to edit SWL, length, size and weight. Ctrl-click selects several items of the same type. The rope angle is the line between the two pins. The default is 60° to the horizontal (TF 1.15). Changing the length changes the angle for the same span.',
+            'Nhấp đúp dây cáp, ma ní, dầm hoặc móc trên mô hình để nhập SWL, chiều dài, kích thước và khối lượng. Giữ Ctrl và chọn nhiều món cùng loại để sửa một lúc. Góc cáp là đường thẳng giữa hai ma ní; mặc định ~40–45° so với phương ngang (cáp trên 8–10 m, cáp dưới 2–4 m). Đổi chiều dài thì góc đổi theo khẩu độ.': 'Double-click a rope, shackle, beam or the hook to edit SWL, length, size and weight. Ctrl-click selects several items of the same type. The rope angle is the line between the two pins. Defaults are ~40–45° to the horizontal (upper 8–10 m, lower 2–4 m). Changing the length changes the angle for the same span.',
+            'Giữ Shift + kéo khung chuột để chọn nhiều thiết bị; thông số hiện bên trái và có thể cuộn. Nhấp đúp để sửa một món. Chuột trái xoay/kéo camera tự do — không còn bị khóa vào kiện hàng khi đang thao tác góc nhìn.': 'Hold Shift and drag a box to multi-select parts; parameters stack on the left and scroll. Double-click edits one item. Left-drag orbits the camera freely — the view is no longer locked to the cargo while you reframe.',
             '📊 Thông Số Kỹ Thuật & Tải Trọng Cáp': 'Rope engineering data',
             'CHUẨN AN TOÀN': 'WITHIN LIMITS',
             'Góc Cáp (Dọc α)': 'Rope angle from vertical α',
@@ -2195,6 +2861,8 @@
             'Ctrl+nhấp đúp hoặc Alt+nhấp để mở phiếu kỹ thuật. Ctrl+nhấp gộp cùng loại.': 'Ctrl+double-click or Alt+click opens the data sheet. Ctrl+click adds another item of the same type.',
             'Nhấp bất kỳ chi tiết 3D để sửa thông số. Ctrl+nhấp để gộp cùng loại.': 'Click any 3D part to edit its data. Ctrl+click adds another item of the same type.',
             'Nhấp bất kỳ chi tiết 3D để sửa. Để trống chiều dài/SWL để theo thông số chung.': 'Click any 3D part to edit. Blank length or SWL follows the global slider.',
+            'Giữ Shift + kéo khung chuột để chọn nhiều. Nhấp đúp một vật để sửa đơn. Cuộn panel trái để chỉnh từng mục.': 'Shift+drag a box to multi-select. Double-click one part for a single edit. Scroll the left panel to adjust each item.',
+            'Giữ Shift + kéo khung để chọn. Cuộn xuống để chỉnh từng thiết bị.': 'Shift+drag a box to select. Scroll to edit each part below.',
             'Theo thông số chung · Use global': 'Use global',
             'Nối lại · Reeve': 'Reeve',
             'Bỏ chọn · Clear': 'Clear',
@@ -2252,7 +2920,7 @@
             'Dải bồn chịu áp 28–55 t': 'Pressure-vessel band 28–55 t',
             'Máy Biến Áp 110kV': '110 kV transformer',
             'Dải máy biến áp 45–85 t': 'Transformer band 45–85 t',
-            'Xe Bán Tải / SUV': 'Pickup / SUV',
+            'Xe Bán Tải / SUV': 'Vehicle',
             'Dải xe 2.4–3.2 t': 'Vehicle band 2.4–3.2 t',
             'Tàu Lai Công Tác': 'Workboat',
             'Dải tàu 22–45 t': 'Vessel band 22–45 t',
@@ -2318,6 +2986,7 @@
                 'btn-replay': ['Xem', 'Play'],
                 'btn-replay-stop': ['Dừng', 'Stop'],
                 'btn-auto-level': ['Cân bằng', 'Level'],
+                'btn-cable-auto-balance': ['⚖️ Auto cân bằng (tính lại chiều dài cáp)', '⚖️ Auto-balance (recalc cable lengths)'],
                 'btn-xray': ['X-Ray', 'X-Ray'],
                 'btn-toggle-cad-edges': ['CAD', 'CAD'],
                 'btn-toggle-vectors': ['Lực', 'Force'],
@@ -2506,6 +3175,7 @@
                     state.leftCollapsed = true;
                     state.rightCollapsed = true;
                     if (gear) gear.style.display = 'none';
+                    document.body.classList.remove('gear-editor-open');
                     syncSheetButtons();
                 } else toggleLeftPanel(false);
             });
@@ -2611,7 +3281,9 @@
                 btnOogCargo.addEventListener('click', () => {
                     state.oogHasCargo = !state.oogHasCargo;
                     if (!state.weightUserSet) {
-                        const tare = state.tareT != null ? state.tareT : (state.cargoType === 'flatrack' ? 4.8 : 2.4);
+                        const tare = state.tareT != null ? state.tareT
+                            : ((state.cargoType === 'flatrack' || state.cargoType === 'flatrack20') ? 4.8
+                                : ((state.cargoType === 'platform' || state.cargoType === 'platform20') ? 5.5 : 2.4));
                         const loadedW = calibratedWeight(state.cargoType, state.L, state.W, state.H) || 20.0;
                         state.weight = state.oogHasCargo ? Math.round(loadedW * 10) / 10 : tare;
                         const wEl = document.getElementById('inp-Weight');
@@ -2636,7 +3308,11 @@
                 const vEl = document.getElementById(`v-${id}`);
                 if (!el) return;
                 el.addEventListener('input', e => {
-                    state[key] = parseFloat(e.target.value);
+                    let val = parseFloat(e.target.value);
+                    const isOT = state.cargoType === 'opentop' || state.cargoType === 'opentop40';
+                    if (isOT && key === 'oogCargoW') val = Math.min(val, Math.max(0.85, state.W - 0.40));
+                    if (isOT && key === 'oogCargoL') val = Math.min(val, Math.max(1.2, state.L - 0.40));
+                    state[key] = val;
                     if (vEl) vEl.textContent = state[key].toFixed(2);
                     syncOogCargoUI(false);
                     rebuildCargoAndRig(false);
@@ -2843,7 +3519,10 @@
                     const delta = parseFloat(btn.dataset.delta || 0);
                     const stateKey = target === 'oogH' ? 'oogCargoH' : (target === 'oogW' ? 'oogCargoW' : 'oogCargoL');
                     const cur = state[stateKey] || 0;
-                    const next = Math.max(0.5, +(cur + delta).toFixed(2));
+                    let next = Math.max(0.5, +(cur + delta).toFixed(2));
+                    const isOT = state.cargoType === 'opentop' || state.cargoType === 'opentop40';
+                    if (isOT && stateKey === 'oogCargoW') next = Math.min(next, Math.max(0.85, state.W - 0.40));
+                    if (isOT && stateKey === 'oogCargoL') next = Math.min(next, Math.max(1.2, state.L - 0.40));
                     state[stateKey] = next;
                     const numEl = document.getElementById(`num-${target}`);
                     const inpEl = document.getElementById(`inp-${target}`);
@@ -2873,10 +3552,18 @@
                     beamCards.forEach(c => c.classList.remove('active'));
                     card.classList.add('active');
                     state.beamType = card.dataset.beam;
+                    if (state.beamType === 'container_spreader') {
+                        state.slingType = 'wire';
+                        applyStsSpreaderSize(state.stsTwinLift ? 'twin' : (state.stsSizeFt || 40));
+                        return;
+                    }
                     state.slingUserSet = false;
                     state.upperSlingLength = null;
                     state.lowerSlingLength = null;
-                    rebuildCargoAndRig(false);
+                    if (typeof updateStsBeamDimUI === 'function') updateStsBeamDimUI();
+                    // Beam-only rebuild — skip full cargo mesh/lug rebuild (was the main lag source)
+                    if (typeof flushRebuildSpreaderVisuals === 'function') flushRebuildSpreaderVisuals();
+                    rebuildSpreaderVisuals();
                     if (phy.groundClearance > 0.05) autoPositionHookForLift(0.75);
                     else if (typeof syncHookToRigTaut === 'function') syncHookToRigTaut();
                     syncSlingSlidersFromState();
@@ -2888,8 +3575,45 @@
                 card.addEventListener('click', () => {
                     slingCards.forEach(c => c.classList.remove('active'));
                     card.classList.add('active');
-                    state.slingType = card.dataset.sling;
+                    const selectedType = card.dataset.sling;
+                    state.slingType = selectedType;
+
+                    // Automatically sync elastic material type & DNV-ST-N001 selector
+                    if (selectedType === 'wire' || selectedType === 'grommet') {
+                        state.slingMaterialType = 'wire';
+                    } else if (selectedType === 'chain') {
+                        state.slingMaterialType = 'chain';
+                    } else if (selectedType === 'web' || selectedType === 'round_sling') {
+                        state.slingMaterialType = 'poly';
+                    }
+                    const selMat = document.getElementById('sel-sling-material');
+                    if (selMat) selMat.value = state.slingMaterialType;
+
+                    // Auto-compute standard diameter / width based on WLL
+                    const getSpec = (typeof CAE !== 'undefined' && CAE.getSlingPhysicalSpec)
+                        || (typeof window !== 'undefined' && window.CAE && window.CAE.getSlingPhysicalSpec);
+                    const spec = getSpec ? getSpec(selectedType, state.wllPerLeg || 15.0) : null;
+                    if (spec) {
+                        state.slingDiaMm = spec.diaMm;
+                    }
+
+                    if (state.gear) {
+                        (state.gear.uppers || []).forEach(u => {
+                            u.slingType = selectedType;
+                            if (spec) u.diaMm = spec.diaMm;
+                            u.grade = (selectedType === 'chain') ? 'g80' : ((selectedType === 'web' || selectedType === 'round_sling') ? 'poly' : 'iwrc');
+                        });
+                        (state.gear.legs || []).forEach(l => {
+                            l.slingType = selectedType;
+                            if (spec) l.diaMm = spec.diaMm;
+                            l.grade = (selectedType === 'chain') ? 'g80' : ((selectedType === 'web' || selectedType === 'round_sling') ? 'poly' : 'iwrc');
+                        });
+                    }
+
                     computeRiggingMassBreakdown();
+                    syncSlingSlidersFromState();
+                    updateRiggingBOMUI();
+                    rebuildCargoAndRig(false);
                     rebuildSpreaderVisuals();
                 });
             });
@@ -3000,9 +3724,30 @@
             };
             btnUp.addEventListener('pointerdown', e => {
                 e.preventDefault();
+                // Resume design sling lengths when the operator starts to hoist again
+                state.holdCableLength = false;
+                state.heldCableL0 = null;
                 if (state.poseLock) {
                     state.poseLock = false;
                     syncPoseLockUI();
+                }
+                // STS direct: snug twistlock rest lengths to current pin gap so hoist picks immediately
+                if (typeof isStsDirectAttach === 'function' && isStsDirectAttach() && typeof attachWorld === 'function') {
+                    state.lowerSlingLength = 0.06;
+                    (phy.cables || []).forEach(c => {
+                        if (c.role !== 'leg') return;
+                        const span = attachWorld(c.a).distanceTo(attachWorld(c.b));
+                        c.L0 = Math.max(0.04, Math.min(0.12, span + 0.005));
+                        c.designL0 = c.L0;
+                        c.slack = false;
+                    });
+                    if (state.gear && state.gear.legs) {
+                        state.gear.legs.forEach(leg => {
+                            if (!leg) return;
+                            leg.lengthM = null;
+                            leg.userSet = false;
+                        });
+                    }
                 }
                 if (phy.groundClearance < 0.08) {
                     const rotatedCoG = new THREE.Vector3(state.cogX, 0, state.cogZ).applyAxisAngle(new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(state.cargoYawDeg));
@@ -3024,6 +3769,58 @@
             btnUp.addEventListener('pointercancel', stopHoistHold);
             btnDown.addEventListener('pointerdown', e => {
                 e.preventDefault();
+                const wasGrounded = (phy.groundClearance || 0) < 0.15;
+                // Unlocking pose must not launch the cargo — kill residual / settle on deck
+                if (phy.cargoVel) phy.cargoVel.set(0, 0, 0);
+                if (phy.cargoOmega) phy.cargoOmega.set(0, 0, 0);
+                if (phy.hookVel) phy.hookVel.set(0, 0, 0);
+                if (wasGrounded && typeof applyLockedPose === 'function') {
+                    state.poseLock = true;
+                    applyLockedPose();
+                    if (typeof seedBeamsFromKinematic === 'function') seedBeamsFromKinematic();
+                    // Capture current pin-to-pin spans as held rest lengths (+4 cm
+                    // pay-out slack).  syncCableRest runs every XPBD frame and would
+                    // otherwise restore the design L0 and instantly re-pick the load.
+                    state.holdCableLength = true;
+                    state.heldCableL0 = { upper: [], leg: [], hanger: [], extra: [] };
+                    (phy.cables || []).forEach(c => {
+                        if (typeof cableIsBroken === 'function' && cableIsBroken(c)) return;
+                        const span = (typeof attachWorld === 'function')
+                            ? attachWorld(c.a).distanceTo(attachWorld(c.b))
+                            : (c.L0 || 1);
+                        const L0 = Math.max(0.2, span + 0.04);
+                        if (!state.heldCableL0[c.role]) state.heldCableL0[c.role] = [];
+                        state.heldCableL0[c.role][c.index] = L0;
+                        c.L0 = L0;
+                        c.designL0 = L0;
+                        c.slack = true;
+                        c.tensionT = 0;
+                        c._sum = 0;
+                    });
+                    if (Array.isArray(phy.legSlacks)) phy.legSlacks.fill(true);
+                    if (Array.isArray(phy.legTensions)) phy.legTensions.fill(0);
+                    phy.groundClearance = 0;
+                }
+                if (Array.isArray(phy.beams)) {
+                    phy.beams.forEach(b => {
+                        if (b.v) b.v.set(0, 0, 0);
+                        if (b.w) b.w.set(0, 0, 0);
+                    });
+                }
+                // Grounded / snug lower: drop elastic hoist compensation so paying
+                // out cannot haul the drum up through a stale offLP.
+                if (wasGrounded && phy.hoist) {
+                    if (typeof resetHoistDynamicState === 'function') resetHoistDynamicState(phy.hoist);
+                    else {
+                        phy.hoist.off.set(0, 0, 0);
+                        phy.hoist.offLP.set(0, 0, 0);
+                        phy.hoist.vel.set(0, 0, 0);
+                        phy.hoist.tensionN = 0;
+                        phy.hoist.tensionLP = 0;
+                    }
+                    phy.hoist.kin.copy(phy.hookPos);
+                    phy.solverMaxOverrun = 0;
+                }
                 if (state.poseLock) {
                     state.poseLock = false;
                     syncPoseLockUI();
@@ -3045,9 +3842,22 @@
             document.querySelectorAll('#btn-pretension, .btn-action-pretension').forEach(btn => btn.addEventListener('click', handlePretension));
 
             const handleTestLift = () => {
+                // Settle beam under hook before XPBD so skewed seeds don't overstretch
+                if (typeof seedBeamsFromKinematic === 'function') seedBeamsFromKinematic();
+                if (typeof syncCableRest === 'function') syncCableRest(false);
+                // Zero residual velocities before take-up
+                phy.cargoVel.set(0, 0, 0);
+                phy.cargoOmega.set(0, 0, 0);
+                if (Array.isArray(phy.beams)) {
+                    phy.beams.forEach(b => {
+                        if (b.v) b.v.set(0, 0, 0);
+                        if (b.w) b.w.set(0, 0, 0);
+                    });
+                }
                 state.poseLock = false;
                 syncPoseLockUI();
-                autoPositionHookForLift(3.2);
+                // 1.0–1.2 m clear is a real trial lift; 3.2 m was launching the load
+                autoPositionHookForLift(1.15);
                 document.getElementById('sim-status-text').textContent = '🏗️ Đang nhấc thử tải...';
             };
             document.querySelectorAll('#btn-test-lift, .btn-action-test-lift').forEach(btn => btn.addEventListener('click', handleTestLift));
@@ -3306,7 +4116,7 @@
             });
 
             // Close dropdowns upon clicking action items inside docs panel or camera presets
-            ['btn-open-compliance', 'btn-open-liftplan', 'btn-quick-export-pdf', 'btn-open-3d-library'].forEach(id => {
+            ['btn-open-compliance', 'btn-open-liftplan', 'btn-open-plan-wizard', 'btn-quick-export-pdf', 'btn-open-3d-library'].forEach(id => {
                 document.getElementById(id)?.addEventListener('click', () => closeAllTopDropdowns());
             });
             document.querySelectorAll('#dropdown-panel-camera .cam-btn').forEach(btn => {
@@ -3424,6 +4234,9 @@
                     parkHookSlack();
                     syncPoseLockUI();
                 }
+                // Instant upper-gear lean with cargo skew (before next physics frame)
+                if (typeof seedBeamsFromKinematic === 'function') seedBeamsFromKinematic();
+                if (typeof applyBeamVisuals === 'function') applyBeamVisuals();
                 if (typeof updateCargoGroundAngleIndicator3D === 'function') {
                     updateCargoGroundAngleIndicator3D();
                 }
@@ -3477,6 +4290,7 @@
                 btnAlignFixed.addEventListener('click', () => {
                     state.spreaderAlignWithCargo = false;
                     syncOrientationAndPullUI();
+                    if (typeof seedBeamsFromKinematic === 'function') seedBeamsFromKinematic();
                     if (typeof rebuildSpreaderVisuals === 'function') rebuildSpreaderVisuals();
                 });
             }
@@ -3485,7 +4299,25 @@
                 btnAlignFollow.addEventListener('click', () => {
                     state.spreaderAlignWithCargo = true;
                     syncOrientationAndPullUI();
+                    if (typeof seedBeamsFromKinematic === 'function') seedBeamsFromKinematic();
                     if (typeof rebuildSpreaderVisuals === 'function') rebuildSpreaderVisuals();
+                });
+            }
+
+            const btnHookSwivelOn = document.getElementById('btn-hook-swivel-on');
+            if (btnHookSwivelOn) {
+                btnHookSwivelOn.addEventListener('click', () => {
+                    state.hookSwivelEnabled = true;
+                    syncOrientationAndPullUI();
+                    if (typeof seedBeamsFromKinematic === 'function') seedBeamsFromKinematic();
+                });
+            }
+            const btnHookSwivelOff = document.getElementById('btn-hook-swivel-off');
+            if (btnHookSwivelOff) {
+                btnHookSwivelOff.addEventListener('click', () => {
+                    state.hookSwivelEnabled = false;
+                    syncOrientationAndPullUI();
+                    if (typeof seedBeamsFromKinematic === 'function') seedBeamsFromKinematic();
                 });
             }
 
@@ -3575,54 +4407,154 @@
                     if (mode === 'crane') { camera.position.set(15.5, 9.5, 17.5); controls.target.set(-2.0, 4.5, -2.0); }
                     controls.update();
                     if (typeof prevFollowWorldPos !== 'undefined') prevFollowWorldPos = null;
+                    // Preset angles freeze into manual hold so auto cinema won't override
+                    if (state.cameraFollow) {
+                        state.cameraFollow.userManual = true;
+                        state.cameraFollow.behavior = 'lock';
+                        state.cameraFollow.enabled = false;
+                        state.cameraFollow.smart = false;
+                        state.cameraFollow.suppressUiReframe = true;
+                        state.cameraFollow.stableView = true;
+                        state.cameraFollow.lockedOffset = camera.position.clone().sub(controls.target);
+                        state.cameraFollow.orbiting = false;
+                        state.cameraFollow.paused = false;
+                    }
+                    if (typeof window.syncCameraFollowUI === 'function') window.syncCameraFollowUI();
                 });
             });
 
-            // Camera Follow & Target Setup
+            // Camera behavior: Auto | Giữ | Góc | Fly
+            const btnCamCinema = document.getElementById('btn-cam-cinema');
+            const btnCamLock = document.getElementById('btn-cam-lock');
+            const btnCamHoldAngle = document.getElementById('btn-cam-hold-angle');
+            const btnCamFlycam = document.getElementById('btn-cam-flycam');
             const btnCamFollow = document.getElementById('btn-cam-follow');
             const lblCamFollow = document.getElementById('cam-follow-label');
             const selCamFollowMode = document.getElementById('sel-cam-follow-mode');
 
-            const syncCameraFollowUI = () => {
-                const enabled = !!(state.cameraFollow && state.cameraFollow.enabled);
-                if (btnCamFollow) {
-                    btnCamFollow.classList.toggle('active', enabled);
-                    btnCamFollow.classList.toggle('!bg-sky-600', enabled);
-                    btnCamFollow.classList.toggle('!border-sky-400', enabled);
-                    btnCamFollow.classList.toggle('!text-white', enabled);
-                }
-                if (lblCamFollow) {
-                    lblCamFollow.textContent = enabled
-                        ? (state.lang === 'en' ? 'Follow: ON' : 'Bám: BẬT')
-                        : (state.lang === 'en' ? 'Follow: OFF' : 'Bám: TẮT');
-                }
-                if (selCamFollowMode) {
-                    selCamFollowMode.classList.toggle('hidden', !enabled);
-                    if (state.cameraFollow && state.cameraFollow.mode) {
-                        selCamFollowMode.value = state.cameraFollow.mode;
-                    }
+            const styleCamBehaviorBtn = (btn, on) => {
+                if (!btn) return;
+                btn.classList.toggle('!bg-sky-700', on);
+                btn.classList.toggle('!border-sky-400', on);
+                btn.classList.toggle('!text-white', on);
+                btn.classList.toggle('active', on);
+                if (!on) {
+                    btn.classList.add('text-slate-300');
+                } else {
+                    btn.classList.remove('text-slate-300');
                 }
             };
 
+            const syncCameraFollowUI = () => {
+                if (!state.cameraFollow) {
+                    state.cameraFollow = {
+                        enabled: true, behavior: 'cinema', mode: 'auto', smart: true,
+                        customOffset: new THREE.Vector3(), lockedOffset: null, angleIndex: 0,
+                        flycamPhase: 0, flycamPitch: 0.34, flycamDist: 22, flycamSeeded: false,
+                        flycamYawRate: 0.12,
+                        orbiting: false, paused: false, userManual: false,
+                        suppressUiReframe: true, stableView: true, focusOverride: null
+                    };
+                }
+                if (state.cameraFollow.behavior === 'holdAngle') state.cameraFollow.behavior = 'angleCycle';
+                if (!state.cameraFollow.behavior) {
+                    state.cameraFollow.behavior = state.cameraFollow.enabled ? 'cinema' : 'lock';
+                }
+                if (state.cameraFollow.userManual == null) state.cameraFollow.userManual = false;
+                if (state.cameraFollow.angleIndex == null) state.cameraFollow.angleIndex = 0;
+                const behavior = state.cameraFollow.behavior;
+                const mode = state.cameraFollow.mode || 'auto';
+                const userManual = !!state.cameraFollow.userManual;
+                const angleN = ((state.cameraFollow.angleIndex % 12) + 12) % 12 + 1;
+
+                styleCamBehaviorBtn(btnCamCinema, !userManual && behavior === 'cinema');
+                styleCamBehaviorBtn(btnCamLock, userManual || behavior === 'lock');
+                styleCamBehaviorBtn(btnCamHoldAngle, !userManual && behavior === 'angleCycle');
+                styleCamBehaviorBtn(btnCamFlycam, !userManual && behavior === 'flycam');
+
+                if (lblCamFollow) {
+                    if (userManual) {
+                        lblCamFollow.textContent = state.lang === 'en' ? 'Mode: Manual' : 'Chế độ: Thủ công';
+                    } else if (behavior === 'cinema') {
+                        lblCamFollow.textContent = state.lang === 'en' ? 'Mode: Auto' : 'Chế độ: Auto';
+                    } else if (behavior === 'angleCycle') {
+                        lblCamFollow.textContent = state.lang === 'en'
+                            ? `Mode: Angle ${angleN}/12`
+                            : `Chế độ: Góc ${angleN}/12`;
+                    } else if (behavior === 'flycam') {
+                        lblCamFollow.textContent = state.lang === 'en' ? 'Mode: Flycam' : 'Chế độ: Flycam';
+                    } else {
+                        lblCamFollow.textContent = state.lang === 'en' ? 'Mode: Hold' : 'Chế độ: Giữ';
+                    }
+                }
+                if (selCamFollowMode) {
+                    const locked = userManual || behavior === 'lock';
+                    selCamFollowMode.classList.toggle('opacity-40', locked);
+                    selCamFollowMode.disabled = locked;
+                    selCamFollowMode.value = mode;
+                }
+            };
+
+            if (typeof window !== 'undefined') window.syncCameraFollowUI = syncCameraFollowUI;
+
+            const applyCamBehavior = (behavior) => {
+                if (typeof window.setCameraBehavior === 'function') {
+                    window.setCameraBehavior(behavior);
+                } else if (typeof setCameraBehavior === 'function') {
+                    setCameraBehavior(behavior);
+                } else {
+                    state.cameraFollow = state.cameraFollow || {};
+                    state.cameraFollow.behavior = behavior;
+                    state.cameraFollow.enabled = behavior !== 'lock';
+                    syncCameraFollowUI();
+                }
+            };
+
+            if (btnCamCinema) {
+                btnCamCinema.addEventListener('click', () => {
+                    // Always re-run hero cinematic framing (rule of thirds) — even if already on Auto
+                    if (typeof window.frameCinematicHeroShot === 'function') {
+                        window.frameCinematicHeroShot({ duration: 0.95, force: true });
+                    } else {
+                        applyCamBehavior('cinema');
+                    }
+                });
+            }
+            if (btnCamLock) btnCamLock.addEventListener('click', () => applyCamBehavior('lock'));
+            if (btnCamHoldAngle) btnCamHoldAngle.addEventListener('click', () => applyCamBehavior('angleCycle'));
+            if (btnCamFlycam) btnCamFlycam.addEventListener('click', () => applyCamBehavior('flycam'));
+
+            // Legacy hidden toggle still maps to cinema ↔ lock
             if (btnCamFollow) {
                 btnCamFollow.addEventListener('click', () => {
-                    if (!state.cameraFollow) {
-                        state.cameraFollow = { enabled: false, mode: 'cog', customOffset: new THREE.Vector3() };
-                    }
-                    state.cameraFollow.enabled = !state.cameraFollow.enabled;
-                    if (state.cameraFollow.enabled && typeof centerCameraOnFollowTarget === 'function') {
-                        centerCameraOnFollowTarget();
-                    }
-                    syncCameraFollowUI();
+                    const cur = (state.cameraFollow && state.cameraFollow.behavior) || 'cinema';
+                    applyCamBehavior(cur === 'lock' ? 'cinema' : 'lock');
                 });
             }
 
             if (selCamFollowMode) {
                 selCamFollowMode.addEventListener('change', e => {
                     if (!state.cameraFollow) {
-                        state.cameraFollow = { enabled: true, mode: 'cog', customOffset: new THREE.Vector3() };
+                        state.cameraFollow = {
+                            enabled: true, behavior: 'flycam', mode: 'auto', smart: true,
+                            customOffset: new THREE.Vector3(), lockedOffset: null, angleIndex: 0,
+                            flycamPhase: 0, flycamYawRate: 0.18,
+                            orbiting: false, paused: false, userManual: false,
+                            suppressUiReframe: false, stableView: false, focusOverride: null
+                        };
                     }
+                    // Focus-mode select is an explicit control — clear manual override
+                    if (state.cameraFollow.userManual || state.cameraFollow.behavior === 'lock') {
+                        applyCamBehavior('angleCycle');
+                    }
+                    state.cameraFollow.userManual = false;
                     state.cameraFollow.mode = e.target.value;
+                    state.cameraFollow.smart = state.cameraFollow.mode === 'auto'
+                        || state.cameraFollow.behavior === 'cinema'
+                        || state.cameraFollow.behavior === 'angleCycle'
+                        || state.cameraFollow.behavior === 'flycam';
+                    state.cameraFollow.paused = false;
+                    state.cameraFollow.orbiting = false;
                     if (state.cameraFollow.mode === 'custom') {
                         const px = prompt('Nhập tọa độ Offset X (m) trên kiện:', state.cameraFollow.customOffset?.x || 0);
                         const py = prompt('Nhập tọa độ Offset Y (m) trên kiện:', state.cameraFollow.customOffset?.y || 0);
@@ -3631,8 +4563,11 @@
                             state.cameraFollow.customOffset = new THREE.Vector3(parseFloat(px) || 0, parseFloat(py) || 0, parseFloat(pz) || 0);
                         }
                     }
-                    if (typeof centerCameraOnFollowTarget === 'function') {
-                        centerCameraOnFollowTarget();
+                    if (state.cameraFollow.behavior === 'angleCycle' && typeof window.cycleCargoAngleShot === 'function') {
+                        window.cycleCargoAngleShot({ duration: 0.65, advance: false });
+                    } else if (typeof window.startCinematicUiFrame === 'function') {
+                        // Focus-mode select is an explicit camera control — always allow
+                        window.startCinematicUiFrame({ duration: 0.75, force: true });
                     }
                     syncCameraFollowUI();
                 });
@@ -3703,6 +4638,15 @@
                 // Wind Force & Deflection
                 const windSpeed = parseFloat(document.getElementById('rng-wind-speed')?.value || '3.5') || 3.5;
                 const isGust = Boolean(document.getElementById('chk-wind-gust')?.checked);
+                const windDirDeg = parseFloat(document.getElementById('sel-wind-dir')?.value || '0') || 0;
+                // Feed the live physics: the solver's stochastic wind field (dynamics.js)
+                // takes the mean speed / direction / gust envelope from the site panel.
+                if (state.wind) {
+                    state.wind.speedMps = windSpeed;
+                    state.wind.dirDeg = windDirDeg;
+                    state.wind.gust = isGust;
+                    state.wind.enabled = windSpeed > 0.01;
+                }
                 const effectiveWindSpeed = isGust ? windSpeed * 1.3 : windSpeed;
                 const windSpeedKmH = effectiveWindSpeed * 3.6;
 
@@ -3737,6 +4681,9 @@
                 const driftDeg = (Math.atan2(windForceN, Math.max(1000, totalWeightN)) * 180 / Math.PI);
                 const driftEl = document.getElementById('val-wind-drift');
                 if (driftEl) driftEl.textContent = `${driftDeg.toFixed(2)}° (${effectiveWindSpeed <= 9.8 ? 'Đạt chuẩn' : 'Cần giám sát'})`;
+                // Design (static) values above; the live solver values are published per frame
+                // by refreshLiveWindReadout() once the airborne cargo actually feels the gusts.
+                phy.windDesign = { forceKN: windForceKN, driftDeg };
 
                 const windBadge = document.getElementById('wind-status-badge');
                 if (windBadge) {

@@ -33,6 +33,10 @@
             // Hyper-Realistic Procedural PBR Textures & Optically Physical Materials
             if (pbrFactory) {
                 MATS.wireRope = pbrFactory.createWireRopeMaterial();
+                MATS.chainDark = pbrFactory.createChainAlloyMaterial('body');
+                MATS.chainPowderRed = pbrFactory.createChainAlloyMaterial('powder_red');
+                MATS.chainPowderYellow = pbrFactory.createChainAlloyMaterial('powder_yellow');
+                MATS.webGreen = pbrFactory.createWebSlingMaterial('#16a34a', 2);
                 MATS.quayConcrete = pbrFactory.createQuayConcreteMaterial();
                 MATS.waterDeepSea = pbrFactory.createMaritimeWaterMaterial();
                 MATS.hookChevrons = new THREE.MeshPhysicalMaterial({
@@ -43,13 +47,15 @@
                 });
             } else {
                 MATS.wireRope = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.86, roughness: 0.28 });
+                MATS.chainDark = new THREE.MeshStandardMaterial({ color: 0x3e4554, metalness: 0.88, roughness: 0.32 });
+                MATS.chainPowderRed = new THREE.MeshPhysicalMaterial({ color: 0xdc2626, metalness: 0.42, roughness: 0.22, clearcoat: 0.48 });
+                MATS.chainPowderYellow = new THREE.MeshPhysicalMaterial({ color: 0xeab308, metalness: 0.42, roughness: 0.22, clearcoat: 0.48 });
+                MATS.webGreen = new THREE.MeshStandardMaterial({ color: 0x16a34a, metalness: 0.02, roughness: 0.94 });
                 MATS.quayConcrete = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.88, metalness: 0.08 });
                 MATS.waterDeepSea = new THREE.MeshPhysicalMaterial({ color: 0x03445e, roughness: 0.15, metalness: 0.8, transparent: true, opacity: 0.92 });
                 MATS.hookChevrons = MATS.yellowHazard;
             }
 
-            MATS.chainDark = new THREE.MeshStandardMaterial({ color: 0x4b5563, metalness: 0.92, roughness: 0.26 });
-            MATS.webGreen = new THREE.MeshStandardMaterial({ color: 0x10b981, metalness: 0.08, roughness: 0.76 });
             MATS.ferruleSilver = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, metalness: 0.94, roughness: 0.14 });
             MATS.timberWood = new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.82, metalness: 0.05 });
             MATS.lpHighlight = new THREE.MeshStandardMaterial({ color: 0x10b981, emissive: 0x064e3b, metalness: 0.55, roughness: 0.25 });
@@ -97,12 +103,85 @@
             MATS.craneYellow = new THREE.MeshPhysicalMaterial({ color: 0xf59e0b, metalness: 0.36, roughness: 0.30, clearcoat: 0.38 });
             MATS.craneWhite = new THREE.MeshPhysicalMaterial({ color: 0xf8fafc, metalness: 0.25, roughness: 0.35, clearcoat: 0.3 });
             MATS.craneSafetyRed = new THREE.MeshPhysicalMaterial({ color: 0xdc2626, metalness: 0.35, roughness: 0.35, clearcoat: 0.3 });
-            MATS.spreaderYellow = new THREE.MeshPhysicalMaterial({ color: 0xeab308, metalness: 0.46, roughness: 0.25, clearcoat: 0.45 });
+            MATS.spreaderYellow = new THREE.MeshPhysicalMaterial({ color: 0xfdb813, metalness: 0.42, roughness: 0.28, clearcoat: 0.4 });
+            // STS end-beam hazard chevrons (black / yellow diagonal)
+            {
+                const c = document.createElement('canvas');
+                c.width = 128; c.height = 128;
+                const ctx = c.getContext('2d');
+                ctx.fillStyle = '#0a0a0a';
+                ctx.fillRect(0, 0, 128, 128);
+                ctx.fillStyle = '#fdb813';
+                for (let i = -128; i < 256; i += 28) {
+                    ctx.beginPath();
+                    ctx.moveTo(i, 0);
+                    ctx.lineTo(i + 14, 0);
+                    ctx.lineTo(i + 14 + 128, 128);
+                    ctx.lineTo(i + 128, 128);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                const tex = new THREE.CanvasTexture(c);
+                tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+                tex.repeat.set(2, 2);
+                tex.colorSpace = THREE.SRGBColorSpace;
+                MATS.stsHazardStripe = new THREE.MeshStandardMaterial({ map: tex, metalness: 0.25, roughness: 0.55 });
+            }
+            MATS.stsFlipperRed = new THREE.MeshPhysicalMaterial({ color: 0xe11d48, metalness: 0.35, roughness: 0.32, clearcoat: 0.35 });
+            MATS.stsGreyBox = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.55, roughness: 0.4 });
             MATS.craneRailSteel = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.88, roughness: 0.18 });
             MATS.maerskCyan = new THREE.MeshPhysicalMaterial({ color: 0x0284c7, metalness: 0.3, roughness: 0.38, clearcoat: 0.3 });
             MATS.evergreenGreen = new THREE.MeshPhysicalMaterial({ color: 0x15803d, metalness: 0.3, roughness: 0.38, clearcoat: 0.3 });
             MATS.hapagOrange = new THREE.MeshPhysicalMaterial({ color: 0xea580c, metalness: 0.3, roughness: 0.38, clearcoat: 0.3 });
         }
+
+        // Resolves dynamic EN 1492 color-coded & PBR material for slings based on WLL
+        function getDynamicSlingMaterial(look = 'wire', wllT = 15.0) {
+            const wll = Math.max(0.2, Number(wllT) || 15.0);
+            if (look === 'chain') {
+                return MATS.chainDark;
+            }
+            if (look === 'wire' || look === 'grommet') {
+                return MATS.wireRope;
+            }
+
+            // Fallback color determination if Core is not yet attached to window
+            let colorHex = '#16a34a';
+            let stripeCount = 2;
+            if (wll <= 1.0) { colorHex = '#8b5cf6'; stripeCount = 1; }
+            else if (wll <= 2.0) { colorHex = '#16a34a'; stripeCount = 2; }
+            else if (wll <= 3.0) { colorHex = '#eab308'; stripeCount = 3; }
+            else if (wll <= 4.0) { colorHex = '#64748b'; stripeCount = 4; }
+            else if (wll <= 5.0) { colorHex = '#dc2626'; stripeCount = 5; }
+            else if (wll <= 6.0) { colorHex = '#92400e'; stripeCount = 6; }
+            else if (wll <= 8.0) { colorHex = '#2563eb'; stripeCount = 8; }
+            else { colorHex = '#ea580c'; stripeCount = 0; }
+
+            const enSpecGetter = window.getEN1492ColorSpec || (window.Core && window.Core.getEN1492ColorSpec);
+            if (typeof enSpecGetter === 'function') {
+                const spec = enSpecGetter(wll);
+                if (spec) {
+                    colorHex = spec.colorHex;
+                    stripeCount = spec.stripeCount;
+                }
+            }
+
+            if (look === 'web') {
+                if (pbrFactory && typeof pbrFactory.createWebSlingMaterial === 'function') {
+                    return pbrFactory.createWebSlingMaterial(colorHex, stripeCount);
+                }
+                return MATS.webGreen;
+            }
+            if (look === 'round_sling') {
+                if (pbrFactory && typeof pbrFactory.createRoundSlingMaterial === 'function') {
+                    return pbrFactory.createRoundSlingMaterial(colorHex);
+                }
+                return MATS.webGreen;
+            }
+            return MATS.wireRope;
+        }
+        window.getDynamicSlingMaterial = getDynamicSlingMaterial;
+        MATS.getDynamicSlingMaterial = getDynamicSlingMaterial;
 
         // Helper: Adds crisp CAD feature crease outlines to any 3D Group
         function applyCADFeatureEdges(rootGroup, useLightEdge = false) {
@@ -167,11 +246,13 @@
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.15, 220);
             // Perspective framing on Flat Rack Container + Spreader Beam + Hook (1/3 left offset for open right drawer)
+            // High-angle 1/3 composition (cargo left of free stage when right drawer opens)
             camera.position.set(-13.5, 9.2, 19.5);
 
             const container = document.getElementById('canvas-container');
             const GfxRendererClass = window.GFX?.SceneRenderer || GFX?.SceneRenderer;
             if (GfxRendererClass) {
+                // Default 'high' = 1080p-tuned (DPR≤1, 2048 PCF shadows, no post FX)
                 sceneRenderer = new GfxRendererClass(container, scene, camera, { quality: 'high' });
                 renderer = sceneRenderer.renderer;
                 envManager = sceneRenderer.envManager;
@@ -181,9 +262,10 @@
             } else {
                 renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
                 renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                // Cap DPR at 1 for 1080p smoothness without jagged edges from upscale
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1));
                 renderer.shadowMap.enabled = true;
-                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                renderer.shadowMap.type = THREE.PCFShadowMap;
                 renderer.outputColorSpace = THREE.SRGBColorSpace;
                 renderer.toneMapping = THREE.ACESFilmicToneMapping;
                 renderer.toneMappingExposure = 1.18;
@@ -214,11 +296,56 @@
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
-            controls.dampingFactor = 0.06;
+            // Slightly higher damping = smoother hand-orbit, less micro-jitter
+            controls.dampingFactor = 0.12;
+            controls.rotateSpeed = 0.88;
+            controls.panSpeed = 1.0;
+            controls.zoomSpeed = 1.0;
             controls.minDistance = 1.2;
             controls.maxDistance = 120.0;
             controls.maxPolarAngle = Math.PI / 2 - 0.004;
             controls.target.set(3.2, 3.2, -0.6);
+            controls.update();
+            // Bake initial pose so Auto/Fly never snap from an unseeded orbit
+            if (state.cameraFollow) {
+                state.cameraFollow.behavior = 'cinema';
+                state.cameraFollow.enabled = true;
+                state.cameraFollow.stableView = true;
+                state.cameraFollow.suppressUiReframe = true;
+                state.cameraFollow.flycamSeeded = false;
+                state.cameraFollow.lockedOffset = camera.position.clone().sub(controls.target);
+            }
+            // Mouse drag: kill ALL auto modes — user owns the view until a cam button is pressed
+            controls.addEventListener('start', () => {
+                if (typeof window.takeManualCameraControl === 'function') {
+                    window.takeManualCameraControl({ orbiting: true });
+                } else if (state.cameraFollow) {
+                    state.cameraFollow.userManual = true;
+                    state.cameraFollow.orbiting = true;
+                    state.cameraFollow.behavior = 'lock';
+                    state.cameraFollow.enabled = false;
+                    state.cameraFollow.smart = false;
+                    state.cameraFollow.suppressUiReframe = true;
+                    state.cameraFollow.stableView = true;
+                }
+            });
+            controls.addEventListener('end', () => {
+                if (state.cameraFollow) {
+                    state.cameraFollow.orbiting = false;
+                    // Stay in user lock after release — do not revive Auto/Fly
+                    state.cameraFollow.userManual = true;
+                    state.cameraFollow.behavior = 'lock';
+                    state.cameraFollow.enabled = false;
+                    state.cameraFollow.smart = false;
+                    state.cameraFollow.suppressUiReframe = true;
+                    state.cameraFollow.stableView = true;
+                    if (camera && controls) {
+                        state.cameraFollow.lockedOffset = camera.position.clone().sub(controls.target);
+                    }
+                    if (typeof prevFollowWorldPos !== 'undefined') prevFollowWorldPos = null;
+                    if (typeof window.syncCameraFollowUI === 'function') window.syncCameraFollowUI();
+                }
+            });
 
             // Camera Follow Target 3D Reticle Marker
             cameraFollowMarker = new THREE.Group();
@@ -242,14 +369,32 @@
             scene.add(floorMesh);
 
             // Dual-Scale Engineering Metric Grid (1m subdivisions + 5m major grid)
+            // Materials keep fog:true so linear scene.fog dissolves lines into the void at the pad edge
             gridHelper = new THREE.Group();
             const minorGrid = new THREE.GridHelper(100, 100, 0x334155, 0x1e293b);
-            minorGrid.material.transparent = true;
-            minorGrid.material.opacity = 0.45;
+            const enableGridFog = (mat) => {
+                const mats = Array.isArray(mat) ? mat : [mat];
+                mats.forEach(m => {
+                    if (!m) return;
+                    m.transparent = true;
+                    m.fog = true;
+                    m.depthWrite = false;
+                });
+            };
+            enableGridFog(minorGrid.material);
+            if (Array.isArray(minorGrid.material)) {
+                minorGrid.material.forEach(m => { if (m) m.opacity = 0.42; });
+            } else {
+                minorGrid.material.opacity = 0.42;
+            }
             const majorGrid = new THREE.GridHelper(100, 20, 0x475569, 0x334155);
             majorGrid.position.y = 0.002;
-            majorGrid.material.transparent = true;
-            majorGrid.material.opacity = 0.68;
+            enableGridFog(majorGrid.material);
+            if (Array.isArray(majorGrid.material)) {
+                majorGrid.material.forEach(m => { if (m) m.opacity = 0.62; });
+            } else {
+                majorGrid.material.opacity = 0.62;
+            }
             gridHelper.add(minorGrid, majorGrid);
             gridHelper.position.y = 0.006;
             scene.add(gridHelper);
@@ -352,10 +497,26 @@
             if (envManager) {
                 envManager.applyPreset(targetPreset);
             } else {
+                // Fallback (no GFX env manager): fog color === background for soft infinite pad
                 const isLightSheet = state.sceneId === 'sheet';
                 const sky = isLightSheet ? 0xeef2f6 : (state.sceneId === 'yard' ? 0x1e293b : 0x131924);
-                scene.background = new THREE.Color(sky);
-                scene.fog = new THREE.FogExp2(sky, 0.0005);
+                const fogNear = isLightSheet ? 42 : (state.sceneId === 'yard' ? 34 : 28);
+                const fogFar = isLightSheet ? 95 : (state.sceneId === 'yard' ? 60 : 52);
+                const bg = new THREE.Color(sky);
+                // Vietnam night wash when no env manager (Asia/Ho_Chi_Minh)
+                try {
+                    const parts = new Intl.DateTimeFormat('en-GB', {
+                        timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+                    }).formatToParts(new Date());
+                    const h = parseInt(parts.find(p => p.type === 'hour')?.value || '12', 10);
+                    const m = parseInt(parts.find(p => p.type === 'minute')?.value || '0', 10);
+                    const t = h + m / 60;
+                    if (!isLightSheet && (t >= 19.2 || t < 5.4)) {
+                        bg.lerp(new THREE.Color(0x080c14), 0.35);
+                    }
+                } catch (_) { /* keep base sky */ }
+                scene.background = bg;
+                scene.fog = new THREE.Fog(bg.getHex(), fogNear, fogFar);
             }
 
             const isPrintSheet = state.sceneId === 'sheet';
@@ -1335,51 +1496,97 @@
         function createLatticeBoomMesh(boomLen, width, mat) {
             const group = new THREE.Group();
             const halfW = width / 2;
-            const chordGeo = new THREE.CylinderGeometry(0.055, 0.055, boomLen, 8);
-
-            [[-halfW, -halfW], [halfW, -halfW], [-halfW, halfW], [halfW, halfW]].forEach(([cx, cz]) => {
-                const chord = new THREE.Mesh(chordGeo, mat);
+            const chordMat = mat || MATS.yellowHazard;
+            // Unique geometries per chord so deformation / UV never share torn buffers
+            const makeChord = (cx, cz) => {
+                const chord = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, boomLen, 10), chordMat);
                 chord.position.set(cx, boomLen / 2, cz);
                 chord.castShadow = true;
+                chord.receiveShadow = true;
                 group.add(chord);
-            });
+            };
+            makeChord(-halfW, -halfW);
+            makeChord(halfW, -halfW);
+            makeChord(-halfW, halfW);
+            makeChord(halfW, halfW);
 
             const numBays = Math.max(6, Math.round(boomLen / 1.4));
             const bayH = boomLen / numBays;
             const strutLen = Math.hypot(width, bayH);
-            const strutGeo = new THREE.CylinderGeometry(0.028, 0.028, strutLen, 6);
 
             for (let i = 0; i < numBays; i++) {
                 const yMid = (i + 0.5) * bayH;
+                // Bay frames (box) + diagonal lacing — full 3D volume, not a flat X
+                [[-halfW, -halfW, halfW, -halfW], [-halfW, halfW, halfW, halfW],
+                 [-halfW, -halfW, -halfW, halfW], [halfW, -halfW, halfW, halfW]].forEach(([x0, z0, x1, z1]) => {
+                    const dx = x1 - x0, dz = z1 - z0;
+                    const len = Math.hypot(dx, dz) || 0.01;
+                    const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, len, 6), chordMat);
+                    rail.position.set((x0 + x1) * 0.5, yMid, (z0 + z1) * 0.5);
+                    rail.quaternion.setFromUnitVectors(
+                        new THREE.Vector3(0, 1, 0),
+                        new THREE.Vector3(dx, 0, dz).normalize()
+                    );
+                    rail.castShadow = true;
+                    group.add(rail);
+                });
                 [-halfW, halfW].forEach(fz => {
-                    const s = new THREE.Mesh(strutGeo, mat);
+                    const s = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, strutLen, 6), chordMat);
                     s.position.set(0, yMid, fz);
                     s.rotation.z = Math.atan2(width, bayH) * (i % 2 === 0 ? 1 : -1);
+                    s.castShadow = true;
                     group.add(s);
                 });
                 [-halfW, halfW].forEach(fx => {
-                    const sSide = new THREE.Mesh(strutGeo, mat);
+                    const sSide = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, strutLen, 6), chordMat);
                     sSide.position.set(fx, yMid, 0);
                     sSide.rotation.x = Math.atan2(width, bayH) * (i % 2 === 0 ? -1 : 1);
+                    sSide.castShadow = true;
                     group.add(sSide);
                 });
             }
 
-            const tipHead = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, width + 0.16, 18), MATS.yellowHazard);
-            tipHead.rotation.z = Math.PI / 2;
-            tipHead.position.set(0, boomLen, 0);
-            group.add(tipHead);
+            // End plates at both tips so the lattice reads as a closed compression beam
+            [0, boomLen].forEach(yTip => {
+                const tipHead = new THREE.Mesh(
+                    new THREE.BoxGeometry(width + 0.08, 0.10, width + 0.08),
+                    MATS.yellowHazard || chordMat
+                );
+                tipHead.position.set(0, yTip, 0);
+                tipHead.castShadow = true;
+                group.add(tipHead);
+            });
 
             return group;
         }
 
         // Updates the 3D Crane Boom / Trolley & 4-Part Hoist Ropes to dynamically track `phy.hookPos`
         function updateCraneKinematics() {
-            const hp = phy.hookPos;
+            const hookNow = phy.hookPos;
+            // The crane structure (trolley / boom nose) sits over the winch-driven
+            // suspension point; the physical hook block hangs from it on the elastic
+            // hoist rope and may sway (dynamics.js).  Fall back to the hook itself
+            // whenever the hoist state is not in sync (fresh teleport, rigid mode).
+            let hp = hookNow;
+            const hoist = phy.hoist;
+            if (hoist && hoist.kin && hoist.off) {
+                const expected = hoist.kin.clone().add(hoist.off);
+                if (expected.distanceToSquared(hookNow) < 0.05 * 0.05) hp = hoist.kin;
+            }
             const ropeTopOffset = 0.54; // Top of hook block sheaves relative to hookPos
+            const upAxis = new THREE.Vector3(0, 1, 0);
+            const invHookQuat = hookAssemblyGroup.getWorldQuaternion(new THREE.Quaternion()).invert();
 
             const updateHoistFalls = (topY) => {
-                const ropeLen = Math.max(0.4, topY - (hp.y + ropeTopOffset));
+                // Sheave crown (hook-local) -> suspension point (hook-local): the falls
+                // tilt when the block swings under the boom nose.
+                const toTop = new THREE.Vector3(hp.x - hookNow.x, topY - (hookNow.y + ropeTopOffset), hp.z - hookNow.z).applyQuaternion(invHookQuat);
+                if (toTop.y < 0.4) toTop.y = 0.4;
+                const ropeLen = toTop.length();
+                const dir = toTop.clone().normalize();
+                const q = new THREE.Quaternion().setFromUnitVectors(upAxis, dir);
+                const mid = toTop.clone().multiplyScalar(0.5);
+                mid.y += ropeTopOffset;
                 const fallOffsets = [
                     [-0.275, 0],
                     [-0.025, 0],
@@ -1392,8 +1599,8 @@
                     if (fall) {
                         hasFourFalls = true;
                         fall.scale.set(1, ropeLen, 1);
-                        fall.position.set(fallOffsets[idx][0], ropeTopOffset + ropeLen / 2, fallOffsets[idx][1]);
-                        fall.rotation.set(0, 0, 0);
+                        fall.position.set(fallOffsets[idx][0] + mid.x, mid.y, fallOffsets[idx][1] + mid.z);
+                        fall.quaternion.copy(q);
                     }
                 }
                 const ropeL = hookAssemblyGroup.getObjectByName('hoistRopeL');
@@ -1403,9 +1610,11 @@
                     ropeR.visible = !hasFourFalls;
                     if (!hasFourFalls) {
                         ropeL.scale.set(1, ropeLen, 1);
-                        ropeL.position.set(-0.15, ropeTopOffset + ropeLen / 2, 0);
+                        ropeL.position.set(-0.15 + mid.x, mid.y, mid.z);
+                        ropeL.quaternion.copy(q);
                         ropeR.scale.set(1, ropeLen, 1);
-                        ropeR.position.set(0.15, ropeTopOffset + ropeLen / 2, 0);
+                        ropeR.position.set(0.15 + mid.x, mid.y, mid.z);
+                        ropeR.quaternion.copy(q);
                     }
                 }
             };

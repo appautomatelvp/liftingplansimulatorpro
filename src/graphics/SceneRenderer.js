@@ -22,6 +22,7 @@ export const QUALITY_TIERS = {
         id: 'ultra',
         name: 'Ultra (AAA Photoreal)',
         shadowMapSize: 4096,
+        shadowType: 'soft',
         aoEnabled: true,
         aoType: 'gtao',
         bloomEnabled: true,
@@ -29,25 +30,30 @@ export const QUALITY_TIERS = {
         msaaSamples: 4,
         maxDPR: 2.0
     },
+    // Default interactive tier — 1080p ~60 FPS + native MSAA (no răng cưa)
     high: {
         id: 'high',
-        name: 'High (Cân Bằng Chuẩn)',
+        name: 'High (1080p / Cân bằng)',
         shadowMapSize: 4096,
+        shadowType: 'pcf',
         aoEnabled: false,
         aoType: 'gtao',
         bloomEnabled: false,
         smaaEnabled: false,
-        msaaSamples: 4,
-        maxDPR: 1.5,
+        antialias: true,
+        msaaSamples: 0,
+        maxDPR: 1.0,
         bypassComposer: true
     },
     studio: {
         id: 'studio',
         name: 'CAD / Liebherr Studio (Sắc Nét)',
         shadowMapSize: 2048,
+        shadowType: 'pcf',
         aoEnabled: false,
         bloomEnabled: false,
         smaaEnabled: false,
+        antialias: true,
         msaaSamples: 4,
         maxDPR: 2.0,
         bypassComposer: true
@@ -56,9 +62,11 @@ export const QUALITY_TIERS = {
         id: 'performance',
         name: 'Performance (Tiết Kiệm Pin / 60 FPS)',
         shadowMapSize: 1024,
+        shadowType: 'basic',
         aoEnabled: false,
         bloomEnabled: false,
         smaaEnabled: false,
+        antialias: true,
         msaaSamples: 0,
         maxDPR: 1.0,
         bypassComposer: true
@@ -86,6 +94,11 @@ export class SceneRenderer {
         // 2. Initialize PBR Engine & Environment Manager
         this.pbrFactory = new PBRMaterialFactory(this.renderer);
         this.envManager = new EnvironmentManager(this.scene, this.renderer);
+        // Align shadow map with selected quality tier (EnvironmentManager defaults are overridden)
+        if (this.envManager.sunLight) {
+            const q0 = QUALITY_TIERS[this.currentQuality] || QUALITY_TIERS.high;
+            this.envManager.sunLight.shadow.mapSize.set(q0.shadowMapSize, q0.shadowMapSize);
+        }
 
         // 3. Initialize Post-Processing EffectComposer
         this.composer = null;
@@ -105,7 +118,8 @@ export class SceneRenderer {
         const quality = QUALITY_TIERS[this.currentQuality] || QUALITY_TIERS.high;
 
         this.renderer = new THREE.WebGLRenderer({
-            antialias: true,
+            // Native MSAA keeps cables/edges smooth (no răng cưa). Cheap at DPR≤1 / 1080p.
+            antialias: quality.antialias !== false,
             powerPreference: 'high-performance',
             stencil: false,
             depth: true,
@@ -123,11 +137,18 @@ export class SceneRenderer {
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.renderer.toneMappingExposure = 1.18;
 
-        // Shadow Map Setup
+        // Shadow Map Setup — soft shadows only on Ultra; high/1080p uses cheaper PCF
         this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.applyShadowType(quality.shadowType || 'pcf');
 
         this.container.appendChild(this.renderer.domElement);
+    }
+
+    applyShadowType(shadowType) {
+        if (shadowType === 'soft') this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        else if (shadowType === 'basic') this.renderer.shadowMap.type = THREE.BasicShadowMap;
+        else this.renderer.shadowMap.type = THREE.PCFShadowMap;
+        this.renderer.shadowMap.needsUpdate = true;
     }
 
     /**
@@ -267,7 +288,8 @@ export class SceneRenderer {
         this.currentQuality = qualityKey;
         const q = QUALITY_TIERS[qualityKey];
 
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, q.maxDPR));
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, q.maxDPR));
+        this.applyShadowType(q.shadowType || 'pcf');
         if (this.envManager && this.envManager.sunLight) {
             this.envManager.sunLight.shadow.mapSize.set(q.shadowMapSize, q.shadowMapSize);
             if (this.envManager.sunLight.shadow.map) {

@@ -72,9 +72,119 @@ export const ASSET_SPECS = {
         ]
     },
 
+    'container_20fthc': {
+        id: 'container_20fthc', category: 'cargo', name: 'ISO 25G1 20ft High Cube',
+        standard: 'ISO 668', verified: true,
+        targetDimensions: { x: 6.058, y: 2.896, z: 2.438 }, tolerance: 0.05, pivot: 'center',
+        tareMassKg: 2350, grossMassKg: 30480, cogOffset: { x: 0, y: -0.08, z: 0 }
+    },
+    'container_45fthc': {
+        id: 'container_45fthc', category: 'cargo', name: 'ISO L5G1 45ft High Cube',
+        standard: 'ISO 668', verified: true,
+        targetDimensions: { x: 13.716, y: 2.896, z: 2.438 }, tolerance: 0.05, pivot: 'center',
+        tareMassKg: 4800, grossMassKg: 30480, cogOffset: { x: 0, y: -0.10, z: 0 }
+    },
+    'container_10ft': {
+        id: 'container_10ft', category: 'cargo', name: 'ISO 12G1 10ft Mini / Offshore',
+        standard: 'ISO 668', verified: true,
+        targetDimensions: { x: 2.991, y: 2.591, z: 2.438 }, tolerance: 0.06, pivot: 'center',
+        tareMassKg: 1300, grossMassKg: 10160, cogOffset: { x: 0, y: -0.10, z: 0 }
+    },
+    'container_53fthc': {
+        id: 'container_53fthc', category: 'cargo', name: '53ft HC Intermodal Overhang',
+        standard: 'AAR / ISO intermodal', verified: true,
+        targetDimensions: { x: 16.154, y: 2.896, z: 2.591 }, tolerance: 0.08, pivot: 'center',
+        tareMassKg: 6200, grossMassKg: 30480, cogOffset: { x: 0, y: -0.10, z: 0 }
+    },
+    'container_halfheight': {
+        id: 'container_halfheight', category: 'cargo', name: 'ISO 28U1 20ft Half-Height',
+        standard: 'ISO 1496-1', verified: true,
+        targetDimensions: { x: 6.058, y: 1.295, z: 2.438 }, tolerance: 0.08, pivot: 'center',
+        tareMassKg: 2400, grossMassKg: 30480, cogOffset: { x: 0, y: -0.05, z: 0 }
+    },
+    'container_drybulk': {
+        id: 'container_drybulk', category: 'cargo', name: 'ISO 22B0 20ft Dry Bulk',
+        standard: 'ISO 1496-4', verified: true,
+        targetDimensions: { x: 6.058, y: 2.591, z: 2.438 }, tolerance: 0.08, pivot: 'center',
+        tareMassKg: 2800, grossMassKg: 30480, cogOffset: { x: 0, y: -0.05, z: 0 }
+    },
+    'container_reefer20': {
+        id: 'container_reefer20', category: 'cargo', name: 'ISO 22R1 20ft Reefer',
+        standard: 'ISO 1496-2', verified: true,
+        targetDimensions: { x: 6.058, y: 2.591, z: 2.438 }, tolerance: 0.08, pivot: 'center',
+        tareMassKg: 3000, grossMassKg: 30480, cogOffset: { x: -0.25, y: 0.05, z: 0 }
+    },
+    'container_opentop40': {
+        id: 'container_opentop40', category: 'cargo', name: 'ISO 42U1 40ft Open Top',
+        standard: 'ISO 1496-1', verified: true,
+        targetDimensions: { x: 12.192, y: 2.591, z: 2.438 }, tolerance: 0.08, pivot: 'center',
+        tareMassKg: 4000, grossMassKg: 30480, cogOffset: { x: 0, y: -0.15, z: 0 }
+    },
+    'container_flatrack20': {
+        id: 'container_flatrack20', category: 'cargo', name: 'ISO 22P3 20ft Flat Rack',
+        standard: 'ISO 1496-5', verified: true,
+        targetDimensions: { x: 6.058, y: 2.591, z: 2.438 }, tolerance: 0.10, pivot: 'center',
+        tareMassKg: 2750, grossMassKg: 34000, cogOffset: { x: 0, y: -0.45, z: 0 }
+    },
+    'container_platform20': {
+        id: 'container_platform20', category: 'cargo', name: 'ISO 29P0 20ft Platform',
+        standard: 'ISO 1496-5', verified: true,
+        targetDimensions: { x: 6.058, y: 0.335, z: 2.438 }, tolerance: 0.12, pivot: 'center',
+        tareMassKg: 2200, grossMassKg: 30480, cogOffset: { x: 0, y: 0, z: 0 }
+    },
+
     // ------------------------------------------------------------------------
     // BELOW-THE-HOOK RIGGING (SPREADERS & HARDWARE)
     // ------------------------------------------------------------------------
+    'sts_spreader_20': {
+        id: 'sts_spreader_20',
+        category: 'beam',
+        name: 'STS Telescopic Spreader 20ft Retracted',
+        standard: 'ISO 3874 / RAM SingFlex style',
+        verified: true,
+        targetDimensions: { x: 6.058, y: 1.20, z: 2.438 },
+        tolerance: 0.20,
+        pivot: 'center',
+        tareMassKg: 9200,
+        wllT: 41.0
+    },
+    'sts_spreader_40': {
+        id: 'sts_spreader_40',
+        category: 'beam',
+        name: 'STS Telescopic Spreader 40ft Master',
+        standard: 'ISO 3874 / RAM SingFlex style',
+        verified: true,
+        targetDimensions: { x: 12.192, y: 1.20, z: 2.438 },
+        tolerance: 0.20,
+        pivot: 'center',
+        tareMassKg: 10500,
+        wllT: 41.0
+    },
+    'sts_spreader_45': {
+        id: 'sts_spreader_45',
+        category: 'beam',
+        name: 'STS Telescopic Spreader 45ft Extended',
+        standard: 'ISO 3874 / Bromma STS45 style',
+        verified: true,
+        targetDimensions: { x: 13.716, y: 1.20, z: 2.438 },
+        tolerance: 0.20,
+        pivot: 'center',
+        tareMassKg: 11200,
+        wllT: 41.0
+    },
+    'sts_spreader_twin': {
+        id: 'sts_spreader_twin',
+        category: 'beam',
+        name: 'STS Twin-Lift Spreader 2×20ft',
+        standard: 'ISO 3874 Twin-Lift',
+        verified: true,
+        targetDimensions: { x: 12.192, y: 1.20, z: 2.438 },
+        tolerance: 0.20,
+        pivot: 'center',
+        tareMassKg: 11800,
+        wllT: 2 * 25.0
+    },
+
     'modulift_spreader': {
         id: 'modulift_spreader',
         category: 'beam',
@@ -156,12 +266,26 @@ export const ASSET_SPECS = {
         name: 'Flat Rack Container — Container mặt bằng (ISO 45P3)',
         standard: 'ISO 668 / ISO 1496-5',
         verified: true,
-        targetDimensions: { x: 12.192, y: 2.591, z: 2.438 },
+        targetDimensions: { x: 12.192, y: 2.896, z: 2.438 },
         tolerance: 0.15,
         pivot: 'center',
         tareMassKg: 5200,
         grossMassKg: 45000,
-        cogOffset: { x: 0, y: -0.45, z: 0 }
+        cogOffset: { x: 0, y: -0.55, z: 0 }
+    },
+
+    'container_platform40': {
+        id: 'container_platform40',
+        category: 'cargo',
+        name: 'ISO 49P0 40ft Platform Deck',
+        standard: 'ISO 1496-5',
+        verified: true,
+        targetDimensions: { x: 12.192, y: 0.610, z: 2.438 },
+        tolerance: 0.12,
+        pivot: 'center',
+        tareMassKg: 5500,
+        grossMassKg: 30480,
+        cogOffset: { x: 0, y: 0, z: 0 }
     },
 
     'opentop_container': {

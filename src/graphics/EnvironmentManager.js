@@ -21,7 +21,10 @@ export const LIGHTING_PRESETS = {
         sunPosition: [20, 38, 24],
         fillColor: 0x60a5fa,
         fillIntensity: 0.72,
-        fogDensity: 0.0005,
+        // Linear fog: clear lift zone, grid gone by ~edge of 100 m helper
+        fogNear: 30,
+        fogFar: 54,
+        fogDensity: 0.0005, // legacy Exp2 fallback
         exposure: 1.18,
         envIntensity: 1.18,
         backgroundBlur: 0.25,
@@ -37,6 +40,8 @@ export const LIGHTING_PRESETS = {
         sunPosition: [24, 44, 28],
         fillColor: 0x93c5fd,
         fillIntensity: 0.78,
+        fogNear: 34,
+        fogFar: 60,
         fogDensity: 0.0006,
         exposure: 1.16,
         envIntensity: 1.1,
@@ -53,6 +58,8 @@ export const LIGHTING_PRESETS = {
         sunPosition: [20, 48, 22],
         fillColor: 0xcbd5e1,
         fillIntensity: 0.85,
+        fogNear: 42,
+        fogFar: 95,
         fogDensity: 0.0002,
         exposure: 1.06,
         envIntensity: 0.95,
@@ -69,6 +76,8 @@ export const LIGHTING_PRESETS = {
         sunPosition: [32, 26, 28],
         fillColor: 0x38bdf8,
         fillIntensity: 0.55,
+        fogNear: 28,
+        fogFar: 52,
         fogDensity: 0.0008,
         exposure: 1.2,
         envIntensity: 1.15,
@@ -85,6 +94,8 @@ export const LIGHTING_PRESETS = {
         sunPosition: [-18, 36, 22],
         fillColor: 0x38bdf8,
         fillIntensity: 0.5,
+        fogNear: 24,
+        fogFar: 48,
         fogDensity: 0.0008,
         exposure: 1.22,
         envIntensity: 0.95,
@@ -92,6 +103,36 @@ export const LIGHTING_PRESETS = {
         solidBackground: 0x090d16
     }
 };
+
+/**
+ * Vietnam local clock (Asia/Ho_Chi_Minh, UTC+7, no DST) → atmospheric band.
+ * Used to soften the horizon tint without fighting the active lighting preset.
+ */
+export function getVietnamHorizonBand(date = new Date()) {
+    let hour = 12;
+    let minute = 0;
+    try {
+        const parts = new Intl.DateTimeFormat('en-GB', {
+            timeZone: 'Asia/Ho_Chi_Minh',
+            hour: '2-digit',
+            minute: '2-digit',
+            hourCycle: 'h23'
+        }).formatToParts(date);
+        hour = parseInt(parts.find(p => p.type === 'hour')?.value || '12', 10);
+        minute = parseInt(parts.find(p => p.type === 'minute')?.value || '0', 10);
+    } catch (_) {
+        const vn = new Date(date.getTime() + (7 * 60 - date.getTimezoneOffset()) * 60000);
+        hour = vn.getUTCHours();
+        minute = vn.getUTCMinutes();
+    }
+    const t = hour + minute / 60;
+    // Approx. Ho Chi Minh photoperiod (Nov): sunrise ~05:47, sunset ~17:27
+    if (t >= 5.4 && t < 6.5) return 'dawn';
+    if (t >= 6.5 && t < 16.5) return 'day';
+    if (t >= 16.5 && t < 18.0) return 'golden';
+    if (t >= 18.0 && t < 19.2) return 'dusk';
+    return 'night';
+}
 
 export class EnvironmentManager {
     constructor(scene, renderer) {
@@ -122,8 +163,8 @@ export class EnvironmentManager {
         this.sunLight.position.set(20, 38, 24);
         this.sunLight.castShadow = true;
 
-        // Ultra High-Resolution 4096px Soft Shadows focused tightly on Rigging & Load
-        this.sunLight.shadow.mapSize.set(4096, 4096);
+        // Default 1024 for 1080p interactive; SceneRenderer.setQuality can raise for Ultra/Studio
+        this.sunLight.shadow.mapSize.set(1024, 1024);
         this.sunLight.shadow.camera.near = 2.0;
         this.sunLight.shadow.camera.far = 140.0;
         this.sunLight.shadow.camera.left = -26;
@@ -160,6 +201,74 @@ export class EnvironmentManager {
     }
 
     /**
+     * Linear fog color === exact scene background → soft infinite floor / no hard horizon cut.
+     * near: lifting gear stays crisp; far: 100 m grid fully dissolves into the void.
+     */
+    applyMatchedHorizonFog(bgColor, near = 30, far = 54, opts) {
+        const fogColor = (bgColor && bgColor.isColor)
+            ? bgColor.clone()
+            : new THREE.Color(bgColor != null ? bgColor : 0x131924);
+        const setBackground = !(opts && opts.setBackground === false);
+        if (setBackground) this.scene.background = fogColor;
+        if (this.scene.fog && this.scene.fog.isFog) {
+            this.scene.fog.color.copy(fogColor);
+            this.scene.fog.near = near;
+            this.scene.fog.far = far;
+        } else {
+            this.scene.fog = new THREE.Fog(fogColor.getHex(), near, far);
+        }
+        return this.scene.fog;
+    }
+
+    /**
+     * Tint background+fog from Vietnam local time (UTC+7) for a living horizon feel.
+     * Keeps the same hex on fog & background so the fade stays seamless.
+     */
+    applyVietnamHorizonAtmosphere(basePreset) {
+        const preset = basePreset || LIGHTING_PRESETS[this.currentPresetId] || LIGHTING_PRESETS.liebherr_studio;
+        // CAD sheet stays neutral white — no TOD wash
+        if (preset.id === 'print_plan') {
+            this.applyMatchedHorizonFog(preset.solidBackground, preset.fogNear, preset.fogFar);
+            return getVietnamHorizonBand();
+        }
+
+        const band = getVietnamHorizonBand();
+        const base = new THREE.Color(preset.solidBackground);
+        const wash = new THREE.Color();
+        let near = preset.fogNear != null ? preset.fogNear : 30;
+        let far = preset.fogFar != null ? preset.fogFar : 54;
+
+        if (band === 'dawn') {
+            wash.setHex(0x3b455c);
+            base.lerp(wash, 0.22);
+            near = Math.max(26, near - 2);
+            far = Math.min(58, far + 2);
+        } else if (band === 'day') {
+            wash.setHex(0x243044);
+            base.lerp(wash, 0.08);
+        } else if (band === 'golden') {
+            wash.setHex(0x3a2a22);
+            base.lerp(wash, 0.28);
+            near = Math.max(24, near - 3);
+            far = Math.min(56, far + 1);
+        } else if (band === 'dusk') {
+            wash.setHex(0x1a2233);
+            base.lerp(wash, 0.2);
+            near = Math.max(24, near - 2);
+        } else {
+            // night (current VN evening) — deeper void, tighter fade for infinite pad
+            wash.setHex(0x080c14);
+            base.lerp(wash, 0.35);
+            near = Math.max(22, near - 4);
+            far = Math.min(50, far - 2);
+        }
+
+        this.applyMatchedHorizonFog(base, near, far);
+        this._vietnamHorizonBand = band;
+        return band;
+    }
+
+    /**
      * Applies a predefined industrial lighting and atmospheric preset.
      */
     applyPreset(presetKey) {
@@ -174,9 +283,6 @@ export class EnvironmentManager {
         this.fillLight.color.setHex(preset.fillColor);
         this.fillLight.intensity = preset.fillIntensity;
 
-        // Configure Atmospheric Fog
-        this.scene.fog = new THREE.FogExp2(preset.horizonColor, preset.fogDensity);
-
         // Configure Exposure & Environment Intensity
         this.renderer.toneMappingExposure = preset.exposure;
         this.scene.environmentIntensity = preset.envIntensity;
@@ -184,14 +290,13 @@ export class EnvironmentManager {
         // If no external HDR loaded yet, generate high-fidelity procedural IBL
         if (!this.currentHDREnvMap) {
             this.generateProceduralSkyHDR(preset);
-        } else {
-            if (preset.solidBackground !== undefined) {
-                this.scene.background = new THREE.Color(preset.solidBackground);
-            } else {
-                this.scene.background = this.currentHDREnvMap;
-                this.scene.backgroundBlurriness = preset.backgroundBlur || 0.0;
-            }
+        } else if (preset.solidBackground === undefined) {
+            this.scene.background = this.currentHDREnvMap;
+            this.scene.backgroundBlurriness = preset.backgroundBlur || 0.0;
         }
+
+        // Fog color must equal background — Vietnam TOD softens the horizon wash
+        this.applyVietnamHorizonAtmosphere(preset);
     }
 
     /**
@@ -230,10 +335,18 @@ export class EnvironmentManager {
 
             const preset = LIGHTING_PRESETS[this.currentPresetId];
             if (preset && preset.solidBackground !== undefined) {
-                this.scene.background = new THREE.Color(preset.solidBackground);
+                this.applyVietnamHorizonAtmosphere(preset);
             } else {
                 this.scene.background = envMap;
-                this.scene.backgroundBlurriness = options.blurriness || preset.backgroundBlur || 0.0;
+                this.scene.backgroundBlurriness = options.blurriness || (preset && preset.backgroundBlur) || 0.0;
+                if (preset) {
+                    this.applyMatchedHorizonFog(
+                        preset.horizonColor || 0x131924,
+                        preset.fogNear != null ? preset.fogNear : 30,
+                        preset.fogFar != null ? preset.fogFar : 54,
+                        { setBackground: false }
+                    );
+                }
             }
 
             console.info(`[EnvironmentManager] HDR Environment "${fileName}" loaded and filtered successfully.`);
@@ -291,11 +404,18 @@ export class EnvironmentManager {
         canvasTexture.dispose();
 
         this.scene.environment = envMap;
+        // Solid studio void (not HDR sky) so linear fog can match 1:1 and erase the hard horizon
         if (preset.solidBackground !== undefined) {
-            this.scene.background = new THREE.Color(preset.solidBackground);
+            this.applyVietnamHorizonAtmosphere(preset);
         } else {
             this.scene.background = envMap;
             this.scene.backgroundBlurriness = preset.backgroundBlur || 0.0;
+            this.applyMatchedHorizonFog(
+                preset.horizonColor || 0x131924,
+                preset.fogNear != null ? preset.fogNear : 30,
+                preset.fogFar != null ? preset.fogFar : 54,
+                { setBackground: false }
+            );
         }
 
         return envMap;

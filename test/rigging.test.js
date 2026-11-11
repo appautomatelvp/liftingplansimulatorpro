@@ -91,6 +91,7 @@ beforeAll(async () => {
         'scene.js',
         'rigging.js',
         'cargo.js',
+        'dynamics.js',
         'physics.js',
         'telemetry.js',
         'gear.js',
@@ -167,6 +168,10 @@ beforeAll(async () => {
                 state.W = W;
                 state.H = H;
                 rebuildCargoAndRig(true);
+                autoPositionHookForLift(0);
+                phy.hookPos.copy(phy.hookTarget);
+                phy.hookVel.set(0, 0, 0);
+                phy.autoHoistActive = false;
                 for (let i = 0; i < 15; i++) stepPhysicsEngine(1 / 60);
                 updateSceneAndTelemetry();
             },
@@ -711,7 +716,8 @@ describe('3D Rigging Testbed, Hardware Geometry & Mass Deductions', () => {
 
     it('12ac. Keeps every supported sling style outside every beam design', () => {
         simApi.setCargoType('crate', 6.0, 2.4, 2.6);
-        const beamTypes = ['spreader', 'lifting_beam', 'cascaded', 'modular_truss', 'frame', 'basket', 'container_spreader', 'inline4', 'inline8', 'spatial8'];
+        // STS container_spreader has no bridle slings around the frame (headblock + twistlocks only).
+        const beamTypes = ['spreader', 'lifting_beam', 'cascaded', 'modular_truss', 'frame', 'basket', 'inline4', 'inline8', 'spatial8'];
         const slingRadii = {
             wire: 0.014,
             chain: 0.022,

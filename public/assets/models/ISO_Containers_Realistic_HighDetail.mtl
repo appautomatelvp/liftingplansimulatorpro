@@ -1,0 +1,181 @@
+# ==========================================================================
+# High-Detail Material Library for Realistic ISO Shipping Containers
+# Upgraded with True 3D Hollow Corner Castings & Complete Door Locking Gear
+# ==========================================================================
+
+newmtl Cont_Blue_20DC
+Ka 0.0175 0.0875 0.1675
+Kd 0.0700 0.3500 0.6700
+Ks 0.3000 0.3000 0.3000
+Ns 52.0
+d 1.0
+illum 2
+
+newmtl Cont_Cyan_20HC
+Ka 0.0275 0.1400 0.1925
+Kd 0.1100 0.5600 0.7700
+Ks 0.3000 0.3000 0.3000
+Ns 52.0
+d 1.0
+illum 2
+
+newmtl Cont_Green_40DC
+Ka 0.0125 0.1100 0.0575
+Kd 0.0500 0.4400 0.2300
+Ks 0.3000 0.3000 0.3000
+Ns 52.0
+d 1.0
+illum 2
+
+newmtl Cont_Orange_40HC
+Ka 0.2150 0.0925 0.0150
+Kd 0.8600 0.3700 0.0600
+Ks 0.3000 0.3000 0.3000
+Ns 52.0
+d 1.0
+illum 2
+
+newmtl Cont_Magenta_45HC
+Ka 0.1900 0.0250 0.1100
+Kd 0.7600 0.1000 0.4400
+Ks 0.3000 0.3000 0.3000
+Ns 52.0
+d 1.0
+illum 2
+
+newmtl Cont_Navy_53HC
+Ka 0.0225 0.0475 0.1000
+Kd 0.0900 0.1900 0.4000
+Ks 0.3000 0.3000 0.3000
+Ns 52.0
+d 1.0
+illum 2
+
+newmtl Cont_Reefer_White
+Ka 0.2325 0.2375 0.2400
+Kd 0.9300 0.9500 0.9600
+Ks 0.3000 0.3000 0.3000
+Ns 52.0
+d 1.0
+illum 2
+
+newmtl Cont_OpenTop_Teal
+Ka 0.0200 0.1175 0.1275
+Kd 0.0800 0.4700 0.5100
+Ks 0.3000 0.3000 0.3000
+Ns 52.0
+d 1.0
+illum 2
+
+newmtl Cont_FlatRack_Red
+Ka 0.1675 0.0325 0.0325
+Kd 0.6700 0.1300 0.1300
+Ks 0.3000 0.3000 0.3000
+Ns 52.0
+d 1.0
+illum 2
+
+newmtl Cont_Tank_FrameBlue
+Ka 0.0250 0.1025 0.1850
+Kd 0.1000 0.4100 0.7400
+Ks 0.3000 0.3000 0.3000
+Ns 52.0
+d 1.0
+illum 2
+
+newmtl Cont_Bulk_Ochre
+Ka 0.2025 0.1375 0.0225
+Kd 0.8100 0.5500 0.0900
+Ks 0.3000 0.3000 0.3000
+Ns 52.0
+d 1.0
+illum 2
+
+newmtl Cont_HalfHeight_Grey
+Ka 0.0850 0.0975 0.1075
+Kd 0.3400 0.3900 0.4300
+Ks 0.3000 0.3000 0.3000
+Ns 52.0
+d 1.0
+illum 2
+
+newmtl Cont_Mini10_Yellow
+Ka 0.2225 0.1675 0.0175
+Kd 0.8900 0.6700 0.0700
+Ks 0.3000 0.3000 0.3000
+Ns 52.0
+d 1.0
+illum 2
+
+newmtl Corner_Casting_Steel
+Ka 0.0550 0.0600 0.0675
+Kd 0.2200 0.2400 0.2700
+Ks 0.3000 0.3000 0.3000
+Ns 52.0
+d 1.0
+illum 2
+
+newmtl Corner_Cavity_Inside
+Ka 0.0225 0.0250 0.0300
+Kd 0.0900 0.1000 0.1200
+Ks 0.3000 0.3000 0.3000
+Ns 52.0
+d 1.0
+illum 2
+
+newmtl Galvanized_LockGear
+Ka 0.1900 0.1975 0.2050
+Kd 0.7600 0.7900 0.8200
+Ks 0.6800 0.6800 0.6800
+Ns 96.0
+d 1.0
+illum 2
+
+newmtl Hinge_Pin_Steel
+Ka 0.1050 0.1125 0.1200
+Kd 0.4200 0.4500 0.4800
+Ks 0.6800 0.6800 0.6800
+Ns 96.0
+d 1.0
+illum 2
+
+newmtl Rubber_Gasket_Black
+Ka 0.0275 0.0300 0.0325
+Kd 0.1100 0.1200 0.1300
+Ks 0.0800 0.0800 0.0800
+Ns 16.0
+d 1.0
+illum 2
+
+newmtl Wood_Deck_Floor
+Ka 0.1375 0.0975 0.0575
+Kd 0.5500 0.3900 0.2300
+Ks 0.3000 0.3000 0.3000
+Ns 52.0
+d 1.0
+illum 2
+
+newmtl Stainless_Steel
+Ka 0.2125 0.2175 0.2250
+Kd 0.8500 0.8700 0.9000
+Ks 0.6800 0.6800 0.6800
+Ns 96.0
+d 1.0
+illum 2
+
+newmtl Tarp_Canvas_Grey
+Ka 0.1100 0.1175 0.1250
+Kd 0.4400 0.4700 0.5000
+Ks 0.3000 0.3000 0.3000
+Ns 52.0
+d 1.0
+illum 2
+
+newmtl Hazard_Yellow
+Ka 0.2375 0.1900 0.0125
+Kd 0.9500 0.7600 0.0500
+Ks 0.3000 0.3000 0.3000
+Ns 52.0
+d 1.0
+illum 2
+

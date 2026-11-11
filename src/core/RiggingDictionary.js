@@ -112,6 +112,14 @@ export const RIGGING_DICTIONARY = {
             vi: 'Tàu kéo / Vỏ tàu thủy',
             label: 'Tugboat / Vessel Hull — Tàu kéo / Vỏ tàu thủy',
             sub: 'Deep-V Workboat / Vessel Hull on Marine Lifting Cradle'
+        },
+        vehicle: {
+            id: 'car',
+            meshName: 'Vehicle',
+            en: 'Vehicle',
+            vi: 'Xe bus / Xe cơ giới',
+            label: 'Vehicle — Xe bus / Xe cơ giới',
+            sub: '3D CAD 1:1 bus / motor-vehicle body for exterior sling wrap'
         }
     },
 

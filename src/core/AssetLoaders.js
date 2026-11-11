@@ -9,6 +9,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
 import { AssetPipeline } from './AssetPipeline.js';
 import { AssemblyEngine } from './AssemblyEngine.js';
 
@@ -17,6 +18,26 @@ export class AssetLoaders {
         this.gltfLoader = new GLTFLoader();
         this.stlLoader = new STLLoader();
         this.objLoader = new OBJLoader();
+        this.mtlLoader = new MTLLoader();
+    }
+
+    async _loadObjMaterials(objText, basePath) {
+        const match = objText.match(/^\s*mtllib\s+(.+?)\s*$/m);
+        if (!match) return null;
+        const mtlFile = match[1].trim().replace(/\\/g, '/').split('/').pop();
+        if (!mtlFile) return null;
+        return new Promise((resolve) => {
+            this.mtlLoader.setPath(basePath);
+            this.mtlLoader.load(
+                mtlFile,
+                (materials) => {
+                    try { materials.preload(); } catch (_) { /* ignore */ }
+                    resolve(materials);
+                },
+                undefined,
+                () => resolve(null)
+            );
+        });
     }
 
     /**
@@ -86,9 +107,42 @@ export class AssetLoaders {
      * Loads a 3D model from a URL.
      */
     async loadFromUrl(url, pipelineOptions = {}) {
-        const ext = url.split('?')[0].split('.').pop().toLowerCase();
+        const cleanUrl = url.split('?')[0];
+        const ext = cleanUrl.split('.').pop().toLowerCase();
         const res = await fetch(url);
         if (!res.ok) throw new Error(`Failed to load asset from ${url}: HTTP ${res.status}`);
+
+        // OBJ + companion MTL (e.g. ISO Realistic V2 material library)
+        if (ext === 'obj') {
+            const text = await res.text();
+            const basePath = cleanUrl.slice(0, cleanUrl.lastIndexOf('/') + 1);
+            const materials = await this._loadObjMaterials(text, basePath);
+            if (materials) this.objLoader.setMaterials(materials);
+            else this.objLoader.setMaterials(null);
+            let rawObject;
+            try {
+                rawObject = this.objLoader.parse(text);
+            } finally {
+                this.objLoader.setMaterials(null);
+            }
+            const caeHeader = AssemblyEngine.parseCAEHeader(text);
+            const opts = { ...pipelineOptions };
+            if (caeHeader) {
+                if (!opts.targetDimensions && caeHeader.dimensions) {
+                    opts.targetDimensions = {
+                        x: caeHeader.dimensions.L,
+                        y: caeHeader.dimensions.H,
+                        z: caeHeader.dimensions.W
+                    };
+                }
+                opts.caeHeader = caeHeader;
+            }
+            const result = AssetPipeline.normalizeAsset(rawObject, opts);
+            result.report.sourceUrl = url;
+            result.report.hasMtl = !!materials;
+            return result;
+        }
+
         const buffer = await res.arrayBuffer();
         const result = await this.parseData(buffer, ext, pipelineOptions);
         result.report.sourceUrl = url;

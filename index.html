@@ -275,6 +275,11 @@
                 </button>
             </div>
 
+            <!-- WIZARD TẠO PHƯƠNG ÁN KÉO -->
+            <button id="btn-open-plan-wizard-header" type="button" class="pendant-btn yellow !py-1 !px-2.5 text-[11px] font-extrabold shadow-lg flex items-center gap-1.5 ml-1" title="Tạo phương án kéo hàng theo trình tự câu hỏi — dựng 3D trực tiếp" data-testid="plan-wizard-open">
+                <span>🧙</span> <span>Tạo Phương Án</span>
+            </button>
+
             <!-- NÚT MỞ/ĐÓNG BẢNG THÔNG SỐ (DRAWER TOGGLE) -->
             <button id="btn-toggle-drawer" type="button" class="pendant-btn emerald !py-1 !px-2.5 text-[11px] font-extrabold shadow-lg flex items-center gap-1.5 ml-1" title="Mở/Đóng Bảng Thông Số Kỹ Thuật (Phím 1-6 / Esc)" data-testid="drawer-toggle">
                 <span>📐</span> <span>Thông Số (1-6)</span>
@@ -355,9 +360,10 @@
                 </div>
 
                 <!-- Footer của box: Hư hại -->
-                <div class="flex items-center justify-between pt-1 mt-1 border-t border-slate-800/80 text-[9.5px]">
-                    <span class="text-slate-400">Hư hại tải động:</span>
-                    <span id="hud-damage" class="hud-val font-mono font-bold text-rose-300">0%</span>
+                <div class="flex items-center justify-between gap-2 pt-1 mt-1 border-t border-slate-800/80 text-[9.5px]">
+                    <span class="text-slate-400 whitespace-nowrap">Hư hại tải động: <span id="hud-damage" class="hud-val font-mono font-bold text-rose-300">0%</span></span>
+                    <span class="text-slate-400 whitespace-nowrap" title="Hệ số tải động cáp cẩu (lực căng cáp cẩu / tải tĩnh) · đỉnh">DAF cáp cẩu: <span id="hud-daf" class="hud-val font-mono font-bold text-amber-200">—</span></span>
+                    <span class="text-slate-400 whitespace-nowrap" title="Lực khí động thực tế lên kiện hàng (gió trung bình + rối) và góc dạt đo được">Gió: <span id="hud-wind" class="hud-val font-mono font-bold text-sky-300">—</span></span>
                 </div>
             </div>
         </div>
@@ -395,6 +401,21 @@
                         <div class="h-3 w-px bg-slate-700 mx-0.5"></div>
                         <button id="btn-set-baseline" type="button" class="pendant-btn !py-0.5 !px-1 text-amber-200 border-amber-500/50 bg-amber-950/40 hover:bg-amber-900/60 font-semibold text-[10px] whitespace-nowrap btn-action-set-baseline" title="Thiết lập trạng thái ban đầu làm mốc để Reset">
                             <span>📌</span> <span class="dock-label">Đặt Mốc</span>
+                        </button>
+                    </div>
+
+                    <div class="h-3 w-px bg-slate-700 mx-0.5"></div>
+
+                    <div class="flex items-center gap-1 shrink-0" data-testid="dock-cut">
+                        <button id="btn-cut-tool" type="button" class="pendant-btn !py-0.5 !px-1.5 text-rose-200 border-rose-500/60 bg-rose-950/50 hover:bg-rose-900/70 text-[10px] font-bold whitespace-nowrap inline-flex items-center gap-1" title="Kéo cắt cáp: bật rồi bấm vào cáp/xích để cắt đúng chỗ" data-i18n-title="cutToolTitle">
+                            <svg class="cut-scissors-icon" width="16" height="16" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+                                <circle cx="9" cy="24" r="4.2" fill="none" stroke="#fb7185" stroke-width="2.4"/>
+                                <circle cx="23" cy="24" r="4.2" fill="none" stroke="#fb7185" stroke-width="2.4"/>
+                                <path fill="#e2e8f0" stroke="#94a3b8" stroke-width="1" d="M11.2 20.6 L6.2 5.8 L14.8 13.8 Z"/>
+                                <path fill="#f8fafc" stroke="#94a3b8" stroke-width="1" d="M20.8 20.6 L25.8 5.8 L17.2 13.8 Z"/>
+                                <circle cx="16" cy="16.2" r="2.1" fill="#fda4af" stroke="#e11d48" stroke-width="1.2"/>
+                            </svg>
+                            <span class="dock-label" data-i18n="cutTool">Cắt</span>
                         </button>
                     </div>
 
@@ -443,6 +464,16 @@
                     <div id="val-slew" class="text-[11px] font-mono font-bold text-sky-300 min-w-[20px] text-center">0°</div>
                     <button type="button" class="btn-slew-step pendant-btn !py-0.5 !px-0.5 text-[8.5px] font-mono" data-slew="15">+15°</button>
                     <button id="btn-slew-right" type="button" class="pendant-btn !py-0.5 !px-1 text-[10px]" title="Quay cần sang phải 5°">↷</button>
+
+                    <div class="h-3 w-px bg-slate-700 mx-0.5"></div>
+
+                    <span class="text-[8.5px] font-extrabold uppercase text-violet-300 tracking-wider">Cam:</span>
+                    <div class="flex items-center gap-0.5" data-testid="dock-cam-behavior">
+                        <button id="btn-cam-cinema" type="button" class="pendant-btn !py-0.5 !px-1.5 text-[10px] font-bold whitespace-nowrap !bg-sky-700 !border-sky-400 !text-white" title="Auto — đưa kiện về góc cinematic rule-of-thirds (1/3), dễ nhìn nhất">Auto</button>
+                        <button id="btn-cam-lock" type="button" class="pendant-btn !py-0.5 !px-1.5 text-[10px] font-bold whitespace-nowrap text-slate-300" title="Giữ — camera đứng yên tại góc hiện tại">Giữ</button>
+                        <button id="btn-cam-hold-angle" type="button" class="pendant-btn !py-0.5 !px-1.5 text-[10px] font-bold whitespace-nowrap text-slate-300" title="Góc — mỗi lần nhấn chuyển 1/12 góc cinematic quanh kiện (chiều kim đồng hồ)">Góc</button>
+                        <button id="btn-cam-flycam" type="button" class="pendant-btn !py-0.5 !px-1.5 text-[10px] font-bold whitespace-nowrap text-slate-300" title="Flycam — giả lập góc quay bay chuyên nghiệp, xoay liên tục quanh kiện">Fly</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -499,6 +530,11 @@
             <div class="drawer-body-container flex-1 overflow-y-auto p-3 space-y-3 min-h-0 pb-20">
                 <!-- Page 1: CARGO -->
                 <div id="drawer-page-cargo" class="drawer-page active space-y-3">
+
+                <button type="button" id="btn-open-plan-wizard-drawer" class="w-full py-2 px-3 rounded-lg bg-sky-950/80 hover:bg-sky-900 border border-sky-500/60 text-sky-100 text-[11px] font-bold flex items-center justify-center gap-2 transition shadow" title="Tạo phương án kéo theo trình tự câu hỏi">
+                    <span>🧙</span>
+                    <span>Tạo phương án kéo hàng (Wizard)</span>
+                </button>
                     
 <!-- 1.1 Cargo Library (CARGO & LOAD TYPES) -->
                 <div>
@@ -568,8 +604,8 @@
                             <div class="text-[9px] text-slate-400">Sàn phẳng không vách</div>
                         </div>
                         <div class="card-btn" data-cargo="car">
-                            <div class="text-[11px] font-bold text-white">🚗 Utility Vehicle</div>
-                            <div class="text-[9px] text-slate-400">Xe cơ giới / Bán tải</div>
+                            <div class="text-[11px] font-bold text-white">🚗 Vehicle</div>
+                            <div class="text-[9px] text-slate-400">Xe bus / Xe cơ giới · 3D CAD 1:1</div>
                         </div>
                     </div>
                 </div>
@@ -763,6 +799,18 @@
                                 </button>
                                 <button type="button" id="btn-spreader-align-follow" class="py-0.5 px-2 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700 hover:text-white transition" title="Dầm tự động xoay song song theo kiện hàng">
                                     Xoay theo kiện
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="pt-2 flex items-center justify-between text-[11px]">
+                            <span class="text-slate-300 font-medium" title="Móc xoay được thì bộ treo theo mặt phẳng cáp; khóa móc thì dao động xoắn phụ thuộc chiều dài cáp">Móc cẩu (hook):</span>
+                            <div class="flex items-center gap-1">
+                                <button type="button" id="btn-hook-swivel-on" class="py-0.5 px-2 rounded text-[10px] font-bold bg-sky-600 text-white border border-sky-400 shadow transition" title="Móc có bạc đạn xoay — bộ nâng theo kiện khi kéo xiên">
+                                    Xoay được
+                                </button>
+                                <button type="button" id="btn-hook-swivel-off" class="py-0.5 px-2 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700 hover:text-white transition" title="Móc khóa hướng — lắc/xoắn chủ yếu qua chiều dài cáp">
+                                    Khóa hướng
                                 </button>
                             </div>
                         </div>
@@ -1007,8 +1055,8 @@
                                 <div class="text-[9px] text-slate-400">Dầm ngáng chữ H / Khung</div>
                             </div>
                             <div class="card-btn" data-beam="container_spreader">
-                                <div class="text-[11px] font-bold text-amber-200">🔒 ISO Container Spreader</div>
-                                <div class="text-[9px] text-slate-400">Khung chụp Container</div>
+                                <div class="text-[11px] font-bold text-amber-200">🔒 STS Container Spreader</div>
+                                <div class="text-[9px] text-slate-400">Ngáng STS bung 20/40/45ft · twistlock</div>
                             </div>
                             <div class="card-btn" data-beam="cascaded">
                                 <div class="text-[11px] font-bold text-orange-400">🟠 Cascaded Spreader System</div>
@@ -1034,59 +1082,110 @@
                         <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
                             <div class="flex items-center gap-1.5 font-bold text-amber-300 text-xs">
                                 <span>📐</span>
-                                <span>3.2 Kích Thước Dầm Ngáng (Spreader Span)</span>
+                                <span id="lbl-beam-dim-title">3.2 Kích Thước Dầm Ngáng (Spreader Span)</span>
                             </div>
                             <button id="btn-beam-auto-fit" type="button" class="px-2 py-0.5 rounded text-[9.5px] font-bold bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/70 shadow-sm transition" title="Tự động căn chỉnh chiều dài dầm khớp với bề rộng kiện hàng (đảm bảo cáp dưới thả đứng 90°)">
                                 ⚡ Tự Khớp Kiện
                             </button>
                         </div>
 
-                        <!-- Readout & Direct Steppers -->
-                        <div class="flex justify-between items-center text-slate-300">
+                        <!-- STS: only 3 ISO twistlock pitches (not outer / phủ bì) -->
+                        <div id="sts-size-panel" class="hidden flex-col gap-2">
+                            <p class="text-[10px] text-slate-400 leading-relaxed">
+                                Ngáng STS chỉ bung <b class="text-amber-200">3 cỡ chuẩn</b>. Số đo là
+                                <b class="text-sky-300">khoảng cách tâm twistlock</b> (ISO 1161 / 668) — không phải kích thước phủ bì container.
+                            </p>
+                            <div class="grid grid-cols-3 gap-1.5">
+                                <button type="button" class="btn-sts-size rounded-lg border border-slate-700 bg-slate-950/90 px-2 py-2 text-left hover:border-amber-400/70 transition" data-sts-ft="20" title="ISO twistlock centres 20ft">
+                                    <div class="text-[12px] font-extrabold text-white">20 ft</div>
+                                    <div class="text-[9px] font-mono text-sky-300 mt-0.5">L 5.853 · W 2.259 m</div>
+                                    <div class="text-[8px] text-slate-500 mt-0.5">Retracted</div>
+                                </button>
+                                <button type="button" class="btn-sts-size rounded-lg border border-amber-500/80 bg-amber-950/50 px-2 py-2 text-left shadow-sm" data-sts-ft="40" title="ISO twistlock centres 40ft">
+                                    <div class="text-[12px] font-extrabold text-amber-200">40 ft</div>
+                                    <div class="text-[9px] font-mono text-sky-300 mt-0.5">L 11.985 · W 2.259 m</div>
+                                    <div class="text-[8px] text-slate-500 mt-0.5">Master</div>
+                                </button>
+                                <button type="button" class="btn-sts-size rounded-lg border border-slate-700 bg-slate-950/90 px-2 py-2 text-left hover:border-amber-400/70 transition" data-sts-ft="45" title="ISO twistlock centres 45ft">
+                                    <div class="text-[12px] font-extrabold text-white">45 ft</div>
+                                    <div class="text-[9px] font-mono text-sky-300 mt-0.5">L 13.557 · W 2.259 m</div>
+                                    <div class="text-[8px] text-slate-500 mt-0.5">Extended</div>
+                                </button>
+                            </div>
+                            <div class="flex justify-between items-center text-slate-300 bg-slate-950/70 rounded-md px-2 py-1.5 border border-slate-800">
+                                <div>
+                                    <div class="text-[9px] text-slate-500 uppercase font-bold tracking-wide">Pitch twistlock đang chọn</div>
+                                    <div class="font-mono font-black text-amber-300 text-[12px]">
+                                        <span id="v-sts-pitch">11.985 × 2.259 m</span>
+                                        <span class="text-slate-500 text-[10px] font-bold ml-1" id="v-sts-ft-label">· 40 ft</span>
+                                    </div>
+                                </div>
+                                <span id="v-sts-mass" class="text-[9.5px] font-mono text-slate-400">Tự trọng: ~10.5 t</span>
+                            </div>
+                            <div class="flex flex-col gap-1.5">
+                                <div class="text-[9px] text-slate-500 uppercase font-bold tracking-wide">Cách bắt kiện</div>
+                                <div class="grid grid-cols-2 gap-1.5">
+                                    <button type="button" id="btn-sts-attach-direct" class="btn-sts-attach rounded-lg border border-amber-500/80 bg-amber-950/50 px-2 py-2 text-left shadow-sm transition" data-sts-attach="direct" title="Twistlock gắp trực tiếp trên nóc container">
+                                        <div class="text-[11px] font-extrabold text-amber-200">Gắp trực tiếp</div>
+                                        <div class="text-[8.5px] text-slate-400 mt-0.5 leading-snug">Twistlock chụp góc ISO — không cáp / ma ní / xích dưới ngáng</div>
+                                    </button>
+                                    <button type="button" id="btn-sts-attach-cable" class="btn-sts-attach rounded-lg border border-slate-700 bg-slate-950/90 px-2 py-2 text-left hover:border-sky-400/60 transition" data-sts-attach="cable" title="Ma ní + cáp/xích từ ngáng xuống tai kiện">
+                                        <div class="text-[11px] font-extrabold text-white">Dùng cáp / xích</div>
+                                        <div class="text-[8.5px] text-slate-400 mt-0.5 leading-snug">Điểm ma ní dưới ngáng → cáp/xích → tai cẩu kiện như dầm thường</div>
+                                    </button>
+                                </div>
+                            </div>
+                            <label class="flex items-center gap-2 text-[10px] text-slate-400 cursor-pointer select-none">
+                                <input type="checkbox" id="chk-sts-twin" class="rounded border-slate-600 bg-slate-900 text-amber-400 focus:ring-amber-500/40">
+                                Twin-lift 2×20 ft — hai cont đặt cạnh nhau (CAD twin)
+                            </label>
+                        </div>
+
+                        <!-- Generic beam length controls (hidden for STS) -->
+                        <div id="generic-beam-dim-panel" class="flex flex-col gap-2">
+                            <div class="flex justify-between items-center text-slate-300">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="font-bold text-amber-300 text-[11px]">Chiều Dài Dầm (L):</span>
+                                    <span class="font-mono font-black text-amber-400 text-[13px]"><span id="v-beamL">12.20</span><span class="unit-len">m</span></span>
+                                </div>
+                                <span id="v-beam-mass" class="text-[9.5px] font-mono text-slate-400">Tự trọng: ~1074 kg</span>
+                            </div>
+
+                            <div class="space-y-1">
+                                <input type="range" id="inp-beamL" class="w-full h-2.5 bg-slate-800 rounded-lg cursor-pointer accent-amber-400 transition" min="2.0" max="24.0" step="0.1" value="12.2">
+                                <div class="flex justify-between text-[8px] font-mono text-slate-500">
+                                    <span>2.0m</span>
+                                    <span>6.0m</span>
+                                    <span>12.2m (40ft)</span>
+                                    <span>18.0m</span>
+                                    <span>24.0m</span>
+                                </div>
+                            </div>
+
                             <div class="flex items-center gap-1.5">
-                                <span class="font-bold text-amber-300 text-[11px]">Chiều Dài Dầm (L):</span>
-                                <span class="font-mono font-black text-amber-400 text-[13px]"><span id="v-beamL">12.20</span><span class="unit-len">m</span></span>
+                                <div class="inline-flex rounded-md shadow-sm border border-slate-700 bg-slate-900 p-0.5" role="group">
+                                    <button type="button" class="btn-step-beam px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-300 hover:text-white hover:bg-slate-800 rounded transition" data-delta="-1.0" title="Giảm 1.0m">-1m</button>
+                                    <button type="button" class="btn-step-beam px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-300 hover:text-white hover:bg-slate-800 rounded transition" data-delta="-0.2" title="Giảm 0.2m">-0.2m</button>
+                                    <button type="button" class="btn-step-beam px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-300 hover:text-white hover:bg-slate-800 rounded transition" data-delta="-0.05" title="Giảm 50mm">-50mm</button>
+                                    <button type="button" class="btn-step-beam px-1.5 py-0.5 text-[10px] font-mono font-bold text-amber-300 hover:text-white hover:bg-slate-800 rounded transition" data-delta="0.05" title="Tăng 50mm">+50mm</button>
+                                    <button type="button" class="btn-step-beam px-1.5 py-0.5 text-[10px] font-mono font-bold text-amber-300 hover:text-white hover:bg-slate-800 rounded transition" data-delta="0.2" title="Tăng 0.2m">+0.2m</button>
+                                    <button type="button" class="btn-step-beam px-1.5 py-0.5 text-[10px] font-mono font-bold text-amber-300 hover:text-white hover:bg-slate-800 rounded transition" data-delta="1.0" title="Tăng 1.0m">+1m</button>
+                                </div>
+                                <div class="flex items-center bg-slate-950 border border-slate-700 rounded px-2 py-0.5 flex-1 justify-end">
+                                    <input type="number" id="num-beamL" class="w-16 bg-transparent text-right font-mono font-bold text-amber-400 text-[12px] focus:outline-none" min="1.0" max="30" step="0.1" value="12.2">
+                                    <span class="text-slate-400 text-[10px] ml-1 unit-len">m</span>
+                                </div>
                             </div>
-                            <span id="v-beam-mass" class="text-[9.5px] font-mono text-slate-400">Tự trọng: ~1074 kg</span>
-                        </div>
 
-                        <!-- Thanh Kéo Ngang Chiều Dài Dầm (Prominent Horizontal Slider) -->
-                        <div class="space-y-1">
-                            <input type="range" id="inp-beamL" class="w-full h-2.5 bg-slate-800 rounded-lg cursor-pointer accent-amber-400 transition" min="2.0" max="24.0" step="0.1" value="12.2">
-                            <div class="flex justify-between text-[8px] font-mono text-slate-500">
-                                <span>2.0m</span>
-                                <span>6.0m</span>
-                                <span>12.2m (40ft)</span>
-                                <span>18.0m</span>
-                                <span>24.0m</span>
+                            <div class="flex items-center gap-1 flex-wrap">
+                                <span class="text-[9px] text-slate-400 shrink-0 font-medium">Quy cách:</span>
+                                <button type="button" class="btn-preset-beam px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" data-val="4.0">4.0m</button>
+                                <button type="button" class="btn-preset-beam px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" data-val="6.0">6.0m (20ft)</button>
+                                <button type="button" class="btn-preset-beam px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" data-val="8.0">8.0m</button>
+                                <button type="button" class="btn-preset-beam px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" data-val="10.0">10.0m</button>
+                                <button type="button" class="btn-preset-beam px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950 hover:bg-amber-900 text-amber-300 border border-amber-500/80 shadow-sm transition" data-val="12.2" title="Quy cách chuẩn Container 40ft (12.2m)">⭐ 12.2m (40ft)</button>
+                                <button type="button" class="btn-preset-beam px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" data-val="14.0">14.0m</button>
                             </div>
-                        </div>
-
-                        <!-- Stepper Buttons & Numeric Input -->
-                        <div class="flex items-center gap-1.5">
-                            <div class="inline-flex rounded-md shadow-sm border border-slate-700 bg-slate-900 p-0.5" role="group">
-                                <button type="button" class="btn-step-beam px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-300 hover:text-white hover:bg-slate-800 rounded transition" data-delta="-1.0" title="Giảm 1.0m">-1m</button>
-                                <button type="button" class="btn-step-beam px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-300 hover:text-white hover:bg-slate-800 rounded transition" data-delta="-0.2" title="Giảm 0.2m">-0.2m</button>
-                                <button type="button" class="btn-step-beam px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-300 hover:text-white hover:bg-slate-800 rounded transition" data-delta="-0.05" title="Giảm 50mm">-50mm</button>
-                                <button type="button" class="btn-step-beam px-1.5 py-0.5 text-[10px] font-mono font-bold text-amber-300 hover:text-white hover:bg-slate-800 rounded transition" data-delta="0.05" title="Tăng 50mm">+50mm</button>
-                                <button type="button" class="btn-step-beam px-1.5 py-0.5 text-[10px] font-mono font-bold text-amber-300 hover:text-white hover:bg-slate-800 rounded transition" data-delta="0.2" title="Tăng 0.2m">+0.2m</button>
-                                <button type="button" class="btn-step-beam px-1.5 py-0.5 text-[10px] font-mono font-bold text-amber-300 hover:text-white hover:bg-slate-800 rounded transition" data-delta="1.0" title="Tăng 1.0m">+1m</button>
-                            </div>
-                            <div class="flex items-center bg-slate-950 border border-slate-700 rounded px-2 py-0.5 flex-1 justify-end">
-                                <input type="number" id="num-beamL" class="w-16 bg-transparent text-right font-mono font-bold text-amber-400 text-[12px] focus:outline-none" min="1.0" max="30" step="0.1" value="12.2">
-                                <span class="text-slate-400 text-[10px] ml-1 unit-len">m</span>
-                            </div>
-                        </div>
-
-                        <!-- Quick Standard Presets -->
-                        <div class="flex items-center gap-1 flex-wrap">
-                            <span class="text-[9px] text-slate-400 shrink-0 font-medium">Quy cách:</span>
-                            <button type="button" class="btn-preset-beam px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" data-val="4.0">4.0m</button>
-                            <button type="button" class="btn-preset-beam px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" data-val="6.0">6.0m (20ft)</button>
-                            <button type="button" class="btn-preset-beam px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" data-val="8.0">8.0m</button>
-                            <button type="button" class="btn-preset-beam px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" data-val="10.0">10.0m</button>
-                            <button type="button" class="btn-preset-beam px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950 hover:bg-amber-900 text-amber-300 border border-amber-500/80 shadow-sm transition" data-val="12.2" title="Quy cách chuẩn Container 40ft (12.2m)">⭐ 12.2m (40ft)</button>
-                            <button type="button" class="btn-preset-beam px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" data-val="14.0">14.0m</button>
                         </div>
                     </div>
 
@@ -1110,12 +1209,12 @@
                             <div class="flex flex-col gap-0.5">
                                 <div class="flex justify-between items-center text-slate-300">
                                     <span class="font-bold text-sky-300 text-[11px]" id="lbl-upper-title">Tầng 1 (Top Bridle — Móc ➔ Dầm):</span>
-                                    <span class="font-mono font-bold text-sky-400 text-[12px]"><span id="v-upperL">8.68</span><span class="unit-len">m</span></span>
+                                    <span class="font-mono font-bold text-sky-400 text-[12px]"><span id="v-upperL">8.00</span><span class="unit-len">m</span></span>
                                 </div>
                                 <div class="flex items-center justify-between text-[10px] font-mono bg-slate-900/90 px-2 py-0.5 rounded border border-slate-800 text-slate-400">
-                                    <span>Góc ngang β: <b id="v-upper-beta-txt" class="text-sky-300">60.0°</b></span>
-                                    <span>Góc đứng α: <b id="v-upper-alpha-txt" class="text-slate-300">30.0°</b></span>
-                                    <span>Hệ số TF (LAF): <b id="v-upper-laf-txt" class="text-emerald-400">1.155</b></span>
+                                    <span>Góc kéo β: <b id="v-upper-beta-txt" class="text-sky-300">42.5°</b></span>
+                                    <span>Góc đứng α: <b id="v-upper-alpha-txt" class="text-slate-300">47.5°</b></span>
+                                    <span>Hệ số TF (LAF): <b id="v-upper-laf-txt" class="text-emerald-400">1.476</b></span>
                                 </div>
                             </div>
 
@@ -1123,9 +1222,9 @@
                             <div class="space-y-0.5">
                                 <div class="flex justify-between text-[10px] text-slate-400">
                                     <span>Độ dài nhánh T1 (L₁):</span>
-                                    <span id="lbl-upper-len-indicator" class="font-mono text-sky-300 font-bold">8.68 m</span>
+                                    <span id="lbl-upper-len-indicator" class="font-mono text-sky-300 font-bold">8.00 m</span>
                                 </div>
-                                <input type="range" id="inp-upperL" class="w-full h-2.5 bg-slate-800 rounded-lg cursor-pointer accent-sky-400 transition" min="1.0" max="25" step="0.05" value="8.68">
+                                <input type="range" id="inp-upperL" class="w-full h-2.5 bg-slate-800 rounded-lg cursor-pointer accent-sky-400 transition" min="1.0" max="25" step="0.05" value="8.00">
                             </div>
 
                             <!-- Nút bấm tăng giảm độ dài trực tiếp & ô nhập số -->
@@ -1139,7 +1238,7 @@
                                     <button type="button" class="btn-step-tier1 px-1.5 py-0.5 text-[10px] font-mono font-bold text-sky-300 hover:text-white hover:bg-slate-800 rounded transition" data-delta="1.0" title="Tăng 1.0m">+1m</button>
                                 </div>
                                 <div class="flex items-center bg-slate-950 border border-slate-700 rounded px-2 py-0.5 flex-1 justify-end">
-                                    <input type="number" id="num-upperL" class="w-16 bg-transparent text-right font-mono font-bold text-sky-400 text-[12px] focus:outline-none" min="0.5" max="40" step="0.05" value="8.68">
+                                    <input type="number" id="num-upperL" class="w-16 bg-transparent text-right font-mono font-bold text-sky-400 text-[12px] focus:outline-none" min="0.5" max="40" step="0.05" value="8.00">
                                     <span class="text-slate-400 text-[10px] ml-1 unit-len">m</span>
                                 </div>
                             </div>
@@ -1147,34 +1246,32 @@
                             <!-- Nút nấc độ dài chuẩn Tier 1 -->
                             <div class="flex items-center gap-1 flex-wrap">
                                 <span class="text-[9px] text-slate-400 shrink-0 font-medium">Nấc dài:</span>
-                                <button type="button" class="btn-preset-tier1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" data-val="6.0">6.0m</button>
-                                <button type="button" class="btn-preset-tier1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" data-val="7.5">7.5m</button>
-                                <button type="button" class="btn-preset-tier1 px-2 py-0.5 rounded text-[10px] font-bold bg-sky-950 hover:bg-sky-900 text-sky-300 border border-sky-500/80 shadow-sm transition" data-val="8.68" title="Góc tiêu chuẩn α = 60°">⭐ 8.68m (60°)</button>
-                                <button type="button" class="btn-preset-tier1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" data-val="10.0">10.0m</button>
-                                <button type="button" class="btn-preset-tier1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" data-val="12.0">12.0m</button>
+                                <button type="button" class="btn-preset-tier1 px-2 py-0.5 rounded text-[10px] font-bold bg-sky-950 hover:bg-sky-900 text-sky-300 border border-sky-500/80 shadow-sm transition" data-val="8.0" title="Mặc định gần hook — số chẵn 8 m">⭐ 8m</button>
+                                <button type="button" class="btn-preset-tier1 px-2 py-0.5 rounded text-[10px] font-bold bg-sky-950/70 hover:bg-sky-900 text-sky-300 border border-sky-600/60 transition" data-val="10.0" title="Cáp trên 10 m — số chẵn">10m</button>
+                                <button type="button" class="btn-preset-tier1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" data-val="12.0">12m</button>
+                                <button type="button" class="btn-preset-tier1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" data-val="14.0">14m</button>
                             </div>
 
                             <!-- THANH KÉO NGANG GÓC BẮT CÁP TẦNG 1 (BRIDLE ANGLE SLIDER β) -->
                             <div class="space-y-1 bg-slate-900/80 p-2 rounded border border-slate-800/80 mt-1">
                                 <div class="flex justify-between items-center text-slate-300 text-[10px]">
                                     <span class="font-bold text-sky-300 flex items-center gap-1">
-                                        <span>📐</span> <span>Góc Bắt Cáp Tầng 1 (Bridle Angle β):</span>
+                                        <span>📐</span> <span>Góc kéo Tầng 1 (β ngang):</span>
                                     </span>
-                                    <span class="font-mono font-bold text-sky-400 text-xs"><span id="lbl-upper-angle-val">60.0</span>°</span>
+                                    <span class="font-mono font-bold text-sky-400 text-xs"><span id="lbl-upper-angle-val">42.5</span>°</span>
                                 </div>
-                                <input type="range" id="inp-upper-angle" class="w-full h-2.5 bg-slate-800 rounded-lg cursor-pointer accent-sky-400 transition" min="30.0" max="75.0" step="0.5" value="60.0">
+                                <input type="range" id="inp-upper-angle" class="w-full h-2.5 bg-slate-800 rounded-lg cursor-pointer accent-sky-400 transition" min="30.0" max="75.0" step="0.5" value="42.5">
                                 <div class="flex justify-between text-[8px] font-mono text-slate-500">
-                                    <span class="text-rose-400">30° (LAF 2.00)</span>
-                                    <span class="text-amber-400">45° (LAF 1.414)</span>
-                                    <span class="text-emerald-400 font-bold">60° (ASME Chuẩn)</span>
-                                    <span>70° (Dốc cao)</span>
+                                    <span class="text-rose-400">30°</span>
+                                    <span class="text-emerald-400 font-bold">40–45° (mặc định)</span>
+                                    <span class="text-amber-400">60° ASME</span>
                                     <span>75°</span>
                                 </div>
                                 <div class="flex items-center gap-1 flex-wrap pt-0.5">
                                     <span class="text-[9px] text-slate-400 shrink-0 font-medium">Nấc góc:</span>
-                                    <button type="button" class="btn-preset-upper-angle px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 transition" data-angle="45">45° (Headroom)</button>
-                                    <button type="button" class="btn-preset-upper-angle px-2 py-0.5 rounded text-[10px] font-bold bg-sky-950 hover:bg-sky-900 text-sky-300 border border-sky-500/80 shadow-sm transition" data-angle="60">⭐ 60° (ASME Chuẩn)</button>
-                                    <button type="button" class="btn-preset-upper-angle px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 transition" data-angle="70">70° (Dốc an toàn)</button>
+                                    <button type="button" class="btn-preset-upper-angle px-2 py-0.5 rounded text-[10px] font-bold bg-sky-950 hover:bg-sky-900 text-sky-300 border border-sky-500/80 shadow-sm transition" data-angle="42.5">⭐ 42.5°</button>
+                                    <button type="button" class="btn-preset-upper-angle px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 transition" data-angle="45">45°</button>
+                                    <button type="button" class="btn-preset-upper-angle px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 transition" data-angle="60">60°</button>
                                 </div>
                             </div>
 
@@ -1184,6 +1281,47 @@
                                 <div id="tier1-quick-selector" class="flex flex-wrap items-center gap-1 flex-1">
                                     <!-- Populated dynamically: [L1-1] [L1-2] [L1-3] [L1-4] -->
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- Tier mid: Cáp treo dầm (Cascaded / Truss 3-tier) -->
+                        <div id="row-hanger-sling" class="hidden flex flex-col gap-2 bg-slate-950/60 p-2.5 rounded border border-violet-800/50">
+                            <div class="flex flex-col gap-0.5">
+                                <div class="flex justify-between items-center text-slate-300">
+                                    <span class="font-bold text-violet-300 text-[11px]" id="lbl-hanger-title">Tầng giữa (Hanger — Dầm chính ➔ Dầm phụ):</span>
+                                    <span class="font-mono font-bold text-violet-400 text-[12px]"><span id="v-hangerL">2.00</span><span class="unit-len">m</span></span>
+                                </div>
+                                <div class="text-[10px] font-mono bg-slate-900/90 px-2 py-0.5 rounded border border-slate-800 text-slate-400">
+                                    Cáp treo giữa hệ 3 tầng — mặc định số chẵn 2–4 m, chỉnh thủ công được
+                                </div>
+                            </div>
+                            <div class="space-y-0.5">
+                                <div class="flex justify-between text-[10px] text-slate-400">
+                                    <span>Độ dài hanger (H):</span>
+                                    <span id="lbl-hanger-len-indicator" class="font-mono text-violet-300 font-bold">2.00 m</span>
+                                </div>
+                                <input type="range" id="inp-hangerL" class="w-full h-2.5 bg-slate-800 rounded-lg cursor-pointer accent-violet-400 transition" min="0.5" max="12" step="0.05" value="2.0">
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <div class="inline-flex rounded-md shadow-sm border border-slate-700 bg-slate-900 p-0.5" role="group">
+                                    <button type="button" class="btn-step-hanger px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-300 hover:text-white hover:bg-slate-800 rounded transition" data-delta="-1.0">-1m</button>
+                                    <button type="button" class="btn-step-hanger px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-300 hover:text-white hover:bg-slate-800 rounded transition" data-delta="-0.5">-0.5m</button>
+                                    <button type="button" class="btn-step-hanger px-1.5 py-0.5 text-[10px] font-mono font-bold text-violet-300 hover:text-white hover:bg-slate-800 rounded transition" data-delta="0.5">+0.5m</button>
+                                    <button type="button" class="btn-step-hanger px-1.5 py-0.5 text-[10px] font-mono font-bold text-violet-300 hover:text-white hover:bg-slate-800 rounded transition" data-delta="1.0">+1m</button>
+                                </div>
+                                <div class="flex items-center bg-slate-950 border border-slate-700 rounded px-2 py-0.5 flex-1 justify-end">
+                                    <input type="number" id="num-hangerL" class="w-16 bg-transparent text-right font-mono font-bold text-violet-400 text-[12px] focus:outline-none" min="0.5" max="20" step="0.05" value="2.00">
+                                    <span class="text-slate-400 text-[10px] ml-1 unit-len">m</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1 flex-wrap">
+                                <span class="text-[9px] text-slate-400 shrink-0 font-medium">Nấc chuẩn:</span>
+                                <button type="button" class="btn-preset-hanger px-2 py-0.5 rounded text-[10px] font-bold bg-violet-950 hover:bg-violet-900 text-violet-300 border border-violet-500/80 shadow-sm transition" data-val="2.0">⭐ 2m</button>
+                                <button type="button" class="btn-preset-hanger px-2 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" data-val="4.0">4m</button>
+                            </div>
+                            <div class="flex items-center gap-1 pt-0.5 flex-wrap">
+                                <span class="text-[9px] text-slate-400 shrink-0 font-medium">Nhánh H:</span>
+                                <div id="hanger-quick-selector" class="flex flex-wrap items-center gap-1 flex-1"></div>
                             </div>
                         </div>
 
@@ -1229,11 +1367,8 @@
                             <!-- Nút nấc chuẩn nhanh Tier 2 -->
                             <div class="flex items-center gap-1 flex-wrap">
                                 <span class="text-[9px] text-slate-400 shrink-0 font-medium">Nấc chuẩn:</span>
-                                <button type="button" class="btn-preset-tier2 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" data-val="1.5">1.5m</button>
-                                <button type="button" class="btn-preset-tier2 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950 hover:bg-amber-900 text-amber-300 border border-amber-500/80 shadow-sm transition" data-val="2.00" title="Góc đứng tuyệt đối α = 90°">⭐ 2.0m (90°)</button>
-                                <button type="button" class="btn-preset-tier2 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" data-val="2.5">2.5m</button>
-                                <button type="button" class="btn-preset-tier2 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" data-val="3.0">3.0m</button>
-                                <button type="button" class="btn-preset-tier2 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" data-val="4.0">4.0m</button>
+                                <button type="button" class="btn-preset-tier2 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950 hover:bg-amber-900 text-amber-300 border border-amber-500/80 shadow-sm transition" data-val="2.0" title="Cáp dưới mặc định — số chẵn 2 m">⭐ 2m</button>
+                                <button type="button" class="btn-preset-tier2 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950/70 hover:bg-amber-900 text-amber-300 border border-amber-600/60 transition" data-val="4.0" title="Cáp dưới 4 m — số chẵn">4m</button>
                             </div>
 
                             <!-- Tier 2 Cable Pills (L2-1, L2-2, L2-3, L2-4) -->
@@ -1245,15 +1380,23 @@
                             </div>
                         </div>
 
+                        <!-- Auto cân bằng — chỉ hiện khi đang chỉnh thông số cáp -->
+                        <div id="row-cable-auto-balance" class="hidden">
+                            <button id="btn-cable-auto-balance" type="button" class="w-full py-2 px-2 rounded-lg bg-sky-950/80 hover:bg-sky-900 border border-sky-500/70 text-sky-100 text-[11px] font-bold flex items-center justify-center gap-1.5 transition shadow-sm" title="Khi kiện nghiêng: tính lại chiều dài từng sợi cáp để cân bằng">
+                                <span>⚖️</span>
+                                <span>Auto cân bằng (tính lại chiều dài cáp)</span>
+                            </button>
+                        </div>
+
                         <!-- Gợi ý Phương án Nâng An toàn theo ASME B30.9 / OSHA -->
                         <div class="flex items-center gap-1.5 pt-0.5">
-                            <button id="btn-rig-min-safe" type="button" class="flex-1 py-1.5 px-2 rounded-lg bg-amber-950/70 hover:bg-amber-900 border border-amber-600/60 text-amber-200 text-[10.5px] font-bold flex items-center justify-center gap-1 transition shadow-sm" title="Tự động tính góc cáp tối thiểu an toàn α ≥ 45° (LAF = 1.414) để tiết kiệm chiều cao nâng / headroom">
+                            <button id="btn-rig-min-safe" type="button" class="flex-1 py-1.5 px-2 rounded-lg bg-amber-950/70 hover:bg-amber-900 border border-amber-600/60 text-amber-200 text-[10.5px] font-bold flex items-center justify-center gap-1 transition shadow-sm" title="Tự động tính góc kéo tối thiểu an toàn β ≈ 45° để tiết kiệm chiều cao nâng / headroom">
                                 <span>🛡️</span>
-                                <span>Nâng Tối Thiểu (α ≥ 45°)</span>
+                                <span>Nâng Tối Thiểu (β ≈ 45°)</span>
                             </button>
-                            <button id="btn-rig-ideal-safe" type="button" class="flex-1 py-1.5 px-2 rounded-lg bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-500/60 text-emerald-200 text-[10.5px] font-bold flex items-center justify-center gap-1 transition shadow-sm" title="Tự động thiết lập cấu hình lý tưởng chuẩn ASME B30.9: Tầng 1 α = 60° (LAF = 1.155), Tầng 2 α = 90° (LAF = 1.000, triệt tiêu lực xé ngang)">
+                            <button id="btn-rig-ideal-safe" type="button" class="flex-1 py-1.5 px-2 rounded-lg bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-500/60 text-emerald-200 text-[10.5px] font-bold flex items-center justify-center gap-1 transition shadow-sm" title="Áp dụng mặc định làm việc: góc kéo ~42.5°, cáp trên 8/10 m, cáp dưới 2/4 m (số chẵn)">
                                 <span>⭐</span>
-                                <span>Tuyệt Đối An Toàn (60°/90°)</span>
+                                <span>Mặc định 42.5° / 8·2 m</span>
                             </button>
                         </div>
 
@@ -1429,6 +1572,26 @@
                             </div>
                         </div>
 
+                        <!-- Kích thước thân cáp (Đường kính Ø / Bản rộng W) & Tự động Tính Khối Lượng -->
+                        <div class="flex flex-col gap-1 pt-1.5 border-t border-slate-800">
+                            <div class="flex justify-between items-center text-slate-300">
+                                <span class="font-semibold text-slate-200">Kích thước thân cáp (Ø / W):</span>
+                                <span class="font-mono font-bold text-amber-400 text-[11px]" id="badge-sling-size">Ø28 mm</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input type="range" id="inp-sling-dia" class="flex-1 accent-amber-500 cursor-pointer" min="6" max="150" step="1" value="28">
+                                <div class="flex items-center bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 shrink-0">
+                                    <input type="number" id="num-sling-dia" class="w-14 bg-transparent text-right font-mono font-bold text-amber-400 text-[11px] focus:outline-none" min="6" max="300" step="1" value="28">
+                                    <span class="text-slate-400 text-[10px] ml-1">mm</span>
+                                </div>
+                                <button type="button" id="btn-auto-sling-dia" class="px-2 py-0.5 text-[9px] bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded transition" title="Tự động tính quy cách theo WLL chuẩn ASME/EN">Auto</button>
+                            </div>
+                            <div class="flex justify-between items-center text-[10px] bg-slate-900/80 px-2 py-1 rounded border border-slate-800/80 mt-0.5">
+                                <span class="text-slate-400">Khối lượng tự động:</span>
+                                <span class="font-mono text-emerald-300 font-semibold" id="readout-sling-unit-mass">~3.2 kg/m · 12.8 kg/sợi</span>
+                            </div>
+                        </div>
+
                         <!-- Backward compatibility hidden hooks & containers -->
                         <div id="cable-quick-selector" class="hidden"></div>
                         <input type="range" id="inp-slingL" class="hidden" min="1.0" max="30" step="0.05" value="3.8">
@@ -1436,7 +1599,6 @@
                     </div>
                     <p class="text-[10px] text-slate-400 mt-1.5 leading-snug">Toàn bộ cụm cáp tuân thủ chuẩn <b>ASME B30.9 &amp; B30.26</b>: Đầu cáp có <b>Thimble (Bẹn)</b> &amp; <b>Ferrule (Ép chì)</b>, gom vào <b>Master Link</b>. Chỉnh ΔL ≠ 0 lắp <b>Turnbuckle</b>.</p>
                 </div>
-</div>
 
                     <!-- 4.2: ELASTIC SLING ELONGATION & DNV-ST-N001 SKEW LOAD -->
                     <div class="bg-slate-950/95 p-2.5 rounded-xl border border-indigo-500/40 flex flex-col gap-2 shadow-xl">
@@ -1492,6 +1654,23 @@
                         <div class="text-[10px] text-slate-300 flex items-center justify-between border-t border-slate-800 pt-1">
                             <span>Lệch tải đường chéo (Skew Share):</span>
                             <b id="skew-share-pct" class="font-mono text-amber-300 font-bold">50.0% / 50.0%</b>
+                        </div>
+
+                        <!-- 4.2b Structural Elastic Deformation (Euler-Bernoulli & Saint-Venant) -->
+                        <div class="border-t border-slate-800 pt-1.5 flex flex-col gap-1 text-[10px]">
+                            <div class="flex items-center justify-between text-slate-300">
+                                <span class="font-semibold text-sky-300">Võng Dầm/Sàn (w):</span>
+                                <span id="out-structural-deflection" class="font-mono font-bold text-amber-300">0.0 mm</span>
+                            </div>
+                            <div class="flex items-center justify-between text-slate-400 text-[9px]">
+                                <span>Xoắn Thân (ϕ): <span id="out-structural-twist" class="font-mono text-slate-200">0.00°</span></span>
+                                <span>Võng Dầm: <span id="out-beam-deflection" class="font-mono text-slate-200">0.0 mm</span></span>
+                            </div>
+                            <div class="flex items-center justify-between gap-1 text-[9px] mt-0.5">
+                                <span class="text-slate-400">Phóng đại thị giác:</span>
+                                <input type="range" id="inp-visual-exaggeration" min="1.0" max="15.0" step="0.5" value="5.0" class="flex-1 accent-indigo-400 h-1">
+                                <span id="val-visual-exaggeration" class="font-mono font-bold text-indigo-300 text-[10px] w-8 text-right">5.0x</span>
+                            </div>
                         </div>
                     </div>
 
@@ -2404,7 +2583,7 @@
                                         <option value="vessel">Bồn Áp Lực (Pressure Vessel)</option>
                                         <option value="crate">Kiện Thùng Gỗ / Khung Thép (Crate)</option>
                                         <option value="wind_nacelle">Tua-bin Điện Gió (Wind Nacelle)</option>
-                                        <option value="car">Xe Cơ Giới / Bán Tải (Vehicle)</option>
+                                        <option value="car">Vehicle (Xe bus / Xe cơ giới)</option>
                                         <option value="boat">Tàu Thủy / Vỏ Tàu (Vessel Hull)</option>
                                         <option value="pipe">Cụm Thiết Bị Siêu Trường (OOG Skid)</option>
                                     </optgroup>
@@ -2455,21 +2634,31 @@
         </div>
     </div>
 
-    <div id="gear-editor" style="display:none; position:fixed; left:50%; bottom:18px; transform:translateX(-50%); width:520px; max-height:46vh; overflow:auto;" class="bg-slate-950/95 border border-sky-500/40 rounded-xl p-3 shadow-2xl text-slate-100 pointer-events-auto">
-        <div class="flex items-start justify-between gap-2 mb-2">
+    <div id="gear-editor" style="display:none;" class="p-3 text-slate-100 pointer-events-auto">
+        <div class="flex items-start justify-between gap-2 mb-2 pb-1.5 border-b border-slate-800">
             <div>
-                <div id="gear-editor-title" class="text-[12px] font-extrabold text-sky-300 uppercase tracking-wide">Thông số thiết bị</div>
-                <div id="gear-editor-sub" class="text-[10px] text-slate-400 mt-0.5">Nhấp bất kỳ chi tiết 3D để sửa thông số. Ctrl+nhấp để gộp cùng loại.</div>
+                <div class="flex items-center gap-1.5">
+                    <span class="text-sm">⚙️</span>
+                    <div id="gear-editor-title" class="text-[12px] font-extrabold text-sky-300 uppercase tracking-wide">Thông số thiết bị</div>
+                </div>
+                <div id="gear-editor-sub" class="text-[10px] text-slate-400 mt-0.5">Giữ Shift + kéo khung chuột để chọn thiết bị. Cuộn panel để chỉnh thông số.</div>
             </div>
-            <button id="gear-editor-close" type="button" class="text-slate-300 hover:text-white text-lg leading-none px-1">×</button>
+            <button id="gear-editor-close" type="button" class="text-slate-400 hover:text-white hover:bg-slate-800 rounded px-1.5 py-0.5 text-base leading-none transition-colors" title="Đóng">✕</button>
         </div>
-        <div id="gear-editor-live" class="text-[10px] font-mono text-amber-200 mb-2"></div>
-        <div id="gear-editor-fields" class="space-y-1.5"></div>
-        <div class="flex gap-1.5 mt-2">
-            <button id="gear-editor-auto" type="button" class="pendant-btn !py-1 !px-2 text-[10px]" data-i18n="gearAuto">Theo thông số chung · Use global</button>
-            <button id="gear-editor-cut" type="button" class="pendant-btn rose !py-1 !px-2.5 text-[10px] font-bold bg-rose-700 hover:bg-rose-600 text-white shadow" data-i18n="gearCut">✂ Cắt cáp · Snap</button>
-            <button id="gear-editor-repair" type="button" class="pendant-btn emerald !py-1 !px-2 text-[10px]" data-i18n="gearRepair">Nối lại · Reeve</button>
-            <button id="gear-editor-clear" type="button" class="pendant-btn !py-1 !px-2 text-[10px]" data-i18n="gearClear">Bỏ chọn · Clear</button>
+        <div id="gear-editor-live" class="text-[10px] font-mono text-amber-300 mb-2 px-2 py-1 rounded bg-slate-900/80 border border-slate-800"></div>
+        <div id="gear-editor-fields" class="space-y-2"></div>
+        <div class="flex flex-wrap items-center gap-1.5 mt-2.5 pt-2 border-t border-slate-800/80">
+            <button id="gear-editor-auto" type="button" class="pendant-btn !py-1 !px-2.5 text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-sky-200 border border-slate-700 flex items-center gap-1" data-i18n="gearAuto" title="Đặt lại thông số mặc định theo tiêu chuẩn">
+                <span>↺</span><span>Theo thông số chung</span>
+            </button>
+            <button id="gear-editor-cut" type="button" class="pendant-btn rose !py-1 !px-2.5 text-[10px] font-bold bg-rose-700 hover:bg-rose-600 active:bg-rose-800 text-white shadow flex items-center gap-1" data-i18n="gearCut" title="Cắt cáp mô phỏng đứt nhánh">
+                <svg class="cut-scissors-icon" width="14" height="14" viewBox="0 0 32 32" aria-hidden="true"><circle cx="9" cy="24" r="4.2" fill="none" stroke="#fecdd3" stroke-width="2.4"/><circle cx="23" cy="24" r="4.2" fill="none" stroke="#fecdd3" stroke-width="2.4"/><path fill="#e2e8f0" d="M11.2 20.6 L6.2 5.8 L14.8 13.8 Z"/><path fill="#f8fafc" d="M20.8 20.6 L25.8 5.8 L17.2 13.8 Z"/><circle cx="16" cy="16.2" r="2" fill="#fda4af"/></svg>
+                <span>Cắt cáp</span>
+            </button>
+            <button id="gear-editor-repair" type="button" class="pendant-btn emerald !py-1 !px-2.5 text-[10px] font-bold bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white shadow flex items-center gap-1" data-i18n="gearRepair" title="Nối lại cáp đã đứt">
+                <span>🔗</span><span>Nối lại</span>
+            </button>
+            <button id="gear-editor-clear" type="button" class="pendant-btn !py-1 !px-2.5 text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 ml-auto" data-i18n="gearClear">Bỏ chọn</button>
         </div>
     </div>
 
@@ -2501,6 +2690,30 @@
             <button onclick="document.getElementById('btn-open-liftplan').click()" class="pendant-btn yellow !py-1 !px-2.5 text-xs font-bold">
                 📋 Xuất Hồ Sơ Lift Plan
             </button>
+        </div>
+    </div>
+
+    <!-- Guided Lift Plan Stack Builder (left dock — main 3D stays visible) -->
+    <div id="plan-wizard-modal" class="modal-layer wiz-dock-layer" data-testid="modal-plan-wizard" style="display:none">
+        <div class="modal-card wiz-dock-card flex flex-col bg-slate-950/96 border border-sky-500/45 rounded-2xl shadow-2xl overflow-hidden pointer-events-auto">
+            <div class="flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <span class="text-xl shrink-0">🧱</span>
+                    <div class="min-w-0">
+                        <div id="plan-wizard-title" class="text-sm font-extrabold text-white tracking-wide uppercase truncate">Xếp Khối Phương Án</div>
+                        <div id="plan-wizard-sub" class="text-[10px] font-mono text-sky-300 truncate">Danh sách trên → dưới · nối 3D trực tiếp</div>
+                    </div>
+                </div>
+                <button id="btn-close-plan-wizard" type="button" class="text-slate-400 hover:text-white text-xl leading-none px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 shrink-0">✕</button>
+            </div>
+            <div id="plan-wizard-body" class="flex-1 overflow-y-auto p-3 bg-slate-950"></div>
+            <div class="flex items-center justify-between gap-2 px-3 py-2.5 border-t border-slate-800 bg-slate-900/95">
+                <button id="btn-wiz-preview" type="button" class="pendant-btn blue !py-1.5 !px-3 text-[11px] font-bold" title="Đồng bộ lại stack 3D">↻ 3D</button>
+                <button id="btn-wiz-apply" type="button" class="pendant-btn yellow !py-1.5 !px-3 text-[11px] font-extrabold">✅ Áp dụng & đóng</button>
+            </div>
+        </div>
+        <div class="wiz-dock-hint pointer-events-none select-none">
+            <span>← Chọn tầng · 3D cập nhật bên này</span>
         </div>
     </div>
 
@@ -2567,36 +2780,49 @@
     <!-- FLOATING POPOVERS: ĐẶT Ở CẤP ROOT BODY ĐỂ KHÔNG BỊ #TOP-BAR CẮT (CLIP)  -->
     <!-- ======================================================================= -->
 
-    <!-- 1. POPOVER CAMERA -->
-    <div id="dropdown-panel-camera" class="topbar-popover-panel hidden fixed bg-slate-900/98 backdrop-blur-xl border border-sky-500/50 rounded-lg shadow-2xl p-3 text-xs text-slate-200 select-none w-72 box-border pointer-events-auto">
+    <!-- 1. POPOVER CAMERA — góc nhìn chuyên sâu (chế độ Auto/Giữ/Góc nằm ở dock dưới) -->
+    <div id="dropdown-panel-camera" class="topbar-popover-panel hidden fixed bg-slate-900/98 backdrop-blur-xl border border-sky-500/50 rounded-lg shadow-2xl p-3 text-xs text-slate-200 select-none w-80 box-border pointer-events-auto">
         <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-700/80">
-            <span class="font-extrabold text-[11px] uppercase tracking-wider text-sky-400">🎥 Góc Nhìn Camera 3D</span>
+            <span class="font-extrabold text-[11px] uppercase tracking-wider text-sky-400">Camera · Góc nhìn</span>
+            <span id="cam-follow-label" class="text-[9px] font-semibold text-sky-300/90">Auto</span>
         </div>
-        <div class="grid grid-cols-3 gap-1.5 mb-2.5">
-            <button type="button" class="pendant-btn !py-1.5 !px-2 text-[11px] cam-btn active justify-center" data-cam="iso" title="Phối cảnh 3D cận cảnh">Iso</button>
-            <button type="button" class="pendant-btn !py-1.5 !px-2 text-[11px] cam-btn justify-center" data-cam="hook" title="Cận cảnh Đầu Hook &amp; Cáp">Móc</button>
-            <button type="button" class="pendant-btn !py-1.5 !px-2 text-[11px] cam-btn justify-center" data-cam="front" title="Mặt đứng chính diện">Đứng</button>
-            <button type="button" class="pendant-btn !py-1.5 !px-2 text-[11px] cam-btn justify-center" data-cam="side" title="Mặt bên">Bên</button>
-            <button type="button" class="pendant-btn !py-1.5 !px-2 text-[11px] cam-btn justify-center" data-cam="top" title="Mặt bằng kiểm tra CoG">Bằng</button>
-            <button type="button" class="pendant-btn !py-1.5 !px-2 text-[11px] cam-btn justify-center" data-cam="crane" title="Toàn cảnh máy cẩu">Cẩu</button>
+
+        <div class="mb-2">
+            <div class="text-[9px] font-bold uppercase tracking-wide text-slate-500 mb-1.5">1. Góc nhìn cố định</div>
+            <div class="grid grid-cols-3 gap-1.5">
+                <button type="button" class="pendant-btn !py-1.5 !px-2 text-[11px] cam-btn active justify-center" data-cam="iso" title="Phối cảnh 3/4 — bao quát kiện + bộ treo">Iso</button>
+                <button type="button" class="pendant-btn !py-1.5 !px-2 text-[11px] cam-btn justify-center" data-cam="hook" title="Cận cảnh móc &amp; cáp trên">Móc</button>
+                <button type="button" class="pendant-btn !py-1.5 !px-2 text-[11px] cam-btn justify-center" data-cam="front" title="Mặt đứng chính diện">Đứng</button>
+                <button type="button" class="pendant-btn !py-1.5 !px-2 text-[11px] cam-btn justify-center" data-cam="side" title="Mặt bên">Bên</button>
+                <button type="button" class="pendant-btn !py-1.5 !px-2 text-[11px] cam-btn justify-center" data-cam="top" title="Mặt bằng — kiểm tra CoG / LP">Bằng</button>
+                <button type="button" class="pendant-btn !py-1.5 !px-2 text-[11px] cam-btn justify-center" data-cam="crane" title="Toàn cảnh máy cẩu">Cẩu</button>
+            </div>
+            <p class="text-[9px] text-slate-500 mt-1.5 leading-snug">Chọn góc cố định sẽ chuyển sang chế độ <b class="text-slate-400">Giữ</b> trên thanh Cam dưới.</p>
         </div>
-        <div class="pt-2 border-t border-slate-800 flex items-center justify-between gap-2">
-            <button id="btn-cam-follow" type="button" class="pendant-btn !py-1 !px-2 text-[10.5px] flex items-center gap-1 font-semibold text-slate-300 hover:text-sky-300 transition" title="Bật/Tắt chế độ camera tự động bám theo điểm chỉ định trên kiện hàng khi kéo lên">
-                <span>🎥</span>
-                <span id="cam-follow-label">Bám: TẮT</span>
-            </button>
-            <select id="sel-cam-follow-mode" class="hidden bg-slate-800 text-sky-300 border border-slate-600 rounded text-[10px] px-1.5 py-1 outline-none focus:border-sky-400 cursor-pointer" title="Chọn điểm trên kiện hàng để camera bám theo">
-                <option value="cog">Trọng tâm (CoG)</option>
-                <option value="center">Tâm kiện (Center)</option>
-                <option value="top">Đỉnh kiện (Top)</option>
-                <option value="hook">Móc cẩu (Hook)</option>
+
+        <div class="pt-2 border-t border-slate-800">
+            <div class="text-[9px] font-bold uppercase tracking-wide text-slate-500 mb-1.5">2. Điểm focus (khi Auto / Góc)</div>
+            <select id="sel-cam-follow-mode" class="w-full bg-slate-800 text-sky-200 border border-slate-600 rounded px-2 py-1.5 text-[11px] outline-none focus:border-sky-400 cursor-pointer" title="Điểm camera bám theo">
+                <option value="auto" selected>Tự động (kiện + móc)</option>
+                <option value="cog">Trọng tâm CoG</option>
+                <option value="center">Tâm kiện</option>
+                <option value="top">Đỉnh kiện</option>
+                <option value="hook">Móc cẩu</option>
                 <option value="lp1">Tai cẩu LP1</option>
                 <option value="lp2">Tai cẩu LP2</option>
                 <option value="lp3">Tai cẩu LP3</option>
                 <option value="lp4">Tai cẩu LP4</option>
-                <option value="custom">Tùy chỉnh...</option>
+                <option value="custom">Tọa độ tùy chỉnh…</option>
             </select>
+            <p class="text-[9px] text-slate-500 mt-2 leading-snug">
+                <b class="text-slate-400">Auto</b> = cinematic tự xoay ·
+                <b class="text-slate-400">Giữ</b> = đứng yên ·
+                <b class="text-slate-400">Góc</b> = mỗi lần nhấn sang góc tiếp theo (12 góc quanh kiện) ·
+                <b class="text-slate-400">Fly</b> = flycam chuyên nghiệp, xoay liên tục quanh kiện.
+                Điều khiển nhanh ở hàng <b class="text-violet-300">Cam</b> dưới cùng.
+            </p>
         </div>
+        <button id="btn-cam-follow" type="button" class="hidden" aria-hidden="true" tabindex="-1">follow</button>
     </div>
 
     <!-- 2. POPOVER HIỂN THỊ (Tích hợp luôn CAD, X-Ray, Véc-tơ Lực ở đầu) -->
@@ -2714,9 +2940,9 @@
                 <label class="block text-slate-400 text-[10px] uppercase font-bold mb-1">Chất lượng đồ họa CAE:</label>
                 <select id="sel-gfx-quality" class="w-full bg-slate-800 text-slate-200 border border-slate-700 rounded px-2 py-1 text-xs font-medium cursor-pointer">
                     <option value="ultra">💎 Ultra (Chi tiết cao nhất)</option>
-                    <option value="high" selected>⚡ High (Cân bằng chuẩn)</option>
+                    <option value="high" selected>⚡ High (1080p / Cân bằng ~60 FPS)</option>
                     <option value="studio">📐 Studio (Kỹ thuật CAD)</option>
-                    <option value="performance">🔋 60 FPS (Hiệu năng cao)</option>
+                    <option value="performance">🔋 Performance (Máy yếu)</option>
                 </select>
             </div>
             <div class="pt-1.5 border-t border-slate-800 flex items-center justify-between">
@@ -2735,6 +2961,9 @@
         </button>
         <button id="btn-open-liftplan" type="button" class="w-full text-left pendant-btn yellow !py-1.5 !px-2.5 text-[11px] font-bold shadow flex items-center gap-2">
             <span>📋</span> <span>Hồ Sơ Lift Plan ASME P30.1</span>
+        </button>
+        <button id="btn-open-plan-wizard" type="button" class="w-full text-left pendant-btn emerald !py-1.5 !px-2.5 text-[11px] font-bold shadow flex items-center gap-2">
+            <span>🧙</span> <span>Tạo Phương Án Kéo (Wizard)</span>
         </button>
         <button id="btn-quick-export-pdf" type="button" class="w-full text-left pendant-btn !py-1.5 !px-2.5 text-[11px] font-bold shadow bg-rose-700/90 hover:bg-rose-600 text-white border border-rose-400/80 flex items-center gap-2">
             <span>📄</span> <span>Xuất Báo Cáo PDF</span>
