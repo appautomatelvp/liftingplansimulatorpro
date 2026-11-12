@@ -1,0 +1,374 @@
+================================================================================
+LIFTING PLAN SIMULATOR PRO — MÔ TẢ CHI TIẾT VẬT LÝ & TƯƠNG TÁC KHỐI 3D
+================================================================================
+Nguồn: code live XPBD trong src/sim/physics/* (không phải Rapier/Cannon quarantine).
+Mục đích: tài liệu đối chiếu / kiểm tra hành vi mô phỏng.
+Hệ trục: Y-up. Trọng lực: −Y. G_EARTH = 9.80665 m/s² (footprint_rig.js).
+
+
+--------------------------------------------------------------------------------
+1. CÁC “KHỐI” VẬT LÝ ĐANG CÓ
+--------------------------------------------------------------------------------
+
+| Khối              | Biến chính                                              | Khối lượng / quán tính                         | Chuyển động                          |
+|-------------------|---------------------------------------------------------|------------------------------------------------|--------------------------------------|
+| Cargo             | phy.cargoPos, cargoQuat, cargoVel, cargoOmega           | mass = weightT × 1000 kg; invI quanh CoG       | Rigid body 6DOF                      |
+| Hook block        | phy.hookPos → phy.hookTarget                            | Không tích phân như cargo; điều khiển tời      | Kinematic + clamp rắn                |
+| Spreader / beam   | phy.beams[].x, q, v, w, mass, invI                      | Mass beam riêng                                | Rigid body + trọng lực (trừ basket)  |
+| Cáp               | phy.cables[] (a, b, L0, role, slack, tensionT)          | Unilateral constraint (không nén)              | XPBD impulse + position projection   |
+| Mặt đất / quay    | supportY(x,z) trong scene.js                            | Height-field                                   | Contact + ma sát                     |
+| OOG Flat Rack     | phy.oogState                                            | Payload tách khi đứt lashing                   | Slide → fall → ground                |
+
+Sơ đồ liên kết (text):
+
+  Hook (kinematic)
+       |  upper cables (L0)
+       v
+  Spreader / beam
+       |  leg cables (L0)
+       v
+  Cargo (rigid)
+       |  contact points
+       v
+  supportY height-field (quay / đất)
+
+  Thêm:
+  - Beam ↔ Cargo: depenetrate + clampBeamAboveCargoRoof
+  - Hook ↔ Cargo/Beam/đất: clampHookOutOfSolids (chỉ khi cargo grounded)
+  - OOG payload: lashing / fall / ground riêng trên Flat Rack
+
+
+--------------------------------------------------------------------------------
+2. VÒNG LẶP THỜI GIAN (ĐỐI CHIẾU FRAME)
+--------------------------------------------------------------------------------
+
+Mỗi frame gọi stepPhysicsEngine() (~60 Hz) — file: src/sim/physics/step_engine.js
+
+Thứ tự chính:
+
+  1) Xử lý cáp đứt (impulse + nhả pose-lock nếu cần).
+  2) Nếu Hạ đất (phy._setDownActive): ép hoistSpeed âm đến khi seated,
+     rồi finishSmoothSetDown().
+  3) Cập nhật phy.hookTarget.y từ phy.hoistSpeed
+     (có hệ số tải winch 65 T: loadRatio = m*g / 650000).
+  4) Hai nhánh:
+       - state.poseLock === true  → kinematic / Nhớm (KHÔNG chạy XPBD đầy đủ)
+       - ngược lại                → runXpbdFrame(1/60)
+
+Trong runXpbdFrame (beams_seed.js):
+
+  - Substep thích ứng 8–20
+      · mặc định ~14–20
+      · gần đất / chậm / perf thấp → ~10
+      · sàn tối thiểu: 8
+  - Mỗi substep:
+      advanceHook
+      → gravity cargo / beam
+      → giải cáp (8 iter)
+      → contact đất (2 pass)
+      → keepSolidsApart
+      → damping / gravity gates
+
+
+--------------------------------------------------------------------------------
+3. TRỌNG TRƯỜNG — ÁP DỤNG THẾ NÀO
+--------------------------------------------------------------------------------
+
+3.1. Cargo
+  Mỗi substep:
+    vCom.y -= G_EARTH * dt
+  rồi tích phân vị trí CoM, cập nhật phy.cargoPos từ CoM − r_cog
+  (r_cog từ cogX/Y/Z, có chỉnh khi OOG đang sliding).
+
+3.2. Beam / spreader
+  Mỗi beam (không phải basket kinematic):
+    b.v.y -= G_EARTH * dt
+  + drag khí động nhẹ + gyroscopic trên b.w
+  + settleBeamsToUpperBridle (beam không được “treo lơ lửng” làm upper slack).
+
+3.3. Cáp đứt
+  integrateBrokenCableStubs: tip tự do rơi dưới trọng lực, va solid.
+
+3.4. “Gravity gates” (quan trọng khi kiểm tra)
+  Không chỉ F = mg. Có cổng logic chống nảy / nhấc giả:
+
+  | Điều kiện                                      | Hành vi                                              |
+  |------------------------------------------------|------------------------------------------------------|
+  | Chân cáp còn slack (đặc biệt STS cable mode)   | vCom.y không được > 0                                |
+  | Đang hạ gần đất (minGap < 0.35)                | Cấm vận tốc đi lên (vCom.y > 0 → 0)                  |
+  | Có chân cáp taut hoặc tời dừng                 | Giới hạn lên ≈ hookVel.y + 0.35                      |
+  | Ngồi đất thật (aabbClear < 0.06 & minGap < 0.02)| Cắt vCom.y < 0, ma sát Coulomb ngang, dập omega     |
+
+  Kết luận kiểm tra:
+  Hàng chỉ được NÂNG khi khoảng cách 2 đầu cáp ≥ ~L0 VÀ impulse _j > 0.
+
+
+--------------------------------------------------------------------------------
+4. TƯƠNG TÁC CÁP (XPBD UNILATERAL)
+--------------------------------------------------------------------------------
+
+Mỗi cable nối 2 neo qua attachWorld(a/b):
+  - hook
+  - beam body
+  - cargo lug / pad-eye
+
+Luật slack:
+  - dist < L0 − ε  → slack = true, KHÔNG truyền lực nén (dây mềm)
+  - dist ≥ L0      → xung vận tốc tách (sep) + chiếu vị trí
+                     stretch soft-cap ~ 3.5 cm (STS leg haul mềm hơn)
+
+Mỗi substep: 8 vòng
+  balanceBeamBridles() rồi forEach cable.
+
+Trường hợp đặc biệt:
+  - Leg dưới beam đang resting trên nóc container:
+      impulse chỉ đẩy phía neo trên; không “đẩy hàng xuống đất” giả.
+  - STS direct twistlock:
+      luôn truyền lực nâng vào cargo.
+  - Basket:
+      upper thường kinematic; tension suy từ leg.
+
+Tension hiển thị:
+  trung bình (_j/dt)/(1000·g) qua các substep → c.tensionT (tấn).
+
+Kiểm tra nhanh:
+  Nhớm  → poseLock + rút L0 ≈ span → cáp vẽ thẳng; hàng chưa nâng
+           (groundClearance vẫn ~0).
+  Nhấc  → poseLock false → XPBD → clearance tăng khi legs taut.
+
+
+--------------------------------------------------------------------------------
+5. TƯƠNG TÁC VỚI MẶT ĐẤT / QUAY
+--------------------------------------------------------------------------------
+
+  1) contactLocals() — các điểm “chân” local trên cargo.
+  2) World point → gap = wpt.y − supportY(x,z).
+  3) Nếu gap < 0: penetration contact theo supportNormal (thường +Y).
+  4) Impulse pháp tuyến + ma sát Coulomb:
+       mu ≈ 0.50  quay thường
+       mu ≈ 0.48  rough
+       mu ≈ 0.62  soil   (state.groundId)
+  5) Impact:
+       vn < -3.2 → pendingImpact → dentCargo
+       nhẹ hơn   → âm thanh touchdown
+
+  phy.groundClearance = max(0, minGap) sau frame.
+
+Kiểm tra:
+  Thả hàng / Hạ đất → clearance → 0, không nảy mạnh.
+  Kéo ngang khi seated → ma sát cản.
+
+
+--------------------------------------------------------------------------------
+6. TƯƠNG TÁC RẮN–RẮN (KHÔNG XUYÊN)
+--------------------------------------------------------------------------------
+
+| Cặp                    | Cơ chế                                                         |
+|------------------------|----------------------------------------------------------------|
+| Beam ↔ nóc cargo       | clampBeamAboveCargoRoof, depenetrateBeamFromCargo,             |
+|                        | separateCargoFromBeam                                          |
+| Hook ↔ cargo/beam/đất  | clampHookOutOfSolids — CHỈ khi cargo grounded;                 |
+|                        | hook treo không bị cargo “đẩy bay”                             |
+| Solids chung           | keepSolidsApart trong vòng XPBD                                |
+| STS busy               | Tắt depenetration beam↔cargo tạm (tránh nẩy khi twin/hoist)    |
+
+Kiểm tra:
+  Hạ hook khi hàng dưới đất → hook dừng trên nóc/spreader, không xuyên.
+  Suspended → hạ hook không bị “bật” bởi cargo.
+
+
+--------------------------------------------------------------------------------
+7. TỜI / HOOK VS TRỌNG LƯỢNG
+--------------------------------------------------------------------------------
+
+  - phy.hoistSpeed đổi hookTarget.y mỗi frame (trong stepPhysicsEngine).
+  - Hệ số chậm theo tải:
+        loadRatio = (totalMassKg * 9.81) / 650000   // winch 65 T
+        speedMult = max(0.15, 1 − loadRatio)
+  - advanceHook(dt) nội suy hookPos → target.
+  - Kéo chuột: hookDragLoadCoupling 0→1 theo độ căng leg
+    (upper một mình không làm cảm giác “kéo cả hàng” sớm).
+
+Kiểm tra:
+  Cùng tốc độ tời, hàng nặng hơn phải lên chậm hơn một chút.
+
+
+--------------------------------------------------------------------------------
+8. HAI CHẾ ĐỘ “VẬT LÝ” TRÊN UI
+--------------------------------------------------------------------------------
+
+8.A. poseLock (Nhớm / pre-lift) — nhánh sớm return trong stepPhysicsEngine
+
+  - Cargo KHÔNG tích phân XPBD; groundClearance gán 0.
+  - Beam: seed kinematic hoặc freeze sau Nhớm (_nhomFreezeSpreader).
+  - Cáp: căng hình học → tensionT tối thiểu ~0.10 T để VẼ taut
+    (không có nghĩa đang treo hàng).
+  - Hạ hook khi poseLock: bỏ freeze spreader để beam theo hook xuống,
+    vẫn clampBeamAboveCargoRoof (không xuyên nóc).
+
+8.B. XPBD live (sau Nhấc / đang treo / hạ)
+
+  - Gravity + cable + ground + aero + damping đầy đủ.
+  - Flat Rack OOG: stepFlatRackPayloadPhysics —
+    trượt mặt sàn / rơi / tiếp đất riêng.
+  - publishCableLoads cho HUD.
+
+
+--------------------------------------------------------------------------------
+9. CHI TIẾT THÊM TRONG runXpbdFrame (ĐỂ ĐỐI CHIẾU CODE)
+--------------------------------------------------------------------------------
+
+File: src/sim/physics/beams_seed.js → function runXpbdFrame(frameDt)
+
+Thứ tự trong mỗi substep (tóm tắt):
+
+  (1) advanceHook(dt)
+  (2) Tính rCog / com từ cargoPos + quat
+  (3) vCom.y -= G_EARTH * dt
+  (4) applyCargoAerodynamics + applyGyroscopicTerm
+  (5) Cập nhật quat (omega) và com (vCom); writeCargoCom
+  (6) Beam: gravity + aero + gyro + (optional) yaw lock STS/hook swivel
+  (7) settleBeamsToUpperBridle()
+  (8) 8 iter cable XPBD:
+        - skip nếu broken / invalid ends
+        - slack nếu dist < L0 threshold
+        - velocity impulse j từ relative separating velocity
+        - cap axialImpulseCap
+        - position projection theo stretch (hệ số phụ thuộc hoistStopped / STS)
+        - đánh dấu slack nếu chưa truyền impulse và chưa overrun
+  (9) Contact đất 2 pass trên contactLocals()
+ (10) keepSolidsApart
+ (11) Tích tension step vào c._sum / c._n
+ (12) integrateBrokenCableStubs
+ (13) Gravity gates / seated arrest / damping công nghiệp
+ (14) Ghi phy.cargoVel / cargoOmega từ vCom, omega
+
+Sau hết substeps (cuối frame):
+  - tensionT = trung bình _sum/_n
+  - STS: enforceStsSpreaderAsHeadblock / twistlock couple / yaw
+  - depenetrateBeamFromCargo (trừ khi stsBusy)
+  - phy.groundClearance = max(0, clearance)
+  - resolveFlatRackFallenOogContacts nếu OOG falling/grounded
+  - publishAeroTelemetry
+
+
+--------------------------------------------------------------------------------
+10. POSE-LOCK / NHỚM — CHI TIẾT KIỂM TRA
+--------------------------------------------------------------------------------
+
+Khi state.poseLock:
+
+  - phy.rigLive = false
+  - resetFlatRackPayloadState()
+  - applyLockedPose()
+  - Nếu hạ hook: bỏ _nhomFreezeSpreader
+  - Nếu _nhomFreezeSpreader: zero beam v/w + clampBeamAboveCargoRoof
+  - Ngược lại: seedBeamsFromKinematic()
+  - Hard clamp nóc mỗi frame
+  - advanceHook(frameDt); stepCornerYield
+  - Nhớm freeze: gán tension nhẹ + slack=false khi span >= L0−0.02
+    để renderer vẽ cáp thẳng (không bụng giả)
+  - phy.groundClearance = 0
+  - return (không vào runXpbdFrame)
+
+Pose-lock bị GỠ khi:
+  - cáp đứt
+  - hoistSpeed > 0 / autoHoist / kéo hook / hookTarget cao hơn hookPos
+  - lệnh Nhấc thử / reset thích hợp trong session
+
+
+--------------------------------------------------------------------------------
+11. HẠ ĐẤT (SET-DOWN)
+--------------------------------------------------------------------------------
+
+phy._setDownActive (session beginSmoothSetDown):
+
+  Mỗi frame trong stepPhysicsEngine:
+    - Đo clearance (groundClearance + cargoAabbClearance)
+    - seated nếu clearance < ~0.035–0.04 → finishSmoothSetDown()
+    - chưa seated: ép hoistSpeed âm, chậm dần khi clr < 0.35
+      (ratio^0.65)
+
+Khi XPBD hạ gần đất:
+  - cấm rebound lên
+  - dập omega / vận tốc ngang
+  - seated thật mới cắt vy âm và giữ ma sát
+
+
+--------------------------------------------------------------------------------
+12. CHECKLIST KIỂM TRA THỰC TẾ (npm run dev)
+--------------------------------------------------------------------------------
+
+  1) Tĩnh trên bãi:
+       cargo ngồi supportY, clearance ≈ 0;
+       cáp có thể bụng nếu L0 > span.
+
+  2) Nhớm cáp:
+       cargo không nhấc; cáp thẳng;
+       hook/spreader gần như đứng yên.
+
+  3) Nhấc thử:
+       chỉ khi legs taut mới lên;
+       pendulum nhẹ; không xuyên nóc.
+
+  4) Hạ đất:
+       giảm tốc gần đất; seated → finishSmoothSetDown;
+       không snatch lên lại vài cm.
+
+  5) Cắt cáp / đứt:
+       nhánh còn lại nhận shock; stub rơi;
+       không “đứng giữa trời” nếu mất hết load path.
+
+  6) STS direct vs cable:
+       direct = pin cứng;
+       cable = phải taut mới nâng (gravity gate).
+
+  7) Flat Rack OOG:
+       phá lashing → payload slide/fall độc lập với frame.
+
+
+--------------------------------------------------------------------------------
+13. CÁI GÌ *KHÔNG* THAM GIA LIVE
+--------------------------------------------------------------------------------
+
+  PhysicsWorldManager / Rapier / Cannon / SimulationEngine / PhysicalCableSolver
+  KHÔNG chạy trong stepPhysicsEngine.
+
+  Live solver = XPBD custom ở src/sim/physics/*.
+  Experimental backends: xem ADR-003 (quarantine) và PhysicsPort (ADR-004).
+
+
+--------------------------------------------------------------------------------
+14. FILE CODE NÊN ĐỌC KÈM
+--------------------------------------------------------------------------------
+
+  src/sim/physics/step_engine.js     — orchestration stepPhysicsEngine
+  src/sim/physics/beams_seed.js      — runXpbdFrame (lõi XPBD)
+  src/sim/physics/hoist_contacts.js  — advanceHook, clampHook, roof clamp
+  src/sim/physics/cables_break.js    — snap / stub / loads
+  src/sim/physics/flatrack_payload.js— OOG slide/fall
+  src/sim/physics/footprint_rig.js   — G_EARTH, getRigSpec, kinematic pose
+  src/sim/scene.js                   — supportY / supportNormal
+  src/sim/session/prelift_reset.js   — Nhớm, set-down, reset
+  src/sim/rigging/draw_update.js     — vẽ cáp taut/slack (visual ≠ force)
+  src/sim/physics/port.js            — façade app (step / pretension / telemetry)
+
+
+--------------------------------------------------------------------------------
+15. THUẬT NGỮ NHANH
+--------------------------------------------------------------------------------
+
+  L0              Chiều dài nghỉ của cáp (rest length)
+  span / dist     Khoảng cách hình học hai neo hiện tại
+  slack           Dây chưa chịu kéo (dist < L0)
+  taut            Đang truyền impulse hoặc overrun hình học
+  poseLock        Khóa tư thế pre-lift / sau Nhớm
+  groundClearance Khoảng hở nhỏ nhất điểm chân cargo so với supportY
+  XPBD            Extended Position Based Dynamics (solver cáp/contact)
+  unilateral      Chỉ chịu kéo, không chịu nén
+  substep         Bước con trong 1 frame 1/60 s
+  invMass / invI  Nghịch đảo khối lượng / tensor quán tính
+
+================================================================================
+Hết tài liệu vatly.txt
+================================================================================
