@@ -374,7 +374,7 @@
 
             // Pool: denser tube samples + chain link budget for soft bends (not long broken sticks)
             for (let i = 0; i < 48; i++) {
-                const slingObj = createArticulated3DSling(48, 280);
+                const slingObj = createArticulated3DSling(48, 500);
                 slingObj.group.name = `Wire_Rope_Sling_${i + 1}`;
                 scene.add(slingObj.group);
                 sling3DPool.push(slingObj);
@@ -1093,16 +1093,19 @@
                 topAssembly.rotation.z = Math.PI; // +Y downward into chain
                 g.add(topAssembly);
                 const topFar = 1.38 - chainTopAssemblyLength(1);
-                for (let i = 0; i < 32; i++) {
+                const prevScale = 1.1;
+                const prevPitch = CHAIN_NOMINAL_PITCH * prevScale;
+                const prevCount = 32;
+                for (let i = 0; i < prevCount; i++) {
                     const lk = createOvalChainLinkGroup();
-                    // Nest first links back into the red far eye
-                    lk.position.set(0, topFar - CHAIN_NEST_PITCH * 0.45 - i * CHAIN_NEST_PITCH, 0);
+                    // Nest first link into the red far eye; adjacent links touch metal-on-metal (tì vào nhau)
+                    lk.position.set(0, topFar - (i + 0.5) * prevPitch, 0);
                     if (i % 2) lk.rotation.y = Math.PI / 2;
-                    lk.scale.set(1.1, 1.1, 1.1);
+                    lk.scale.set(prevScale, prevScale, prevScale);
                     g.add(lk);
                 }
                 const botHook = createChainEndHardwareGroup(false);
-                botHook.position.set(0, -1.38, 0); // +Y upward into chain
+                botHook.position.set(0, topFar - prevCount * prevPitch, 0); // +Y upward into chain
                 g.add(botHook);
                 return g;
             }
@@ -1272,19 +1275,22 @@
             return mergeBufferGeometries([geo1, geo2]);
         }
 
-        // Grade-80 oval link, EN 818-2 @ 16 mm stock:
-        //   d = 16 mm, inside length p = 3d = 48 mm, inside width ≈ 1.25d–1.4d ≈ 22 mm
-        //   centerline half-width R = (inside_w + d) / 2 = 19 mm
-        //   straightHalf sH = p/2 - (R - tubeR) = 24 - 11 = 13 mm
-        // Nest pitch = sH + R = 32 mm (centers sit on the partner end-arc) so each oval
-        // ngoắc through the previous opening — stock fills the hole (not tip-welded rims).
+        // Grade-80 / Grade-100 short-link chain per EN 818-2 / ASME B30.9 @ 16 mm nominal stock:
+        //   d = 16 mm, inside pitch p = 3d = 48 mm, inside width w = 22 mm (~1.38d)
+        //   centerline radius R = (w + d) / 2 = (22 + 16) / 2 = 19 mm = 0.019 m
+        //   stock radius tubeR = d / 2 = 8 mm = 0.008 m
+        //   straight half sH = p / 2 - (R - tubeR) = 24 - 11 = 13 mm = 0.013 m
+        // Center-to-center pitch under tension:
+        //   Adjacent links pull taut against each other until inner saddle contacts kiss metal-on-metal:
+        //   p_taut = 2 * (sH + R - tubeR) = 2 * (13 + 19 - 8) = 48 mm = 0.048 m = 3d.
         const CHAIN_LINK_MAJOR = 0.019;     // centerline half-width (m) @ 16 mm stock
         const CHAIN_LINK_TUBE = 0.008;      // stock radius (m) @ 16 mm stock
         const CHAIN_LINK_STRAIGHT = 0.013;  // stadium straight half → inside length = 48 mm
         const CHAIN_LINK_GEO = new THREE.TubeGeometry(
             new StadiumCurve(CHAIN_LINK_STRAIGHT, CHAIN_LINK_MAJOR), 28, CHAIN_LINK_TUBE, 12, true
         );
-        const CHAIN_NEST_PITCH = CHAIN_LINK_STRAIGHT + CHAIN_LINK_MAJOR; // 0.032 m
+        const CHAIN_NOMINAL_PITCH = 2 * (CHAIN_LINK_STRAIGHT + CHAIN_LINK_MAJOR - CHAIN_LINK_TUBE); // 0.048 m (EN 818-2 pitch p = 3d @ 16mm stock)
+        const CHAIN_NEST_PITCH = CHAIN_NOMINAL_PITCH;
 
         function createOvalChainLinkGroup() {
             const mesh = new THREE.Mesh(CHAIN_LINK_GEO, MATS.chainDark);
@@ -1305,7 +1311,7 @@
             const group = new THREE.Group();
             const segments = [];
             const nSeg = Math.max(8, numSegments | 0);
-            const nLink = Math.max(nSeg, numLinks | 0);
+            const nLink = Math.max(nSeg, Math.max(numLinks | 0, 500));
 
             const endEyeA = createSlingEyeTerminationGroup();
             const endEyeB = createSlingEyeTerminationGroup();
@@ -3436,10 +3442,16 @@
             const cargoSuspended = !state.poseLock && (phy.groundClearance || 0) > 0.05;
 
             const geometricallyTaut = !meta.broken && chord >= workLen - 0.015;
+            // Nhớm cáp: ropes are taken up to the live pin span while cargo stays on the quay.
+            // Must still DRAW straight — do not force a gravity belly just because poseLock
+            // reports near-zero solver tension.
+            const nhomSnug = !!(phy && (phy._nhomFreezeSpreader || (state.poseLock && state.holdCableLength)))
+                && geometricallyTaut;
             // Uppers look taut when they reach workLen while the beam is off the lid or when carrying suspended cargo
             const upperCarryingGear = meta.role === 'upper' && !meta.broken && (
                 (beamOffCargo && chord >= workLen - 0.04)
                 || (cargoSuspended && actualTension > 0.05)
+                || nhomSnug
             );
             const lowerCarryingSuspendedLoad = meta.role === 'leg' && !meta.broken
                 && cargoSuspended && actualTension > 0.05
@@ -3447,6 +3459,7 @@
             const physicallyTaut = !meta.broken && (
                 upperCarryingGear
                 || lowerCarryingSuspendedLoad
+                || nhomSnug
                 || (geometricallyTaut && !beamResting
                     && !(meta.role === 'leg' && beamOnCargo && actualTension < 0.15))
             );
@@ -3454,7 +3467,7 @@
             // Manufactured length is immutable this frame — NEVER inflate for resting belly
             // (that looked like rubber: same UI L0, longer drawn cable).
             const renderLen = workLen;
-            if (upperCarryingGear || lowerCarryingSuspendedLoad) {
+            if (upperCarryingGear || lowerCarryingSuspendedLoad || nhomSnug) {
                 pathMeta.tautness = 1;
             } else if (!physicallyTaut) {
                 pathMeta.tautness = beamResting ? 0 : Math.min(pathMeta.tautness || 0, 0.35);
@@ -3682,23 +3695,36 @@
                 }
             }
 
-            // Interlocked Grade-80 chain: pitch = end-arc nest so each oval ngoắc through the last.
-            // Broken stubs keep articulated links so a cut half still looks like real chain.
-            // NEVER enlarge stock when the path gets longer (slack / set-down) — that made
-            // chain diameter "phóng to" as soon as the hook lowered.
+            // Interlocked Grade-80 / Grade-100 chain per EN 818-2 / ASME B30.9:
+            // Center-to-center pitch under tension equals the inner link pitch p = 3d (48mm @ 16mm stock).
+            // When taut, adjacent links rest metal-on-metal with ZERO air gap and zero penetration:
+            // link i's top inner crown kisses link i+1's bottom inner crown snugly (tì vào nhau).
             if (chain && slingObj.links && (!meta.broken || meta.brokenHalf)) {
-                const arcRaw = Math.max(0.05, polylineLength(pts));
-                // Manufactured length caps the run — drape detours must not inflate stock size
-                const arc = Math.min(arcRaw, Math.max(workLen, chord) * 1.06 + 0.04);
+                const acc = [0];
+                for (let k = 1; k < pts.length; k++) acc.push(acc[k - 1] + pts[k].distanceTo(pts[k - 1]));
+                const total = acc[acc.length - 1] || 1;
+
                 const stockScale = THREE.MathUtils.clamp((dia || 16) / 16, 0.5, 3.5);
-                const pitch = CHAIN_NEST_PITCH * stockScale;
-                const maxLinks = slingObj.numLinks || slingObj.links.length;
-                let linkCount = Math.max(3, Math.ceil(arc / pitch));
-                if (linkCount > maxLinks) linkCount = maxLinks;
-                // Keep true diameter always — prefer slightly wider nest spacing over fat links
-                const ls = stockScale;
-                const sx = ls;
-                const sy = ls;
+                const nominalPitch = CHAIN_NOMINAL_PITCH * stockScale;
+                const linkCount = Math.max(3, Math.round(total / nominalPitch));
+
+                // Dynamically ensure enough link meshes exist in the pool for any crane height / sling length
+                while (slingObj.links.length < linkCount) {
+                    const extraLink = new THREE.Mesh(CHAIN_LINK_GEO, mat);
+                    extraLink.visible = false;
+                    extraLink.castShadow = false;
+                    extraLink.receiveShadow = false;
+                    if (typeof tagSling === 'function') tagSling(extraLink);
+                    slingObj.group.add(extraLink);
+                    slingObj.links.push(extraLink);
+                }
+
+                // Exact physical pitch step along the path:
+                // Spacing = total / linkCount ensures exact integer closure with zero accumulated drift.
+                const step = total / linkCount;
+                // Longitudinal scale: matches the exact step so each link's inside pitch equals step
+                const sy = step / CHAIN_NOMINAL_PITCH;
+                const sx = stockScale;
 
                 // First black link so le to the red end-link / parent ring (same basis as orientEndLink)
                 const nParentA = (slingObj.parentNormalA && slingObj.parentNormalA.isVector3
@@ -3720,17 +3746,6 @@
                 if (zLink0.lengthSq() < 1e-8) zLink0 = nParentA.clone();
                 zLink0.normalize();
 
-                const acc = [0];
-                for (let k = 1; k < pts.length; k++) acc.push(acc[k - 1] + pts[k].distanceTo(pts[k - 1]));
-                const total = acc[acc.length - 1] || 1;
-                // Pull first/last centers back into the red end-link eyes by ~half pitch − tube
-                // so stock fills the far aperture (ngoắc), instead of tip-welding at the rim.
-                // Free cut tip has no end-link — don't pull nest into empty air.
-                const nestB = !meta.brokenHalf;
-                const endNestA = Math.min(pitch * 0.55, total * 0.12);
-                const endNestB = nestB ? Math.min(pitch * 0.55, total * 0.12) : pitch * 0.15;
-                const usable = Math.max(pitch * 2, total - endNestA - endNestB);
-                const step = usable / linkCount;
                 let kCursor = 1;
                 for (let i = 0; i < slingObj.links.length; i++) {
                     const link = slingObj.links[i];
@@ -3739,7 +3754,11 @@
                         link.visible = false;
                         continue;
                     }
-                    const d = Math.min(total - 1e-4, endNestA + step * (i + 0.5));
+                    // Distance along path to link center:
+                    // Link 0 center is at 0.5 * step (so its bottom inner crown sits at d = 0, kissing red end-link A).
+                    // Link i and link i+1 meet at d = (i + 1) * step (zero gap, metal-on-metal).
+                    // Link (linkCount - 1) top inner crown reaches d = total, kissing red end-link B.
+                    const d = Math.min(total - 1e-4, Math.max(0, step * (i + 0.5)));
                     while (kCursor < acc.length - 1 && acc[kCursor] < d) kCursor++;
                     const span = Math.max(1e-6, acc[kCursor] - acc[kCursor - 1]);
                     const t = THREE.MathUtils.clamp((d - acc[kCursor - 1]) / span, 0, 1);

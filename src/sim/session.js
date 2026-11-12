@@ -3,14 +3,122 @@
  * These files are assembled into one module so they share state, physics and the scene.
  */
         // --- 11. RESET TO INITIAL PRE-LIFT STATE, FACTORY RESET & SMOOTH AUTO-LEVEL ---
-        function resetToInitialPreLiftState() {
-            phy.autoHoistActive = false;
+
+        /** Freeze hook/spreader/cables at the current suspended pose (after Nhấc thử / release Kéo). */
+        function freezeSuspendedHoist() {
             phy.hoistSpeed = 0;
+            phy.autoHoistActive = false;
+            phy._trialLiftActive = false;
+            if (phy.hookPos) {
+                phy.hookTarget.x = phy.hookPos.x;
+                phy.hookTarget.y = phy.hookPos.y;
+                phy.hookTarget.z = phy.hookPos.z;
+            }
             if (phy.hookVel) phy.hookVel.set(0, 0, 0);
             if (phy.cargoVel) phy.cargoVel.set(0, 0, 0);
             if (phy.cargoOmega) phy.cargoOmega.set(0, 0, 0);
-            if (phy.cargoQuat) phy.cargoQuat.identity();
-            if (phy.cargoPos) { phy.cargoPos.x = 0; phy.cargoPos.z = 0; }
+            if (Array.isArray(phy.beams)) {
+                phy.beams.forEach(b => {
+                    if (b.v) b.v.set(0, 0, 0);
+                    if (b.w) b.w.set(0, 0, 0);
+                });
+            }
+            if ((phy.groundClearance || 0) > 0.08) {
+                phy._stsPinsSnug = true;
+                state.holdCableLength = true;
+                if (!state.heldCableL0) state.heldCableL0 = { upper: [], leg: [], hanger: [], extra: [] };
+                (phy.cables || []).forEach(c => {
+                    if (typeof cableIsBroken === 'function' && cableIsBroken(c)) return;
+                    const span = (typeof attachWorld === 'function')
+                        ? attachWorld(c.a).distanceTo(attachWorld(c.b))
+                        : (c.L0 || 1);
+                    const L0 = Math.max(0.06, span);
+                    c.L0 = L0;
+                    c.designL0 = L0;
+                    c.slack = false;
+                    if (!state.heldCableL0[c.role]) state.heldCableL0[c.role] = [];
+                    state.heldCableL0[c.role][c.index] = L0;
+                });
+                if (phy.hoist) {
+                    if (typeof resetHoistDynamicState === 'function') resetHoistDynamicState(phy.hoist);
+                    phy.hoist.kin.copy(phy.hookPos);
+                }
+            }
+        }
+        if (typeof window !== 'undefined') window.freezeSuspendedHoist = freezeSuspendedHoist;
+
+        /**
+         * Hạ đất: continuously and smoothly lowers the cargo to the ground at the configured speed,
+         * with gentle touchdown deceleration, then snap-seat (poseLock).
+         * Multiple clicks seamlessly continue the lowering motion without stuttering or velocity resets.
+         */
+        function beginSmoothSetDown() {
+            const clearance = Math.max(
+                phy.groundClearance || 0,
+                (typeof cargoAabbClearance === 'function') ? cargoAabbClearance() : 0
+            );
+            // If already actively lowering to ground, smoothly keep lowering without resetting velocity
+            if (phy._setDownActive) {
+                const st = document.getElementById('sim-status-text');
+                if (st) {
+                    st.textContent = (typeof L === 'function')
+                        ? L('Lowering in progress — descending smoothly to the quay...',
+                            'Đang tiếp tục hạ đất — hạ êm xuống mặt sàn...')
+                        : 'Đang tiếp tục hạ đất — hạ êm xuống mặt sàn...';
+                }
+                return;
+            }
+            // If already on ground, seat and lock immediately
+            const alreadyDown = clearance < 0.04;
+            if (alreadyDown) {
+                finishSmoothSetDown();
+                return;
+            }
+            // Cancel any active trial lift
+            phy._trialLiftActive = false;
+            phy._nhomFreezeSpreader = false;
+            state.poseLock = false;
+            if (typeof syncPoseLockUI === 'function') syncPoseLockUI();
+            // Allow upper/leg payout while descending
+            state.holdCableLength = false;
+            state.heldCableL0 = null;
+            phy._setDownActive = true;
+            phy._stsPinsSnug = true;
+            phy.autoHoistActive = true;
+            phy.hoistSpeed = 0;
+            if (phy.hookPos) phy.hookTarget.copy(phy.hookPos);
+
+            const st = document.getElementById('sim-status-text');
+            if (st) {
+                st.textContent = (typeof L === 'function')
+                    ? L('Setting down — lowering smoothly until cargo touches the quay.',
+                        'Hạ đất — hạ êm từ từ theo tốc độ cài đặt đến khi kiện chạm đất an toàn.')
+                    : 'Hạ đất — hạ êm từ từ theo tốc độ cài đặt đến khi kiện chạm đất an toàn.';
+            }
+        }
+
+        function finishSmoothSetDown() {
+            phy._setDownActive = false;
+            phy._trialLiftActive = false;
+            phy.autoHoistActive = false;
+            phy.hoistSpeed = 0;
+            resetToInitialPreLiftState();
+        }
+        if (typeof window !== 'undefined') {
+            window.beginSmoothSetDown = beginSmoothSetDown;
+            window.finishSmoothSetDown = finishSmoothSetDown;
+        }
+
+        function resetToInitialPreLiftState() {
+            phy.autoHoistActive = false;
+            phy.hoistSpeed = 0;
+            phy._setDownActive = false;
+            phy._trialLiftActive = false;
+            phy._nhomFreezeSpreader = false;
+            if (phy.hookVel) phy.hookVel.set(0, 0, 0);
+            if (phy.cargoVel) phy.cargoVel.set(0, 0, 0);
+            if (phy.cargoOmega) phy.cargoOmega.set(0, 0, 0);
+            // Keep yaw / plan — only kill spin for a clean set-down seat
             if (Array.isArray(phy.beams)) {
                 phy.beams.forEach(b => {
                     if (b.v) b.v.set(0, 0, 0);
@@ -18,7 +126,11 @@
                 });
             }
             resetFlatRackPayloadState();
-            // Keep plan position — NEVER teleport to y=3 (that made cargo "nảy lên" before set-down)
+            // Drop Nhớm hold — parking the hook at design height with short snug L0
+            // was snatching the cargo a few cm back into the air after Hạ đất.
+            state.holdCableLength = false;
+            state.heldCableL0 = null;
+            // Seat on quay; twin residual gap is preserved inside applyLockedPose.
             state.poseLock = true;
             applyLockedPose();
             phy.legTensions = [0, 0, 0, 0, 0, 0, 0, 0];
@@ -27,43 +139,123 @@
             phy.groundClearance = 0;
             syncPoseLockUI();
             parkHookSlack();
+            // Seat the spreader on the cargo roof FIRST, then pay out L0 past the
+            // live span. Measuring while the beam was still hanging made uppers
+            // re-taut and snatch the cargo up a few cm after Hạ đất.
+            if (Array.isArray(phy.beams) && state.beamType !== 'none') {
+                phy.beams.forEach(b => {
+                    if (typeof clampBeamAboveCargoRoof === 'function') {
+                        clampBeamAboveCargoRoof(b);
+                    }
+                    const spec = (typeof getRigSpec === 'function') ? getRigSpec() : null;
+                    if (typeof cargoCeilingUnderBeam === 'function') {
+                        const floorY = cargoCeilingUnderBeam(b.x.x, b.x.z, spec, b);
+                        if (isFinite(floorY) && floorY > -1e5) {
+                            b.x.y = floorY;
+                            b.isRestingOnCargo = true;
+                            if (b.v) b.v.set(0, 0, 0);
+                            if (b.group) b.group.position.copy(b.x);
+                        }
+                    }
+                });
+            }
+            if (typeof attachWorld === 'function' && Array.isArray(phy.cables)) {
+                if (state.gear && state.gear.legs) {
+                    state.gear.legs.forEach(leg => {
+                        if (!leg) return;
+                        leg.lengthM = null;
+                        leg.userSet = false;
+                    });
+                }
+                if (state.gear && state.gear.uppers) {
+                    state.gear.uppers.forEach(u => {
+                        if (!u) return;
+                        u.lengthM = null;
+                        u.userSet = false;
+                    });
+                }
+                phy.cables.forEach(c => {
+                    if (typeof cableIsBroken === 'function' && cableIsBroken(c)) return;
+                    const span = attachWorld(c.a).distanceTo(attachWorld(c.b));
+                    const slack = Math.min(0.55, Math.max(0.18, span * 0.05));
+                    const L0 = Math.max(0.08, span + slack);
+                    c.L0 = L0;
+                    c.designL0 = L0;
+                    c.slack = true;
+                    c.tensionT = 0;
+                });
+                phy.legSlacks = [true, true, true, true, true, true, true, true];
+                phy.legTensions = [0, 0, 0, 0, 0, 0, 0, 0];
+                phy.upperTensions = [0, 0, 0, 0];
+            }
+            // Keep beam on the roof after payout (kinematic hang would lift it again).
+            phy._nhomFreezeSpreader = true;
+            if (Array.isArray(phy.beams)) {
+                phy.beams.forEach(b => {
+                    if (typeof clampBeamAboveCargoRoof === 'function') clampBeamAboveCargoRoof(b);
+                });
+            }
+            if (typeof applyLockedPose === 'function') applyLockedPose();
+            phy.groundClearance = 0;
             state.pullRadius = 0;
             syncOrientationAndPullUI();
             if (typeof syncSlingSlidersFromState === 'function') syncSlingSlidersFromState();
-            document.getElementById('sim-status-text').textContent = L('Set down. The cargo is at the placed angle and the ropes are slack.', 'Đã hạ đất. Kiện nằm đúng góc đặt, cáp đang chùng.');
+            const gapNote = (phy.twinCableFlare && (phy.twinCableFlare.sepExtra || 0) > 0.08)
+                ? L(' Residual twin gap kept after pry-open.', ' Giữ khe twin sau khi ngoác.')
+                : '';
+            document.getElementById('sim-status-text').textContent = L(
+                'Set down. Cargo on the quay, ropes slack.' + gapNote,
+                'Đã hạ đất. Kiện sát mặt đất, cáp chùng.' + gapNote
+            );
         }
 
-        // Nhóm kiện hàng cho căng cáp: kiện vẫn nằm trên mặt đất nhưng các sợi cáp đã căng sẵn sàng nâng hạ
+        /**
+         * Nhớm cáp: cargo stays on the quay; take up slack at the CURRENT spreader/
+         * hook pose. Never fly the beam skyward or lengthen ropes to a taut geometry.
+         */
         function pretensionRig() {
             phy.autoHoistActive = false;
             phy.hoistSpeed = 0;
-            state.holdCableLength = false;
-            state.heldCableL0 = null;
             if (phy.hookVel) phy.hookVel.set(0, 0, 0);
             if (phy.cargoVel) phy.cargoVel.set(0, 0, 0);
             if (phy.cargoOmega) phy.cargoOmega.set(0, 0, 0);
-            if (phy.cargoQuat) phy.cargoQuat.identity();
-            if (phy.cargoPos) { phy.cargoPos.x = 0; phy.cargoPos.z = 0; }
+            if (Array.isArray(phy.beams)) {
+                phy.beams.forEach(b => {
+                    if (b.v) b.v.set(0, 0, 0);
+                    if (b.w) b.w.set(0, 0, 0);
+                });
+            }
 
-            // Giữ kiện hàng ổn định trên mặt đất / đà kê (cùng điểm tiếp xúc với XPBD)
+            // Keep residual twin gap if already pry-opened; only flatten pitch for seating.
+            if (typeof stsTwinCableMode === 'function' && stsTwinCableMode()
+                && phy.twinCableFlare) {
+                phy.twinCableFlare.pitchA = 0;
+                phy.twinCableFlare.pitchB = 0;
+                phy.twinCableFlare.targetSmooth = 0;
+                phy.twinCableFlare.active = (phy.twinCableFlare.sepExtra || 0) > 0.01;
+                if (typeof applyStsTwinCableFlareVisual === 'function') applyStsTwinCableFlareVisual();
+                if (typeof syncTwinCableLugsFromFlare === 'function') syncTwinCableLugsFromFlare();
+            }
+
+            // Seat cargo on the quay — do NOT reset yaw/plan to origin mid-job.
             if (typeof applyLockedPose === 'function') {
-                const keepLock = state.poseLock;
                 state.poseLock = true;
                 applyLockedPose();
-                state.poseLock = keepLock;
-            } else if (typeof supportY === 'function') {
-                const sY = supportY(phy.cargoPos.x, phy.cargoPos.z);
-                phy.cargoPos.y = sY + state.H * 0.5;
+            } else if (typeof supportY === 'function' && phy.cargoPos) {
+                phy.cargoPos.y = supportY(phy.cargoPos.x, phy.cargoPos.z) + state.H * 0.5;
             }
             phy.groundClearance = 0;
+            state.poseLock = true;
+            if (typeof syncPoseLockUI === 'function') syncPoseLockUI();
 
-            // Đặt móc lên đúng cao độ hình học làm căng cáp
-            if (typeof syncHookToRigTaut === 'function') {
-                syncHookToRigTaut();
-            }
-            // Snug pose starts with an unloaded hoist rope — clear any leftover
-            // elastic stretch / operator compensation from a previous lift so the
-            // next "Hạ" pays out instead of hauling the hook up.
+            // Keep hook/spreader WHERE THEY ARE — Nhớm is take-up, not a hoist.
+            // (Old syncHookToRigTaut / *0.998 ratchet flew the beam skyward on repeat clicks.)
+            const hookSnap = phy.hookPos ? phy.hookPos.clone() : null;
+            const beamSnaps = (Array.isArray(phy.beams) ? phy.beams : []).map(b => ({
+                x: b.x ? b.x.clone() : null,
+                q: b.q ? b.q.clone() : null
+            }));
+
             if (phy.hoist && typeof resetHoistDynamicState === 'function') {
                 resetHoistDynamicState(phy.hoist);
                 phy.hoist.kin.copy(phy.hookPos);
@@ -75,62 +267,94 @@
                 phy.hoist.tensionLP = 0;
                 phy.hoist.kin.copy(phy.hookPos);
             }
-            state.poseLock = true;
-            if (typeof syncPoseLockUI === 'function') syncPoseLockUI();
+            phy.hookTarget.copy(phy.hookPos);
 
-            // Cân bằng dầm ngáng nằm ngang trên kiện ở cao độ căng cáp
-            const spec = (typeof getRigSpec === 'function') ? getRigSpec() : null;
-            let lowerDrop = (spec && spec.lowerDrop) || 2.0;
-            const legCables = (phy.cables || []).filter(c => c.role === 'leg');
-            if (legCables.length) {
-                lowerDrop = 0;
-                legCables.forEach(c => {
-                    const hL = (typeof lowerPlanOffset === 'function') ? lowerPlanOffset(c.index || 0) : 0;
-                    const d = Math.sqrt(Math.max(0.04, (c.L0 || 2) * (c.L0 || 2) - hL * hL));
-                    if (d > lowerDrop) lowerDrop = d;
-                });
-            }
-
-            let worldLugY = 0;
-            if (state.lugs && state.lugs.length) {
-                for (let i = 0; i < state.lugs.length; i++) {
-                    const p = state.lugs[i].clone().applyQuaternion(phy.cargoQuat).add(phy.cargoPos);
-                    worldLugY += p.y;
-                }
-                worldLugY /= Math.max(1, state.lugs.length);
-            }
-
-            let yLugLow = 0.22;
-            if (state.beamType === 'lifting_beam') yLugLow = 0.24;
-            else if (state.beamType === 'frame') yLugLow = 0.18;
-            else if (state.beamType === 'basket') yLugLow = 0.14;
-            else if (state.beamType === 'container_spreader') yLugLow = 0.28;
-            const beamTautY = worldLugY + 0.12 + lowerDrop + yLugLow;
-            if (Array.isArray(phy.beams)) {
-                // Seed from kinematic pose so skewed cargo already leans the upper gear
-                // (do NOT force identity — that wiped askew take-up physics).
-                if (typeof seedBeamsFromKinematic === 'function') {
-                    seedBeamsFromKinematic();
-                }
+            if (Array.isArray(phy.beams) && phy.beams.length) {
                 phy.beams.forEach(b => {
-                    b.x.y = Math.max(b.x.y, beamTautY);
-                    b.v.set(0, 0, 0);
-                    b.w.set(0, 0, 0);
+                    // STS: keep plan under trolley, but NEVER yank Y up to the hook —
+                    // that lengthened lower chords and raised the yellow beam.
+                    if (state.beamType === 'container_spreader' && phy.hookPos) {
+                        b.x.x = phy.hookPos.x;
+                        b.x.z = phy.hookPos.z;
+                    }
+                    if (b.v) b.v.set(0, 0, 0);
+                    if (b.w) b.w.set(0, 0, 0);
                 });
             }
 
-            // Đánh dấu toàn bộ cáp vào trạng thái vừa căng (pretensioned / snug)
+            // Take up slack at the CURRENT pin-to-pin span only.
+            // Never lengthen. Never ratchet shorter when already snug (repeat-click safe).
+            state.holdCableLength = true;
+            state.heldCableL0 = { upper: [], leg: [], hanger: [], extra: [] };
+            let tookUp = false;
             (phy.cables || []).forEach(c => {
+                if (typeof cableIsBroken === 'function' && cableIsBroken(c)) return;
+                const span = (typeof attachWorld === 'function')
+                    ? attachWorld(c.a).distanceTo(attachWorld(c.b))
+                    : (c.L0 || 1);
+                const prev = c.L0 != null ? c.L0 : span;
+                const minL0 = (c.role === 'leg'
+                    && typeof isStsDirectAttach === 'function'
+                    && isStsDirectAttach()) ? 0.04 : 0.08;
+                // Nhớm = take up SLACK only. Never lengthen.
+                // Lengthening uppers to a tall live span dropped the beam and left
+                // lower legs baggy (desired Fig.1 → broken Fig.2).
+                let snug;
+                if (prev > span + 0.012) {
+                    snug = Math.max(minL0, span * 0.996); // rút chùng một lần
+                } else {
+                    snug = Math.max(minL0, prev); // đã căng / khớp — giữ nguyên
+                }
+                if (Math.abs(snug - prev) > 1e-4) tookUp = true;
+                c.L0 = snug;
+                c.designL0 = snug;
                 c.slack = false;
-                c._sum = 0.05 * 9.81 * 1000;
-                c.tensionT = 0.05;
+                c.tensionT = 0.12;
+                c._sum = 0.12 * 9.81 * 1000;
+                if (!state.heldCableL0[c.role]) state.heldCableL0[c.role] = [];
+                state.heldCableL0[c.role][c.index] = snug;
+                if (c.role === 'leg' && state.gear && state.gear.legs && state.gear.legs[c.index]) {
+                    state.gear.legs[c.index].lengthM = snug;
+                    state.gear.legs[c.index].userSet = true;
+                }
+                if (c.role === 'upper' && state.gear && state.gear.uppers && state.gear.uppers[c.index]) {
+                    state.gear.uppers[c.index].lengthM = snug;
+                    state.gear.uppers[c.index].userSet = true;
+                }
             });
             if (Array.isArray(phy.legSlacks)) phy.legSlacks.fill(false);
-            if (Array.isArray(phy.legTensions)) phy.legTensions.fill(0.05);
+            if (Array.isArray(phy.legTensions)) phy.legTensions.fill(0.06);
 
+            // Freeze before telemetry so poseLock kinematic seed cannot lift the beam.
+            phy._nhomFreezeSpreader = true;
             if (typeof syncCableRest === 'function') syncCableRest(false);
             if (typeof updateSceneAndTelemetry === 'function') updateSceneAndTelemetry();
             if (typeof updateCraneKinematics === 'function') updateCraneKinematics();
+
+            // Re-pin hook/beam after telemetry (absolute pose must match the snapshot).
+            if (hookSnap && phy.hookPos) {
+                phy.hookPos.copy(hookSnap);
+                phy.hookTarget.copy(hookSnap);
+                if (phy.hoist && phy.hoist.kin) phy.hoist.kin.copy(hookSnap);
+            }
+            beamSnaps.forEach((s, i) => {
+                const b = phy.beams && phy.beams[i];
+                if (!b || !s.x) return;
+                b.x.copy(s.x);
+                if (state.beamType === 'container_spreader' && phy.hookPos) {
+                    b.x.x = phy.hookPos.x;
+                    b.x.z = phy.hookPos.z;
+                }
+                if (s.q && b.q) b.q.copy(s.q);
+                if (b.v) b.v.set(0, 0, 0);
+                if (b.w) b.w.set(0, 0, 0);
+                // Never leave the spreader buried inside the cargo solid.
+                if (typeof clampBeamAboveCargoRoof === 'function') clampBeamAboveCargoRoof(b);
+                else if (b.group) {
+                    b.group.position.copy(b.x);
+                    if (b.q) b.group.quaternion.copy(b.q);
+                }
+            });
 
             const inpHookY = document.getElementById('inp-hook-y');
             if (inpHookY) inpHookY.value = phy.hookPos.y.toFixed(2);
@@ -143,9 +367,15 @@
 
             const statusEl = document.getElementById('sim-status-text');
             if (statusEl) {
-                statusEl.textContent = state.lang === 'en'
-                    ? '⚡ Slings snug & pre-tensioned. Ready to hoist or lower.'
-                    : '⚡ Đã nhóm căng cáp. Kiện trên mặt đất, sẵn sàng kéo lên hoặc hạ.';
+                if (state.lang === 'en') {
+                    statusEl.textContent = tookUp
+                        ? '⚡ Slings snug at current height. Cargo still on the quay — ready to hoist.'
+                        : '⚡ Already snug — hook/spreader unchanged. Ready to hoist.';
+                } else {
+                    statusEl.textContent = tookUp
+                        ? '⚡ Đã nhớm căng cáp tại cao độ hiện tại. Kiện vẫn sát đất — sẵn sàng kéo lên.'
+                        : '⚡ Cáp đã căng sẵn — giữ nguyên móc/ngáng. Sẵn sàng kéo lên.';
+                }
             }
         }
         window.pretensionRig = pretensionRig;
@@ -529,13 +759,26 @@
             document.querySelectorAll('#ground-store .card-btn').forEach(c => c.classList.toggle('active', c.dataset.ground === 'flat'));
             selectLPTab('all');
             rebuildCargoAndRig(true);
+            if (typeof clearStsTwinCableFlareState === 'function') clearStsTwinCableFlareState();
             resetToInitialPreLiftState();
             document.getElementById('sim-status-text').textContent = '🧹 Đã Reset về mặc định';
         }
 
+        /**
+         * Auto-hoist so cargo underside clears the quay by `desiredClearance` metres.
+         * Nhấc thử uses ~3 m. Never yank the hook downward after Nhớm.
+         */
         function autoPositionHookForLift(desiredClearance) {
             const { beamType, cogX, cogZ } = state;
+            const clearance = Math.max(0.35, desiredClearance != null ? desiredClearance : 1.0);
             const spec = getRigSpec();
+            const support = (typeof supportY === 'function')
+                ? supportY(phy.cargoPos.x, phy.cargoPos.z)
+                : 0;
+            const H = state.H || 2.6;
+            // Target: cargo bottom ≈ support + clearance  →  centre = support + H/2 + clearance
+            const wantCargoY = support + H * 0.5 + clearance;
+
             let worldLugY = 0;
             state.lugs.forEach(p => {
                 worldLugY += p.clone().applyQuaternion(phy.cargoQuat).add(phy.cargoPos).y;
@@ -551,13 +794,11 @@
             } else if (beamType === 'basket') {
                 horizU = Math.max(0.35, spanZ / 2);
             } else if (beamType === 'container_spreader') {
-                // Headblock sheave landings — NOT full twistlock span (that made upperDrop = 0).
                 horizU = Math.max(0.35, Math.hypot(0.55, 0.35));
             } else if (beamType === 'frame' || customBeamMeshes[beamType]) {
                 horizU = Math.max(0.35, Math.hypot(spanX / 2, spanZ / 2));
             }
 
-            // Compute actual vertical drops from active XPBD cable rest lengths (c.L0) + 3D beam lug separation
             const legCables = (phy.cables || []).filter(c => c.role === 'leg');
             const upperCables = (phy.cables || []).filter(c => c.role === 'upper');
             const hangerCables = (phy.cables || []).filter(c => c.role === 'hanger');
@@ -604,16 +845,37 @@
                 }
             }
 
-            const tautMasterY = lugBoreY + lowerDropActual + beamStructuralSep + upperDropActual;
-            const targetY = THREE.MathUtils.clamp(tautMasterY - HOOK_MASTER_OFFSET_Y + desiredClearance, 2.8, 30.0);
-            // Smoothly hoist hook at realistic crane winch speed instead of jumping
+            let targetY;
+            if (stsDirectLift) {
+                // Hook above flush twistlock seat at the trial-lift cargo height.
+                const wantRoof = wantCargoY + H * 0.5;
+                const beamY = wantRoof + 0.34;
+                targetY = beamY + 0.22;
+            } else {
+                const tautMasterY = lugBoreY + lowerDropActual + beamStructuralSep + upperDropActual;
+                // Raise so cargo reaches wantCargoY: delta from current cargo centre
+                const cargoDelta = Math.max(0, wantCargoY - (phy.cargoPos ? phy.cargoPos.y : wantCargoY));
+                targetY = tautMasterY - HOOK_MASTER_OFFSET_Y + cargoDelta;
+            }
+
+            const curY = phy.hookPos ? phy.hookPos.y : targetY;
+            // Never yank downward after Nhớm; always climb at least a short step.
+            targetY = Math.max(targetY, curY + 0.35);
+            targetY = THREE.MathUtils.clamp(targetY, 2.8, 40.0);
+
             const azRad = THREE.MathUtils.degToRad(state.pullAzimuthDeg);
             const pullOffX = state.pullRadius * Math.cos(azRad);
             const pullOffZ = state.pullRadius * Math.sin(azRad);
             const rotatedCoG = new THREE.Vector3(cogX, 0, cogZ).applyAxisAngle(new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(state.cargoYawDeg));
 
+            phy.hoistSpeed = 0;
             phy.autoHoistActive = true;
+            phy._stsPinsSnug = true;
             phy.hookTarget.set(rotatedCoG.x + pullOffX, targetY, rotatedCoG.z + pullOffZ);
+            // Lead clearly upward so advanceHook treats this as rising at cargoHoistRates.
+            if (phy.hookPos && phy.hookTarget.y <= phy.hookPos.y + 0.05) {
+                phy.hookTarget.y = phy.hookPos.y + Math.max(0.35, clearance * 0.25);
+            }
             syncOrientationAndPullUI();
         }
 
@@ -1724,10 +1986,23 @@
                 phy._stsYawLockRad = THREE.MathUtils.degToRad(
                     state.spreaderAlignWithCargo ? (state.cargoYawDeg || 0) : (state.spreaderYawDeg || 0)
                 );
+                // Leaving cable mode (or re-entering) clears pry + residual gap on the twin pair
+                if (typeof clearStsTwinCableFlareState === 'function') {
+                    clearStsTwinCableFlareState();
+                } else if (phy.twinCableFlare) {
+                    phy.twinCableFlare.pitchA = 0;
+                    phy.twinCableFlare.pitchB = 0;
+                    phy.twinCableFlare.sepExtra = 0;
+                    phy.twinCableFlare.peakSep = 0;
+                    phy.twinCableFlare.peakPitch = 0;
+                    phy.twinCableFlare.warned = false;
+                    phy.twinCableFlare.gapWarned = false;
+                    phy.twinCableFlare.active = false;
+                }
             }
             if (next === 'direct') {
                 state.lowerSlingLength = 0.06;
-                state.upperSlingLength = Math.max(1.2, state.upperSlingLength || 2.4);
+                state.upperSlingLength = 0.28;
                 state.slingLength = state.upperSlingLength;
                 state.slingUserSet = true;
                 state.lugElevPreset = 'top';
@@ -1743,21 +2018,37 @@
                 if (state.heldCableL0 && state.heldCableL0.leg) state.heldCableL0.leg = [];
                 state.legDeltaL = [0, 0, 0, 0];
             } else {
-                // Normal flexible legs with shackle pick points under the spreader
-                if (state.lowerSlingLength == null || state.lowerSlingLength < 0.8) {
-                    state.lowerSlingLength = 2.0;
-                }
-                state.upperSlingLength = Math.max(1.2, state.upperSlingLength || 2.4);
+                // Cable lift: spreader stands off the roof by lower sling length (≠ direct flush).
+                // Always reset — leftover Nhớm/direct pin lengths made “cáp” look like twistlocks.
+                state.lowerSlingLength = 2.0;
+                state.upperSlingLength = 0.28;
                 state.slingLength = state.upperSlingLength;
                 state.slingUserSet = true;
+                state.holdCableLength = false;
+                state.heldCableL0 = null;
                 state.pendingConform = 'structural';
+                if (state.gear && state.gear.legs) {
+                    state.gear.legs.forEach(leg => {
+                        if (!leg) return;
+                        leg.lengthM = 2.0;
+                        leg.userSet = true;
+                        leg.broken = false;
+                    });
+                }
+                if (state.gear && state.gear.uppers) {
+                    state.gear.uppers.forEach(u => {
+                        if (!u) return;
+                        u.lengthM = 0.28;
+                        u.userSet = true;
+                    });
+                }
             }
             if (typeof setSymmetricLugsFromDimensions === 'function') setSymmetricLugsFromDimensions();
             updateStsBeamDimUI();
-            if (typeof flushRebuildSpreaderVisuals === 'function') flushRebuildSpreaderVisuals();
             if (typeof rebuildCargoAndRig === 'function') rebuildCargoAndRig(false);
             else if (typeof rebuildSpreaderVisuals === 'function') rebuildSpreaderVisuals();
-            if (typeof syncHookToRigTaut === 'function') syncHookToRigTaut();
+            if (typeof seatStsSpreaderToCargo === 'function') seatStsSpreaderToCargo();
+            else if (typeof syncHookToRigTaut === 'function') syncHookToRigTaut();
             syncSlingSlidersFromState();
             if (typeof updateRiggingBOMUI === 'function') updateRiggingBOMUI();
         }
@@ -1809,7 +2100,8 @@
                 state.spreaderAlignWithCargo ? (state.cargoYawDeg || 0) : (state.spreaderYawDeg || 0)
             );
             if (!state.stsAttachMode) state.stsAttachMode = 'direct';
-            state.upperSlingLength = Math.max(1.2, state.upperSlingLength || 2.4);
+            // Spreader IS the trolley head — short headblock falls, not a hanging bridle
+            state.upperSlingLength = 0.28;
             if (state.stsAttachMode === 'cable') {
                 if (state.lowerSlingLength == null || state.lowerSlingLength < 0.8) state.lowerSlingLength = 2.0;
             } else {
@@ -1853,10 +2145,10 @@
                 c.classList.toggle('active', c.dataset.beam === 'container_spreader');
             });
 
-            if (typeof flushRebuildSpreaderVisuals === 'function') flushRebuildSpreaderVisuals();
             if (typeof rebuildCargoAndRig === 'function') rebuildCargoAndRig(true);
             else if (typeof rebuildSpreaderVisuals === 'function') rebuildSpreaderVisuals();
-            if (typeof syncHookToRigTaut === 'function') syncHookToRigTaut();
+            if (typeof seatStsSpreaderToCargo === 'function') seatStsSpreaderToCargo();
+            else if (typeof syncHookToRigTaut === 'function') syncHookToRigTaut();
             syncSlingSlidersFromState();
             if (typeof updateRiggingBOMUI === 'function') updateRiggingBOMUI();
         }
@@ -3215,12 +3507,15 @@
 
             // 3. X-Ray Cargo Toggle
             const btnXray = document.getElementById('btn-xray');
-            btnXray.addEventListener('click', () => {
-                state.xrayCargo = !state.xrayCargo;
-                btnXray.classList.toggle('border-sky-400', state.xrayCargo);
-                btnXray.classList.toggle('text-sky-300', state.xrayCargo);
-                rebuildCargoAndRig(false);
-            });
+            if (btnXray) {
+                btnXray.addEventListener('click', () => {
+                    state.xrayCargo = !state.xrayCargo;
+                    if (typeof applyXRayToCargo === 'function') {
+                        applyXRayToCargo(cargoRootGroup, state.xrayCargo);
+                    }
+                    syncDisplayOptionsUI();
+                });
+            }
 
             // 4. Crane Vehicle Selector
             const craneCards = document.querySelectorAll('#crane-store .card-btn');
@@ -3270,8 +3565,15 @@
                     }
                     syncOogCargoUI(true);
                     syncOrientationAndPullUI();
+                    // Match STS telescopic size to the new box before seating twistlocks.
+                    if (state.beamType === 'container_spreader' && !state.stsTwinLift
+                        && typeof resolveStsFitToCargo === 'function') {
+                        resolveStsFitToCargo();
+                        if (typeof updateStsBeamDimUI === 'function') updateStsBeamDimUI();
+                    }
                     rebuildCargoAndRig(true);
                     resetToInitialPreLiftState();
+                    if (typeof seatStsSpreaderToCargo === 'function') seatStsSpreaderToCargo();
                 });
             });
 
@@ -3562,7 +3864,6 @@
                     state.lowerSlingLength = null;
                     if (typeof updateStsBeamDimUI === 'function') updateStsBeamDimUI();
                     // Beam-only rebuild — skip full cargo mesh/lug rebuild (was the main lag source)
-                    if (typeof flushRebuildSpreaderVisuals === 'function') flushRebuildSpreaderVisuals();
                     rebuildSpreaderVisuals();
                     if (phy.groundClearance > 0.05) autoPositionHookForLift(0.75);
                     else if (typeof syncHookToRigTaut === 'function') syncHookToRigTaut();
@@ -3715,32 +4016,73 @@
 
             const btnUp = document.getElementById('btn-hoist-up');
             const btnDown = document.getElementById('btn-hoist-down');
-            const stopHoistHold = () => {
-                phy.hoistSpeed = 0;
-                phy.hookTarget.x = phy.hookPos.x;
-                phy.hookTarget.y = phy.hookPos.y;
-                phy.hookTarget.z = phy.hookPos.z;
-                phy.hookVel.set(0, 0, 0);
+            let hoistHoldArmed = false;
+            const stopHoistHold = (e) => {
+                // Only act on a real Kéo/Hạ release — ignore stray pointerleave while
+                // Nhấc thử / Hạ đất are driving autoHoist.
+                if (!hoistHoldArmed) return;
+                hoistHoldArmed = false;
+                if (e && e.pointerId != null) {
+                    try {
+                        if (btnUp && btnUp.hasPointerCapture?.(e.pointerId)) btnUp.releasePointerCapture(e.pointerId);
+                        if (btnDown && btnDown.hasPointerCapture?.(e.pointerId)) btnDown.releasePointerCapture(e.pointerId);
+                    } catch (_) { /* ignore */ }
+                }
+                // Hạ đất keeps paying out after the click — do not freeze it on pendant leave.
+                if (phy._setDownActive) {
+                    phy.hoistSpeed = (typeof hoistHoldSpeed === 'function')
+                        ? hoistHoldSpeed(-1)
+                        : phy.hoistSpeed;
+                    return;
+                }
+                if (phy._trialLiftActive) {
+                    phy.hoistSpeed = 0;
+                    return;
+                }
+                // Hold position — do NOT unload / drop a suspended load.
+                freezeSuspendedHoist();
             };
             btnUp.addEventListener('pointerdown', e => {
                 e.preventDefault();
-                // Resume design sling lengths when the operator starts to hoist again
-                state.holdCableLength = false;
-                state.heldCableL0 = null;
+                try { btnUp.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+                hoistHoldArmed = true;
+                phy._setDownActive = false;
+                phy._trialLiftActive = false;
+                phy._nhomFreezeSpreader = false;
+                // Keep Nhớm snug L0 into the lift (clearing it restored long design
+                // lengths and left cables visually slack while the spreader rose).
+                // Only drop a Hạ payout hold that is clearly longer than the live span.
+                if (state.holdCableLength && state.heldCableL0 && typeof attachWorld === 'function') {
+                    let payoutOnly = true;
+                    (phy.cables || []).forEach(c => {
+                        if (typeof cableIsBroken === 'function' && cableIsBroken(c)) return;
+                        const held = state.heldCableL0[c.role] && state.heldCableL0[c.role][c.index];
+                        if (held == null) return;
+                        const span = attachWorld(c.a).distanceTo(attachWorld(c.b));
+                        if (held <= span + 0.06) payoutOnly = false;
+                    });
+                    if (payoutOnly) {
+                        state.holdCableLength = false;
+                        state.heldCableL0 = null;
+                    }
+                }
                 if (state.poseLock) {
                     state.poseLock = false;
                     syncPoseLockUI();
                 }
-                // STS direct: snug twistlock rest lengths to current pin gap so hoist picks immediately
-                if (typeof isStsDirectAttach === 'function' && isStsDirectAttach() && typeof attachWorld === 'function') {
+                // STS direct: seat flush first, then snug pin L0 so the lift is twistlock-locked (no ghost gap).
+                if (typeof isStsDirectAttach === 'function' && isStsDirectAttach()) {
                     state.lowerSlingLength = 0.06;
-                    (phy.cables || []).forEach(c => {
-                        if (c.role !== 'leg') return;
-                        const span = attachWorld(c.a).distanceTo(attachWorld(c.b));
-                        c.L0 = Math.max(0.04, Math.min(0.12, span + 0.005));
-                        c.designL0 = c.L0;
-                        c.slack = false;
-                    });
+                    if (typeof seatStsSpreaderToCargo === 'function') seatStsSpreaderToCargo();
+                    if (typeof attachWorld === 'function') {
+                        (phy.cables || []).forEach(c => {
+                            if (c.role !== 'leg') return;
+                            const span = attachWorld(c.a).distanceTo(attachWorld(c.b));
+                            c.L0 = Math.max(0.04, Math.min(0.12, span + 0.002));
+                            c.designL0 = c.L0;
+                            c.slack = false;
+                        });
+                    }
                     if (state.gear && state.gear.legs) {
                         state.gear.legs.forEach(leg => {
                             if (!leg) return;
@@ -3748,6 +4090,7 @@
                             leg.userSet = false;
                         });
                     }
+                    phy._stsPinsSnug = true;
                 }
                 if (phy.groundClearance < 0.08) {
                     const rotatedCoG = new THREE.Vector3(state.cogX, 0, state.cogZ).applyAxisAngle(new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(state.cargoYawDeg));
@@ -3762,78 +4105,126 @@
                 }
                 phy.hookTarget.y = phy.hookPos.y;
                 phy.autoHoistActive = false;
-                phy.hoistSpeed = 0.50;
+                phy.hoistSpeed = (typeof hoistHoldSpeed === 'function')
+                    ? hoistHoldSpeed(1)
+                    : 0.22 * (typeof hoistSpeedScaleFactor === 'function' ? hoistSpeedScaleFactor() : (state.hoistSpeedScale || 1));
             });
             btnUp.addEventListener('pointerup', stopHoistHold);
-            btnUp.addEventListener('pointerleave', stopHoistHold);
             btnUp.addEventListener('pointercancel', stopHoistHold);
+            // pointerleave only if capture failed (desktop mouse slip off button)
+            btnUp.addEventListener('pointerleave', (e) => {
+                if (hoistHoldArmed && !(btnUp.hasPointerCapture && btnUp.hasPointerCapture(e.pointerId))) {
+                    stopHoistHold(e);
+                }
+            });
             btnDown.addEventListener('pointerdown', e => {
                 e.preventDefault();
-                const wasGrounded = (phy.groundClearance || 0) < 0.15;
-                // Unlocking pose must not launch the cargo — kill residual / settle on deck
+                try { btnDown.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+                hoistHoldArmed = true;
+                phy._trialLiftActive = false;
+                phy._nhomFreezeSpreader = false;
+                // Operator Hạ cancels an in-progress Hạ đất auto sequence
+                phy._setDownActive = false;
+                const clearance = Math.max(
+                    phy.groundClearance || 0,
+                    (typeof cargoAabbClearance === 'function') ? cargoAabbClearance() : 0
+                );
+                // Cargo on quay: keep the load seated, but still pay out the hook /
+                // spreader until they rest on the cargo roof (all solids are 3D).
+                const wasGrounded = clearance < 0.05;
+                if (wasGrounded) {
+                    if (phy.cargoVel) phy.cargoVel.set(0, 0, 0);
+                    if (phy.cargoOmega) phy.cargoOmega.set(0, 0, 0);
+                    if (Array.isArray(phy.beams)) {
+                        phy.beams.forEach(b => {
+                            if (b.v) b.v.set(0, 0, 0);
+                            if (b.w) b.w.set(0, 0, 0);
+                        });
+                    }
+                    phy._nhomFreezeSpreader = false;
+                    state.holdCableLength = false;
+                    state.heldCableL0 = null;
+                    state.poseLock = true;
+                    phy.groundClearance = 0;
+                    if (typeof applyLockedPose === 'function') applyLockedPose();
+                    if (typeof syncPoseLockUI === 'function') syncPoseLockUI();
+                    phy.autoHoistActive = false;
+                    phy.hookTarget.x = phy.hookPos.x;
+                    phy.hookTarget.z = phy.hookPos.z;
+                    phy.hookTarget.y = phy.hookPos.y;
+                    phy.hoistSpeed = (typeof hoistHoldSpeed === 'function')
+                        ? hoistHoldSpeed(-1)
+                        : -0.22 * (typeof hoistSpeedScaleFactor === 'function' ? hoistSpeedScaleFactor() : (state.hoistSpeedScale || 1));
+                    const st = document.getElementById('sim-status-text');
+                    if (st) {
+                        st.textContent = (typeof L === 'function')
+                            ? L('Lowering hook/spreader onto the cargo roof — load stays on the quay.',
+                                'Hạ móc/ngáng xuống nóc kiện — kiện vẫn sát đất.')
+                            : 'Hạ móc/ngáng xuống nóc kiện — kiện vẫn sát đất.';
+                    }
+                    return;
+                }
                 if (phy.cargoVel) phy.cargoVel.set(0, 0, 0);
                 if (phy.cargoOmega) phy.cargoOmega.set(0, 0, 0);
                 if (phy.hookVel) phy.hookVel.set(0, 0, 0);
-                if (wasGrounded && typeof applyLockedPose === 'function') {
-                    state.poseLock = true;
-                    applyLockedPose();
-                    if (typeof seedBeamsFromKinematic === 'function') seedBeamsFromKinematic();
-                    // Capture current pin-to-pin spans as held rest lengths (+4 cm
-                    // pay-out slack).  syncCableRest runs every XPBD frame and would
-                    // otherwise restore the design L0 and instantly re-pick the load.
-                    state.holdCableLength = true;
-                    state.heldCableL0 = { upper: [], leg: [], hanger: [], extra: [] };
-                    (phy.cables || []).forEach(c => {
-                        if (typeof cableIsBroken === 'function' && cableIsBroken(c)) return;
-                        const span = (typeof attachWorld === 'function')
-                            ? attachWorld(c.a).distanceTo(attachWorld(c.b))
-                            : (c.L0 || 1);
-                        const L0 = Math.max(0.2, span + 0.04);
-                        if (!state.heldCableL0[c.role]) state.heldCableL0[c.role] = [];
-                        state.heldCableL0[c.role][c.index] = L0;
-                        c.L0 = L0;
-                        c.designL0 = L0;
-                        c.slack = true;
-                        c.tensionT = 0;
-                        c._sum = 0;
-                    });
-                    if (Array.isArray(phy.legSlacks)) phy.legSlacks.fill(true);
-                    if (Array.isArray(phy.legTensions)) phy.legTensions.fill(0);
-                    phy.groundClearance = 0;
-                }
                 if (Array.isArray(phy.beams)) {
                     phy.beams.forEach(b => {
                         if (b.v) b.v.set(0, 0, 0);
                         if (b.w) b.w.set(0, 0, 0);
                     });
                 }
-                // Grounded / snug lower: drop elastic hoist compensation so paying
-                // out cannot haul the drum up through a stale offLP.
-                if (wasGrounded && phy.hoist) {
-                    if (typeof resetHoistDynamicState === 'function') resetHoistDynamicState(phy.hoist);
-                    else {
-                        phy.hoist.off.set(0, 0, 0);
-                        phy.hoist.offLP.set(0, 0, 0);
-                        phy.hoist.vel.set(0, 0, 0);
-                        phy.hoist.tensionN = 0;
-                        phy.hoist.tensionLP = 0;
-                    }
-                    phy.hoist.kin.copy(phy.hookPos);
-                    phy.solverMaxOverrun = 0;
-                }
                 if (state.poseLock) {
                     state.poseLock = false;
                     syncPoseLockUI();
                 }
+                // Allow payout while lowering from a frozen Nhấc thử hold
+                state.holdCableLength = false;
+                state.heldCableL0 = null;
+                phy._stsPinsSnug = true;
                 phy.autoHoistActive = false;
                 phy.hookTarget.x = phy.hookPos.x;
                 phy.hookTarget.z = phy.hookPos.z;
                 phy.hookTarget.y = phy.hookPos.y;
-                phy.hoistSpeed = -0.50;
+                phy.hoistSpeed = (typeof hoistHoldSpeed === 'function')
+                    ? hoistHoldSpeed(-1)
+                    : -0.22 * (typeof hoistSpeedScaleFactor === 'function' ? hoistSpeedScaleFactor() : (state.hoistSpeedScale || 1));
             });
             btnDown.addEventListener('pointerup', stopHoistHold);
-            btnDown.addEventListener('pointerleave', stopHoistHold);
             btnDown.addEventListener('pointercancel', stopHoistHold);
+            btnDown.addEventListener('pointerleave', (e) => {
+                if (hoistHoldArmed && !(btnDown.hasPointerCapture && btnDown.hasPointerCapture(e.pointerId))) {
+                    stopHoistHold(e);
+                }
+            });
+
+            const rngHoistSpeed = document.getElementById('rng-hoist-speed');
+            const valHoistSpeed = document.getElementById('val-hoist-speed');
+            const syncHoistSpeedUI = () => {
+                const v = THREE.MathUtils.clamp(state.hoistSpeedScale != null ? state.hoistSpeedScale : 1, 0.25, 2);
+                state.hoistSpeedScale = v;
+                if (rngHoistSpeed && document.activeElement !== rngHoistSpeed) rngHoistSpeed.value = String(v);
+                if (valHoistSpeed) valHoistSpeed.textContent = `${v.toFixed(2)}×`;
+            };
+            const applyHoistSpeedFromSlider = () => {
+                if (!rngHoistSpeed) return;
+                const v = THREE.MathUtils.clamp(parseFloat(rngHoistSpeed.value) || 1, 0.25, 2);
+                state.hoistSpeedScale = v;
+                if (valHoistSpeed) valHoistSpeed.textContent = `${v.toFixed(2)}×`;
+                // Live-update held Kéo/Hạ so slider works while the button is down
+                if (Math.abs(phy.hoistSpeed || 0) > 0.01 && typeof hoistHoldSpeed === 'function') {
+                    phy.hoistSpeed = hoistHoldSpeed(phy.hoistSpeed > 0 ? 1 : -1);
+                }
+            };
+            if (rngHoistSpeed) {
+                // Stop dock/pendant from stealing pointer events on the range
+                rngHoistSpeed.style.pointerEvents = 'auto';
+                rngHoistSpeed.addEventListener('pointerdown', e => e.stopPropagation());
+                rngHoistSpeed.addEventListener('click', e => e.stopPropagation());
+                rngHoistSpeed.addEventListener('input', applyHoistSpeedFromSlider);
+                rngHoistSpeed.addEventListener('change', applyHoistSpeedFromSlider);
+                syncHoistSpeedUI();
+            }
+            window.syncHoistSpeedUI = syncHoistSpeedUI;
 
             // Unified Simulation Controls
             const handlePretension = () => {
@@ -3842,23 +4233,64 @@
             document.querySelectorAll('#btn-pretension, .btn-action-pretension').forEach(btn => btn.addEventListener('click', handlePretension));
 
             const handleTestLift = () => {
-                // Settle beam under hook before XPBD so skewed seeds don't overstretch
-                if (typeof seedBeamsFromKinematic === 'function') seedBeamsFromKinematic();
-                if (typeof syncCableRest === 'function') syncCableRest(false);
-                // Zero residual velocities before take-up
-                phy.cargoVel.set(0, 0, 0);
-                phy.cargoOmega.set(0, 0, 0);
-                if (Array.isArray(phy.beams)) {
-                    phy.beams.forEach(b => {
-                        if (b.v) b.v.set(0, 0, 0);
-                        if (b.w) b.w.set(0, 0, 0);
-                    });
+                const curClearance = Math.max(
+                    phy.groundClearance || 0,
+                    (typeof cargoAabbClearance === 'function') ? cargoAabbClearance() : 0
+                );
+                // 1. If trial lift is already active, keep smoothly lifting without interruption or velocity reset
+                if (phy._trialLiftActive) {
+                    const st = document.getElementById('sim-status-text');
+                    if (st) {
+                        st.textContent = (typeof L === 'function')
+                            ? L('Trial lift in progress — lifting smoothly to 3.0 m above ground...',
+                                'Đang tiếp tục nhấc thử — nâng êm đến 3.0 m cách đất...')
+                            : 'Đang tiếp tục nhấc thử — nâng êm đến 3.0 m cách đất...';
+                    }
+                    return;
                 }
-                state.poseLock = false;
-                syncPoseLockUI();
-                // 1.0–1.2 m clear is a real trial lift; 3.2 m was launching the load
-                autoPositionHookForLift(1.15);
-                document.getElementById('sim-status-text').textContent = '🏗️ Đang nhấc thử tải...';
+                // 2. If already suspended at 3.0m or higher, keep steady hover hold
+                if (curClearance >= 2.95) {
+                    const st = document.getElementById('sim-status-text');
+                    if (st) {
+                        st.textContent = (typeof L === 'function')
+                            ? L('Cargo is already at 3.0 m trial height and stably suspended.',
+                                'Kiện hàng đã cách đất 3.0 m và đang giữ treo ổn định.')
+                            : 'Kiện hàng đã cách đất 3.0 m và đang giữ treo ổn định.';
+                    }
+                    return;
+                }
+                // 3. Cancel any set-down in progress
+                phy._setDownActive = false;
+                phy._nhomFreezeSpreader = false;
+
+                // 4. If cargo was on ground, seat spreader once and release poseLock
+                if (state.poseLock || curClearance < 0.05) {
+                    if (typeof isStsDirectAttach === 'function' && isStsDirectAttach()
+                        && typeof seatStsSpreaderToCargo === 'function') {
+                        seatStsSpreaderToCargo();
+                    }
+                    state.poseLock = false;
+                    syncPoseLockUI();
+                }
+
+                // 5. Release cable length hold so ropes pay out and lift smoothly
+                state.holdCableLength = false;
+                state.heldCableL0 = null;
+                phy._stsPinsSnug = true;
+                phy.hoistSpeed = 0;
+                phy._trialLiftActive = true;
+                phy.autoHoistActive = true;
+
+                // Prime initial hookTarget towards 3.0m clearance
+                autoPositionHookForLift(3.0);
+
+                const st = document.getElementById('sim-status-text');
+                if (st) {
+                    st.textContent = (typeof L === 'function')
+                        ? L('Trial lift — raising cargo smoothly to 3.0 m above ground, then hold.',
+                            'Nhấc thử — nâng kiện êm ái đến 3.0 m cách đất rồi giữ treo.')
+                        : 'Nhấc thử — nâng kiện êm ái đến 3.0 m cách đất rồi giữ treo.';
+                }
             };
             document.querySelectorAll('#btn-test-lift, .btn-action-test-lift').forEach(btn => btn.addEventListener('click', handleTestLift));
 
@@ -3878,9 +4310,9 @@
             };
             document.querySelectorAll('#btn-auto-level, .btn-action-auto-level').forEach(btn => btn.addEventListener('click', handleAutoLevel));
 
-            // Reset Initial / Set Down
+            // Reset Initial / Set Down — gradual lower until cargo touches quay
             const handleResetInitial = () => {
-                resetToInitialPreLiftState();
+                beginSmoothSetDown();
             };
             document.querySelectorAll('#btn-reset-initial, .btn-action-reset-initial').forEach(btn => btn.addEventListener('click', handleResetInitial));
 
@@ -4031,13 +4463,23 @@
                 // Sync top toolbar button active states
                 const btnCad = document.getElementById('btn-toggle-cad-edges');
                 if (btnCad) {
-                    btnCad.classList.toggle('border-sky-400', Boolean(dOpt.showCADEdges));
-                    btnCad.classList.toggle('text-sky-300', Boolean(dOpt.showCADEdges));
+                    const isCadOn = Boolean(dOpt.showCADEdges);
+                    btnCad.classList.toggle('active', isCadOn);
+                    btnCad.classList.toggle('border-sky-400', isCadOn);
+                    btnCad.classList.toggle('text-sky-300', isCadOn);
+                }
+                const btnXray = document.getElementById('btn-xray');
+                if (btnXray) {
+                    btnXray.classList.toggle('active', Boolean(state.xrayCargo));
+                    btnXray.classList.toggle('border-sky-400', Boolean(state.xrayCargo));
+                    btnXray.classList.toggle('text-sky-300', Boolean(state.xrayCargo));
                 }
                 const btnVec = document.getElementById('btn-toggle-vectors');
                 if (btnVec) {
-                    btnVec.classList.toggle('border-sky-400', Boolean(dOpt.showVectors));
-                    btnVec.classList.toggle('text-sky-300', Boolean(dOpt.showVectors));
+                    const isVecOn = Boolean(dOpt.showVectors || dOpt.showForces);
+                    btnVec.classList.toggle('active', isVecOn);
+                    btnVec.classList.toggle('border-sky-400', isVecOn);
+                    btnVec.classList.toggle('text-sky-300', isVecOn);
                 }
             };
             window.syncDisplayOptionsUI = syncDisplayOptionsUI;
@@ -4189,11 +4631,17 @@
             // Top toolbar buttons
             document.getElementById('btn-toggle-cad-edges')?.addEventListener('click', () => {
                 state.displayOptions.showCADEdges = !state.displayOptions.showCADEdges;
+                if (state.displayOptions.showCADEdges && typeof applyCADFeatureEdges === 'function') {
+                    applyCADFeatureEdges(cargoRootGroup, false);
+                    applyCADFeatureEdges(spreaderRootGroup, false);
+                }
                 syncDisplayOptionsUI();
             });
 
             document.getElementById('btn-toggle-vectors')?.addEventListener('click', () => {
-                state.displayOptions.showVectors = !state.displayOptions.showVectors;
+                const turnOn = !state.displayOptions.showVectors || !state.displayOptions.showForces;
+                state.displayOptions.showVectors = turnOn;
+                state.displayOptions.showForces = turnOn;
                 syncDisplayOptionsUI();
             });
 
