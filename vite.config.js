@@ -1,54 +1,80 @@
 import { defineConfig } from 'vite';
 import fs from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
-const simParts = [
-  'state.js',
-  'ui-layout.js',
-  'audio.js',
-  'scene.js',
-  'rigging.js',
-  'cargo.js',
-  'dynamics.js',
-  'physics.js',
-  'telemetry.js',
-  'gear.js',
-  'session.js',
-  'library.js',
-  'compliance.js',
-  'plan_wizard.js'
-];
+async function loadManifestParts() {
+  const manifestPath = path.resolve('src/sim/manifest.js');
+  // Cache-bust ESM import so manifest edits (new SIM_PARTS) apply without restart.
+  const mod = await import(`${pathToFileURL(manifestPath).href}?t=${Date.now()}`);
+  return {
+    SIM_PARTS: mod.SIM_PARTS,
+    SIM_PARTS_HEADLESS: mod.SIM_PARTS_HEADLESS
+  };
+}
 
 function liftingSim() {
   const virtualId = '\0virtual:lifting-sim';
+
   return {
     name: 'lifting-sim',
     resolveId(id) {
       if (id === 'virtual:lifting-sim') return virtualId;
     },
-    load(id) {
+    async load(id) {
       if (id !== virtualId) return null;
+      // Always re-read manifest so newly added parts (e.g. weather_fx.js) are
+      // picked up without requiring a full Vite restart.
+      const m = await loadManifestParts();
+      const partsCache = m.SIM_PARTS;
       const dir = path.resolve('src/sim');
-      for (const file of simParts) this.addWatchFile(path.join(dir, file));
-      const body = simParts.map((file) => fs.readFileSync(path.join(dir, file), 'utf8')).join('\n');
+      for (const file of partsCache) this.addWatchFile(path.join(dir, file));
+      this.addWatchFile(path.resolve('src/sim/manifest.js'));
+
+      const missing = partsCache.filter((file) => !fs.existsSync(path.join(dir, file)));
+      if (missing.length) {
+        throw new Error(`[lifting-sim] Missing SIM_PARTS: ${missing.join(', ')}`);
+      }
+
+      const body = partsCache
+        .map((file) => fs.readFileSync(path.join(dir, file), 'utf8'))
+        .join('\n');
+
       return [
-        "import * as THREE_NS from 'three'",
-        "import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'",
-        "import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'",
-        "import { OBJExporter } from 'three/examples/jsm/exporters/OBJExporter.js'",
-        "import * as CANNON from 'cannon-es'",
-        "import * as CAE from '/src/core/index.js'",
-        "import * as GFX from '/src/graphics/index.js'",
-        'const THREE = Object.assign({}, THREE_NS)',
-        'THREE.OrbitControls = OrbitControls',
-        'THREE.GLTFLoader = GLTFLoader',
-        'THREE.OBJExporter = OBJExporter',
-        'window.CANNON = CANNON;',
-        'window.CAE = CAE;',
-        'window.GFX = GFX;',
+        'export function attachSimBundle(deps) {',
+        '  const THREE = deps.THREE;',
+        '  const CANNON = deps.CANNON;',
+        '  const CAE = deps.CAE;',
+        '  const GFX = deps.GFX;',
+        '  const RIG = deps.RIG;',
+        '  const runtime = deps.runtime || null;',
+        '  const autoBoot = deps.autoBoot !== false;',
         body,
-        'if (document.readyState === "loading") window.addEventListener("DOMContentLoaded", bootSimulator);',
-        'else bootSimulator();'
+        '  const api = {',
+        '    getState: () => (typeof state !== "undefined" ? state : null),',
+        '    getPhy: () => (typeof phy !== "undefined" ? phy : null),',
+        '    getRigSpec: typeof getRigSpec === "function" ? () => getRigSpec() : null,',
+        '    bootSimulator: typeof bootSimulator === "function" ? bootSimulator : null,',
+        '    pretensionRig: typeof pretensionRig === "function" ? pretensionRig : null,',
+        '    stepPhysicsEngine: typeof stepPhysicsEngine === "function" ? stepPhysicsEngine : null,',
+        '    rebuildCargoAndRig: typeof rebuildCargoAndRig === "function" ? rebuildCargoAndRig : null,',
+        '    beginSmoothSetDown: typeof beginSmoothSetDown === "function" ? beginSmoothSetDown : null,',
+        '    finishSmoothSetDown: typeof finishSmoothSetDown === "function" ? finishSmoothSetDown : null,',
+        '    resetToInitialPreLiftState: typeof resetToInitialPreLiftState === "function" ? resetToInitialPreLiftState : null,',
+        '    resetAllToFactoryDefaults: typeof resetAllToFactoryDefaults === "function" ? resetAllToFactoryDefaults : null,',
+        '    autoPositionHookForLift: typeof autoPositionHookForLift === "function" ? autoPositionHookForLift : null',
+        '  };',
+        '  if (runtime) {',
+        '    runtime.state = api.getState();',
+        '    runtime.phy = api.getPhy();',
+        '    runtime.api = api;',
+        '  }',
+        '  if (autoBoot && typeof bootSimulator === "function") {',
+        '    if (document.readyState === "loading") window.addEventListener("DOMContentLoaded", bootSimulator);',
+        '    else bootSimulator();',
+        '  }',
+        '  return api;',
+        '}'
       ].join('\n');
     }
   };

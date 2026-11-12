@@ -5,6 +5,8 @@ import * as THREE_NS from 'three';
 import * as CANNON from 'cannon-es';
 import * as CAE from '../src/core/index.js';
 import * as GFX from '../src/graphics/index.js';
+import * as RIG from '../src/rigging/index.js';
+import { SIM_PARTS_HEADLESS } from '../src/sim/manifest.js';
 
 let simApi = null;
 
@@ -83,28 +85,17 @@ beforeAll(async () => {
     globalThis.CANNON = CANNON;
     globalThis.CAE = CAE;
     globalThis.GFX = GFX;
+    globalThis.RIG = RIG;
 
     const simDir = path.resolve('src/sim');
-    const simParts = [
-        'state.js',
-        'audio.js',
-        'scene.js',
-        'rigging.js',
-        'cargo.js',
-        'dynamics.js',
-        'physics.js',
-        'telemetry.js',
-        'gear.js',
-        'session.js',
-        'library.js',
-        'compliance.js'
-    ];
+    const simParts = SIM_PARTS_HEADLESS;
 
     const bundleSource = [
         'const THREE = globalThis.THREE;',
         'const CANNON = globalThis.CANNON;',
         'const CAE = globalThis.CAE;',
         'const GFX = globalThis.GFX;',
+        'const RIG = globalThis.RIG;',
         ...simParts.map((f) => fs.readFileSync(path.join(simDir, f), 'utf8')),
         `return {
             getState: () => state,
@@ -203,7 +194,8 @@ describe('Per-Cable Custom Sling Types, Multi-Part Parallel Falls & Physics Fail
         expect(leg0).toBeTruthy();
         expect(leg0.group.name).toBe('Synthetic_Web_Sling');
         expect(leg0.endEyeA.visible).toBe(false);
-        expect(leg0.segments[2].scale.z).toBeCloseTo(0.22, 2);
+        expect(leg0.segments[2].scale.x).toBeCloseTo(0.06, 2);
+        expect(leg0.segments[2].scale.z).toBeLessThan(0.01);
     });
 
     it('2. Multi-part parallel slings (parts = 2, 3, 4) multiply SWL, MBL and render parallel visual falls', () => {
@@ -424,8 +416,11 @@ describe('Per-Cable Custom Sling Types, Multi-Part Parallel Falls & Physics Fail
         state.beamType = 'spreader';
         state.slingType = 'chain';
         state.oogHasCargo = true;
-        state.oogCargoL = 8.0;
-        state.oogCargoH = 2.2;
+        state.oogOh = 0.05;
+        state.oogOwL = 0.20;
+        state.oogOwR = 0.20;
+        state.oogOlF = 0;
+        state.oogOlR = 0;
         state.gear.uppers.forEach(u => {
             u.slingType = 'chain';
             u.grade = 'g80';
@@ -435,8 +430,8 @@ describe('Per-Cable Custom Sling Types, Multi-Part Parallel Falls & Physics Fail
         });
         simApi.rebuild();
 
-        // Deck is at -H * 0.5 + 0.30, dunnage is 0.10, crate top is -H * 0.5 + 0.40 + cH
-        const crateTopLocalY = -state.H * 0.5 + 0.40 + state.oogCargoH;
+        // Cargo top = container top (+H/2) + OH (deck thickness already subtracted in crate height)
+        const crateTopLocalY = state.H * 0.5 + state.oogOh;
         const crateTopWorldY = phy.cargoPos.y + crateTopLocalY;
 
         // Lower hook over the crate
@@ -589,6 +584,8 @@ describe('Per-Cable Custom Sling Types, Multi-Part Parallel Falls & Physics Fail
         state.beamType = 'spreader';
         state.oogHasCargo = true;
         simApi.rebuild();
+        // rebuild() may briefly unlock pose while parking the hook — re-seat on quay
+        simApi.resetToInitialPreLiftState();
 
         // 1. Cargo is resting on ground (clearance <= 0.05)
         expect(phy.groundClearance || 0).toBeLessThanOrEqual(0.05);

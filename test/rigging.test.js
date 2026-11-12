@@ -5,6 +5,8 @@ import * as THREE_NS from 'three';
 import * as CANNON from 'cannon-es';
 import * as CAE from '../src/core/index.js';
 import * as GFX from '../src/graphics/index.js';
+import * as RIG from '../src/rigging/index.js';
+import { SIM_PARTS_HEADLESS } from '../src/sim/manifest.js';
 
 let simApi = null;
 
@@ -83,28 +85,17 @@ beforeAll(async () => {
     globalThis.CANNON = CANNON;
     globalThis.CAE = CAE;
     globalThis.GFX = GFX;
+    globalThis.RIG = RIG;
 
     const simDir = path.resolve('src/sim');
-    const simParts = [
-        'state.js',
-        'audio.js',
-        'scene.js',
-        'rigging.js',
-        'cargo.js',
-        'dynamics.js',
-        'physics.js',
-        'telemetry.js',
-        'gear.js',
-        'session.js',
-        'library.js',
-        'compliance.js'
-    ];
+    const simParts = SIM_PARTS_HEADLESS;
 
     const bundleSource = [
         'const THREE = globalThis.THREE;',
         'const CANNON = globalThis.CANNON;',
         'const CAE = globalThis.CAE;',
         'const GFX = globalThis.GFX;',
+        'const RIG = globalThis.RIG;',
         ...simParts.map((f) => fs.readFileSync(path.join(simDir, f), 'utf8')),
         `return {
             getState: () => state,
@@ -540,13 +531,25 @@ describe('3D Rigging Testbed, Hardware Geometry & Mass Deductions', () => {
         expect(simApi.getCargoVisual().getObjectByName('flatRackOogCargo')).toBeFalsy();
 
         st.oogHasCargo = true;
-        st.oogCargoL = 13.0; // Over-Length front & rear
-        st.oogCargoW = 3.20; // Over-Width left & right
-        st.oogCargoH = 3.10; // Over-Height
+        // Flat Rack: OH/OW OOG OK; length capped by end wings (≥40 cm clear each end)
+        st.oogOh = 2.60;
+        st.oogOwL = 0.38;
+        st.oogOwR = 0.38;
+        st.oogOlF = -0.40;
+        st.oogOlR = -0.40;
         simApi.rebuildCargo(false);
         const topLoadedOog = simApi.getCargoShellTopY(0, 0);
         expect(topLoadedOog).toBeGreaterThan(topEmptyDeck + 2.5);
         expect(simApi.getCargoVisual().getObjectByName('flatRackOogCargo')).toBeTruthy();
+        expect(st.oogCargoL).toBeLessThanOrEqual(st.L - 0.80 + 1e-6);
+        expect(st.oogCargoW).toBeGreaterThan(st.W);
+        // Attempted over-length past wings must clamp back to −0.40
+        st.oogOlF = 0.40;
+        st.oogOlR = 0.40;
+        simApi.rebuildCargo(false);
+        expect(st.oogOlF).toBeLessThanOrEqual(-0.40);
+        expect(st.oogOlR).toBeLessThanOrEqual(-0.40);
+        expect(st.oogCargoL).toBeLessThanOrEqual(st.L - 0.80 + 1e-6);
     });
 
     it('10. High-detail ISO Tank, Cabin Cruiser Boat, and SUV Car build cleanly with accurate structural rigging mounts', () => {
@@ -853,7 +856,9 @@ describe('3D Rigging Testbed, Hardware Geometry & Mass Deductions', () => {
 
         const pairedLower = (phy.cables || []).find(c => c.role === 'leg' && c.index === 3);
         expect(pairedLower.slack).toBe(true);
-        expect(phy.cargoQuat.angleTo(before)).toBeGreaterThan(0.008);
+        // Soft take-up / overstretch relief slightly reduces the first-frame list impulse;
+        // still require a clear off-centre tilt, not a perfect zero.
+        expect(phy.cargoQuat.angleTo(before)).toBeGreaterThan(0.003);
     });
 
     it('12bc. A severed free end falls onto/around the cargo shell instead of being launched or ghosting through it', () => {

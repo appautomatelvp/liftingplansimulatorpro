@@ -1,0 +1,35 @@
+{
+  "id": "sts_container_lift",
+  "name": "STS Container Spreader Lift",
+  "version": 1,
+  "cargo": {
+    "cargoType": "dry",
+    "L": 12.192,
+    "W": 2.438,
+    "H": 2.591,
+    "weight": 28.0,
+    "isoCode": "42G1"
+  },
+  "rig": {
+    "beamType": "container_spreader",
+    "slingType": "chain",
+    "hwType": "bow_shackle",
+    "stsSizeFt": 40,
+    "stsAttachMode": "direct"
+  },
+  "crane": {
+    "craneType": "gantry",
+    "hookCount": 1,
+    "hoistSpeedScale": 1.0
+  },
+  "site": {
+    "unitSystem": "metric"
+  },
+  "spawnPose": {
+    "note": "STS twistlock direct attach"
+  },
+  "winConditions": {
+    "minGroundClearanceM": 1.0,
+    "maxCableUtilization": 0.75
+  }
+}

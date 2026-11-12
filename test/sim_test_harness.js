@@ -4,6 +4,8 @@ import * as THREE_NS from 'three';
 import * as CANNON from 'cannon-es';
 import * as CAE from '../src/core/index.js';
 import * as GFX from '../src/graphics/index.js';
+import * as RIG from '../src/rigging/index.js';
+import { SIM_PARTS_HEADLESS } from '../src/sim/manifest.js';
 
 export function createHeadlessSim() {
     const elements = new Map();
@@ -56,6 +58,9 @@ export function createHeadlessSim() {
     });
 
     globalThis.window = globalThis;
+    globalThis.addEventListener = globalThis.addEventListener || (() => {});
+    globalThis.removeEventListener = globalThis.removeEventListener || (() => {});
+    globalThis.getComputedStyle = globalThis.getComputedStyle || (() => ({ getPropertyValue: () => '', opacity: '1', display: 'block' }));
     globalThis.innerWidth = 1280;
     globalThis.innerHeight = 720;
     globalThis.devicePixelRatio = 1;
@@ -80,28 +85,17 @@ export function createHeadlessSim() {
     globalThis.CANNON = CANNON;
     globalThis.CAE = CAE;
     globalThis.GFX = GFX;
+    globalThis.RIG = RIG;
 
     const simDir = path.resolve('src/sim');
-    const simParts = [
-        'state.js',
-        'audio.js',
-        'scene.js',
-        'rigging.js',
-        'cargo.js',
-        'dynamics.js',
-        'physics.js',
-        'telemetry.js',
-        'gear.js',
-        'session.js',
-        'library.js',
-        'compliance.js'
-    ];
+    const simParts = SIM_PARTS_HEADLESS;
 
     const bundleSource = [
         'const THREE = globalThis.THREE;',
         'const CANNON = globalThis.CANNON;',
         'const CAE = globalThis.CAE;',
         'const GFX = globalThis.GFX;',
+        'const RIG = globalThis.RIG;',
         ...simParts.map((f) => fs.readFileSync(path.join(simDir, f), 'utf8')),
         `return {
             getState: () => state,
@@ -171,7 +165,13 @@ export function createHeadlessSim() {
                 if (st.lashing) st.lashing.isIntact = false;
                 st.massKg = config.massKg || Math.max(600, ((state.weight || 22) - (state.tareT || 4.8)) * 1000);
                 st.half = { hx: meta.half.hx, hy: meta.half.hy, hz: meta.half.hz };
-                st.worldPos.copy(config.position || new THREE.Vector3(0, meta.half.hy + 2, 0));
+                // OOG OBB centre sits at meta.centerY in cargo-local (crate on deck), not at origin
+                const restLocalY = Number.isFinite(meta.centerY) ? meta.centerY : meta.half.hy;
+                st.worldPos.copy(config.position || new THREE.Vector3(
+                    phy.cargoPos.x + (meta.offsetX || 0),
+                    phy.cargoPos.y + restLocalY + 2,
+                    phy.cargoPos.z + (meta.offsetZ || 0)
+                ));
                 st.worldQuat.copy(config.quaternion || new THREE.Quaternion());
                 st.worldVel.copy(config.velocity || new THREE.Vector3());
                 st.worldOmega.copy(config.omega || new THREE.Vector3());

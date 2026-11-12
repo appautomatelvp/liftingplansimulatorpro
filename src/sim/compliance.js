@@ -15,12 +15,24 @@ function initComplianceUI() {
     const panelComp = document.getElementById('compliance-hud-panel');
     const modalPlan = document.getElementById('liftplan-modal');
 
+    function reframeForComplianceHud() {
+        if (typeof window.invalidateUiSafeNdcCache === 'function') {
+            window.invalidateUiSafeNdcCache();
+        }
+        if (typeof window.reframeAutoToUiSafeCenter === 'function') {
+            window.reframeAutoToUiSafeCenter({ duration: 0.5, delay: 80 });
+        } else if (typeof window.startCinematicUiFrame === 'function') {
+            window.startCinematicUiFrame({ duration: 0.5, force: true });
+        }
+    }
+
     if (btnComp && panelComp) {
         btnComp.addEventListener('click', () => {
             isComplianceHUDVisible = !isComplianceHUDVisible;
             panelComp.classList.toggle('hidden', !isComplianceHUDVisible);
             btnComp.classList.toggle('active', isComplianceHUDVisible);
             if (isComplianceHUDVisible) updateComplianceHUD();
+            reframeForComplianceHud();
         });
 
         const closeCompBtn = document.getElementById('btn-close-compliance-hud');
@@ -29,6 +41,7 @@ function initComplianceUI() {
                 isComplianceHUDVisible = false;
                 panelComp.classList.add('hidden');
                 btnComp.classList.remove('active');
+                reframeForComplianceHud();
             });
         }
     }

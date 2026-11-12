@@ -60,6 +60,14 @@
             MATS.timberWood = new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.82, metalness: 0.05 });
             MATS.lpHighlight = new THREE.MeshStandardMaterial({ color: 0x10b981, emissive: 0x064e3b, metalness: 0.55, roughness: 0.25 });
             MATS.lpSelected = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0369a1, metalness: 0.65, roughness: 0.2 });
+            // Ctrl-pick hover preview (brighter than selected so sweep-target is obvious)
+            MATS.lpCtrlHover = new THREE.MeshStandardMaterial({
+                color: 0x7dd3fc,
+                emissive: 0x0ea5e9,
+                emissiveIntensity: 1.15,
+                metalness: 0.55,
+                roughness: 0.22
+            });
 
             // High-Precision CAD / Industrial Cargo Surface Materials
             MATS.containerBlue = new THREE.MeshPhysicalMaterial({ color: 0x0369a1, metalness: 0.35, roughness: 0.38, clearcoat: 0.35 });
@@ -81,18 +89,18 @@
             MATS.glassDark = new THREE.MeshPhysicalMaterial({ color: 0x0f172a, metalness: 0.85, roughness: 0.08, clearcoat: 1.0 });
             MATS.rubberTire = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.88, metalness: 0.05 });
             MATS.cadEdgeLine = new THREE.LineBasicMaterial({
-                color: 0x0f172a,
+                color: 0x38bdf8,
                 transparent: true,
-                opacity: 0.65,
+                opacity: 0.85,
                 polygonOffset: true,
                 polygonOffsetFactor: -1.0,
                 polygonOffsetUnits: -4.0,
                 depthTest: true
             });
             MATS.cadLightEdge = new THREE.LineBasicMaterial({
-                color: 0x94a3b8,
+                color: 0x93c5fd,
                 transparent: true,
-                opacity: 0.55,
+                opacity: 0.70,
                 polygonOffset: true,
                 polygonOffsetFactor: -1.0,
                 polygonOffsetUnits: -4.0,
@@ -183,27 +191,42 @@
         window.getDynamicSlingMaterial = getDynamicSlingMaterial;
         MATS.getDynamicSlingMaterial = getDynamicSlingMaterial;
 
-        // Helper: Adds crisp CAD feature crease outlines to any 3D Group
+        // Helper: Adds crisp CAD feature crease outlines to any 3D Group (with geometry caching & zero memory leak)
         function applyCADFeatureEdges(rootGroup, useLightEdge = false) {
+            if (!rootGroup) return;
+            const cadEnabled = Boolean(state.displayOptions?.showCADEdges ?? state.showCADEdges ?? true);
             const lineMat = useLightEdge ? MATS.cadLightEdge : MATS.cadEdgeLine;
             const meshes = [];
             rootGroup.traverse(obj => {
-                if (obj.isMesh && obj.visible && obj.geometry && !obj.userData?.noCADEdge) {
+                if (obj.isMesh && obj.visible && obj.geometry && !obj.userData?.noCADEdge && !obj.userData?.isCADEdge) {
                     const gType = obj.geometry.type || '';
-                    const vCount = obj.geometry.attributes?.position?.count || 0;
-                    if (gType.includes('Sphere') || gType.includes('Torus') || vCount > 240) return;
-                    meshes.push(obj);
+                    if (gType.includes('Sphere') || gType.includes('Torus')) return;
+                    const alreadyHas = obj.children.some(ch => ch.userData?.isCADEdge);
+                    if (!alreadyHas) meshes.push(obj);
                 }
             });
             meshes.forEach(m => {
-                const edgesGeo = new THREE.EdgesGeometry(m.geometry, 28);
-                const line = new THREE.LineSegments(edgesGeo, lineMat);
-                line.visible = state.showCADEdges;
-                line.userData.isCADEdge = true;
-                line.raycast = function () {};
-                m.add(line);
-                cadEdgeObjects.push(line);
+                try {
+                    m.geometry.userData = m.geometry.userData || {};
+                    let edgesGeo = m.geometry.userData._cachedCADEdgesGeo;
+                    if (!edgesGeo) {
+                        const count = m.geometry.attributes?.position?.count || 0;
+                        // Avoid expensive N log N calculations on massive triangle meshes (> 3000 vertices)
+                        edgesGeo = new THREE.EdgesGeometry(m.geometry, count > 3000 ? 35 : 26);
+                        m.geometry.userData._cachedCADEdgesGeo = edgesGeo;
+                    }
+                    const line = new THREE.LineSegments(edgesGeo, lineMat);
+                    line.visible = cadEnabled;
+                    line.userData.isCADEdge = true;
+                    line.raycast = function () {};
+                    m.add(line);
+                    cadEdgeObjects.push(line);
+                } catch (_) {}
             });
+            // Periodically prune detached line segments to prevent memory leaks
+            if (cadEdgeObjects.length > 250) {
+                cadEdgeObjects = cadEdgeObjects.filter(l => l.parent != null);
+            }
         }
 
         // Generates a Procedural Studio HDRI Reflection Environment so forged steel & wire ropes look razor-sharp
@@ -244,7 +267,7 @@
 
         function initScene() {
             scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.15, 220);
+            camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.15, 450);
             // Perspective framing on Flat Rack Container + Spreader Beam + Hook (1/3 left offset for open right drawer)
             // High-angle 1/3 composition (cargo left of free stage when right drawer opens)
             camera.position.set(-13.5, 9.2, 19.5);
@@ -272,22 +295,22 @@
                 container.appendChild(renderer.domElement);
                 scene.environment = createStudioEnvironmentMap(renderer);
 
-                keyLight = new THREE.DirectionalLight(0xffffff, 1.55);
-                keyLight.position.set(20, 36, 24);
+                keyLight = new THREE.DirectionalLight(0xfff6dc, 2.75);
+                keyLight.position.set(28, 44, 24);
                 keyLight.castShadow = true;
                 keyLight.shadow.mapSize.width = 2048;
                 keyLight.shadow.mapSize.height = 2048;
-                keyLight.shadow.camera.left = -26;
-                keyLight.shadow.camera.right = 26;
-                keyLight.shadow.camera.top = 26;
-                keyLight.shadow.camera.bottom = -26;
+                keyLight.shadow.camera.left = -30;
+                keyLight.shadow.camera.right = 30;
+                keyLight.shadow.camera.top = 30;
+                keyLight.shadow.camera.bottom = -30;
                 keyLight.shadow.bias = -0.0002;
                 scene.add(keyLight);
 
-                fillLight = new THREE.DirectionalLight(0x60a5fa, 0.65);
-                fillLight.position.set(-18, 16, -14);
+                fillLight = new THREE.DirectionalLight(0x9ec8f5, 0.85);
+                fillLight.position.set(-24, 22, -18);
                 scene.add(fillLight);
-                scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+                scene.add(new THREE.AmbientLight(0xfffcf2, 0.70));
             }
 
             window.sceneRenderer = sceneRenderer;
@@ -305,6 +328,14 @@
             controls.maxDistance = 120.0;
             controls.maxPolarAngle = Math.PI / 2 - 0.004;
             controls.target.set(3.2, 3.2, -0.6);
+            // Default THREE OrbitControls:
+            //   LMB = orbit, Shift+LMB = pan (left/right + up/down), wheel = zoom.
+            // Ctrl is reserved for pick/marquee — do not remap Shift away from pan.
+            controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
+            controls.mouseButtons.MIDDLE = THREE.MOUSE.DOLLY;
+            controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
+            controls.enablePan = true;
+            controls.screenSpacePanning = true;
             controls.update();
             // Bake initial pose so Auto/Fly never snap from an unseeded orbit
             if (state.cameraFollow) {
@@ -441,8 +472,8 @@
         }
 
         function supportY(x, z) {
-            const g = groundSurfaceY(x, z);
-            return state.groundId === 'rough' ? g : g + DUNNAGE_H;
+            // Quay / ground only — no timber cribbing offset (keeps static cargo flush).
+            return groundSurfaceY(x, z);
         }
 
         // Unit normal for the height-field used by the contact solver. Using the
@@ -474,11 +505,11 @@
         }
 
         const SCENE_LABELS = {
-            studio: 'Studio Kỹ Thuật (Dark)',
+            studio: 'Thời Gian Thực VN (Real-Time)',
             yard: 'Sân Thử Bê Tông (Daylight)',
             sheet: 'Bản Vẽ Lift Plan (ASME)',
-            port: 'Studio Kỹ Thuật (Dark)',
-            urban: 'Studio Kỹ Thuật (Dark)',
+            port: 'Thời Gian Thực VN (Real-Time)',
+            urban: 'Xưởng Chiều Nắng (Sunset)',
             offshore: 'Sân Thử Bê Tông (Daylight)'
         };
         const GROUND_LABELS = { flat: 'Sàn bê tông phẳng', soil: 'Nền đất đầm + đà kê', rough: 'Nền nghiêng / gồ ghề' };
@@ -499,11 +530,10 @@
             } else {
                 // Fallback (no GFX env manager): fog color === background for soft infinite pad
                 const isLightSheet = state.sceneId === 'sheet';
-                const sky = isLightSheet ? 0xeef2f6 : (state.sceneId === 'yard' ? 0x1e293b : 0x131924);
-                const fogNear = isLightSheet ? 42 : (state.sceneId === 'yard' ? 34 : 28);
-                const fogFar = isLightSheet ? 95 : (state.sceneId === 'yard' ? 60 : 52);
-                const bg = new THREE.Color(sky);
-                // Vietnam night wash when no env manager (Asia/Ho_Chi_Minh)
+                let fogNear = isLightSheet ? 120 : 85;
+                let fogFar = isLightSheet ? 280 : 230;
+                let sky = isLightSheet ? 0xeef2f6 : 0xe4e2d8;
+                // Vietnam TOD clock sync in fallback (Asia/Ho_Chi_Minh)
                 try {
                     const parts = new Intl.DateTimeFormat('en-GB', {
                         timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
@@ -511,10 +541,32 @@
                     const h = parseInt(parts.find(p => p.type === 'hour')?.value || '12', 10);
                     const m = parseInt(parts.find(p => p.type === 'minute')?.value || '0', 10);
                     const t = h + m / 60;
-                    if (!isLightSheet && (t >= 19.2 || t < 5.4)) {
-                        bg.lerp(new THREE.Color(0x080c14), 0.35);
+                    if (!isLightSheet) {
+                        if (t >= 19.25 || t < 5.25) {
+                            sky = 0x0c121e;
+                            fogNear = 75;
+                            fogFar = 200;
+                        } else if (t >= 16.5 && t < 18.0) {
+                            sky = 0xd49258;
+                            fogNear = 80;
+                            fogFar = 220;
+                        } else if (t >= 5.25 && t < 6.5) {
+                            sky = 0xc8a296;
+                            fogNear = 80;
+                            fogFar = 220;
+                        } else if (t >= 18.0 && t < 19.25) {
+                            sky = 0x1e2438;
+                            fogNear = 75;
+                            fogFar = 200;
+                        } else {
+                            // Daytime: bright warm golden sunlight ("sáng màu hơi vàng nắng")
+                            sky = 0xe4e2d8;
+                            fogNear = 85;
+                            fogFar = 230;
+                        }
                     }
                 } catch (_) { /* keep base sky */ }
+                const bg = new THREE.Color(sky);
                 scene.background = bg;
                 scene.fog = new THREE.Fog(bg.getHex(), fogNear, fogFar);
             }
@@ -531,7 +583,7 @@
                     floorMesh.material = MATS.quayConcrete;
                 } else {
                     floorMesh.material = new THREE.MeshStandardMaterial({
-                        color: 0x283446,
+                        color: 0x475569,
                         roughness: 0.88,
                         metalness: 0.06
                     });
@@ -547,7 +599,7 @@
 
             const prevGeo = floorMesh.geometry;
             if (state.groundId === 'flat') {
-                const geo = new THREE.PlaneGeometry(200, 200);
+                const geo = new THREE.PlaneGeometry(280, 280);
                 geo.rotateX(-Math.PI / 2);
                 floorMesh.geometry = geo;
                 floorMesh.rotation.x = 0;
@@ -622,13 +674,24 @@
         }
 
         // --- 4. BUILD CLEAN RIGGING-FOCUSED CRANE & OVERHEAD HOIST MODES ---
+        const craneVehicleCache = new Map();
+
         function buildCraneVehicle() {
+            if (typeof craneVehicleGroup === 'undefined' || !craneVehicleGroup || typeof state === 'undefined' || !state) return;
             while (craneVehicleGroup.children.length > 0) {
                 craneVehicleGroup.remove(craneVehicleGroup.children[0]);
             }
             craneDynamicParts = {};
 
             const type = state.craneType;
+
+            // Instantaneous switch from cache (0ms overhead, avoids 40+ geometry rebuilds)
+            if (craneVehicleCache.has(type)) {
+                const cached = craneVehicleCache.get(type);
+                craneVehicleGroup.add(cached.container);
+                craneDynamicParts = cached.dynamicParts;
+                return;
+            }
 
             if (type === 'hook_only') {
                 // 1. PURE OVERHEAD HOOK & HOIST MODE (Zero crane clutter — 360° unobstructed rigging view)
@@ -958,6 +1021,40 @@
 
             if (pbrFactory) pbrFactory.enforcePBRMaterials(craneVehicleGroup);
             applyCADFeatureEdges(craneVehicleGroup, false);
+
+            // Cache standard crane vehicles into container for instantaneous switching
+            const container = new THREE.Group();
+            container.name = `cached_crane_${type}`;
+            while (craneVehicleGroup.children.length > 0) {
+                container.add(craneVehicleGroup.children[0]);
+            }
+            craneVehicleGroup.add(container);
+            craneVehicleCache.set(type, {
+                container,
+                dynamicParts: craneDynamicParts
+            });
+        }
+
+        // Idle pre-warming: constructs all standard crane models during browser idle time
+        function warmUpCraneModels() {
+            if (typeof craneVehicleGroup === 'undefined' || !craneVehicleGroup || typeof state === 'undefined' || !state) return;
+            const types = ['hook_only', 'mobile_telescopic', 'crawler', 'gantry'];
+            const origType = state.craneType || 'mobile_telescopic';
+            for (const t of types) {
+                if (!craneVehicleCache.has(t)) {
+                    state.craneType = t;
+                    buildCraneVehicle();
+                }
+            }
+            state.craneType = origType;
+            buildCraneVehicle();
+        }
+        if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+            if ('requestIdleCallback' in window) {
+                window.requestIdleCallback(() => warmUpCraneModels(), { timeout: 2000 });
+            } else if (typeof window.addEventListener === 'function') {
+                window.addEventListener('load', () => setTimeout(warmUpCraneModels, 800));
+            }
         }
 
         // Helper: Builds a 4-section Nested Octagonal Telescopic Hydraulic Boom along local +Y from 0 to boomLen
@@ -1053,6 +1150,127 @@
         let groundAngleBadgeTexture = null;
         let groundAngleBadgeCanvas = null;
         let groundAngleParts = {};
+        let containerHomePadGroup = null;
+
+        /** ISO / container-family cargo — yellow home-pad L marks apply. */
+        function isContainerFamilyCargo(type) {
+            const t = String(type || state.cargoType || '').toLowerCase();
+            if (!t || t === 'excavator') return false;
+            return /container|iso|opentop|flatrack|platform|reefer|isotank|halfheight|drybulk/.test(t);
+        }
+
+        /** Clear frozen home pad so the next grounded pose becomes the new reference. */
+        function invalidateContainerHomePad() {
+            if (phy) phy.containerHomePad = null;
+            if (containerHomePadGroup) containerHomePadGroup.visible = false;
+        }
+
+        function ensureContainerHomePadGroup() {
+            if (containerHomePadGroup && containerHomePadGroup.parent && containerHomePadGroup.userData.thickLegs) {
+                return containerHomePadGroup;
+            }
+            if (containerHomePadGroup && containerHomePadGroup.parent) {
+                scene.remove(containerHomePadGroup);
+            }
+            containerHomePadGroup = new THREE.Group();
+            containerHomePadGroup.name = 'ContainerHomePadMarks';
+            const mat = new THREE.MeshBasicMaterial({
+                color: 0xfacc15,
+                transparent: true,
+                opacity: 0.92,
+                depthWrite: false,
+                fog: false
+            });
+            // 4 corners × 2 legs — solid ribbons (~20 cm thick), not hairline GL lines
+            const legs = [];
+            for (let i = 0; i < 8; i++) {
+                const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), mat);
+                mesh.frustumCulled = false;
+                mesh.renderOrder = 28;
+                mesh.userData.noCADEdge = true;
+                containerHomePadGroup.add(mesh);
+                legs.push(mesh);
+            }
+            containerHomePadGroup.userData.thickLegs = legs;
+            scene.add(containerHomePadGroup);
+            return containerHomePadGroup;
+        }
+
+        /**
+         * Yellow L chalk marks at the four ground corners of a container, offset 30 cm
+         * outside each corner, ~20 cm stroke thickness. Stamped while seated; frozen on
+         * first lift so set-down drift from wind/rain is visible against the original pad.
+         */
+        function updateContainerHomePadMarks() {
+            if (!scene || !phy) return;
+            if (!isContainerFamilyCargo(state.cargoType)) {
+                if (containerHomePadGroup) containerHomePadGroup.visible = false;
+                return;
+            }
+            const g = ensureContainerHomePadGroup();
+            const grounded = !!(state.poseLock || (phy.groundClearance || 0) < 0.08);
+            let pad = phy.containerHomePad;
+
+            if ((!pad || !pad.frozen) && grounded && phy.cargoPos) {
+                const yaw = THREE.MathUtils.degToRad(state.cargoYawDeg || 0);
+                pad = phy.containerHomePad = {
+                    frozen: false,
+                    x: phy.cargoPos.x,
+                    z: phy.cargoPos.z,
+                    yaw,
+                    L: Math.max(0.5, state.L || 6),
+                    W: Math.max(0.5, state.W || 2.4)
+                };
+            }
+            if (pad && !pad.frozen && !grounded) {
+                pad.frozen = true;
+            }
+            if (!pad) {
+                g.visible = false;
+                return;
+            }
+
+            const OFF = 0.30;   // inner edge of L is 30 cm outside container corner
+            const THICK = 0.20; // ~20 cm chalk stroke width
+            const ARM = 0.85;   // L leg length along each edge (excludes corner block)
+            const HGT = 0.025;
+            const y = HGT * 0.5;
+            const halfL = pad.L * 0.5;
+            const halfW = pad.W * 0.5;
+            const cy = Math.cos(pad.yaw);
+            const sy = Math.sin(pad.yaw);
+            const toWorld = (lx, lz) => ({
+                x: pad.x + lx * cy + lz * sy,
+                z: pad.z - lx * sy + lz * cy
+            });
+
+            const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
+            const legs = g.userData.thickLegs;
+            for (let c = 0; c < 4; c++) {
+                const sx = corners[c][0];
+                const sz = corners[c][1];
+                // Both legs include the THICK×THICK corner block so the outer
+                // corner meets as a clean square (no stepped / broken notch).
+                // Along-L: x ∈ [halfL+OFF-ARM, halfL+OFF+THICK], z ∈ [halfW+OFF, halfW+OFF+THICK]
+                const alongL = legs[c * 2];
+                const lx0 = sx * (halfL + OFF + (THICK - ARM) * 0.5);
+                const lz0 = sz * (halfW + OFF + THICK * 0.5);
+                const w0 = toWorld(lx0, lz0);
+                alongL.position.set(w0.x, y, w0.z);
+                alongL.rotation.set(0, pad.yaw, 0);
+                alongL.scale.set(ARM + THICK, HGT, THICK);
+
+                // Along-W: x ∈ [halfL+OFF, halfL+OFF+THICK], z ∈ [halfW+OFF-ARM, halfW+OFF+THICK]
+                const alongW = legs[c * 2 + 1];
+                const lx1 = sx * (halfL + OFF + THICK * 0.5);
+                const lz1 = sz * (halfW + OFF + (THICK - ARM) * 0.5);
+                const w1 = toWorld(lx1, lz1);
+                alongW.position.set(w1.x, y, w1.z);
+                alongW.rotation.set(0, pad.yaw, 0);
+                alongW.scale.set(THICK, HGT, ARM + THICK);
+            }
+            g.visible = true;
+        }
 
         function makeAxisTagTexture(text, color, bgColor = 'rgba(15, 23, 42, 0.94)') {
             const canvas = document.createElement('canvas');
@@ -1373,6 +1591,9 @@
         }
 
         function updateCargoGroundAngleIndicator3D() {
+            // Home-pad L marks are independent of the ground-angle gizmo visibility
+            if (typeof updateContainerHomePadMarks === 'function') updateContainerHomePadMarks();
+
             if (!cargoGroundAngleGroup || !groundAngleParts.outerRing) return;
 
             // Visibility driven by displayOptions

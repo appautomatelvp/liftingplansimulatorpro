@@ -37,13 +37,65 @@
             if (!state.wind) {
                 state.wind = {
                     enabled: true,
-                    speedMps: 3.5,            // mean speed at 10 m reference height
-                    dirDeg: 0,                // 0° = blowing along +X (cargo length axis)
-                    gust: false,              // coherent +30 % gust envelope
-                    turbulenceIntensity: 0.16 // σ_u / V (IEC class B-ish, open site)
+                    speedMps: 3.5,
+                    dirDeg: 0,
+                    gust: false,
+                    turbulenceIntensity: 0.16,
+                    baseSpeedMps: 3.5,
+                    vary: true
                 };
             }
+            if (state.wind.baseSpeedMps == null) state.wind.baseSpeedMps = state.wind.speedMps || 3.5;
+            if (state.wind.vary == null) state.wind.vary = true;
             return state.wind;
+        }
+
+        function weatherConfig() {
+            if (!state.weather) {
+                state.weather = { rainMmH: 0, rainBaseMmH: 0, wetFactor: 0 };
+            }
+            if (state.weather.rainBaseMmH == null) {
+                state.weather.rainBaseMmH = state.weather.rainMmH || 0;
+            }
+            return state.weather;
+        }
+
+        /**
+         * Slow weather drift around UI setpoints so wind/rain feel alive.
+         * Live speedMps / rainMmH are what the solver and FX consume.
+         */
+        function stepWeatherModulation(dt) {
+            const cfg = windConfig();
+            const wx = weatherConfig();
+            if (!phy.weatherMod) {
+                phy.weatherMod = { t: 0, windMul: 1, rainMul: 1, burst: 0 };
+            }
+            const mod = phy.weatherMod;
+            mod.t += dt;
+            if (cfg.vary === false) {
+                cfg.speedMps = Math.max(0, cfg.baseSpeedMps != null ? cfg.baseSpeedMps : cfg.speedMps);
+                wx.rainMmH = Math.max(0, wx.rainBaseMmH != null ? wx.rainBaseMmH : wx.rainMmH);
+                mod.windMul = 1;
+                mod.rainMul = 1;
+            } else {
+                const baseW = Math.max(0, cfg.baseSpeedMps != null ? cfg.baseSpeedMps : (cfg.speedMps || 0));
+                const baseR = Math.max(0, wx.rainBaseMmH != null ? wx.rainBaseMmH : (wx.rainMmH || 0));
+                const slow = 0.22 * Math.sin(mod.t * 0.11) + 0.14 * Math.sin(mod.t * 0.29 + 1.7);
+                const pulse = 0.18 * Math.max(0, Math.sin(mod.t * 0.55)) ** 2;
+                mod.burst = THREE.MathUtils.lerp(mod.burst || 0, pulse, Math.min(1, dt * 1.2));
+                mod.windMul = THREE.MathUtils.clamp(1 + slow + mod.burst * (cfg.gust ? 1.35 : 0.85), 0.35, 2.1);
+                mod.rainMul = THREE.MathUtils.clamp(1 + 0.35 * Math.sin(mod.t * 0.19 + 0.4) + 0.45 * mod.burst, 0.2, 2.4);
+                cfg.speedMps = baseW * mod.windMul;
+                wx.rainMmH = baseR * mod.rainMul;
+                cfg.turbulenceIntensity = THREE.MathUtils.clamp(
+                    0.12 + Math.min(0.28, (cfg.speedMps || 0) / 80),
+                    0.10,
+                    0.42
+                );
+            }
+            const targetWet = THREE.MathUtils.clamp((wx.rainMmH || 0) / 55, 0, 1);
+            wx.wetFactor = THREE.MathUtils.lerp(wx.wetFactor || 0, targetWet, Math.min(1, dt / 8));
+            return mod;
         }
 
         function windFieldState() {
@@ -73,6 +125,7 @@
          * OU process: du = -(u/T) dt + σ sqrt(2/T) dW, stationary σ_u = I·V.
          */
         function stepWindField(dt) {
+            stepWeatherModulation(dt);
             const cfg = windConfig();
             const wf = windFieldState();
             wf.t += dt;
@@ -187,7 +240,10 @@
                     vector: new THREE.Vector3(),
                     projectedAreaM2: 0,
                     driftDeg: 0,
+                    rainForceN: 0,
+                    rainMmH: 0,
                     _accF: new THREE.Vector3(),
+                    _accRain: 0,
                     _accN: 0
                 };
             }
@@ -195,7 +251,38 @@
         }
 
         /**
-         * Applies wind + motion-relative aerodynamic impulses to the cargo body.
+         * Rain momentum load on cargo: downward impact on roof + wind-driven slant
+         * on the windward face. Scales with rainfall rate (mm/h) and wetness.
+         */
+        function cargoRainForceN(dims, quat, windVec) {
+            const wx = weatherConfig();
+            const rainMmH = Math.max(0, wx.rainMmH || 0);
+            if (rainMmH < 0.2) return new THREE.Vector3();
+            const flux = (rainMmH / 1000) / 3600; // m³/(m²·s)
+            const vTerm = 8.5; // m/s typical large-drop terminal speed
+            const rhoW = 1000;
+            const roofA = Math.max(0.2, (dims.L || 1) * (dims.W || 1));
+            // Momentum flux onto roof (near-vertical component)
+            // Training-visible rain load (true momentum flux is tiny vs 20–40 t cargo)
+            const Fdown = rhoW * flux * roofA * vTerm * 12;
+            const force = new THREE.Vector3(0, -Fdown, 0);
+            // Wind-driven rain: horizontal component on windward faces
+            const windH = windVec.clone();
+            windH.y = 0;
+            const wh = windH.length();
+            if (wh > 0.4) {
+                const sideA = Math.max(0.2, (dims.L || 1) * (dims.H || 1) * 0.55
+                    + (dims.W || 1) * (dims.H || 1) * 0.45);
+                const Fh = rhoW * flux * sideA * Math.min(wh, 22) * 6.5;
+                force.addScaledVector(windH.normalize(), Fh);
+            }
+            const wet = wx.wetFactor || 0;
+            if (wet > 0.05) force.y -= wet * roofA * 120;
+            return force;
+        }
+
+        /**
+         * Applies wind + rain + motion-relative aerodynamic impulses to the cargo body.
          * @param {number} dt substep
          * @param {THREE.Vector3} vCom   centre-of-mass velocity (mutated)
          * @param {THREE.Vector3} omega  angular velocity (mutated)
@@ -203,34 +290,84 @@
          * @param {Object} invI inverse inertia (local diag)
          * @param {THREE.Vector3} rCogWorld vector from geometric centre to CoG (world)
          */
+        /** Training gain: suspended loads need stronger aero to be visually readable. */
+        function weatherLiftGain() {
+            const wx = weatherConfig();
+            const g = wx.liftForceGain != null ? wx.liftForceGain : 5.5;
+            const airborne = !state.poseLock && (phy.groundClearance || 0) > 0.08;
+            return airborne ? Math.max(1, g) : 1;
+        }
+
         function applyCargoAerodynamics(dt, vCom, omega, invMass, invI, rCogWorld) {
             const dims = { L: state.L, W: state.W, H: state.H };
             const com = cargoComNow();
             const wind = windVectorAt(com.y);
             const vRel = wind.clone().sub(vCom);
             const { force, area } = aeroBoxForce(dims, phy.cargoQuat, vRel);
+            // Wet cargo: slightly higher Cd (film / rivulets)
+            const wet = (weatherConfig().wetFactor || 0);
+            if (wet > 0.02) force.multiplyScalar(1 + 0.18 * wet);
+
+            const rainF = cargoRainForceN(dims, phy.cargoQuat, wind);
+            force.add(rainF);
+
+            const gain = weatherLiftGain();
+            if (gain > 1.01) {
+                force.multiplyScalar(gain);
+                rainF.multiplyScalar(gain);
+            }
+
             // Pressure centre = geometric box centre; lever from CoG = −rCog
             const lever = rCogWorld.clone().negate();
             const torque = new THREE.Vector3().crossVectors(lever, force);
             torque.add(aeroBoxRotTorque(dims, phy.cargoQuat, omega));
+            if (gain > 1.01) torque.multiplyScalar(Math.min(gain, 4));
 
-            // Impulse integration (forces are quadratic in velocity: clamp the
-            // per-substep change so an extreme gust cannot invert velocity).
+            // Impulse integration — allow a clearer kick while suspended so sway is visible.
             const dv = force.clone().multiplyScalar(invMass * dt);
-            const vRelMag = vRel.length();
-            if (dv.length() > 0.5 * vRelMag + 0.02) dv.setLength(0.5 * vRelMag + 0.02);
+            const vRelMag = Math.max(vRel.length(), rainF.length() * invMass * 4);
+            const dvCap = (gain > 1.01 ? 1.35 : 0.5) * vRelMag + (gain > 1.01 ? 0.12 : 0.04);
+            if (dv.length() > dvCap) dv.setLength(dvCap);
             vCom.add(dv);
             const dw = alphaFromTorque(torque.clone().multiplyScalar(dt), phy.cargoQuat, invI);
             const wMag = omega.length();
-            if (dw.length() > 0.5 * wMag + 0.01) dw.setLength(0.5 * wMag + 0.01);
+            const dwCap = (gain > 1.01 ? 0.9 : 0.5) * wMag + (gain > 1.01 ? 0.04 : 0.01);
+            if (dw.length() > dwCap) dw.setLength(dwCap);
             omega.add(dw);
 
             const tel = aeroTelemetry();
             tel._accF.add(force);
+            tel._accRain = (tel._accRain || 0) + rainF.length();
             tel._accN += 1;
             tel.vector.copy(wind);
             tel.speedMps = wind.length();
             tel.projectedAreaM2 = area;
+            tel.rainMmH = weatherConfig().rainMmH || 0;
+            tel.liftGain = gain;
+        }
+
+        /** HUD/FX while pose-locked (no XPBD): publish wind/rain estimates without moving cargo. */
+        function publishSeatedWeatherTelemetry() {
+            const dims = { L: state.L || 6, W: state.W || 2.4, H: state.H || 2.6 };
+            const y = (phy.cargoPos && phy.cargoPos.y) || 2;
+            const wind = windVectorAt(y);
+            const q = phy.cargoQuat || new THREE.Quaternion();
+            const { force, area } = aeroBoxForce(dims, q, wind.clone());
+            const rainF = cargoRainForceN(dims, q, wind);
+            force.add(rainF);
+            const tel = aeroTelemetry();
+            tel.force.copy(force);
+            tel.forceN = force.length();
+            tel.rainForceN = rainF.length();
+            tel.vector.copy(wind);
+            tel.speedMps = wind.length();
+            tel.projectedAreaM2 = area;
+            tel.rainMmH = weatherConfig().rainMmH || 0;
+            tel.driftDeg = 0;
+            tel.liftGain = 1;
+        }
+        if (typeof window !== 'undefined') {
+            window.publishSeatedWeatherTelemetry = publishSeatedWeatherTelemetry;
         }
 
         /** Wind + motion drag on a spreader / lifting beam modelled as a cylinder. */
@@ -246,9 +383,11 @@
             if (vp < 1e-4) return;
             const diameter = 2 * (b.radius || 0.12);
             const area = Math.max(0.2, b.length || 1.0) * diameter;
-            const F = 0.5 * AIR_DENSITY * CD_CYLINDER * area * vp * vp;
+            const gain = weatherLiftGain();
+            const F = 0.5 * AIR_DENSITY * CD_CYLINDER * area * vp * vp * gain;
             const dv = vPerp.multiplyScalar((F / vp) * b.invMass * dt);
-            if (dv.length() > 0.5 * vp + 0.02) dv.setLength(0.5 * vp + 0.02);
+            const cap = (gain > 1.01 ? 1.2 : 0.5) * vp + (gain > 1.01 ? 0.08 : 0.02);
+            if (dv.length() > cap) dv.setLength(cap);
             b.v.add(dv);
         }
 
@@ -257,11 +396,15 @@
             const tel = aeroTelemetry();
             if (tel._accN > 0) {
                 tel.force.copy(tel._accF).multiplyScalar(1 / tel._accN);
+                tel.rainForceN = (tel._accRain || 0) / tel._accN;
             } else {
                 tel.force.set(0, 0, 0);
+                tel.rainForceN = 0;
             }
             tel.forceN = tel.force.length();
+            tel.rainMmH = weatherConfig().rainMmH || 0;
             tel._accF.set(0, 0, 0);
+            tel._accRain = 0;
             tel._accN = 0;
             // Measured drift: inclination of hook→CoG line from vertical (what a
             // banksman actually sees), not a static estimate.
@@ -543,7 +686,10 @@
                 const v = h.vel.y;
                 const ropeTaut = x < 0 || (x < 0.002 && v < 0);
                 const k = ropeTaut ? h.k : 0;
-                const zeta = cfg.dampingRatio != null ? cfg.dampingRatio : 0.06;
+                // STS headblock rides the hook — under-damped rope bounce reads as
+                // cargo “nẩy tưng tưng” on nhớm / nâng hạ. Critically damp the mode.
+                let zeta = cfg.dampingRatio != null ? cfg.dampingRatio : 0.06;
+                if (state.beamType === 'container_spreader') zeta = Math.max(zeta, 0.42);
                 // Slack rope: hook block in free air, only a little aerodynamic drag
                 const c = ropeTaut ? 2 * zeta * Math.sqrt(k * Mmodal) : 0.05 * m;
                 const vNew = (mI * v - dt * (m * g + k * x)) / (mI + dt * c + dt * dt * k);

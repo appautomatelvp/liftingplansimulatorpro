@@ -1,6 +1,8 @@
 /**
  * PhysicalCableSolver.js — Arc-Length Preserving Catenary & Elastic Cable Morphology Engine
  *
+ * @deprecated Not on live boot path — live cables use src/sim/physics XPBD (ADR-003).
+ *
  * Implements Continuum Mechanics & Differential Geometry for 1D Flexible Continua:
  *   1. Strict Arc-Length Invariance Law: sum ||p_i - p_{i-1}|| == L_0 + deltaL_elastic(T)
  *      within +/- 1 mm (1e-3 m) across all slack, drooping, and taut states.

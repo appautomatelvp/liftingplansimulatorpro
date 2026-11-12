@@ -201,6 +201,8 @@
     <div id="labels-container">
         <div id="lbl-hook" class="label-3d text-amber-300 border-amber-500/50">HOOK: 8.0m</div>
         <div id="lbl-cog" class="label-3d text-yellow-300 border-yellow-400">🎯 CoG (Kéo 3D)</div>
+        <div id="lbl-cog-a" class="label-3d text-yellow-300 border-yellow-400" style="opacity:0">🎯 CoG A</div>
+        <div id="lbl-cog-b" class="label-3d text-amber-200 border-amber-400" style="opacity:0">🎯 CoG B</div>
         <div id="lbl-ground-angle" class="label-3d font-mono font-black" title="Góc xoay kiện trên nền đất">0.0°</div>
         <div id="lbl-t0" class="label-3d text-emerald-400">LP1: 0.0T</div>
         <div id="lbl-t1" class="label-3d text-emerald-400">LP2: 0.0T</div>
@@ -363,7 +365,7 @@
                 <div class="flex items-center justify-between gap-2 pt-1 mt-1 border-t border-slate-800/80 text-[9.5px]">
                     <span class="text-slate-400 whitespace-nowrap">Hư hại tải động: <span id="hud-damage" class="hud-val font-mono font-bold text-rose-300">0%</span></span>
                     <span class="text-slate-400 whitespace-nowrap" title="Hệ số tải động cáp cẩu (lực căng cáp cẩu / tải tĩnh) · đỉnh">DAF cáp cẩu: <span id="hud-daf" class="hud-val font-mono font-bold text-amber-200">—</span></span>
-                    <span class="text-slate-400 whitespace-nowrap" title="Lực khí động thực tế lên kiện hàng (gió trung bình + rối) và góc dạt đo được">Gió: <span id="hud-wind" class="hud-val font-mono font-bold text-sky-300">—</span></span>
+                    <span class="text-slate-400 whitespace-nowrap" title="Lực khí động thực tế lên kiện hàng (gió + mưa biến thiên) và góc dạt đo được">Thời tiết: <span id="hud-wind" class="hud-val font-mono font-bold text-sky-300">—</span></span>
                 </div>
             </div>
         </div>
@@ -443,10 +445,10 @@
                     <button id="btn-hoist-down" type="button" class="pendant-btn !py-0.5 !px-1.5 text-[10px]" title="Bấm/giữ để hạ móc cẩu">⤓ Hạ</button>
                     
                     <div class="flex items-center bg-slate-950 border border-slate-700 rounded px-1 py-0.2">
-                        <input type="number" id="num-hook-y" class="w-10 bg-transparent text-right font-mono font-bold text-amber-300 text-[11px] focus:outline-none" min="0.5" max="32.0" step="0.1" value="10.1">
+                        <input type="number" id="num-hook-y" class="w-10 bg-transparent text-right font-mono font-bold text-amber-300 text-[11px] focus:outline-none" min="0.5" max="56.0" step="0.1" value="10.1">
                         <span class="text-slate-400 text-[9px] ml-0.5">m</span>
                         <span id="val-hook-y" class="hidden">10.1m</span>
-                        <input type="range" id="inp-hook-y" min="0.5" max="32.0" step="0.05" value="10.1" class="hidden">
+                        <input type="range" id="inp-hook-y" min="0.5" max="56.0" step="0.05" value="10.1" class="hidden">
                     </div>
 
                     <button id="btn-hoist-up" type="button" class="pendant-btn yellow !py-0.5 !px-1.5 text-[10px] font-bold" title="Bấm/giữ để kéo móc cẩu">⤒ Kéo</button>
@@ -456,6 +458,12 @@
                     <button type="button" class="btn-hoist-preset px-1 py-0.2 rounded text-[8.5px] font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/50" data-height="10.1" title="Độ cao chuẩn (10.1m)">10.1m</button>
                     <button type="button" class="btn-hoist-preset px-1 py-0.2 rounded text-[8.5px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-300" data-height="0.2" title="Hạ thử sát đất 200mm">0.2m</button>
 
+                    <div class="h-3 w-px bg-slate-700 mx-0.5"></div>
+                    <span class="text-[8.5px] font-extrabold uppercase text-amber-400/90 tracking-wider whitespace-nowrap" title="Tốc độ hoist (nâng/hạ kiện) — hook & spreader dùng chung">Tốc độ:</span>
+                    <span class="text-[8px] text-slate-500 font-bold">Chậm</span>
+                    <input type="range" id="rng-hoist-speed" min="0.25" max="2" step="0.05" value="1" class="w-16 accent-amber-400 cursor-pointer" title="Tốc độ nâng/hạ kiện — hook & spreader cùng một tốc độ (1× ≈ 0.22 m/s)">
+                    <span class="text-[8px] text-slate-500 font-bold">Nhanh</span>
+                    <span id="val-hoist-speed" class="text-[10px] font-mono font-bold text-amber-300 min-w-[2.2rem] text-center">1.0×</span>
                     <div class="h-3 w-px bg-slate-700 mx-0.5"></div>
 
                     <span class="text-[8.5px] font-extrabold uppercase text-sky-400 tracking-wider">Cần:</span>
@@ -674,19 +682,19 @@
                         <div class="bg-slate-950/60 p-2 rounded border border-slate-800">
                             <div class="flex justify-between items-center text-amber-400 font-bold mb-1">
                                 <span>Khối lượng:</span>
-                                <span class="font-mono"><span id="v-Weight">22.0</span> Tấn</span>
+                                <span class="font-mono"><span id="v-Weight">24</span> Tấn</span>
                             </div>
                             <div class="flex items-center gap-1">
-                                <button type="button" class="btn-step-cargo px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700" data-target="weight" data-delta="-1.0">-1T</button>
-                                <input type="number" id="num-Weight" class="w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-right font-mono font-bold text-amber-300 text-xs focus:outline-none" min="1.0" max="300.0" step="0.5" value="22.0">
-                                <button type="button" class="btn-step-cargo px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700" data-target="weight" data-delta="1.0">+1T</button>
+                                <button type="button" class="btn-step-cargo px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700" data-target="weight" data-delta="-2">-2T</button>
+                                <input type="number" id="num-Weight" class="w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-right font-mono font-bold text-amber-300 text-xs focus:outline-none" min="2" max="300" step="2" value="24">
+                                <button type="button" class="btn-step-cargo px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700" data-target="weight" data-delta="2">+2T</button>
                             </div>
                             <div class="flex items-center gap-1 mt-1">
-                                <button type="button" class="btn-preset-cargo px-1 py-0.5 rounded text-[9px] font-medium bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800" data-target="weight" data-val="16.0">16T</button>
-                                <button type="button" class="btn-preset-cargo px-1 py-0.5 rounded text-[9px] font-bold bg-amber-950 hover:bg-amber-900 text-amber-300 border border-amber-600/70" data-target="weight" data-val="22.0">⭐ 22T</button>
-                                <button type="button" class="btn-preset-cargo px-1 py-0.5 rounded text-[9px] font-medium bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800" data-target="weight" data-val="28.3">28.3T</button>
+                                <button type="button" class="btn-preset-cargo px-1 py-0.5 rounded text-[9px] font-medium bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800" data-target="weight" data-val="20">20T</button>
+                                <button type="button" class="btn-preset-cargo px-1 py-0.5 rounded text-[9px] font-bold bg-amber-950 hover:bg-amber-900 text-amber-300 border border-amber-600/70" data-target="weight" data-val="24">⭐ 24T</button>
+                                <button type="button" class="btn-preset-cargo px-1 py-0.5 rounded text-[9px] font-medium bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800" data-target="weight" data-val="28">28T</button>
                             </div>
-                            <input type="range" id="inp-Weight" min="1.0" max="120.0" step="0.5" value="22.0" class="w-full mt-1 accent-amber-400 h-1 opacity-50 hover:opacity-100 transition">
+                            <input type="range" id="inp-Weight" min="2" max="120" step="2" value="24" class="w-full mt-1 accent-amber-400 h-1 opacity-50 hover:opacity-100 transition">
                         </div>
                     </div>
                 </div>
@@ -705,42 +713,119 @@
                             ⛺ Phủ Vải Bạt Nóc
                         </button>
                     </div>
-                    <div id="oog-dims-wrap" class="grid grid-cols-3 gap-2 text-[11px]">
-                        <div class="bg-slate-950/60 p-1.5 rounded border border-slate-800">
-                            <div class="flex justify-between items-center text-slate-300 mb-1">
-                                <span>Cao hàng:</span>
-                                <span class="font-mono font-bold text-amber-300"><span id="v-oogH">2.85</span>m</span>
+                    <div id="oog-dims-wrap">
+                        <!-- Open Top: absolute bay / tire dimensions -->
+                        <div id="oog-dims-absolute" class="grid grid-cols-3 gap-2 text-[11px]">
+                            <div class="bg-slate-950/60 p-1.5 rounded border border-slate-800">
+                                <div class="flex justify-between items-center text-slate-300 mb-1">
+                                    <span>Cao hàng (Ø):</span>
+                                    <span class="font-mono font-bold text-amber-300"><span id="v-oogH">2.85</span>m</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button type="button" class="btn-step-oog px-1 py-0.5 rounded text-[9px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-300" data-target="oogH" data-delta="-0.1">-0.1</button>
+                                    <input type="number" id="num-oogH" class="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-right font-mono font-bold text-amber-300 text-[10px] focus:outline-none" min="0.5" max="6.0" step="0.05" value="2.85">
+                                    <button type="button" class="btn-step-oog px-1 py-0.5 rounded text-[9px] font-bold bg-slate-800 hover:bg-slate-700 text-amber-300" data-target="oogH" data-delta="0.1">+0.1</button>
+                                </div>
+                                <input type="range" id="inp-oogH" min="0.8" max="4.8" step="0.05" value="2.85" class="w-full mt-1 accent-amber-400 h-1 opacity-50 hover:opacity-100 transition">
                             </div>
-                            <div class="flex items-center gap-1">
-                                <button type="button" class="btn-step-oog px-1 py-0.5 rounded text-[9px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-300" data-target="oogH" data-delta="-0.1">-0.1</button>
-                                <input type="number" id="num-oogH" class="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-right font-mono font-bold text-amber-300 text-[10px] focus:outline-none" min="0.5" max="6.0" step="0.05" value="2.85">
-                                <button type="button" class="btn-step-oog px-1 py-0.5 rounded text-[9px] font-bold bg-slate-800 hover:bg-slate-700 text-amber-300" data-target="oogH" data-delta="0.1">+0.1</button>
+                            <div class="bg-slate-950/60 p-1.5 rounded border border-slate-800">
+                                <div class="flex justify-between items-center text-slate-300 mb-1">
+                                    <span>Rộng hàng:</span>
+                                    <span class="font-mono font-bold text-sky-300"><span id="v-oogW">2.20</span>m</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button type="button" class="btn-step-oog px-1 py-0.5 rounded text-[9px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-300" data-target="oogW" data-delta="-0.1">-0.1</button>
+                                    <input type="number" id="num-oogW" class="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-right font-mono font-bold text-sky-300 text-[10px] focus:outline-none" min="0.5" max="6.0" step="0.05" value="2.20">
+                                    <button type="button" class="btn-step-oog px-1 py-0.5 rounded text-[9px] font-bold bg-slate-800 hover:bg-slate-700 text-sky-300" data-target="oogW" data-delta="0.1">+0.1</button>
+                                </div>
+                                <input type="range" id="inp-oogW" min="1.0" max="5.2" step="0.05" value="2.20" class="w-full mt-1 accent-sky-400 h-1 opacity-50 hover:opacity-100 transition">
                             </div>
-                            <input type="range" id="inp-oogH" min="0.8" max="4.8" step="0.05" value="2.85" class="w-full mt-1 accent-amber-400 h-1 opacity-50 hover:opacity-100 transition">
+                            <div class="bg-slate-950/60 p-1.5 rounded border border-slate-800">
+                                <div class="flex justify-between items-center text-slate-300 mb-1">
+                                    <span>Dài hàng:</span>
+                                    <span class="font-mono font-bold text-emerald-300"><span id="v-oogL">10.50</span>m</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button type="button" class="btn-step-oog px-1 py-0.5 rounded text-[9px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-300" data-target="oogL" data-delta="-0.5">-0.5</button>
+                                    <input type="number" id="num-oogL" class="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-right font-mono font-bold text-emerald-300 text-[10px] focus:outline-none" min="1.0" max="20.0" step="0.1" value="10.50">
+                                    <button type="button" class="btn-step-oog px-1 py-0.5 rounded text-[9px] font-bold bg-slate-800 hover:bg-slate-700 text-emerald-300" data-target="oogL" data-delta="0.5">+0.5</button>
+                                </div>
+                                <input type="range" id="inp-oogL" min="1.5" max="14.5" step="0.1" value="10.50" class="w-full mt-1 accent-emerald-400 h-1 opacity-50 hover:opacity-100 transition">
+                            </div>
                         </div>
-                        <div class="bg-slate-950/60 p-1.5 rounded border border-slate-800">
-                            <div class="flex justify-between items-center text-slate-300 mb-1">
-                                <span>Rộng hàng:</span>
-                                <span class="font-mono font-bold text-sky-300"><span id="v-oogW">2.20</span>m</span>
+
+                        <!-- Flat Rack / Platform: deltas vs ISO frame (signed: + over / − inset) -->
+                        <div id="oog-dims-delta" class="hidden space-y-2 text-[11px]">
+                            <p id="lbl-oog-delta-hint" class="text-[10px] text-slate-400 leading-relaxed">
+                                Độ chênh so với khung ISO: dương = thò ra (OOG), âm = thụt vào trong khung. Có thể chỉ OH dương còn OW/OL = 0 hoặc âm.
+                            </p>
+                            <div class="bg-slate-950/60 p-1.5 rounded border border-amber-500/30">
+                                <div class="flex justify-between items-center text-slate-300 mb-1">
+                                    <span>OH — So với nóc cont:</span>
+                                    <span class="font-mono font-bold text-amber-300"><span id="v-oogOh">+0.30</span>m</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button type="button" class="btn-step-oog-delta px-1 py-0.5 rounded text-[9px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-300" data-key="oogOh" data-delta="-0.05">-0.05</button>
+                                    <input type="number" id="num-oogOh" class="w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-right font-mono font-bold text-amber-300 text-[10px] focus:outline-none" min="-2" max="6" step="0.05" value="0.30">
+                                    <button type="button" class="btn-step-oog-delta px-1 py-0.5 rounded text-[9px] font-bold bg-slate-800 hover:bg-slate-700 text-amber-300" data-key="oogOh" data-delta="0.05">+0.05</button>
+                                </div>
+                                <input type="range" id="inp-oogOh" min="-2" max="4" step="0.05" value="0.30" class="w-full mt-1 accent-amber-400 h-1 opacity-50 hover:opacity-100 transition">
                             </div>
-                            <div class="flex items-center gap-1">
-                                <button type="button" class="btn-step-oog px-1 py-0.5 rounded text-[9px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-300" data-target="oogW" data-delta="-0.1">-0.1</button>
-                                <input type="number" id="num-oogW" class="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-right font-mono font-bold text-sky-300 text-[10px] focus:outline-none" min="0.5" max="6.0" step="0.05" value="2.20">
-                                <button type="button" class="btn-step-oog px-1 py-0.5 rounded text-[9px] font-bold bg-slate-800 hover:bg-slate-700 text-sky-300" data-target="oogW" data-delta="0.1">+0.1</button>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="bg-slate-950/60 p-1.5 rounded border border-sky-500/30">
+                                    <div class="flex justify-between items-center text-slate-300 mb-1">
+                                        <span id="lbl-oog-owL">OW trái (−Z):</span>
+                                        <span class="font-mono font-bold text-sky-300"><span id="v-oogOwL">+0.33</span>m</span>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <button type="button" class="btn-step-oog-delta px-1 py-0.5 rounded text-[9px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-300" data-key="oogOwL" data-delta="-0.05">-0.05</button>
+                                        <input type="number" id="num-oogOwL" class="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-right font-mono font-bold text-sky-300 text-[10px] focus:outline-none" min="-1.2" max="3" step="0.05" value="0.33">
+                                        <button type="button" class="btn-step-oog-delta px-1 py-0.5 rounded text-[9px] font-bold bg-slate-800 hover:bg-slate-700 text-sky-300" data-key="oogOwL" data-delta="0.05">+0.05</button>
+                                    </div>
+                                    <input type="range" id="inp-oogOwL" min="-1.2" max="2.5" step="0.05" value="0.33" class="w-full mt-1 accent-sky-400 h-1 opacity-50 hover:opacity-100 transition">
+                                </div>
+                                <div class="bg-slate-950/60 p-1.5 rounded border border-sky-500/30">
+                                    <div class="flex justify-between items-center text-slate-300 mb-1">
+                                        <span id="lbl-oog-owR">OW phải (+Z):</span>
+                                        <span class="font-mono font-bold text-sky-300"><span id="v-oogOwR">+0.33</span>m</span>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <button type="button" class="btn-step-oog-delta px-1 py-0.5 rounded text-[9px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-300" data-key="oogOwR" data-delta="-0.05">-0.05</button>
+                                        <input type="number" id="num-oogOwR" class="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-right font-mono font-bold text-sky-300 text-[10px] focus:outline-none" min="-1.2" max="3" step="0.05" value="0.33">
+                                        <button type="button" class="btn-step-oog-delta px-1 py-0.5 rounded text-[9px] font-bold bg-slate-800 hover:bg-slate-700 text-sky-300" data-key="oogOwR" data-delta="0.05">+0.05</button>
+                                    </div>
+                                    <input type="range" id="inp-oogOwR" min="-1.2" max="2.5" step="0.05" value="0.33" class="w-full mt-1 accent-sky-400 h-1 opacity-50 hover:opacity-100 transition">
+                                </div>
                             </div>
-                            <input type="range" id="inp-oogW" min="1.0" max="5.2" step="0.05" value="2.20" class="w-full mt-1 accent-sky-400 h-1 opacity-50 hover:opacity-100 transition">
-                        </div>
-                        <div class="bg-slate-950/60 p-1.5 rounded border border-slate-800">
-                            <div class="flex justify-between items-center text-slate-300 mb-1">
-                                <span>Dài hàng:</span>
-                                <span class="font-mono font-bold text-emerald-300"><span id="v-oogL">10.50</span>m</span>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="bg-slate-950/60 p-1.5 rounded border border-emerald-500/30">
+                                    <div class="flex justify-between items-center text-slate-300 mb-1">
+                                        <span id="lbl-oog-olF">ΔL trước (cách cánh ≥40cm):</span>
+                                        <span class="font-mono font-bold text-emerald-300"><span id="v-oogOlF">-0.40</span>m</span>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <button type="button" class="btn-step-oog-delta px-1 py-0.5 rounded text-[9px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-300" data-key="oogOlF" data-delta="-0.05">-0.05</button>
+                                        <input type="number" id="num-oogOlF" class="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-right font-mono font-bold text-emerald-300 text-[10px] focus:outline-none" min="-5" max="-0.4" step="0.05" value="-0.40">
+                                        <button type="button" class="btn-step-oog-delta px-1 py-0.5 rounded text-[9px] font-bold bg-slate-800 hover:bg-slate-700 text-emerald-300" data-key="oogOlF" data-delta="0.05">+0.05</button>
+                                    </div>
+                                    <input type="range" id="inp-oogOlF" min="-5" max="-0.4" step="0.05" value="-0.40" class="w-full mt-1 accent-emerald-400 h-1 opacity-50 hover:opacity-100 transition">
+                                </div>
+                                <div class="bg-slate-950/60 p-1.5 rounded border border-emerald-500/30">
+                                    <div class="flex justify-between items-center text-slate-300 mb-1">
+                                        <span id="lbl-oog-olR">ΔL sau (cách cánh ≥40cm):</span>
+                                        <span class="font-mono font-bold text-emerald-300"><span id="v-oogOlR">-0.40</span>m</span>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <button type="button" class="btn-step-oog-delta px-1 py-0.5 rounded text-[9px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-300" data-key="oogOlR" data-delta="-0.05">-0.05</button>
+                                        <input type="number" id="num-oogOlR" class="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-right font-mono font-bold text-emerald-300 text-[10px] focus:outline-none" min="-5" max="-0.4" step="0.05" value="-0.40">
+                                        <button type="button" class="btn-step-oog-delta px-1 py-0.5 rounded text-[9px] font-bold bg-slate-800 hover:bg-slate-700 text-emerald-300" data-key="oogOlR" data-delta="0.05">+0.05</button>
+                                    </div>
+                                    <input type="range" id="inp-oogOlR" min="-5" max="-0.4" step="0.05" value="-0.40" class="w-full mt-1 accent-emerald-400 h-1 opacity-50 hover:opacity-100 transition">
+                                </div>
                             </div>
-                            <div class="flex items-center gap-1">
-                                <button type="button" class="btn-step-oog px-1 py-0.5 rounded text-[9px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-300" data-target="oogL" data-delta="-0.5">-0.5</button>
-                                <input type="number" id="num-oogL" class="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-right font-mono font-bold text-emerald-300 text-[10px] focus:outline-none" min="1.0" max="20.0" step="0.1" value="10.50">
-                                <button type="button" class="btn-step-oog px-1 py-0.5 rounded text-[9px] font-bold bg-slate-800 hover:bg-slate-700 text-emerald-300" data-target="oogL" data-delta="0.5">+0.5</button>
+                            <div id="lbl-oog-derived" class="text-[10px] font-mono text-slate-400 bg-slate-950/40 px-2 py-1 rounded border border-slate-800">
+                                Kiện quy đổi: — · CoG bao: —
                             </div>
-                            <input type="range" id="inp-oogL" min="1.5" max="14.5" step="0.1" value="10.50" class="w-full mt-1 accent-emerald-400 h-1 opacity-50 hover:opacity-100 transition">
                         </div>
                     </div>
                 </div>
@@ -826,7 +911,7 @@
                 </div>
 
                 <!-- 1.3 3D Center of Gravity (CoG) Setup & Top-Down Plan Map -->
-                <div class="bg-slate-900/80 p-2.5 rounded-lg border border-yellow-500/40">
+                <div class="bg-slate-900/80 p-2.5 rounded-lg border border-yellow-500/40 gear-cog-block !border-yellow-500/40">
                     <div class="section-title !border-yellow-500/30 !text-yellow-400">
                         <span>1.3 Trọng Tâm Kiện Hàng — Center of Gravity (CoG)</span>
                         <button id="btn-reset-cog" class="text-[9px] bg-slate-800 hover:bg-slate-700 text-slate-200 px-1.5 py-0.5 rounded border border-slate-600">Đưa Về Tâm 0</button>
@@ -838,24 +923,24 @@
                             <span class="text-[9px] text-slate-400 mt-0.5">Mặt bằng LP &amp; CoG</span>
                         </div>
                         <div class="flex-1 space-y-1 text-[11px]">
-                            <div>
-                                <div class="flex justify-between text-slate-300">
+                            <div class="param-slider-row accent-yellow">
+                                <div class="param-slider-head">
                                     <span>Lệch dọc X (eX):</span>
-                                    <span class="font-mono font-bold text-yellow-400"><span id="v-cogX">0.00</span>m</span>
+                                    <span class="param-slider-val text-yellow-400"><span id="v-cogX">0.00</span>m</span>
                                 </div>
                                 <input type="range" id="inp-cogX" min="-2.5" max="2.5" step="0.05" value="0.0">
                             </div>
-                            <div>
-                                <div class="flex justify-between text-slate-300">
+                            <div class="param-slider-row accent-yellow">
+                                <div class="param-slider-head">
                                     <span>Lệch ngang Z (eZ):</span>
-                                    <span class="font-mono font-bold text-yellow-400"><span id="v-cogZ">0.00</span>m</span>
+                                    <span class="param-slider-val text-yellow-400"><span id="v-cogZ">0.00</span>m</span>
                                 </div>
                                 <input type="range" id="inp-cogZ" min="-1.5" max="1.5" step="0.05" value="0.0">
                             </div>
-                            <div>
-                                <div class="flex justify-between text-slate-300">
+                            <div class="param-slider-row accent-yellow">
+                                <div class="param-slider-head">
                                     <span>Độ cao CoG (eY):</span>
-                                    <span class="font-mono font-bold text-yellow-400"><span id="v-cogY">0.00</span>m</span>
+                                    <span class="param-slider-val text-yellow-400"><span id="v-cogY">0.00</span>m</span>
                                 </div>
                                 <input type="range" id="inp-cogY" min="-1.0" max="1.5" step="0.05" value="0.0">
                             </div>
@@ -1060,11 +1145,11 @@
                             </div>
                             <div class="card-btn" data-beam="cascaded">
                                 <div class="text-[11px] font-bold text-orange-400">🟠 Cascaded Spreader System</div>
-                                <div class="text-[9px] text-slate-400">Hệ dầm ngáng nhiều tầng</div>
+                                <div class="text-[9px] text-slate-400">2-4-4 · dầm lớn→nhỏ = 2 cáp/đầu</div>
                             </div>
                             <div class="card-btn" data-beam="modular_truss">
                                 <div class="text-[11px] font-bold text-yellow-300">📐 Spreader Beam (Truss)</div>
-                                <div class="text-[9px] text-slate-400">Dầm ngáng giàn chịu nén</div>
+                                <div class="text-[9px] text-slate-400">2-4-4 · giàn nén, 2 hangers/dầm phụ</div>
                             </div>
                             <div class="card-btn" data-beam="none">
                                 <div class="text-[11px] font-bold text-slate-300">🔗 Bridle Sling (4-Leg)</div>
@@ -1072,7 +1157,7 @@
                             </div>
                             <div class="card-btn" data-beam="basket">
                                 <div class="text-[11px] font-bold text-emerald-300">➰ Basket Spreader Cradle</div>
-                                <div class="text-[9px] text-slate-400">Dầm ngáng cáp vòng ôm đáy</div>
+                                <div class="text-[9px] text-slate-400">2 cáp/thanh (4 upper) · ôm đáy</div>
                             </div>
                         </div>
                     </div>
@@ -1137,8 +1222,14 @@
                             </div>
                             <label class="flex items-center gap-2 text-[10px] text-slate-400 cursor-pointer select-none">
                                 <input type="checkbox" id="chk-sts-twin" class="rounded border-slate-600 bg-slate-900 text-amber-400 focus:ring-amber-500/40">
-                                Twin-lift 2×20 ft — hai cont đặt cạnh nhau (CAD twin)
+                                Twin-lift 2×20 ft — hai cont cạnh nhau (8 twistlock, CAD twin)
                             </label>
+                            <div class="text-[8.5px] text-slate-500 leading-snug pl-6">Twin-lift chỉ <b class="text-amber-200/90">gắp twistlock</b> (gồm chốt giữa). Không treo cáp 4 góc ngoài.</div>
+                            <label class="flex items-center gap-2 text-[10px] text-slate-300 cursor-pointer select-none mt-0.5">
+                                <input type="checkbox" id="chk-sts-size-linked" class="rounded border-slate-600 bg-slate-900 text-sky-400 focus:ring-sky-500/40" checked>
+                                Đồng bộ ngáng ↔ container (mặc định cùng cỡ ISO)
+                            </label>
+                            <div class="text-[8.5px] text-slate-500 leading-snug pl-6">Bật: đổi một bên thì bên kia theo. Tắt: chỉnh ngáng hoặc container <b class="text-sky-300/90">độc lập</b>, cái còn lại giữ nguyên.</div>
                         </div>
 
                         <!-- Generic beam length controls (hidden for STS) -->
@@ -1212,7 +1303,7 @@
                                     <span class="font-mono font-bold text-sky-400 text-[12px]"><span id="v-upperL">8.00</span><span class="unit-len">m</span></span>
                                 </div>
                                 <div class="flex items-center justify-between text-[10px] font-mono bg-slate-900/90 px-2 py-0.5 rounded border border-slate-800 text-slate-400">
-                                    <span>Góc kéo β: <b id="v-upper-beta-txt" class="text-sky-300">42.5°</b></span>
+                                    <span>Góc kéo β: <b id="v-upper-beta-txt" class="text-sky-300">50°</b></span>
                                     <span>Góc đứng α: <b id="v-upper-alpha-txt" class="text-slate-300">47.5°</b></span>
                                     <span>Hệ số TF (LAF): <b id="v-upper-laf-txt" class="text-emerald-400">1.476</b></span>
                                 </div>
@@ -1252,26 +1343,26 @@
                                 <button type="button" class="btn-preset-tier1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" data-val="14.0">14m</button>
                             </div>
 
-                            <!-- THANH KÉO NGANG GÓC BẮT CÁP TẦNG 1 (BRIDLE ANGLE SLIDER β) -->
+                            <!-- THANH KÉO NGANG GÓC BẮT CÁP TẦNG 1 (BRIDLE ANGLE SLIDER β) — band 40–55° -->
                             <div class="space-y-1 bg-slate-900/80 p-2 rounded border border-slate-800/80 mt-1">
                                 <div class="flex justify-between items-center text-slate-300 text-[10px]">
                                     <span class="font-bold text-sky-300 flex items-center gap-1">
                                         <span>📐</span> <span>Góc kéo Tầng 1 (β ngang):</span>
                                     </span>
-                                    <span class="font-mono font-bold text-sky-400 text-xs"><span id="lbl-upper-angle-val">42.5</span>°</span>
+                                    <span class="font-mono font-bold text-sky-400 text-xs"><span id="lbl-upper-angle-val">50</span>°</span>
                                 </div>
-                                <input type="range" id="inp-upper-angle" class="w-full h-2.5 bg-slate-800 rounded-lg cursor-pointer accent-sky-400 transition" min="30.0" max="75.0" step="0.5" value="42.5">
+                                <input type="range" id="inp-upper-angle" class="w-full h-2.5 bg-slate-800 rounded-lg cursor-pointer accent-sky-400 transition" min="40" max="55" step="1" value="50">
                                 <div class="flex justify-between text-[8px] font-mono text-slate-500">
-                                    <span class="text-rose-400">30°</span>
-                                    <span class="text-emerald-400 font-bold">40–45° (mặc định)</span>
-                                    <span class="text-amber-400">60° ASME</span>
-                                    <span>75°</span>
+                                    <span class="text-rose-400">40° (tải cao)</span>
+                                    <span class="text-emerald-400 font-bold">50° mặc định</span>
+                                    <span class="text-amber-400">55° (êm)</span>
                                 </div>
                                 <div class="flex items-center gap-1 flex-wrap pt-0.5">
                                     <span class="text-[9px] text-slate-400 shrink-0 font-medium">Nấc góc:</span>
-                                    <button type="button" class="btn-preset-upper-angle px-2 py-0.5 rounded text-[10px] font-bold bg-sky-950 hover:bg-sky-900 text-sky-300 border border-sky-500/80 shadow-sm transition" data-angle="42.5">⭐ 42.5°</button>
+                                    <button type="button" class="btn-preset-upper-angle px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-rose-300 border border-slate-700 transition" data-angle="40">40°</button>
                                     <button type="button" class="btn-preset-upper-angle px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 transition" data-angle="45">45°</button>
-                                    <button type="button" class="btn-preset-upper-angle px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 transition" data-angle="60">60°</button>
+                                    <button type="button" class="btn-preset-upper-angle px-2 py-0.5 rounded text-[10px] font-bold bg-sky-950 hover:bg-sky-900 text-sky-300 border border-sky-500/80 shadow-sm transition" data-angle="50">⭐ 50°</button>
+                                    <button type="button" class="btn-preset-upper-angle px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-slate-700 transition" data-angle="55">55°</button>
                                 </div>
                             </div>
 
@@ -1390,13 +1481,13 @@
 
                         <!-- Gợi ý Phương án Nâng An toàn theo ASME B30.9 / OSHA -->
                         <div class="flex items-center gap-1.5 pt-0.5">
-                            <button id="btn-rig-min-safe" type="button" class="flex-1 py-1.5 px-2 rounded-lg bg-amber-950/70 hover:bg-amber-900 border border-amber-600/60 text-amber-200 text-[10.5px] font-bold flex items-center justify-center gap-1 transition shadow-sm" title="Tự động tính góc kéo tối thiểu an toàn β ≈ 45° để tiết kiệm chiều cao nâng / headroom">
+                            <button id="btn-rig-min-safe" type="button" class="flex-1 py-1.5 px-2 rounded-lg bg-amber-950/70 hover:bg-amber-900 border border-amber-600/60 text-amber-200 text-[10.5px] font-bold flex items-center justify-center gap-1 transition shadow-sm" title="Góc kéo thấp nhất trong dải làm việc β = 40° (tải cáp cao hơn) — tiết kiệm headroom; gear được chọn theo MBL/WLL/SWL tại β=40°">
                                 <span>🛡️</span>
-                                <span>Nâng Tối Thiểu (β ≈ 45°)</span>
+                                <span>Nâng Tối Thiểu (β = 40°)</span>
                             </button>
-                            <button id="btn-rig-ideal-safe" type="button" class="flex-1 py-1.5 px-2 rounded-lg bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-500/60 text-emerald-200 text-[10.5px] font-bold flex items-center justify-center gap-1 transition shadow-sm" title="Áp dụng mặc định làm việc: góc kéo ~42.5°, cáp trên 8/10 m, cáp dưới 2/4 m (số chẵn)">
+                            <button id="btn-rig-ideal-safe" type="button" class="flex-1 py-1.5 px-2 rounded-lg bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-500/60 text-emerald-200 text-[10.5px] font-bold flex items-center justify-center gap-1 transition shadow-sm" title="Áp dụng mặc định làm việc: góc kéo β = 50° (dải 40–55°), cáp trên 8/10 m, cáp dưới 2/4 m (số chẵn); gear tự chọn theo WLL/SWL/MBL">
                                 <span>⭐</span>
-                                <span>Mặc định 42.5° / 8·2 m</span>
+                                <span>Mặc định 50° / 8·2 m</span>
                             </button>
                         </div>
 
@@ -1943,8 +2034,8 @@
                         <div class="section-title"><span>6.1 Sàn Thử Kỹ Thuật — Testbed Environment</span></div>
                         <div class="grid grid-cols-1 gap-1.5" id="scene-store">
                             <div class="card-btn active" data-scene="studio">
-                                <div class="text-[11px] font-bold text-sky-300">🏢 Studio Kỹ Thuật (CAD Dark)</div>
-                                <div class="text-[9px] text-slate-400">Nền phẳng tối · Lưới tọa độ 1m/5m &amp; Vòng bán kính</div>
+                                <div class="text-[11px] font-bold text-sky-300">🌤️ Môi Trường Theo Giờ VN (Real-Time)</div>
+                                <div class="text-[9px] text-slate-400">Tự động theo giờ Việt Nam (nắng vàng ban ngày / xưởng đêm) · Lưới 1m/5m</div>
                             </div>
                             <div class="card-btn" data-scene="yard">
                                 <div class="text-[11px] font-bold text-amber-200">🌤️ Sàn Thử Bê Tông Ngoài Trời</div>
@@ -2155,6 +2246,10 @@
                             </div>
                             <span id="wind-status-badge" class="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">🟢 GIÓ NHẸ (CẤP 2)</span>
                         </div>
+                        <div class="text-[9px] text-slate-400 leading-snug px-0.5">
+                            Mưa nghiêng theo hướng gió; mưa ≥ ~18 mm/h sẽ thỉnh thoảng <b class="text-sky-300">chớp chân trời</b>.
+                            Gió nhẹ gần như không lắc kiện nặng — kéo gió ≥ 10–15 m/s + mưa ≥ 40 mm/h rồi <b class="text-amber-300">Nhấc thử / Kéo</b> để thấy kiện đong đưa.
+                        </div>
 
                         <!-- Wind Speed Slider & Gust -->
                         <div>
@@ -2182,16 +2277,35 @@
                                     <option value="270">Gió Mạn Phải (270°)</option>
                                 </select>
                             </div>
-                            <div class="flex flex-col justify-end">
+                            <div class="flex flex-col gap-1 justify-end">
                                 <label class="flex items-center gap-2 p-1 rounded bg-slate-900 border border-slate-800 cursor-pointer text-[10px] text-slate-300">
                                     <input type="checkbox" id="chk-wind-gust" class="accent-amber-400 rounded">
                                     <span>Mô Phỏng Gió Giật (+30%)</span>
                                 </label>
+                                <label class="flex items-center gap-2 p-1 rounded bg-slate-900 border border-slate-800 cursor-pointer text-[10px] text-slate-300">
+                                    <input type="checkbox" id="chk-weather-vary" class="accent-sky-400 rounded" checked>
+                                    <span>Biến thiên thời tiết (tự dao động)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Rain intensity -->
+                        <div>
+                            <div class="flex justify-between items-center text-[10px] mb-1">
+                                <span class="text-slate-400">Mưa hiện trường:</span>
+                                <span class="font-mono font-bold text-sky-300" id="val-rain-mmh">0 mm/h · Khô</span>
+                            </div>
+                            <input type="range" id="rng-rain-mmh" min="0" max="100" step="1" value="0" class="w-full accent-sky-400">
+                            <div class="flex justify-between text-[8px] font-mono text-slate-500 mt-0.5">
+                                <span>0 khô</span>
+                                <span class="text-sky-400">15 vừa</span>
+                                <span class="text-amber-300">40 lớn</span>
+                                <span class="text-rose-400">80+ rất lớn</span>
                             </div>
                         </div>
 
                         <!-- Live Wind Aerodynamic Force & Deflection Angle -->
-                        <div class="grid grid-cols-2 gap-1 bg-slate-900/90 p-1.5 rounded border border-slate-800 text-[10px]">
+                        <div class="grid grid-cols-3 gap-1 bg-slate-900/90 p-1.5 rounded border border-slate-800 text-[10px]">
                             <div>
                                 <span class="text-slate-400 block text-[9px]">Lực Gió Ngang (Fwind):</span>
                                 <span id="val-wind-force" class="font-mono font-bold text-amber-300">0.82 kN (84 kgf)</span>
@@ -2199,6 +2313,10 @@
                             <div>
                                 <span class="text-slate-400 block text-[9px]">Độ Dạt / Lệch Cáp:</span>
                                 <span id="val-wind-drift" class="font-mono font-bold text-sky-300">0.24° (Đạt chuẩn)</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block text-[9px]">Lực mưa (Frain):</span>
+                                <span id="val-rain-force" class="font-mono font-bold text-cyan-300">0.00 kN</span>
                             </div>
                         </div>
                     </div>
@@ -2641,7 +2759,7 @@
                     <span class="text-sm">⚙️</span>
                     <div id="gear-editor-title" class="text-[12px] font-extrabold text-sky-300 uppercase tracking-wide">Thông số thiết bị</div>
                 </div>
-                <div id="gear-editor-sub" class="text-[10px] text-slate-400 mt-0.5">Giữ Shift + kéo khung chuột để chọn thiết bị. Cuộn panel để chỉnh thông số.</div>
+                <div id="gear-editor-sub" class="text-[10px] text-slate-400 mt-0.5">Giữ Ctrl + kéo khung chuột để chọn nhiều thiết bị. Shift + kéo để xoay góc camera. Cuộn panel để chỉnh thông số.</div>
             </div>
             <button id="gear-editor-close" type="button" class="text-slate-400 hover:text-white hover:bg-slate-800 rounded px-1.5 py-0.5 text-base leading-none transition-colors" title="Đóng">✕</button>
         </div>
@@ -2663,7 +2781,7 @@
     </div>
 
     <!-- Floating Engineering Compliance HUD Panel (Docked gracefully on Left Side) -->
-    <div id="compliance-hud-panel" class="hidden fixed top-14 left-4 w-96 max-w-[95vw] bg-slate-950/95 backdrop-blur-xl border border-sky-500/50 rounded-xl p-3.5 shadow-2xl text-slate-100 flex flex-col gap-2.5 pointer-events-auto" data-testid="analysis-panel">
+    <div id="compliance-hud-panel" class="hidden fixed top-14 left-2.5 w-[22rem] max-w-[min(94vw,360px)] bg-slate-950/95 backdrop-blur-xl border border-sky-500/50 rounded-xl p-3 shadow-2xl text-slate-100 flex flex-col gap-2 pointer-events-auto" data-testid="analysis-panel">
         <div class="flex items-center justify-between pb-2 border-b border-slate-800">
             <div class="flex items-center gap-2">
                 <span class="text-base">🛡️</span>
@@ -2781,7 +2899,7 @@
     <!-- ======================================================================= -->
 
     <!-- 1. POPOVER CAMERA — góc nhìn chuyên sâu (chế độ Auto/Giữ/Góc nằm ở dock dưới) -->
-    <div id="dropdown-panel-camera" class="topbar-popover-panel hidden fixed bg-slate-900/98 backdrop-blur-xl border border-sky-500/50 rounded-lg shadow-2xl p-3 text-xs text-slate-200 select-none w-80 box-border pointer-events-auto">
+    <div id="dropdown-panel-camera" class="topbar-popover-panel hidden fixed bg-slate-950 border border-sky-500/50 rounded-xl shadow-2xl p-3 text-xs text-slate-200 select-none w-80 box-border pointer-events-auto">
         <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-700/80">
             <span class="font-extrabold text-[11px] uppercase tracking-wider text-sky-400">Camera · Góc nhìn</span>
             <span id="cam-follow-label" class="text-[9px] font-semibold text-sky-300/90">Auto</span>
@@ -2826,7 +2944,7 @@
     </div>
 
     <!-- 2. POPOVER HIỂN THỊ (Tích hợp luôn CAD, X-Ray, Véc-tơ Lực ở đầu) -->
-    <div id="display-options-popover" class="topbar-popover-panel hidden fixed bg-slate-900/98 backdrop-blur-xl border border-sky-500/50 rounded-lg shadow-2xl p-3 text-slate-200 text-xs select-none w-80 box-border pointer-events-auto">
+    <div id="display-options-popover" class="topbar-popover-panel hidden fixed bg-slate-950 border border-sky-500/50 rounded-xl shadow-2xl p-3 text-slate-200 text-xs select-none w-80 box-border pointer-events-auto">
         <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-700/80">
             <span class="font-extrabold text-[11px] uppercase tracking-wider text-sky-400 flex items-center gap-1.5">
                 <span>👁️</span> <span>Tùy Chọn Hiển Thị 3D</span>
@@ -2918,7 +3036,7 @@
     </div>
 
     <!-- 3. POPOVER ĐỒ HỌA & MÔI TRƯỜNG CAE -->
-    <div id="gfx-menu-popover" class="topbar-popover-panel hidden fixed bg-slate-900/98 backdrop-blur-xl border border-amber-500/50 rounded-lg shadow-2xl p-3 text-slate-200 text-xs select-none w-72 box-border pointer-events-auto">
+    <div id="gfx-menu-popover" class="topbar-popover-panel hidden fixed bg-slate-950 border border-amber-500/50 rounded-xl shadow-2xl p-3 text-slate-200 text-xs select-none w-72 box-border pointer-events-auto">
         <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-700/80">
             <span class="font-extrabold text-[11px] uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
                 <span>✨</span> <span>Đồ Họa &amp; Môi Trường CAE</span>
@@ -2929,7 +3047,7 @@
             <div>
                 <label class="block text-slate-400 text-[10px] uppercase font-bold mb-1">Ánh sáng &amp; Môi trường:</label>
                 <select id="sel-gfx-preset" class="w-full bg-slate-800 text-slate-200 border border-slate-700 rounded px-2 py-1 text-xs font-medium cursor-pointer">
-                    <option value="liebherr_studio" selected>🏢 Studio Kỹ Thuật (Dark)</option>
+                    <option value="liebherr_studio" selected>🌤️ Theo Giờ Việt Nam (Thời Gian Thực)</option>
                     <option value="overcast">☁️ Bãi Thử Nghiệm (Day)</option>
                     <option value="print_plan">📄 Bản Vẽ CAD (Print)</option>
                     <option value="sunset">🌅 Chiều Nắng Hoàng Hôn</option>
@@ -2954,7 +3072,7 @@
     </div>
 
     <!-- 4. POPOVER HỒ SƠ & CHUẨN -->
-    <div id="dropdown-panel-docs" class="topbar-popover-panel hidden fixed bg-slate-900/98 backdrop-blur-xl border border-amber-500/50 rounded-lg shadow-2xl p-2.5 text-xs text-slate-200 select-none w-64 box-border pointer-events-auto space-y-1.5">
+    <div id="dropdown-panel-docs" class="topbar-popover-panel hidden fixed bg-slate-950 border border-amber-500/50 rounded-xl shadow-2xl p-2.5 text-xs text-slate-200 select-none w-64 box-border pointer-events-auto space-y-1.5">
         <div class="text-[10px] font-extrabold uppercase tracking-wider text-amber-400 pb-1 border-b border-slate-800">📋 Hồ Sơ Kỹ Thuật &amp; Thư Viện</div>
         <button id="btn-open-compliance" type="button" class="w-full text-left pendant-btn emerald !py-1.5 !px-2.5 text-[11px] font-bold shadow flex items-center gap-2">
             <span>🛡️</span> <span>Kiểm Định An Toàn (ASME/ISO)</span>
@@ -2975,7 +3093,7 @@
     </div>
 
     <!-- 5. POPOVER HỆ THỐNG -->
-    <div id="dropdown-panel-system" class="topbar-popover-panel hidden fixed bg-slate-900/98 backdrop-blur-xl border border-slate-600 rounded-lg shadow-2xl p-2.5 text-xs text-slate-200 select-none w-56 box-border pointer-events-auto space-y-1.5">
+    <div id="dropdown-panel-system" class="topbar-popover-panel hidden fixed bg-slate-950 border border-slate-600 rounded-xl shadow-2xl p-2.5 text-xs text-slate-200 select-none w-56 box-border pointer-events-auto space-y-1.5">
         <div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-300 pb-1 border-b border-slate-800">⚙️ Cài Đặt Hệ Thống</div>
         <div class="flex items-center justify-between p-1 hover:bg-slate-800/80 rounded">
             <span>Âm thanh (M):</span>

@@ -2,7 +2,8 @@
  * state — part of the lifting simulator.
  * These files are assembled into one module so they share state, physics and the scene.
  */
-        const DUNNAGE_H = 0.18; // Timber cribbing height on testbed floor (m)
+        // Floor cribbing removed: static cargo rests flush on the quay / ground plane.
+        const DUNNAGE_H = 0;
         const HOOK_MASTER_OFFSET_Y = -0.56; // Hook-block origin → master-link LOWER bearing crown (m)
 
         // --- 1. ENGINEERING CONFIGURATION STATE ---
@@ -11,15 +12,25 @@
             L: 12.192,
             W: 2.438,
             H: 2.591,
-            weight: 22.0,
+            weight: 24.0,
 
             // Out-of-Gauge (OOG) Cargo & Tarpaulin Cover state for Open Top / Flat Rack
-            // Flat Rack frame uses state.L/W/H; OOG payload uses oogCargo* — two separate bodies
+            // Flat Rack / Platform: UI stores DELTAS vs ISO frame (OH / OW L·R / OL F·R).
+            // Derived absolute crate size is written to oogCargo* by resolveDeckOogGeometry().
+            // Open Top still edits oogCargo* as absolute tire/bay dimensions.
             oogHasCargo: true,
             oogTarp: true,
-            oogCargoL: 10.50,
-            oogCargoW: 2.20,
-            oogCargoH: 2.85,
+            oogOh: 0.30,       // Over-Height above container highest point (m)
+            oogOwL: 0.33,      // Over-Width past −Z (left) side (m)
+            oogOwR: 0.33,      // Over-Width past +Z (right) side (m)
+            // Flat Rack: ≤ −0.40 (≥40 cm clear of each end wing). Platform: free OL.
+            oogOlF: -0.40,
+            oogOlR: -0.40,
+            oogCargoOffsetX: 0,
+            oogCargoOffsetZ: 0,
+            oogCargoL: 11.39,  // derived: L − 0.40 − 0.40 (end-wing clear)
+            oogCargoW: 3.10,
+            oogCargoH: 2.78,
 
             // ISO 668 / 1496 identity (filled from library when a standard unit is selected)
             isoCode: '42P1',
@@ -60,7 +71,9 @@
             planLugCount: 4,        // guided wizard: 2 / 4 / 8 lift points on cargo
             stsSizeFt: 40,          // STS telescopic container spreader: 20 | 40 | 45
             stsTwinLift: false,     // true → 2×20ft twin-lift CAD spreader
-            stsAttachMode: 'direct', // 'direct' = twistlock on container roof; 'cable' = shackles + sling/chain to cargo lugs
+            stsAttachMode: 'direct', // 'direct' = twistlock on container roof; 'cable' = shackles + sling/chain to cargo lugs (single cont only — never twin)
+            stsSizeLinked: true,    // true = auto-match spreader ↔ container (direct only); cable mode always forces false
+            hoistSpeedScale: 1.0,   // bottom-dock winch rate multiplier (0.25× … 2.0×)
             beamType: 'spreader',   // 'spreader' (Modular Spreader Beam), 'lifting_beam', 'cascaded', 'frame', 'modular_truss', 'basket', 'container_spreader', 'none'
             slingType: 'chain',             // 'wire', 'chain', 'web'
             slingUserSet: true,             // false = auto calculated from span; true = explicit length
@@ -72,17 +85,17 @@
             hangerSlingLength: 2.00, // cascaded / truss middle tier (even int)
             cableAdjustMode: false, // show Auto-balance after user edits cable params
             unitSystem: 'metric', // 'metric' (m, mm, kg, t) | 'imperial' (ft, in, lbs)
-            wllPerLeg: 15.0,
+            wllPerLeg: 16.0,
             // Scissors cut tool: click a sling in the 3D view to sever it at the hit point
             cutToolActive: false,
             gear: {
                 selection: [],
-                legs: [0, 1, 2, 3, 4, 5, 6, 7].map(() => ({ lengthM: null, swlT: null, diaMm: 22, massKg: null, sf: 5, grade: 'chain_g80', broken: false, slingType: null, parts: 1 })),
-                uppers: [0, 1, 2, 3].map(() => ({ lengthM: null, swlT: null, diaMm: 26, massKg: null, sf: 5, grade: 'chain_g80', broken: false, slingType: null, parts: 1 })),
-                hangers: [0, 1, 2, 3, 4, 5].map(() => ({ lengthM: null, swlT: null, diaMm: 22, massKg: null, sf: 5, grade: 'chain_g80', broken: false, slingType: null, parts: 1 })),
-                shackles: [0, 1, 2, 3].map(() => ({ swlT: 17, massKg: null, pinMm: 35, jawMm: 54, sf: 6 })),
-                beam: { swlT: 40, massT: null, lengthM: null, widthM: null, depthM: 0.24, sf: 4 },
-                hook: { swlT: 65, massKg: 380, sf: 4 },
+                legs: [0, 1, 2, 3, 4, 5, 6, 7].map(() => ({ lengthM: null, swlT: 16, diaMm: 22, massKg: null, sf: 5, mblT: 80, grade: 'chain_g80', broken: false, slingType: null, parts: 1 })),
+                uppers: [0, 1, 2, 3, 4, 5, 6, 7].map(() => ({ lengthM: null, swlT: 26, diaMm: 26, massKg: null, sf: 5, mblT: 130, grade: 'chain_g80', broken: false, slingType: null, parts: 1 })),
+                hangers: [0, 1, 2, 3, 4, 5].map(() => ({ lengthM: null, swlT: 16, diaMm: 22, massKg: null, sf: 5, mblT: 80, grade: 'chain_g80', broken: false, slingType: null, parts: 1 })),
+                shackles: [0, 1, 2, 3].map(() => ({ swlT: 26, massKg: null, pinMm: 38, jawMm: 54, sf: 6, mblT: 156 })),
+                beam: { swlT: 32, massT: null, lengthM: null, widthM: null, depthM: 0.24, sf: 4, mblT: 128 },
+                hook: { swlT: 40, massKg: 380, sf: 4, mblT: 160 },
                 members: {},
                 extraCables: []
             },
@@ -180,7 +193,16 @@
                 speedMps: 3.5,             // mean speed at 10 m reference height (UI: rng-wind-speed)
                 dirDeg: 0,                 // 0° blows along +X (cargo length), 90° along +Z
                 gust: false,               // coherent +30 % gust envelope (UI: chk-wind-gust)
-                turbulenceIntensity: 0.16  // σ_u / V
+                turbulenceIntensity: 0.16, // σ_u / V
+                baseSpeedMps: 3.5,         // slider setpoint (live speed may wander when vary=true)
+                vary: true                 // auto weather: wind/rain intensity drifts over time
+            },
+            // Site rain (visual + momentum load on cargo roof / windward faces)
+            weather: {
+                rainMmH: 0,                // 0 = khô, 15 = mưa vừa, 40+ = mưa lớn, 80+ = rất lớn
+                rainBaseMmH: 0,
+                wetFactor: 0,              // 0..1 surface wetness (ramps with rain)
+                liftForceGain: 5.5         // amplify aero on suspended cargo so sway is readable
             },
             // Elastic hoist (wire rope EA + boom compliance + hook block mass) — see dynamics.js
             hoistDynamics: {
@@ -188,6 +210,12 @@
                 sway: 'auto',              // pendulum sway under the boom nose on real cranes only
                 dampingRatio: 0.06,
                 swayDampingRatio: 0.05
+            },
+            rigSolver: {
+                enabled: true,
+                skl: 1.25,
+                hitch: 'Vertical',
+                topologyOverride: null
             }
         };
 
@@ -199,34 +227,34 @@
 
         const libraryCatalog = {
             cargo: [
-                { id: 'container', meshName: 'ISO_Container_20ft', name: 'ISO Container 20ft DC — Dry Standard 22G1', sub: 'ISO 668 22G1 · 6058×2438×2591 · CAD Realistic V2 · Twistlock 5853×2259', L: 6.058, W: 2.438, H: 2.591, weight: 21.0, tareT: 2.23, maxPayloadT: 21.77, maxGrossT: 24.00, isoCode: '22G1', cogX: 0, cogY: -0.1, cogZ: 0, badge: 'ISO 22G1' },
-                { id: 'iso20hc', meshName: 'ISO_Container_20ft_HC', name: 'ISO Container 20ft HC — High Cube 25G1', sub: 'ISO 668 25G1 · 6058×2438×2896 · CAD Realistic V2', L: 6.058, W: 2.438, H: 2.896, weight: 22.0, tareT: 2.35, maxPayloadT: 28.13, maxGrossT: 30.48, isoCode: '25G1', cogX: 0, cogY: -0.08, cogZ: 0, badge: 'ISO 25G1' },
-                { id: 'iso40', meshName: 'ISO_Container_40ft', name: 'ISO Container 40ft DC — Dry Standard 42G1', sub: 'ISO 668 42G1 · 12192×2438×2591 · CAD Realistic V2 · Twistlock 11985×2259', L: 12.192, W: 2.438, H: 2.591, weight: 28.3, tareT: 3.80, maxPayloadT: 26.68, maxGrossT: 30.48, isoCode: '42G1', cogX: 0, cogY: -0.1, cogZ: 0, badge: 'ISO 42G1' },
-                { id: 'iso40hc', meshName: 'ISO_Container_40ft_HC', name: 'ISO Container 40ft HC — High Cube 45G1', sub: 'ISO 668 45G1 · 12192×2438×2896 · CAD Realistic V2', L: 12.192, W: 2.438, H: 2.896, weight: 28.3, tareT: 3.95, maxPayloadT: 26.53, maxGrossT: 30.48, isoCode: '45G1', cogX: 0, cogY: -0.05, cogZ: 0, badge: 'ISO 45G1' },
-                { id: 'iso45hc', meshName: 'ISO_Container_45ft_HC', name: 'ISO Container 45ft HC — High Cube L5G1', sub: 'ISO 668 L5G1 · 13716×2438×2896 · 16 castings (40+45 pitch)', L: 13.716, W: 2.438, H: 2.896, weight: 29.0, tareT: 4.80, maxPayloadT: 25.68, maxGrossT: 30.48, isoCode: 'L5G1', cogX: 0, cogY: -0.08, cogZ: 0, badge: 'ISO L5G1' },
-                { id: 'container10', meshName: 'ISO_Container_10ft', name: 'ISO Container 10ft Mini — Dry 12G1', sub: 'ISO 668 12G1 · 2991×2438×2591 · Offshore / mini box', L: 2.991, W: 2.438, H: 2.591, weight: 8.5, tareT: 1.30, maxPayloadT: 8.86, maxGrossT: 10.16, isoCode: '12G1', cogX: 0, cogY: -0.1, cogZ: 0, badge: 'ISO 12G1' },
-                { id: 'iso53hc', meshName: 'ISO_Container_53ft_HC', name: '53ft HC Intermodal — Overhang', sub: '16154×2591×2896 · 40ft spreader castings 11985×2259', L: 16.154, W: 2.591, H: 2.896, weight: 30.0, tareT: 6.20, maxPayloadT: 24.28, maxGrossT: 30.48, isoCode: '53HC', cogX: 0, cogY: -0.1, cogZ: 0, badge: '53ft HC' },
-                { id: 'opentop', meshName: 'Open_Top_Container', name: 'Open Top 20ft — 22U1', sub: 'ISO 1496-1 22U1 · 6058×2438×2591 · CAD Realistic V2', L: 6.058, W: 2.438, H: 2.591, weight: 16.0, tareT: 2.40, maxPayloadT: 21.60, maxGrossT: 24.00, isoCode: '22U1', cogX: 0, cogY: -0.15, cogZ: 0, badge: 'ISO 22U1' },
-                { id: 'opentop40', meshName: 'Open_Top_Container_40ft', name: 'Open Top 40ft — 42U1', sub: 'ISO 1496-1 42U1 · 12192×2438×2591 · CAD Realistic V2', L: 12.192, W: 2.438, H: 2.591, weight: 22.0, tareT: 4.00, maxPayloadT: 26.48, maxGrossT: 30.48, isoCode: '42U1', cogX: 0, cogY: -0.15, cogZ: 0, badge: 'ISO 42U1' },
-                { id: 'flatrack', meshName: 'Flat_Rack_Container', name: 'Flat Rack 40ft HC — 45P3', sub: 'ISO 1496-5 45P3 · 12192×2438×2896 · CAD Realistic V2', L: 12.192, W: 2.438, H: 2.896, weight: 22.0, tareT: 5.20, maxPayloadT: 39.80, maxGrossT: 45.00, isoCode: '45P3', cogX: 0, cogY: -0.55, cogZ: 0, badge: 'ISO 45P3' },
-                { id: 'flatrack20', meshName: 'Flat_Rack_Container_20ft', name: 'Flat Rack 20ft — 22P3', sub: 'ISO 1496-5 22P3 · 6058×2438×2591 · CAD Realistic V2', L: 6.058, W: 2.438, H: 2.591, weight: 14.0, tareT: 2.75, maxPayloadT: 31.25, maxGrossT: 34.00, isoCode: '22P3', cogX: 0, cogY: -0.55, cogZ: 0, badge: 'ISO 22P3' },
-                { id: 'isotank', meshName: 'Tank_Container_ISO_Tank', name: 'ISO Tank 20ft — 22K2 Liquid/Gas', sub: 'ISO 1496-3 22K2 · 6058×2438×2591 · CAD Realistic V2', L: 6.058, W: 2.438, H: 2.591, weight: 29.0, tareT: 3.80, maxPayloadT: 32.20, maxGrossT: 36.00, isoCode: '22K2', cogX: 0, cogY: 0.05, cogZ: 0, badge: 'ISO 22K2' },
-                { id: 'reefer', meshName: 'Reefer_Container', name: 'Reefer 40ft HC — 45R1', sub: 'ISO 1496-2 45R1 · 12192×2438×2896 · CAD Realistic V2', L: 12.192, W: 2.438, H: 2.896, weight: 28.3, tareT: 4.60, maxPayloadT: 25.88, maxGrossT: 30.48, isoCode: '45R1', cogX: -0.35, cogY: 0.05, cogZ: 0, badge: 'ISO 45R1' },
-                { id: 'reefer20', meshName: 'Reefer_Container_20ft', name: 'Reefer 20ft — 22R1', sub: 'ISO 1496-2 22R1 · 6058×2438×2591 · CAD Realistic V2', L: 6.058, W: 2.438, H: 2.591, weight: 18.0, tareT: 3.00, maxPayloadT: 27.48, maxGrossT: 30.48, isoCode: '22R1', cogX: -0.25, cogY: 0.05, cogZ: 0, badge: 'ISO 22R1' },
-                { id: 'platform', meshName: 'Platform_Container', name: 'Platform 40ft — 49P0', sub: 'ISO 1496-5 49P0 · 12192×2438×610 · CAD Realistic V2', L: 12.192, W: 2.438, H: 0.610, weight: 8.0, tareT: 5.50, maxPayloadT: 24.98, maxGrossT: 30.48, isoCode: '49P0', cogX: 0, cogY: 0, cogZ: 0, badge: 'ISO 49P0' },
-                { id: 'platform20', meshName: 'Platform_Container_20ft', name: 'Platform 20ft — 29P0', sub: 'ISO 1496-5 29P0 · 6058×2438×335 · CAD Realistic V2', L: 6.058, W: 2.438, H: 0.335, weight: 5.0, tareT: 2.20, maxPayloadT: 28.28, maxGrossT: 30.48, isoCode: '29P0', cogX: 0, cogY: 0, cogZ: 0, badge: 'ISO 29P0' },
-                { id: 'halfheight', meshName: 'Half_Height_Container', name: 'Half-Height 20ft — 28U1', sub: 'ISO 1496-1 28U1 · 6058×2438×1295 · Heavy bulk', L: 6.058, W: 2.438, H: 1.295, weight: 18.0, tareT: 2.40, maxPayloadT: 28.08, maxGrossT: 30.48, isoCode: '28U1', cogX: 0, cogY: -0.05, cogZ: 0, badge: 'ISO 28U1' },
-                { id: 'drybulk', meshName: 'Dry_Bulk_Container', name: 'Dry Bulk 20ft — 22B0 Top Hatches', sub: 'ISO 1496-4 22B0 · 6058×2438×2591 · CAD Realistic V2', L: 6.058, W: 2.438, H: 2.591, weight: 20.0, tareT: 2.80, maxPayloadT: 27.68, maxGrossT: 30.48, isoCode: '22B0', cogX: 0, cogY: -0.05, cogZ: 0, badge: 'ISO 22B0' },
-                { id: 'crate', meshName: 'Heavy_Lift_OOG_Cargo', name: 'Heavy Lift / Out of Gauge (OOG) — Hàng siêu trường siêu trọng', sub: 'Kiện máy công nghiệp đóng khung dầm thép gia cường', L: 4.5, W: 2.8, H: 2.6, weight: 16.0, cogX: 0, cogY: 0, cogZ: 0, badge: 'OOG Heavy' },
-                { id: 'transformer', meshName: 'Transformer', name: 'Transformer — Máy biến áp', sub: 'Máy biến áp lực 110kV có cánh tản nhiệt & sứ cách điện', L: 5.2, W: 2.8, H: 3.2, weight: 65.0, cogX: 0.65, cogY: 0.15, cogZ: 0.20, badge: 'IEC 60076' },
-                { id: 'vessel', meshName: 'Pressure_Vessel', name: 'Pressure Vessel — Bồn áp lực', sub: 'Bồn trụ ngang ASME có tai cẩu hàn trên thân vỏ tròn', L: 7.5, W: 2.6, H: 2.6, weight: 41.5, cogX: 0, cogY: 0.05, cogZ: 0, badge: 'ASME VIII' },
-                { id: 'wind_nacelle', meshName: 'Wind_Turbine_Nacelle', name: 'Wind Turbine Nacelle — Tua-bin điện gió', sub: 'Cụm máy phát điện gió nặng, lệch tâm CoG về phía Hub', L: 8.5, W: 3.4, H: 3.6, weight: 80.0, cogX: 0.55, cogY: 0.1, cogZ: 0.0, badge: 'IEC 61400' },
-                { id: 'excavator', meshName: 'Excavator_Heavy_Machinery', name: 'Excavator / Heavy Machinery — Máy xúc / Xe cơ giới nặng', sub: 'Máy xúc đào bánh xích công trường, cần gầu vươn', L: 6.4, W: 3.0, H: 3.1, weight: 29.5, cogX: -0.35, cogY: -0.1, cogZ: 0.0, badge: 'ISO 6016' },
-                { id: 'boat', meshName: 'Tugboat_Vessel_Hull', name: 'Tugboat / Vessel Hull — Tàu kéo / Vỏ tàu thủy', sub: 'Thân tàu chữ V có sống mũi, cabin lái & đệm chống va', L: 12.0, W: 3.4, H: 3.2, weight: 33.5, cogX: -0.55, cogY: -0.2, cogZ: 0, badge: 'DNV Marine' },
-                { id: 'offshore_skid', meshName: 'Heavy_Lift_OOG_Cargo', name: 'Offshore Process Skid (OOG) — Cụm bơm dầu khí siêu trọng', sub: 'Khung skid thép I-beam, đường ống mặt bích & cụm bơm đôi', L: 6.2, W: 3.2, H: 2.8, weight: 36.0, cogX: 0.30, cogY: -0.15, cogZ: -0.20, badge: 'DNV 2.7-3' },
-                { id: 'car', meshName: 'Vehicle', name: 'Vehicle — Xe bus / Xe cơ giới', sub: 'Mô hình 3D CAD 1:1 thân xe bus, trọng tâm thấp gần sàn', L: 9.0, W: 2.38, H: 2.80, weight: 9.0, cogX: 0.0, cogY: -0.35, cogZ: 0, badge: '3D CAD 1:1' },
-                { id: 'container_20ft_glb', meshName: 'ISO_Container_20ft', name: 'ISO Container 20ft (alias)', sub: 'Maps to Realistic V2 22G1 CAD', L: 6.058, W: 2.438, H: 2.591, weight: 21.0, cogX: 0, cogY: -0.1, cogZ: 0, badge: 'CAD V2', verified: true },
-                { id: 'container_40ft_glb', meshName: 'ISO_Container_40ft', name: 'ISO Container 40ft (alias)', sub: 'Maps to Realistic V2 42G1 CAD', L: 12.192, W: 2.438, H: 2.591, weight: 28.3, cogX: 0, cogY: -0.1, cogZ: 0, badge: 'CAD V2', verified: true }
+                { id: 'container', meshName: 'ISO_Container_20ft', name: 'ISO Container 20ft DC — Dry Standard 22G1', sub: 'ISO 668 22G1 · 6058×2438×2591 · CAD Realistic V2 · Twistlock 5853×2259', L: 6.058, W: 2.438, H: 2.591, weight: 22, tareT: 2.2, maxPayloadT: 21.77, maxGrossT: 24.00, isoCode: '22G1', cogX: 0, cogY: -0.1, cogZ: 0, badge: 'ISO 22G1' },
+                { id: 'iso20hc', meshName: 'ISO_Container_20ft_HC', name: 'ISO Container 20ft HC — High Cube 25G1', sub: 'ISO 668 25G1 · 6058×2438×2896 · CAD Realistic V2', L: 6.058, W: 2.438, H: 2.896, weight: 24, tareT: 2.4, maxPayloadT: 28.13, maxGrossT: 30.48, isoCode: '25G1', cogX: 0, cogY: -0.08, cogZ: 0, badge: 'ISO 25G1' },
+                { id: 'iso40', meshName: 'ISO_Container_40ft', name: 'ISO Container 40ft DC — Dry Standard 42G1', sub: 'ISO 668 42G1 · 12192×2438×2591 · CAD Realistic V2 · Twistlock 11985×2259', L: 12.192, W: 2.438, H: 2.591, weight: 26, tareT: 3.8, maxPayloadT: 26.68, maxGrossT: 30.48, isoCode: '42G1', cogX: 0, cogY: -0.1, cogZ: 0, badge: 'ISO 42G1' },
+                { id: 'iso40hc', meshName: 'ISO_Container_40ft_HC', name: 'ISO Container 40ft HC — High Cube 45G1', sub: 'ISO 668 45G1 · 12192×2438×2896 · CAD Realistic V2', L: 12.192, W: 2.438, H: 2.896, weight: 28, tareT: 4, maxPayloadT: 26.53, maxGrossT: 30.48, isoCode: '45G1', cogX: 0, cogY: -0.05, cogZ: 0, badge: 'ISO 45G1' },
+                { id: 'iso45hc', meshName: 'ISO_Container_45ft_HC', name: 'ISO Container 45ft HC — High Cube L5G1', sub: 'ISO 668 L5G1 · 13716×2438×2896 · 16 castings (40+45 pitch)', L: 13.716, W: 2.438, H: 2.896, weight: 28, tareT: 4.8, maxPayloadT: 25.68, maxGrossT: 30.48, isoCode: 'L5G1', cogX: 0, cogY: -0.08, cogZ: 0, badge: 'ISO L5G1' },
+                { id: 'container10', meshName: 'ISO_Container_10ft', name: 'ISO Container 10ft Mini — Dry 12G1', sub: 'ISO 668 12G1 · 2991×2438×2591 · Offshore / mini box', L: 2.991, W: 2.438, H: 2.591, weight: 10, tareT: 1.4, maxPayloadT: 8.86, maxGrossT: 10.16, isoCode: '12G1', cogX: 0, cogY: -0.1, cogZ: 0, badge: 'ISO 12G1' },
+                { id: 'iso53hc', meshName: 'ISO_Container_53ft_HC', name: '53ft HC Intermodal — Overhang', sub: '16154×2591×2896 · 40ft spreader castings 11985×2259', L: 16.154, W: 2.591, H: 2.896, weight: 28, tareT: 6.2, maxPayloadT: 24.28, maxGrossT: 30.48, isoCode: '53HC', cogX: 0, cogY: -0.1, cogZ: 0, badge: '53ft HC' },
+                { id: 'opentop', meshName: 'Open_Top_Container', name: 'Open Top 20ft — 22U1', sub: 'ISO 1496-1 22U1 · 6058×2438×2591 · CAD Realistic V2', L: 6.058, W: 2.438, H: 2.591, weight: 20, tareT: 2.4, maxPayloadT: 21.60, maxGrossT: 24.00, isoCode: '22U1', cogX: 0, cogY: -0.15, cogZ: 0, badge: 'ISO 22U1' },
+                { id: 'opentop40', meshName: 'Open_Top_Container_40ft', name: 'Open Top 40ft — 42U1', sub: 'ISO 1496-1 42U1 · 12192×2438×2591 · CAD Realistic V2', L: 12.192, W: 2.438, H: 2.591, weight: 24, tareT: 4, maxPayloadT: 26.48, maxGrossT: 30.48, isoCode: '42U1', cogX: 0, cogY: -0.15, cogZ: 0, badge: 'ISO 42U1' },
+                { id: 'flatrack', meshName: 'Flat_Rack_Container', name: 'Flat Rack 40ft HC — 45P3', sub: 'ISO 1496-5 45P3 · 12192×2438×2896 · CAD Realistic V2', L: 12.192, W: 2.438, H: 2.896, weight: 24, tareT: 5.2, maxPayloadT: 39.80, maxGrossT: 45.00, isoCode: '45P3', cogX: 0, cogY: -0.55, cogZ: 0, badge: 'ISO 45P3' },
+                { id: 'flatrack20', meshName: 'Flat_Rack_Container_20ft', name: 'Flat Rack 20ft — 22P3', sub: 'ISO 1496-5 22P3 · 6058×2438×2591 · CAD Realistic V2', L: 6.058, W: 2.438, H: 2.591, weight: 20, tareT: 2.8, maxPayloadT: 31.25, maxGrossT: 34.00, isoCode: '22P3', cogX: 0, cogY: -0.55, cogZ: 0, badge: 'ISO 22P3' },
+                { id: 'isotank', meshName: 'Tank_Container_ISO_Tank', name: 'ISO Tank 20ft — 22K2 Liquid/Gas', sub: 'ISO 1496-3 22K2 · 6058×2438×2591 · CAD Realistic V2', L: 6.058, W: 2.438, H: 2.591, weight: 28, tareT: 3.8, maxPayloadT: 32.20, maxGrossT: 36.00, isoCode: '22K2', cogX: 0, cogY: 0.05, cogZ: 0, badge: 'ISO 22K2' },
+                { id: 'reefer', meshName: 'Reefer_Container', name: 'Reefer 40ft HC — 45R1', sub: 'ISO 1496-2 45R1 · 12192×2438×2896 · CAD Realistic V2', L: 12.192, W: 2.438, H: 2.896, weight: 26, tareT: 4.6, maxPayloadT: 25.88, maxGrossT: 30.48, isoCode: '45R1', cogX: -0.35, cogY: 0.05, cogZ: 0, badge: 'ISO 45R1' },
+                { id: 'reefer20', meshName: 'Reefer_Container_20ft', name: 'Reefer 20ft — 22R1', sub: 'ISO 1496-2 22R1 · 6058×2438×2591 · CAD Realistic V2', L: 6.058, W: 2.438, H: 2.591, weight: 22, tareT: 3, maxPayloadT: 27.48, maxGrossT: 30.48, isoCode: '22R1', cogX: -0.25, cogY: 0.05, cogZ: 0, badge: 'ISO 22R1' },
+                { id: 'platform', meshName: 'Platform_Container', name: 'Platform 40ft — 49P0', sub: 'ISO 1496-5 49P0 · 12192×2438×610 · CAD Realistic V2', L: 12.192, W: 2.438, H: 0.610, weight: 20, tareT: 5.6, maxPayloadT: 24.98, maxGrossT: 30.48, isoCode: '49P0', cogX: 0, cogY: 0, cogZ: 0, badge: 'ISO 49P0' },
+                { id: 'platform20', meshName: 'Platform_Container_20ft', name: 'Platform 20ft — 29P0', sub: 'ISO 1496-5 29P0 · 6058×2438×335 · CAD Realistic V2', L: 6.058, W: 2.438, H: 0.335, weight: 16, tareT: 2.2, maxPayloadT: 28.28, maxGrossT: 30.48, isoCode: '29P0', cogX: 0, cogY: 0, cogZ: 0, badge: 'ISO 29P0' },
+                { id: 'halfheight', meshName: 'Half_Height_Container', name: 'Half-Height 20ft — 28U1', sub: 'ISO 1496-1 28U1 · 6058×2438×1295 · Heavy bulk', L: 6.058, W: 2.438, H: 1.295, weight: 22, tareT: 2.4, maxPayloadT: 28.08, maxGrossT: 30.48, isoCode: '28U1', cogX: 0, cogY: -0.05, cogZ: 0, badge: 'ISO 28U1' },
+                { id: 'drybulk', meshName: 'Dry_Bulk_Container', name: 'Dry Bulk 20ft — 22B0 Top Hatches', sub: 'ISO 1496-4 22B0 · 6058×2438×2591 · CAD Realistic V2', L: 6.058, W: 2.438, H: 2.591, weight: 24, tareT: 2.8, maxPayloadT: 27.68, maxGrossT: 30.48, isoCode: '22B0', cogX: 0, cogY: -0.05, cogZ: 0, badge: 'ISO 22B0' },
+                { id: 'crate', meshName: 'Heavy_Lift_OOG_Cargo', name: 'Heavy Lift / Out of Gauge (OOG) — Hàng siêu trường siêu trọng', sub: 'Kiện máy công nghiệp đóng khung dầm thép gia cường', L: 4.5, W: 2.8, H: 2.6, weight: 20, cogX: 0, cogY: 0, cogZ: 0, badge: 'OOG Heavy' },
+                { id: 'transformer', meshName: 'Transformer', name: 'Transformer — Máy biến áp', sub: 'Máy biến áp lực 110kV có cánh tản nhiệt & sứ cách điện', L: 5.2, W: 2.8, H: 3.2, weight: 66, cogX: 0.65, cogY: 0.15, cogZ: 0.20, badge: 'IEC 60076' },
+                { id: 'vessel', meshName: 'Pressure_Vessel', name: 'Pressure Vessel — Bồn áp lực', sub: 'Bồn trụ ngang ASME có tai cẩu hàn trên thân vỏ tròn', L: 7.5, W: 2.6, H: 2.6, weight: 42, cogX: 0, cogY: 0.05, cogZ: 0, badge: 'ASME VIII' },
+                { id: 'wind_nacelle', meshName: 'Wind_Turbine_Nacelle', name: 'Wind Turbine Nacelle — Tua-bin điện gió', sub: 'Cụm máy phát điện gió nặng, lệch tâm CoG về phía Hub', L: 8.5, W: 3.4, H: 3.6, weight: 80, cogX: 0.55, cogY: 0.1, cogZ: 0.0, badge: 'IEC 61400' },
+                { id: 'excavator', meshName: 'Excavator_Heavy_Machinery', name: 'Excavator / Heavy Machinery — Máy xúc / Xe cơ giới nặng', sub: 'Máy xúc đào bánh xích công trường, cần gầu vươn', L: 6.4, W: 3.0, H: 3.1, weight: 30, cogX: -0.35, cogY: -0.1, cogZ: 0.0, badge: 'ISO 6016' },
+                { id: 'boat', meshName: 'Tugboat_Vessel_Hull', name: 'Tugboat / Vessel Hull — Tàu kéo / Vỏ tàu thủy', sub: 'Thân tàu chữ V có sống mũi, cabin lái & đệm chống va', L: 12.0, W: 3.4, H: 3.2, weight: 34, cogX: -0.55, cogY: -0.2, cogZ: 0, badge: 'DNV Marine' },
+                { id: 'offshore_skid', meshName: 'Heavy_Lift_OOG_Cargo', name: 'Offshore Process Skid (OOG) — Cụm bơm dầu khí siêu trọng', sub: 'Khung skid thép I-beam, đường ống mặt bích & cụm bơm đôi', L: 6.2, W: 3.2, H: 2.8, weight: 36, cogX: 0.30, cogY: -0.15, cogZ: -0.20, badge: 'DNV 2.7-3' },
+                { id: 'car', meshName: 'Vehicle', name: 'Vehicle — Xe bus / Xe cơ giới', sub: 'Mô hình 3D CAD 1:1 thân xe bus, trọng tâm thấp gần sàn', L: 9.0, W: 2.38, H: 2.80, weight: 10, cogX: 0.0, cogY: -0.35, cogZ: 0, badge: '3D CAD 1:1' },
+                { id: 'container_20ft_glb', meshName: 'ISO_Container_20ft', name: 'ISO Container 20ft (alias)', sub: 'Maps to Realistic V2 22G1 CAD', L: 6.058, W: 2.438, H: 2.591, weight: 22, cogX: 0, cogY: -0.1, cogZ: 0, badge: 'CAD V2', verified: true },
+                { id: 'container_40ft_glb', meshName: 'ISO_Container_40ft', name: 'ISO Container 40ft (alias)', sub: 'Maps to Realistic V2 42G1 CAD', L: 12.192, W: 2.438, H: 2.591, weight: 26, cogX: 0, cogY: -0.1, cogZ: 0, badge: 'CAD V2', verified: true }
             ],
             crane: [
                 { id: 'hook_only', meshName: 'Crane_Hook_Block', name: 'Overhead Hook Block — Chế độ cụm móc cẩu thuần túy', sub: 'Tập trung 100% thiết kế bắt cáp, ma ní, tăng đơ & dầm ngáng', badge: 'Rigging Focus', verified: true },
@@ -239,10 +267,10 @@
                 { id: 'lifting_beam', meshName: 'Lifting_Beam', name: 'Lifting Beam — Dầm nâng (chịu lực uốn - Bending)', sub: 'Móc cẩu móc trực tiếp vào tai treo giữa dầm, tiết kiệm chiều cao', weight: 0.85, badge: 'ASME B30.20' },
                 { id: 'frame', meshName: 'H_Beam_Spreader', name: 'H-Beam Spreader — Dầm ngáng chữ H / Khung 4 điểm', sub: 'Phân tải 4 góc thẳng đứng, triệt tiêu lực ép ngang lên kiện hàng', weight: 1.80, badge: 'H-Spreader' },
                 { id: 'container_spreader', meshName: 'ISO_Container_Spreader', name: 'STS Container Spreader — Ngáng chụp cẩu STS/RTG', sub: 'Telescopic ISO 20/40/45ft · Headblock + twistlock · Không móc/cáp bridle', weight: 9.50, badge: 'STS ISO' },
-                { id: 'cascaded', meshName: 'Cascaded_Spreader_System', name: 'Cascaded Spreader System — Hệ dầm ngáng nhiều tầng', sub: '1 dầm chính tầng trên + 2 dầm phụ tầng dưới phân đều tải các nhánh', weight: 1.40, badge: 'Cascaded' },
-                { id: 'modular_truss', meshName: 'Spreader_Beam', name: 'Spreader Beam (Lattice Truss) — Dầm ngáng giàn không gian', sub: 'Dầm ngáng chịu lực nén tải trọng lớn 100T cho hàng siêu trường', weight: 1.60, badge: 'Compression' },
+                { id: 'cascaded', meshName: 'Cascaded_Spreader_System', name: 'Cascaded Spreader System — Hệ dầm ngáng nhiều tầng', sub: 'Phương án 2-4-4: 2 cáp móc→dầm chính, 4 cáp (2×2) dầm chính→2 dầm phụ, 4 nhánh xuống hàng', weight: 1.40, badge: '2-4-4' },
+                { id: 'modular_truss', meshName: 'Spreader_Beam', name: 'Spreader Beam (Lattice Truss) — Dầm ngáng giàn không gian', sub: 'Giàn chịu nén · topology 2-4-4 (2 hangers/dầm phụ, không treo 1 điểm giữa)', weight: 1.60, badge: '2-4-4' },
                 { id: 'none', meshName: 'Bridle_Sling', name: 'Bridle Sling (Direct 4-Leg) — Chùm cáp đa nhánh trực tiếp', sub: 'Gom trực tiếp 4 nhánh cáp vào vòng khuyên chính (Master Link)', weight: 0.08, badge: 'ASME B30.9' },
-                { id: 'basket', meshName: 'Spreader_Beam', name: 'Basket Spreader Cradle — Hệ dầm ngáng cáp vòng ôm đáy', sub: '2 dầm ngáng + cáp vải bản tròn/dẹt luồn đỡ đáy bồn áp lực / vỏ tàu', weight: 0.90, badge: 'Basket Rig' },
+                { id: 'basket', meshName: 'Spreader_Beam', name: 'Basket Spreader Cradle — Hệ dầm ngáng cáp vòng ôm đáy', sub: '2 thanh ngang · mỗi thanh 2 cáp trên (không treo 1 điểm giữa) + 2 nhánh dưới ôm đáy', weight: 0.90, badge: '2×2 upper' },
                 { id: 'inline4', meshName: 'Cascaded_Spreader_System', name: 'Cascaded Spreader (4-Pt Inline) — Hệ dầm ngáng 4 điểm thẳng hàng', sub: '1 dầm chính + 2 dầm phụ dọc + 4 nhánh cáp phân bố đều tải', weight: 1.30, badge: '4-Line' },
                 { id: 'spatial8', meshName: 'Cascaded_Spreader_System', name: 'Cascaded Spreader System (8-Pt) — Hệ dầm ngáng nhiều tầng 8 điểm', sub: 'Hệ 3 tầng dầm ngáng (1 + 2 + 4 dầm) cho 8 điểm neo thiết bị dài', weight: 2.40, badge: '8-Point Tree' },
                 { id: 'inline8', meshName: 'Cascaded_Spreader_System', name: 'Cascaded Spreader (8-Pt Inline) — Hệ dầm ngáng 8 điểm dọc', sub: 'Hệ 3 tầng dầm ngáng dọc cho 8 tai cẩu thẳng hàng', weight: 2.20, badge: '8-Line' },
@@ -292,20 +320,20 @@
             dragHookSpeed: 0,
             dragHookLoadCoupling: 0,
 
-            cargoPos: new THREE.Vector3(0, DUNNAGE_H + 1.20, 0),
+            cargoPos: new THREE.Vector3(0, 1.2955, 0), // ~H/2 — flush on ground (no cribbing)
             cargoVel: new THREE.Vector3(0, 0, 0),
             cargoQuat: new THREE.Quaternion(),
             cargoOmega: new THREE.Vector3(0, 0, 0),
 
             legTensions: [0, 0, 0, 0, 0, 0, 0, 0],
-            upperTensions: [0, 0, 0, 0],
+            upperTensions: [0, 0, 0, 0, 0, 0, 0, 0],
             tensionImpulse: [0, 0, 0, 0, 0, 0, 0, 0],
             legSlacks: [true, true, true, true, true, true, true, true],
             legAngleDeg: [90, 90, 90, 90, 90, 90, 90, 90],
-            upperAngleDeg: [42.5, 42.5, 42.5, 42.5],
+            upperAngleDeg: [50, 50, 50, 50, 50, 50, 50, 50],
             legFactor: [1, 1, 1, 1, 1, 1, 1, 1],
             breakHold: [0, 0, 0, 0, 0, 0, 0, 0],
-            upperBreakHold: [0, 0, 0, 0],
+            upperBreakHold: [0, 0, 0, 0, 0, 0, 0, 0],
             beamCompression: 0,
             damagePct: 0,
             shakeAmp: 0,
@@ -415,10 +443,18 @@
             state.cableAdjustMode = false;
             state.oogHasCargo = true;
             state.oogTarp = true;
-            state.oogCargoL = 10.50;
-            state.oogCargoW = 2.20;
-            state.oogCargoH = 2.85;
-            setDimAndCoG({ L: 12.192, W: 2.438, H: 2.591, weight: 22.0, cogX: 0.0, cogY: -0.55, cogZ: 0.0 });
+            state.oogOh = 0.30;
+            state.oogOwL = 0.33;
+            state.oogOwR = 0.33;
+            state.oogOlF = -0.40;
+            state.oogOlR = -0.40;
+            state.oogCargoOffsetX = 0;
+            state.oogCargoOffsetZ = 0;
+            state.oogCargoL = 11.39;
+            state.oogCargoW = 3.10;
+            state.oogCargoH = 2.78;
+            // CoG at geometric centre of combined FR + OOG envelope (Y rises with OH)
+            setDimAndCoG({ L: 12.192, W: 2.438, H: 2.591, weight: 24, cogX: 0.0, cogY: 0.21, cogZ: 0.0 });
             if (state.gear) {
                 if (state.gear.beam) state.gear.beam.lengthM = 12.01;
                 if (state.gear.uppers) {
@@ -439,6 +475,9 @@
                         l.grade = 'chain_g80';
                     });
                 }
+            }
+            if (typeof autoSizeGearForLoad === 'function') {
+                autoSizeGearForLoad(24, { betaWorstDeg: 40 });
             }
             const activateCard = (selector, attr, val) => {
                 document.querySelectorAll(selector).forEach(c => c.classList.toggle('active', c.dataset[attr] === val));

@@ -9,3 +9,5 @@ dist
 .env.*
 playwright-report
 test-results
+docs/ui-after/
+3Dmodels/

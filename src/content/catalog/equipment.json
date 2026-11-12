@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "modulift_spreader",
+      "kind": "beam",
+      "name": "Modulift Spreader",
+      "meshUrl": "/assets/models/modulift_spreader.glb",
+      "swlT": 40,
+      "tags": ["spreader", "modular"]
+    },
+    {
+      "id": "crosby_shackle_17t",
+      "kind": "hardware",
+      "name": "Crosby Bow Shackle 17t",
+      "meshUrl": "/assets/models/crosby_shackle.glb",
+      "swlT": 17,
+      "tags": ["shackle", "bow"]
+    },
+    {
+      "id": "container_40ft",
+      "kind": "cargo",
+      "name": "ISO 40ft Dry Container",
+      "meshUrl": "/assets/models/container_40ft.glb",
+      "tareT": 3.8,
+      "maxGrossT": 30.48,
+      "tags": ["iso", "dry"]
+    },
+    {
+      "id": "sts_gantry_crane",
+      "kind": "crane",
+      "name": "STS Gantry Crane",
+      "meshUrl": "/assets/models/sts_crane.glb",
+      "tags": ["sts", "gantry"]
+    },
+    {
+      "id": "chain_sling_g80_22mm",
+      "kind": "sling",
+      "name": "Grade 80 Chain 22mm",
+      "meshUrl": null,
+      "wllT": 15,
+      "diaMm": 22,
+      "grade": "chain_g80",
+      "tags": ["chain", "g80"]
+    }
+  ]
+}

@@ -12,6 +12,12 @@ function makeFlatRack() {
     state.H = 2.59;
     state.weight = 22;
     state.oogHasCargo = true;
+    // Under-gauge payload (negative OW/OL) so free-body corners clear end walls
+    state.oogOh = 0.68;
+    state.oogOwL = -0.12;
+    state.oogOwR = -0.12;
+    state.oogOlF = -1.10;
+    state.oogOlR = -1.10;
     sim.rebuildCargoAndRig(true);
     state.poseLock = false;
     return { sim, state, phy };
@@ -30,8 +36,10 @@ describe('SOLID COLLISION AND SETTLING — compound Flat Rack and ground contact
         // Start deliberately overlapping the deck.  The real runtime contact
         // solver, not a standalone toy world, must expel the overlap.
         phy.cargoPos.set(0, 3.0, 0);
+        const meta = sim.getCargoVisual().getObjectByName('flatRackOogCargo').userData.oogMeta;
+        // Start slightly overlapping the deck from above the resting crate centre
         sim.setOogFreeBody({
-            position: new THREE.Vector3(0, 3.0, 0),
+            position: new THREE.Vector3(meta.offsetX || 0, 3.0 + meta.centerY - 0.08, meta.offsetZ || 0),
             quaternion: new THREE.Quaternion(),
             velocity: new THREE.Vector3()
         });

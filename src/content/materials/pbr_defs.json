@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "materials": [
+    {
+      "id": "steel_painted",
+      "color": "#94a3b8",
+      "metalness": 0.55,
+      "roughness": 0.35,
+      "clearcoat": 0.15
+    },
+    {
+      "id": "chain_g80",
+      "color": "#1e293b",
+      "metalness": 0.75,
+      "roughness": 0.4,
+      "clearcoat": 0.05
+    },
+    {
+      "id": "boat_hull",
+      "color": "#f8fafc",
+      "metalness": 0.28,
+      "roughness": 0.22,
+      "clearcoat": 0.75
+    },
+    {
+      "id": "timber_deck",
+      "color": "#a16207",
+      "metalness": 0.05,
+      "roughness": 0.85,
+      "clearcoat": 0
+    },
+    {
+      "id": "iso_container_corten",
+      "color": "#b45309",
+      "metalness": 0.35,
+      "roughness": 0.55,
+      "clearcoat": 0.1
+    }
+  ]
+}

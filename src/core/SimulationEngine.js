@@ -1,6 +1,7 @@
 /**
  * ============================================================================
  * MODULE 3: INDUSTRIAL SIMULATION ENGINE (SimulationEngine.js)
+ * @deprecated Not on live boot path — live step loop is src/sim/physics/step_engine.js (ADR-003).
  * Architecture: CAE / Industrial Physics Simulation Core (Vortex Grade)
  * Physics Engine: Cannon-es (Discrete RigidBody Mechanics & Constraint Solver)
  * Solves: "Bouncing / Styrofoam Box" bug via Critically Damped Inextensible RopeConstraints

@@ -118,47 +118,67 @@ export class PBRMaterialFactory {
         }
         ctxBase.putImageData(imgData, 0, 0);
 
-        // 2. 6m x 6m Expansion Joints (Tar-filled bitumen cut lines)
+        // 2. Expansion Joints (optional; disabled by default to avoid clashing with 3D metric GridHelper)
+        const includeJoints = Boolean(options.includeJoints);
         const jointPositions = [0, size / 2, size - 1];
-        ctxBase.fillStyle = '#1e242c';
-        jointPositions.forEach(p => {
-            ctxBase.fillRect(p - 2, 0, 4, size);
-            ctxBase.fillRect(0, p - 2, size, 4);
-        });
+        if (includeJoints) {
+            ctxBase.fillStyle = '#1e242c';
+            jointPositions.forEach(p => {
+                ctxBase.fillRect(p - 2, 0, 4, size);
+                ctxBase.fillRect(0, p - 2, size, 4);
+            });
+        }
 
-        // 3. Normal Map (Concrete broom finish + joint grooves)
+        // 3. Normal Map (Concrete fine grain broom finish + optional joint grooves)
         ctxNorm.fillStyle = 'rgb(128, 128, 255)'; // Neutral flat normal
         ctxNorm.fillRect(0, 0, size, size);
-        jointPositions.forEach(p => {
-            // Grooved normal indentation
-            ctxNorm.fillStyle = 'rgb(90, 128, 255)';
-            ctxNorm.fillRect(p - 3, 0, 3, size);
-            ctxNorm.fillStyle = 'rgb(165, 128, 255)';
-            ctxNorm.fillRect(p, 0, 3, size);
-            ctxNorm.fillStyle = 'rgb(128, 90, 255)';
-            ctxNorm.fillRect(0, p - 3, size, 3);
-            ctxNorm.fillStyle = 'rgb(128, 165, 255)';
-            ctxNorm.fillRect(0, p, size, 3);
-        });
+        const normData = ctxNorm.getImageData(0, 0, size, size);
+        const nd = normData.data;
+        for (let i = 0; i < nd.length; i += 4) {
+            const nX = (Math.random() - 0.5) * 12;
+            const nY = (Math.random() - 0.5) * 12;
+            nd[i] = Math.min(255, Math.max(0, 128 + nX));
+            nd[i + 1] = Math.min(255, Math.max(0, 128 + nY));
+            nd[i + 2] = 255;
+        }
+        ctxNorm.putImageData(normData, 0, 0);
+
+        if (includeJoints) {
+            jointPositions.forEach(p => {
+                // Grooved normal indentation
+                ctxNorm.fillStyle = 'rgb(90, 128, 255)';
+                ctxNorm.fillRect(p - 3, 0, 3, size);
+                ctxNorm.fillStyle = 'rgb(165, 128, 255)';
+                ctxNorm.fillRect(p, 0, 3, size);
+                ctxNorm.fillStyle = 'rgb(128, 90, 255)';
+                ctxNorm.fillRect(0, p - 3, size, 3);
+                ctxNorm.fillStyle = 'rgb(128, 165, 255)';
+                ctxNorm.fillRect(0, p, size, 3);
+            });
+        }
 
         // 4. Roughness Map (Matte dry concrete 0.88 with glossy damp spots 0.3)
         ctxRough.fillStyle = 'rgb(215, 215, 215)'; // High roughness
         ctxRough.fillRect(0, 0, size, size);
-        // Bitumen joints are smoother
-        ctxRough.fillStyle = 'rgb(90, 90, 90)';
-        jointPositions.forEach(p => {
-            ctxRough.fillRect(p - 3, 0, 6, size);
-            ctxRough.fillRect(0, p - 3, size, 6);
-        });
+        if (includeJoints) {
+            // Bitumen joints are smoother
+            ctxRough.fillStyle = 'rgb(90, 90, 90)';
+            jointPositions.forEach(p => {
+                ctxRough.fillRect(p - 3, 0, 6, size);
+                ctxRough.fillRect(0, p - 3, size, 6);
+            });
+        }
 
         // 5. Ambient Occlusion Map (Crevice shadowing at joints)
         ctxAO.fillStyle = 'rgb(255, 255, 255)';
         ctxAO.fillRect(0, 0, size, size);
-        ctxAO.fillStyle = 'rgb(110, 110, 110)';
-        jointPositions.forEach(p => {
-            ctxAO.fillRect(p - 4, 0, 8, size);
-            ctxAO.fillRect(0, p - 4, size, 8);
-        });
+        if (includeJoints) {
+            ctxAO.fillStyle = 'rgb(110, 110, 110)';
+            jointPositions.forEach(p => {
+                ctxAO.fillRect(p - 4, 0, 8, size);
+                ctxAO.fillRect(0, p - 4, size, 8);
+            });
+        }
 
         // Convert canvases to Three.js CanvasTextures
         const repeatX = options.repeatX || 30; // 180m / 6m = 30 tiles

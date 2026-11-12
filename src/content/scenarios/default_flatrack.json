@@ -1,0 +1,35 @@
+{
+  "id": "default_flatrack",
+  "name": "Default Flat Rack Lift",
+  "version": 1,
+  "cargo": {
+    "cargoType": "flatrack",
+    "L": 12.192,
+    "W": 2.438,
+    "H": 2.591,
+    "weight": 22.0,
+    "isoCode": "42P1"
+  },
+  "rig": {
+    "beamType": "spreader",
+    "slingType": "chain",
+    "hwType": "bow_shackle",
+    "upperSlingLength": 8.0,
+    "lowerSlingLength": 2.0
+  },
+  "crane": {
+    "craneType": "hook_only",
+    "hookCount": 1,
+    "hoistSpeedScale": 1.0
+  },
+  "site": {
+    "unitSystem": "metric"
+  },
+  "spawnPose": {
+    "note": "Uses sim rebuild + ground seat; hook auto-position left to session defaults"
+  },
+  "winConditions": {
+    "minGroundClearanceM": 0.5,
+    "maxCableUtilization": 0.8
+  }
+}

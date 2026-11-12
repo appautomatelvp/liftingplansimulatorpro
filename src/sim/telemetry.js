@@ -7,10 +7,12 @@
             const { H, beamType, slingType, slingLength, wllPerLeg } = state;
             const { spanX, spanZ } = getLPBoundingSpan();
 
-            // STS mode: hide forged J-hook + master link — hoist falls land on headblock.
+            // STS: yellow spreader IS the trolley head — hide entire forged hook block
+            // (no J-hook / master-link / hanging bridle above the beam).
             const stsMode = state.beamType === 'container_spreader';
             const dualHooks = (state.hookCount || 1) >= 2 && !stsMode;
-            {
+            if (hookAssemblyGroup) {
+                hookAssemblyGroup.visible = !stsMode;
                 const swivel = hookAssemblyGroup.getObjectByName('Swivel_Hook');
                 const master = hookAssemblyGroup.getObjectByName('Master_Link');
                 if (swivel) swivel.visible = !stsMode;
@@ -63,6 +65,8 @@
             cargoRootGroup.position.copy(phy.cargoPos);
             cargoRootGroup.quaternion.copy(phy.cargoQuat);
             applyCornerYieldVisual();
+            // Twin+cable pry: each 20ft pivots about its outer cable picks after root pose
+            if (typeof applyStsTwinCableFlareVisual === 'function') applyStsTwinCableFlareVisual();
             const depthScale = THREE.MathUtils.clamp((state.gear.beam.depthM || 0.28) / 0.28, 0.4, 2.2);
             spreaderRootGroup.scale.set(1, beamType === 'none' ? 1 : depthScale, 1);
 
@@ -113,6 +117,8 @@
                     const stsDirect = stsMode && (typeof isStsDirectAttach === 'function'
                         ? isStsDirectAttach()
                         : (state.stsAttachMode || 'direct') !== 'cable');
+                    // STS headblock: no visible upper bridle from a hook — falls are inside the trolley
+                    if (stsMode && c.role === 'upper') return;
                     if (stsDirect && c.role === 'leg') return;
                     const A = attachWorld(c.a);
                     const B = attachWorld(c.b);
@@ -234,21 +240,20 @@
 
             hwWorldPos.forEach((wPos, i) => {
                 const arrow = forceArrows[i];
-                const tVal = phy.legTensions[i];
-                const showVec = (state.displayOptions && state.displayOptions.showVectors !== undefined)
-                    ? state.displayOptions.showVectors
-                    : state.showVectors;
-                if (showVec && tVal > 0.15) {
+                if (!arrow) return;
+                const tVal = phy.legTensions[i] || 0;
+                const showVec = Boolean(state.displayOptions?.showVectors ?? state.showVectors);
+                if (showVec) {
                     arrow.visible = true;
                     arrow.position.copy(wPos);
                     const dir = new THREE.Vector3().subVectors(slingAnchorWorld(i, rigNow), wPos);
                     if (dir.lengthSq() < 1e-8) dir.set(0, 1, 0);
                     arrow.setDirection(dir.normalize());
                     const swl = Math.max(0.05, legSwl(i));
-                    const len = THREE.MathUtils.clamp(0.6 + (tVal / swl) * 1.8, 0.6, 3.0);
+                    const len = THREE.MathUtils.clamp(0.75 + (tVal / swl) * 2.2, 0.75, 3.5);
                     const col = (tVal > swl) ? 0xef4444 : (tVal > swl * 0.8 ? 0xfacc15 : 0x10b981);
                     arrow.setColor(new THREE.Color(col));
-                    arrow.setLength(len, 0.32, 0.18);
+                    arrow.setLength(len, 0.35, 0.2);
                 } else {
                     arrow.visible = false;
                 }
@@ -389,14 +394,27 @@
                 if (windEl && phy.wind) {
                     const w = phy.wind;
                     const live = w.vector ? w.vector.length() : 0;
-                    windEl.textContent = `${(w.forceN / 1000).toFixed(2)} kN · ${live.toFixed(1)} m/s · dạt ${(w.driftDeg || 0).toFixed(1)}°`;
-                    windEl.className = 'hud-val font-mono font-bold ' + ((w.driftDeg || 0) > 3 ? 'text-amber-300' : 'text-sky-300');
+                    const rainMm = w.rainMmH != null ? w.rainMmH : ((state.weather && state.weather.rainMmH) || 0);
+                    const rainN = w.rainForceN || 0;
+                    windEl.textContent = `${live.toFixed(1)} m/s · mưa ${rainMm.toFixed(0)} · ${(w.forceN / 1000).toFixed(2)} kN · dạt ${(w.driftDeg || 0).toFixed(1)}°`;
+                    windEl.className = 'hud-val font-mono font-bold ' + ((w.driftDeg || 0) > 3 || rainMm >= 40 ? 'text-amber-300' : 'text-sky-300');
                     // Site panel: once airborne, show the measured values next to the design estimate
                     if (phy.groundClearance > 0.05 && phy.windDesign) {
                         const fEl = document.getElementById('val-wind-force');
                         if (fEl) fEl.textContent = `${(w.forceN / 1000).toFixed(2)} kN thực (tk ${phy.windDesign.forceKN.toFixed(2)} kN)`;
                         const dEl = document.getElementById('val-wind-drift');
                         if (dEl) dEl.textContent = `${(w.driftDeg || 0).toFixed(2)}° đo (tk ${phy.windDesign.driftDeg.toFixed(2)}°)`;
+                    }
+                    const rEl = document.getElementById('val-rain-force');
+                    if (rEl) rEl.textContent = `${(rainN / 1000).toFixed(2)} kN`;
+                    const rainValLive = document.getElementById('val-rain-mmh');
+                    if (rainValLive && state.wind && state.wind.vary) {
+                        let rainLabel = 'Khô';
+                        if (rainMm >= 80) rainLabel = 'Rất lớn';
+                        else if (rainMm >= 40) rainLabel = 'Mưa lớn';
+                        else if (rainMm >= 15) rainLabel = 'Mưa vừa';
+                        else if (rainMm >= 2) rainLabel = 'Mưa nhỏ';
+                        rainValLive.textContent = `${rainMm.toFixed(0)} mm/h · ${rainLabel}`;
                     }
                 }
                 let risk = Math.min(40, (maxT / Math.max(0.1, wllPerLeg)) * 40);
@@ -606,11 +624,22 @@
                 }
             }
 
-            if (cogIndicatorGroup) cogIndicatorGroup.visible = Boolean(dOpt.showCoG !== false);
-            if (plumbLineMesh) plumbLineMesh.visible = Boolean(dOpt.showCoG !== false);
+            const twinCogMode = typeof stsTwinCableMode === 'function' && stsTwinCableMode()
+                && state.stsTwinLift && activeCargoVisual;
+            if (twinCogMode && typeof ensureTwinCogMarkers === 'function') {
+                ensureTwinCogMarkers();
+            }
 
+            if (cogIndicatorGroup) {
+                // Twin cable lift: two per-box CoGs — hide fused centre marker
+                cogIndicatorGroup.visible = Boolean(dOpt.showCoG !== false) && !twinCogMode;
+            }
+            if (plumbLineMesh) plumbLineMesh.visible = Boolean(dOpt.showCoG !== false) && !twinCogMode;
+
+            const lblCogA = document.getElementById('lbl-cog-a');
+            const lblCogB = document.getElementById('lbl-cog-b');
             if (lblCog) {
-                if (dOpt.showCoG !== false) {
+                if (dOpt.showCoG !== false && !twinCogMode && cogIndicatorGroup) {
                     const cogWorld = new THREE.Vector3();
                     cogIndicatorGroup.getWorldPosition(cogWorld);
                     projectToScreen(cogWorld, lblCog);
@@ -618,6 +647,35 @@
                     lblCog.style.opacity = '1';
                 } else {
                     lblCog.style.opacity = '0';
+                }
+            }
+            if (lblCogA && lblCogB) {
+                if (dOpt.showCoG !== false && twinCogMode) {
+                    const boxA = activeCargoVisual.getObjectByName('Twin_20ft_A');
+                    const boxB = activeCargoVisual.getObjectByName('Twin_20ft_B');
+                    const mA = boxA && boxA.getObjectByName('Twin_CoG_A');
+                    const mB = boxB && boxB.getObjectByName('Twin_CoG_B');
+                    const wA = new THREE.Vector3();
+                    const wB = new THREE.Vector3();
+                    if (mA) {
+                        mA.getWorldPosition(wA);
+                        projectToScreen(wA, lblCogA);
+                        lblCogA.textContent = `🎯 CoG A (${state.cogX.toFixed(2)}, ${state.cogY.toFixed(2)}, ${state.cogZ.toFixed(2)})`;
+                        lblCogA.style.opacity = '1';
+                    } else {
+                        lblCogA.style.opacity = '0';
+                    }
+                    if (mB) {
+                        mB.getWorldPosition(wB);
+                        projectToScreen(wB, lblCogB);
+                        lblCogB.textContent = `🎯 CoG B (${state.cogX.toFixed(2)}, ${state.cogY.toFixed(2)}, ${state.cogZ.toFixed(2)})`;
+                        lblCogB.style.opacity = '1';
+                    } else {
+                        lblCogB.style.opacity = '0';
+                    }
+                } else {
+                    lblCogA.style.opacity = '0';
+                    lblCogB.style.opacity = '0';
                 }
             }
 
@@ -664,6 +722,50 @@
 
             // Phase 1 Core Safety: Crane Load Chart Matrix, Ground Pressure & Elastic Sling Dynamics
             updatePhase1CoreSafetyTelemetry(mb);
+
+            // === PHASE 1: Rigging UI store + 3-zone / angle HUD ===
+            const rigUI = (typeof window !== 'undefined' && window.RIG && window.RIG.riggingUIStore)
+                ? window.RIG.riggingUIStore
+                : ((typeof RIG !== 'undefined' && RIG.riggingUIStore) ? RIG.riggingUIStore : null);
+            if (rigUI && typeof rigUI.sync === 'function') {
+                try {
+                    rigUI.sync(phy, state);
+                } catch (e) {
+                    // Non-fatal UI telemetry guard
+                }
+            }
+            const rg = phy.rigging;
+            if (rg) {
+                const hud = document.getElementById('compliance-hud-panel')
+                    || document.getElementById('rigging-alarm-hud');
+                if (hud && rigUI) {
+                    const ui = rigUI.getState();
+                    hud.classList.remove('border-green-500', 'border-red-500', 'border-red-600', 'animate-pulse', 'animate-ping');
+                    const cls = (ui.hudBorderClass || 'border-green-500').split(/\s+/);
+                    cls.forEach((c) => { if (c) hud.classList.add(c); });
+                }
+                const zoneEl = document.getElementById('v-rig-zone');
+                if (zoneEl) {
+                    const label = rg.zoneLabel || 'SAFE';
+                    const color = label === 'SAFE' ? 'text-emerald-300' : 'text-red-400 font-bold';
+                    zoneEl.innerHTML = `Zone: <b class="${color}">${label}</b>`
+                        + (rg.topology ? ` · ${rg.topology}` : '')
+                        + (rg.minAngleDeg != null ? ` · α<sub>min</sub> ${rg.minAngleDeg.toFixed(0)}°` : '');
+                }
+                const dnvEl = document.getElementById('v-rig-dnv');
+                if (dnvEl) {
+                    dnvEl.textContent = rg.dnvNotice || '';
+                    dnvEl.classList.toggle('hidden', !rg.dnvNotice);
+                }
+                if (rg.sirenActive || (rigUI && rigUI.getState().sirenActive)) {
+                    if (typeof simAudio !== 'undefined' && simAudio.playAlarmChirp && !(phy._alarmChirpCool > 0)) {
+                        simAudio.playAlarmChirp();
+                        phy._alarmChirpCool = 45;
+                    }
+                }
+                if ((phy._alarmChirpCool || 0) > 0) phy._alarmChirpCool -= 1;
+            }
+            // === END PHASE 1 RIGGING HUD ===
         }
 
         let craneLoadChartEngine = null;

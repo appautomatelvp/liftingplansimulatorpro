@@ -25,14 +25,26 @@ export { DeformableSteelStructure } from './DeformableSteelStructure.js';
 export { RIGGING_DICTIONARY, getDictionaryEntry } from './RiggingDictionary.js';
 export { RIGGING_EQUIPMENT_CATALOG, getRiggingEquipmentGroup } from './RiggingEquipmentCatalog.js';
 
-// Physics Engine Modern Architecture
-export { PhysicsWorldManager } from './physics-world/PhysicsWorldManager.js';
-export { FixedStepLoop } from './physics-world/FixedStepLoop.js';
-export { ConstraintGraph } from './physics-world/ConstraintGraph.js';
-export { IPhysicsBackend } from './physics-world/IPhysicsBackend.js';
-export { CannonBackend } from './physics-world/CannonBackend.js';
-export { RapierBackend } from './physics-world/RapierBackend.js';
-export { G_ACCEL, TONNE, E_MODULUS, MATERIAL_DAMPING, SAFETY_FACTOR } from './physics-world/Units.js';
+// Physics Engine Modern Architecture — QUARANTINED (ADR-003). Live solver = src/sim/physics.
+export {
+    PhysicsWorldManager,
+    FixedStepLoop,
+    ConstraintGraph,
+    IPhysicsBackend,
+    CannonBackend,
+    loadRapierBackend,
+    G_ACCEL,
+    TONNE,
+    E_MODULUS,
+    MATERIAL_DAMPING,
+    SAFETY_FACTOR
+} from './physics-world/index.js';
+export const __experimental = Object.freeze({
+    physicsWorld: true,
+    note: 'PhysicsWorldManager / Rapier / Cannon are not the live UI step loop. See docs/architecture/adr/ADR-003-physics-quarantine.md'
+});
+
+
 export { UnilateralCableConstraint } from '../rigging/constraints/UnilateralCableConstraint.js';
 export {
     ShackleConstraint,
