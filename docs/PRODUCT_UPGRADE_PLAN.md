@@ -8,12 +8,16 @@
 
 | Hạng mục | Trạng thái | Lệnh chứng minh | Ngày chạy |
 |---|---|---|---|
-| Unit & regression suite | ✓ 34/34 file, 273/273 test đạt | `npm test -- --reporter=dot` | 13/11/2026 |
+| Unit & regression suite | ✓ 40/40 file, 295/295 test đạt | `npm test -- --reporter=dot` | 13/11/2026 |
 | Architecture gate | ✓ Đạt (6 shim, 28 phần manifest) | `npm run architecture:gate` | 13/11/2026 |
-| Production build | ✓ Đạt (cảnh báo chunk lớn & có `.map`) | `npm run build` | 13/11/2026 |
-| Firestore Rules Emulator | ✓ 12/12 ca đạt | `npm run test:rules` | 13/11/2026 |
-| Playwright E2E (4 viewport) | ◐ 42 đạt, 10 lỗi (F-01 Cargo i18n, UI-015, UI-008, UI-003) | `npx playwright test --reporter=list` | 13/11/2026 |
-| CI GitHub / Staging / Production | □ Chưa chạy lại cho HEAD hiện tại (`5f6aff9`); chưa phát hành | — | — |
+| Production build & `.map` check | ✓ Đạt (`vite build` + không có `.map` trong `dist/`) | `npm run build && npm run check:dist` | 13/11/2026 |
+| Security dependency audit | ✓ 0 lỗ hổng mức high+ | `npm audit --audit-level=high` | 13/11/2026 |
+| Firestore Rules Emulator | ✓ 16/16 ca đạt | `npm run test:rules` | 13/11/2026 |
+| Auth + Firestore Emulator E2E | ✓ 2/2 kịch bản đạt | `npm run test:e2e:auth` | 13/11/2026 |
+| Playwright SaaS & Accessibility E2E | ✓ 16/16 ca đạt (4 viewport) | `npx playwright test e2e/saas-accessibility.spec.js --reporter=list` | 13/11/2026 |
+| Playwright Layout E2E (ngoài phạm vi SaaS) | ◐ 27 đạt, 9 lỗi có sẵn (`UI-008`, `UI-015`, `UI-003` tại `hd-720p`) | `npx playwright test e2e/saas-accessibility.spec.js e2e/layout.spec.js --reporter=list` | 13/11/2026 |
+| S-00 → S-15 implementation | ✓ Hoàn tất toàn bộ 16 bước trên nhánh local `codex/safelift-g0-ci` | Xem `docs/UPGRADE_PLAN_V2_FOR_FLASH.md` | 13/11/2026 |
+| Giai đoạn 5 (Deploy Staging / Production / CI remote) | □ Chờ người dùng push remote, cấu hình Authorized domains & deploy | — | — |
 
 **Phạm vi cố định:** lỗi vật lý được hoãn theo chỉ đạo người dùng; Spark Free là yêu cầu (chỉ text/JSON nhẹ, không ảnh/mô hình, không gắn thẻ/Blaze); G4 (billing) hoãn hoàn toàn.
 
