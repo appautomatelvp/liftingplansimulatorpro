@@ -98,7 +98,7 @@ export default defineConfig(({ mode }) => {
     plugins: [liftingSim()],
     build: {
       outDir: 'dist',
-      sourcemap: true,
+      sourcemap: mode === 'staging',
       chunkSizeWarningLimit: 1200
     },
     server: {

@@ -150,7 +150,7 @@ Tôi không chạy được toàn bộ E2E/Rules/Build trong lượt kiểm tra 
 | S-00 | ✓ | `git status`, `npm test`, `architecture:gate`, `npm run build`, `npm run test:rules`, `npx playwright test` | Unit 273/273; Gate OK; Build OK; Rules 12/12; E2E 42/52 (10 fail) | 13/11/2026 |
 | S-01 | ✓ | `Select-String -Path docs ... -Pattern vercel`, `npm run architecture:gate` | `docs/architecture/*` không còn Vercel; gate OK | 13/11/2026 |
 | S-02 | ✓ | `npm test`, `architecture:gate`, `npm run build`, `npx playwright test e2e/saas-accessibility.spec.js` | Unit 277/277 (35 file); Gate OK; Build OK; E2E i18n/a11y 16/16 | 13/11/2026 |
-| S-03 | □ | | | |
+| S-03 | ✓ | `npm test`, `architecture:gate`, `npm run build`, `npm run check:dist` | Unit 277/277; Gate OK; Build OK; `MAP_COUNT=0` trong `dist/` | 13/11/2026 |
 | S-04 | □ | | | |
 | S-05 | □ | | | |
 | S-06 | □ | | | |
@@ -193,3 +193,8 @@ Tôi không chạy được toàn bộ E2E/Rules/Build trong lượt kiểm tra 
 - Tạo `src/i18n/cargo_labels.js` (`formatCargoDerivedLabel`, `formatCargoCrateLabel`), export qua `src/i18n/index.js` (`window.SafeLift.i18n`).
 - Cập nhật `src/sim/session/ui_units_bom.js` (`data-i18n-dynamic="cargo-derived"` + `window.SafeLift.cargoDerivedLast`), `src/sim/gear/editor.js`, `src/sim/session/presets_events.js` (`applyLang()` gọi lại `syncOogCargoUI(false)` và cập nhật `[data-i18n-dynamic="cargo-derived"]`), và `index.html:908` (`— × — × — m`).
 - Unit (`test/cargo_labels.test.js`): **35/35 file, 277/277 test đạt**; Gate: đạt; Build: đạt; Playwright `e2e/saas-accessibility.spec.js`: **16/16 đạt** trên cả 4 viewport (0 rò rỉ tiếng Việt trên 6 tab + 3 menu). Lưu ý: `e2e/layout.spec.js` vẫn có 3 lỗi baseline từ S-00 (`UI-015`, `UI-008`, `UI-003`).
+
+### S-03 — 13/11/2026
+- `vite.config.js`: đặt `sourcemap: mode === 'staging'`.
+- Tạo `scripts/check-dist.mjs` và thêm script `check:dist` vào `package.json` (tích hợp vào `npm run ci`).
+- Unit: **35/35 file, 277/277 đạt**; Gate: đạt; Build: đạt (5.84s); `npm run check:dist` & `Get-ChildItem dist -Recurse -Filter *.map`: **0 file `.map`**.

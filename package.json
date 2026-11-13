@@ -16,8 +16,9 @@
     "test:ui": "playwright test",
     "test:all": "vitest run && playwright test",
     "architecture:gate": "node scripts/architecture-gate.mjs",
+    "check:dist": "node scripts/check-dist.mjs",
     "lint": "npm run architecture:gate",
-    "ci": "npm run architecture:gate && npm test && npm run build"
+    "ci": "npm run architecture:gate && npm test && npm run build && npm run check:dist"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.21.0",
