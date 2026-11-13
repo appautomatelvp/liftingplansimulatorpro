@@ -128,12 +128,18 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
 
   function renderPlan(item) {
     const snapshot = (() => { try { return dataService.parsePlanSnapshot(item.snapshot); } catch { return null; } })();
+    const migration = snapshot && typeof dataService.migrateSnapshot === 'function'
+      ? dataService.migrateSnapshot(snapshot, snapshot.solverVersion || item.solverVersion)
+      : null;
     const input = snapshot?.inputs || {};
     const dims = [input.L, input.W, input.H].every(Number.isFinite) ? `${input.L} × ${input.W} × ${input.H} m` : '';
     const status = snapshot?.analysis?.overallStatus;
     const statusLabel = status ? `${tr('wsSavedAssessment')}: ${status}` : '';
     const equipmentCount = Array.isArray(item.equipmentIds) ? item.equipmentIds.length : 0;
-    return `<article class="saas-workspace-card ${item.archived ? 'is-archived' : ''}"><div class="saas-workspace-card-icon">⌖</div><div class="saas-workspace-card-main"><div class="saas-workspace-card-title"><strong>${esc(item.title)}</strong><span class="saas-workspace-version">r${Number(item.revision) || 1}</span>${status ? `<span class="saas-workspace-status status-${esc(status.toLowerCase())}">${esc(status)}</span>` : ''}${item.archived ? `<span class="saas-workspace-archived">${tr('wsArchived')}</span>` : ''}</div><small>${esc(item.description || dims || tr('wsPlanDefault'))} · ${tr('wsSolverLabel')} ${esc(item.solverVersion || '?')} · ${esc(timestamp(item.updatedAt))}${statusLabel ? ` · ${esc(statusLabel)}` : ''}${equipmentCount ? ` · ${equipmentCount} ${tr('wsLinkedEquipment')}` : ''}</small>${snapshot?.solverVersion !== '5.0' ? `<em>${tr('wsSolverVersionWarning')}</em>` : ''}</div><div class="saas-workspace-card-actions"><button type="button" data-action="apply" data-id="${esc(item.id)}" ${item.archived ? 'disabled' : ''}>${tr('wsOpen')}</button><button type="button" data-action="duplicate" data-id="${esc(item.id)}">${tr('wsCopy')}</button><button type="button" data-action="export" data-id="${esc(item.id)}">${tr('wsExportJson')}</button><button type="button" data-action="archive" data-id="${esc(item.id)}" data-archived="${!item.archived}">${item.archived ? tr('wsRestore') : tr('wsArchive')}</button><button type="button" class="is-danger" data-action="delete" data-id="${esc(item.id)}">${tr('wsDelete')}</button></div></article>`;
+    const versionWarning = migration && !migration.compatible
+      ? `<em>${tr('wsSolverUnknownWarning')}</em>`
+      : (snapshot?.solverVersion !== '5.0' ? `<em>${tr('wsSolverVersionWarning')}</em>` : '');
+    return `<article class="saas-workspace-card ${item.archived ? 'is-archived' : ''}"><div class="saas-workspace-card-icon">⌖</div><div class="saas-workspace-card-main"><div class="saas-workspace-card-title"><strong>${esc(item.title)}</strong><span class="saas-workspace-version">r${Number(item.revision) || 1}</span>${status ? `<span class="saas-workspace-status status-${esc(status.toLowerCase())}">${esc(status)}</span>` : ''}${item.archived ? `<span class="saas-workspace-archived">${tr('wsArchived')}</span>` : ''}</div><small>${esc(item.description || dims || tr('wsPlanDefault'))} · ${tr('wsSolverLabel')} ${esc(item.solverVersion || '?')} · ${esc(timestamp(item.updatedAt))}${statusLabel ? ` · ${esc(statusLabel)}` : ''}${equipmentCount ? ` · ${equipmentCount} ${tr('wsLinkedEquipment')}` : ''}</small>${versionWarning}</div><div class="saas-workspace-card-actions"><button type="button" data-action="apply" data-id="${esc(item.id)}" ${item.archived ? 'disabled' : ''}>${tr('wsOpen')}</button><button type="button" data-action="duplicate" data-id="${esc(item.id)}">${tr('wsCopy')}</button><button type="button" data-action="export" data-id="${esc(item.id)}">${tr('wsExportJson')}</button><button type="button" data-action="archive" data-id="${esc(item.id)}" data-archived="${!item.archived}">${item.archived ? tr('wsRestore') : tr('wsArchive')}</button><button type="button" class="is-danger" data-action="delete" data-id="${esc(item.id)}">${tr('wsDelete')}</button></div></article>`;
   }
 
   async function chooseEquipmentLinks() {
@@ -248,7 +254,11 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
     const runtime = window.__LIFTING_RUNTIME__;
     const state = runtime?.api?.getState?.();
     if (!state) throw new Error(tr('wsSimNotReadyOpen'));
-    const snapshot = dataService.parsePlanSnapshot(item.snapshot);
+    const parsed = dataService.parsePlanSnapshot(item.snapshot);
+    const migration = typeof dataService.migrateSnapshot === 'function'
+      ? dataService.migrateSnapshot(parsed, parsed.solverVersion || item.solverVersion)
+      : { snapshot: parsed, migrated: false, compatible: true, fromVersion: parsed.solverVersion, toVersion: '5.0' };
+    const snapshot = migration.snapshot;
     for (const [key, value] of Object.entries(snapshot.inputs)) {
       if (key === 'lugs') continue;
       state[key] = value;
@@ -259,7 +269,11 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
     state.pendingConform = 'skip';
     runtime.api.rebuildCargoAndRig?.(false);
     closeWorkspace();
-    notice('');
+    notice(
+      !migration.compatible
+        ? tr('wsPlanUnknownVersionNotice', { from: migration.fromVersion })
+        : (migration.migrated ? tr('wsPlanMigratedNotice', { from: migration.fromVersion, to: migration.toVersion }) : '')
+    );
   }
 
   async function action(event) {

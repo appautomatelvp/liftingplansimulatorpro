@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildEquipmentRecord, makeLegacyRigSnapshot, makePlanSnapshot, MAX_PLAN_BYTES, parsePlanSnapshot } from '../src/saas/workspace_data.js';
+import { buildEquipmentRecord, makeLegacyRigSnapshot, makePlanSnapshot, MAX_PLAN_BYTES, migrateSnapshot, parsePlanSnapshot, SOLVER_VERSION } from '../src/saas/workspace_data.js';
 
 describe('SafeLift personal workspace data', () => {
   it('normalizes equipment fields and rejects invalid engineering values', () => {
@@ -59,5 +59,58 @@ describe('SafeLift personal workspace data', () => {
   it('rejects malformed legacy rig data before it can be written to Firestore', () => {
     expect(() => makeLegacyRigSnapshot({}, { members: [], extraCables: [] })).toThrow(/invalid equipment settings/);
     expect(() => makeLegacyRigSnapshot({}, { members: {}, extraCables: Array(9).fill({}) })).toThrow(/number of additional cables/);
+  });
+
+  it('migrates legacy solver snapshots, passes current snapshots unchanged, and flags unknown versions', () => {
+    const legacyFixture = {
+      schemaVersion: 1,
+      solverVersion: '4.2',
+      savedAt: '2025-05-01T00:00:00.000Z',
+      inputs: { cargoType: 'flatrack', L: 12, W: 2.4, H: 2.6, weight: 22 },
+      analysis: { overallStatus: 'PASS' }
+    };
+    const legacyResult = migrateSnapshot(legacyFixture);
+    expect(legacyResult.migrated).toBe(true);
+    expect(legacyResult.compatible).toBe(true);
+    expect(legacyResult.fromVersion).toBe('4.2');
+    expect(legacyResult.toVersion).toBe(SOLVER_VERSION);
+    expect(legacyResult.warnings).toContain('LEGACY_SOLVER_MIGRATED');
+    expect(legacyResult.snapshot.solverVersion).toBe(SOLVER_VERSION);
+    expect(legacyResult.snapshot.inputs).toMatchObject({
+      cargoType: 'flatrack',
+      weight: 22,
+      unitSystem: 'metric',
+      rigFit: 'fixed',
+      windSpeedMps: 0,
+      windLimitMps: 15,
+      slewDeg: 0
+    });
+    expect(legacyFixture.inputs.unitSystem).toBeUndefined();
+
+    const currentFixture = {
+      schemaVersion: 1,
+      solverVersion: SOLVER_VERSION,
+      savedAt: '2026-01-01T00:00:00.000Z',
+      inputs: { cargoType: 'container', unitSystem: 'imperial', windSpeedMps: 8 },
+      analysis: null
+    };
+    const currentResult = migrateSnapshot(currentFixture);
+    expect(currentResult.migrated).toBe(false);
+    expect(currentResult.compatible).toBe(true);
+    expect(currentResult.warnings).toEqual([]);
+    expect(currentResult.snapshot.inputs.unitSystem).toBe('imperial');
+
+    const unknownFixture = {
+      schemaVersion: 1,
+      solverVersion: '9.1',
+      savedAt: '2027-01-01T00:00:00.000Z',
+      inputs: { cargoType: 'vessel', weight: 80 },
+      analysis: null
+    };
+    const unknownResult = migrateSnapshot(unknownFixture);
+    expect(unknownResult.migrated).toBe(false);
+    expect(unknownResult.compatible).toBe(false);
+    expect(unknownResult.warnings).toContain('UNKNOWN_SOLVER_VERSION');
+    expect(unknownResult.snapshot.inputs.weight).toBe(80);
   });
 });

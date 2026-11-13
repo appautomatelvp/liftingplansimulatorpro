@@ -158,7 +158,7 @@ Tôi không chạy được toàn bộ E2E/Rules/Build trong lượt kiểm tra 
 | S-08 | ✓ | `npm audit --audit-level=high`, `architecture:gate`, `npm test`, `npm run build`, `npm run check:dist`, đọc rà soát YAML `.github/workflows/ci.yml` | `npm audit`: 0 high/critical; Unit 282/282; Gate OK; Build OK; `check:dist` OK; CI giới hạn `push` nhánh `master` + thêm `check:dist`, `audit`, Playwright SaaS & upload report | 13/11/2026 |
 | S-09 | ✓ | `architecture:gate`, `npm test`, `npm run build`, `npm run check:dist` | Unit **37 files, 285/285** đạt (thêm `test/i18n_keys.test.js`); `SAAS_KEYS` đồng nhất EN/VI trong `src/i18n/keys.js`; Gate OK; Build OK; `check:dist` OK | 13/11/2026 |
 | S-10 | ✓ | `firebase emulators:exec --only auth,firestore` (`playwright.auth.config.js`), `npm run test:rules`, `npm test`, `architecture:gate`, `npm run build`, `npm run check:dist` | Auth + Firestore Emulator E2E (`e2e/auth.spec.js`): **2/2** đạt (đăng ký, pending verify, verify email qua Emulator REST, CRUD & reload, sai mật khẩu, cách ly user B, khóa `locked`, lỗi mạng); sửa bug mất thông báo khóa trong `session.js`; Rules **14/14**; Unit **285/285**; Gate OK; Build OK; `check:dist` OK | 13/11/2026 |
-| S-11 | □ | | | |
+| S-11 | ✓ | `architecture:gate`, `npm test`, `npm run build`, `npm run check:dist` | `migrateSnapshot()` xử lý snapshot cũ (`4.x`/`legacy`), hiện tại (`5.0`), và phiên bản lạ (`UNKNOWN_SOLVER_VERSION`); Unit **37 files, 286/286** đạt (3 fixture test trong `workspace_data.test.js`); Gate OK; Build OK; `check:dist` OK | 13/11/2026 |
 | S-12 | □ | | | |
 | S-13 | □ | | | |
 | S-14 | □ | | | |
@@ -238,3 +238,9 @@ Tôi không chạy được toàn bộ E2E/Rules/Build trong lượt kiểm tra 
 - Viết `playwright.auth.config.js`, `e2e/auth.spec.js` và script `test:e2e:auth` trong `package.json`: kiểm thử đầy đủ đăng ký -> pending verification -> xác minh qua Auth Emulator oobCodes -> tạo thiết bị & lift plan -> reload giữ phiên -> đăng xuất -> sai mật khẩu -> cách ly user B -> tự ngắt khi bị chuyển `status: 'locked'` -> chịu lỗi mạng.
 - Phát hiện và sửa lỗi thực tế trong `src/saas/session.js`: thêm `pendingAuthNotice` để giữ thông báo tài khoản bị khóa sau khi `signOut()` kích hoạt `showSignedOut()`.
 - Kiểm tra: Auth+Firestore E2E **2/2** đạt; Rules **14/14** đạt; Unit **37 files, 285/285** đạt; `architecture:gate` OK; `npm run build` OK (5.58s); `npm run check:dist` OK.
+
+### S-11 — Migration dữ liệu phương án cũ (G1.05)
+- Thêm `migrateSnapshot(snapshot, fromVersion)` vào `src/saas/workspace_data.js` (không làm thay đổi object đầu vào, tự bổ sung mặc định `5.0` cho bản `4.x`/`legacy`, giữ nguyên `5.0`, và gắn cờ `compatible: false` / `UNKNOWN_SOLVER_VERSION` khi gặp phiên bản lạ).
+- Nối `migrateSnapshot` vào `renderPlan` và `applyPlan` trong `src/saas/workspace_dashboard.js` cùng thông báo i18n trong `src/i18n/keys.js`.
+- Thêm unit test với 3 fixture (`4.2`, `5.0`, `9.1`) trong `test/workspace_data.test.js`.
+- Kiểm tra: `architecture:gate` OK; Unit **37 files, 286/286** đạt; `npm run build` OK (5.67s); `npm run check:dist` OK.

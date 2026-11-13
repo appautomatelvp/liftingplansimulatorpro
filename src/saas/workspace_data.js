@@ -120,6 +120,60 @@ export function parsePlanSnapshot(serialized) {
   return { schemaVersion: parsed.schemaVersion, solverVersion: String(parsed.solverVersion || ''), savedAt: String(parsed.savedAt || ''), inputs, analysis };
 }
 
+export function migrateSnapshot(snapshot, fromVersion = snapshot?.solverVersion) {
+  if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) {
+    throw new Error('Cannot migrate an invalid plan snapshot.');
+  }
+  const sourceVersion = String(fromVersion ?? snapshot.solverVersion ?? '').trim();
+  const baseInputs = snapshot.inputs && typeof snapshot.inputs === 'object' ? safeJson(snapshot.inputs) : {};
+  const analysis = snapshot.analysis && typeof snapshot.analysis === 'object' ? safeJson(snapshot.analysis) : null;
+  const base = {
+    schemaVersion: snapshot.schemaVersion || PLAN_SCHEMA_VERSION,
+    solverVersion: sourceVersion || SOLVER_VERSION,
+    savedAt: String(snapshot.savedAt || ''),
+    inputs: baseInputs,
+    analysis
+  };
+
+  if (sourceVersion === SOLVER_VERSION) {
+    return {
+      snapshot: base,
+      fromVersion: sourceVersion,
+      toVersion: SOLVER_VERSION,
+      migrated: false,
+      compatible: true,
+      warnings: []
+    };
+  }
+
+  const isKnownLegacy = sourceVersion === '' || sourceVersion === 'legacy' || /^4\.\d+$/.test(sourceVersion);
+  if (isKnownLegacy) {
+    const migratedInputs = { ...baseInputs };
+    if (migratedInputs.unitSystem === undefined) migratedInputs.unitSystem = 'metric';
+    if (migratedInputs.rigFit === undefined) migratedInputs.rigFit = 'fixed';
+    if (migratedInputs.windSpeedMps === undefined) migratedInputs.windSpeedMps = 0;
+    if (migratedInputs.windLimitMps === undefined) migratedInputs.windLimitMps = 15;
+    if (migratedInputs.slewDeg === undefined) migratedInputs.slewDeg = 0;
+    return {
+      snapshot: { ...base, solverVersion: SOLVER_VERSION, inputs: migratedInputs },
+      fromVersion: sourceVersion || 'legacy',
+      toVersion: SOLVER_VERSION,
+      migrated: true,
+      compatible: true,
+      warnings: ['LEGACY_SOLVER_MIGRATED']
+    };
+  }
+
+  return {
+    snapshot: base,
+    fromVersion: sourceVersion,
+    toVersion: SOLVER_VERSION,
+    migrated: false,
+    compatible: false,
+    warnings: ['UNKNOWN_SOLVER_VERSION']
+  };
+}
+
 function maximumSlots(tier) { return tier === 'premium' || tier === 'admin' ? 200 : 20; }
 
 async function createInAvailableSlot(db, uid, tier, type, value) {
