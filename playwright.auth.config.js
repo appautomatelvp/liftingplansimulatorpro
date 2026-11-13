@@ -4,7 +4,7 @@ process.env.VITE_USE_EMULATORS ??= 'true';
 
 export default defineConfig({
   testDir: './e2e',
-  testMatch: '**/auth.spec.js',
+  testMatch: ['**/auth.spec.js', '**/cms-roles.spec.js'],
   timeout: 90_000,
   retries: 0,
   workers: 1,

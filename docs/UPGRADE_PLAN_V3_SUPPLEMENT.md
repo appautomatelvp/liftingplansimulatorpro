@@ -105,7 +105,7 @@ Chưa kiểm chứng trong lượt này: nguyên nhân gốc của 9 lỗi layou
 | T-04 | ✓ | `architecture:gate`, `npm test`, `npm run build`, `check:dist`, `test:rules` | Chọn phương án 2 để tránh chi phí đọc `getAfter` trên Spark và giữ tương thích CRUD trực tiếp: đổi nhãn `wsDailyQuotaHint` sang ước lượng phía client, ghi rõ giới hạn telemetry trong `SECURITY_THREAT_MODEL.md`; Rules **20/20**; Unit **42/42 (307/307)**; Build 5.66s + `check:dist` OK | 13/11/2026 |
 | T-05 | ◐ (UI-015 đã sửa test 4/4; UI-008/UI-003 hoãn) | `npx playwright test e2e/layout.spec.js -g "UI-015"`, `npx playwright test e2e/saas-accessibility.spec.js` | Đúng phạm vi đã chốt: không sửa UI-008/UI-003; `UI-015` đạt **4/4** (`20.5s`); `saas-accessibility.spec.js` đạt **16/16** (`1.8m`) | 13/11/2026 |
 | T-06 | ✓ | `architecture:gate`, `npm test`, `npm run build`, `check:dist`, probe Playwright CSP `dist/_headers` | Bỏ `onclick` inline ở `index.html` (`#btn-comp-hud-export` nối qua `src/ui/controllers/index.js`), tách script màn loading sang `public/loading-screen-init.js`; thêm test `security_headers.test.js`; Unit **42/42 (308/308)**; Build 5.76s; Probe CSP `/` & `/admin` **0 vi phạm** (`Content-Security-Policy-Report-Only` giữ nguyên cho chủ sản phẩm bật enforce) | 13/11/2026 |
-| T-07 | □ | | | |
+| T-07 | ✓ | `architecture:gate`, `npm run test:e2e:auth` | Tạo `e2e/emulator_helpers.js` + `e2e/cms-roles.spec.js`, cập nhật `playwright.auth.config.js` chạy cả `auth.spec.js` và `cms-roles.spec.js`; E2E Emulator **5/5 đạt** (`2.3m`: `user` bị chặn, `support` chỉ đọc/nút `disabled`, `catalog-editor` chỉ thấy catalog, `admin` bắt buộc lý do + ghi dòng audit `before -> after`) | 13/11/2026 |
 | T-08 | □ | | | |
 | T-09 | □ | | | |
 | T-10 | □ | | | |
@@ -153,3 +153,9 @@ Chưa kiểm chứng trong lượt này: nguyên nhân gốc của 9 lỗi layou
 - `public/loading-screen-init.js`: tách đoạn `<script>` inline khởi tạo năm/ngôn ngữ màn loading ra file `/loading-screen-init.js` phục vụ từ `'self'`; giữ nguyên `Content-Security-Policy-Report-Only` trong `public/_headers` (quyết định bật enforce thuộc về chủ sản phẩm).
 - `test/security_headers.test.js`: bổ sung assert bảo đảm `index.html` không còn `<script>` inline hay thuộc tính `on*=`.
 - Kiểm tra: `architecture:gate` OK; Unit **42/42 file, 308/308 test đạt** (`36.98s`); `npm run build` (`5.76s`) + `check:dist` OK; probe Playwright đọc trực tiếp header `Content-Security-Policy-Report-Only` từ `dist/_headers` trên route `/` và `/admin` ghi nhận `TOTAL_CSP_VIOLATIONS=0`, `CSP_CONSOLE=0`.
+
+### T-07 Test UI theo vai trò CMS trên Emulator (G-08) — 13/11/2026
+- Tách `e2e/emulator_helpers.js` (dùng chung cho `e2e/auth.spec.js` và `e2e/cms-roles.spec.js` để không lặp logic Emulator Auth/Firestore).
+- Tạo `e2e/cms-roles.spec.js` kiểm tra 4 vai trò trên Auth + Firestore Emulator: `user` thường vào `/admin` thấy thông báo `Cần quyền quản trị viên`; `support` thấy bảng user + audit nhưng nút đổi tier/trạng thái/cờ bị `disabled` và không thấy catalog; `catalog-editor` chỉ thấy catalog; `admin` thiếu lý do bị chặn, nhập lý do đổi tier thành công và xuất hiện dòng audit `USER_ACCESS_UPDATE` kèm lý do và diff `free -> premium`.
+- Cập nhật `playwright.auth.config.js` `testMatch: ['**/auth.spec.js', '**/cms-roles.spec.js']`.
+- Kiểm tra: `architecture:gate` OK; `npm run test:e2e:auth` **5/5 passed** (`2.3m`).
