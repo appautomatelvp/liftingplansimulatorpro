@@ -1,4 +1,13 @@
 {
+  "auth": {
+    "providers": {
+      "emailPassword": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "SafeLift3D",
+        "supportEmail": "levietphuong.hcmutrans@gmail.com"
+      }
+    }
+  },
   "firestore": {
     "rules": "firestore.rules"
   },

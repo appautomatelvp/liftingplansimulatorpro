@@ -3,6 +3,7 @@ import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-ch
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { validateDeploymentEnvironment } from './deployment_environment.js';
+import { requiresAppCheckSiteKey, resolveAppCheckSiteKey } from './app_check_config.js';
 
 const env = import.meta.env;
 const appEnvironment = env.VITE_APP_ENV || 'development';
@@ -20,6 +21,14 @@ const defaultFirebaseConfig = {
 };
 const defaultAppCheckSiteKey = '6LcT4R0uAAAAAFn1R33TccDuguLZshAlgz-0S2mo';
 
+function readAppCheckSiteKey() {
+  return resolveAppCheckSiteKey({
+    environment: appEnvironment,
+    configuredSiteKey: env.VITE_FIREBASE_APPCHECK_SITE_KEY,
+    productionSiteKey: defaultAppCheckSiteKey
+  });
+}
+
 function readFirebaseConfig() {
   const useIsolatedConfig = appEnvironment === 'preview' || appEnvironment === 'staging';
   return {
@@ -36,7 +45,10 @@ export function getFirebaseSetupStatus() {
   const config = readFirebaseConfig();
   const required = ['apiKey', 'authDomain', 'projectId', 'appId'];
   const missing = required.filter((key) => !config[key]);
-  if (env.PROD && !(env.VITE_FIREBASE_APPCHECK_SITE_KEY || defaultAppCheckSiteKey)) missing.push('VITE_FIREBASE_APPCHECK_SITE_KEY');
+  const appCheckSiteKey = readAppCheckSiteKey();
+  if (requiresAppCheckSiteKey({ buildIsProduction: env.PROD, environment: appEnvironment }) && !appCheckSiteKey) {
+    missing.push('VITE_FIREBASE_APPCHECK_SITE_KEY');
+  }
   const deployment = validateDeploymentEnvironment({
     environment: appEnvironment,
     projectId: config.projectId,
@@ -51,7 +63,7 @@ export function initializeFirebaseClient() {
 
   const app = getApps()[0] || initializeApp(setup.config);
   let appCheck = null;
-  const siteKey = env.VITE_FIREBASE_APPCHECK_SITE_KEY || defaultAppCheckSiteKey;
+  const siteKey = readAppCheckSiteKey();
 
   if (siteKey) {
     if (env.DEV && env.VITE_FIREBASE_APPCHECK_DEBUG === 'true') {
@@ -61,7 +73,7 @@ export function initializeFirebaseClient() {
       provider: new ReCaptchaEnterpriseProvider(siteKey),
       isTokenAutoRefreshEnabled: true
     });
-  } else if (env.PROD) {
+  } else if (requiresAppCheckSiteKey({ buildIsProduction: env.PROD, environment: appEnvironment })) {
     throw new Error('Firebase App Check reCAPTCHA v3 site key is required in production.');
   }
 
