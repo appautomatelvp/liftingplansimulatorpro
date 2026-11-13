@@ -1,11 +1,14 @@
 import * as workspaceData from './workspace_data.js';
+import { getTierSlotLimit } from './runtime_flags.js';
 import { getLang } from '../i18n/index.js';
 import { trapDialogFocus } from './dialog_accessibility.js';
 import { saasT } from './i18n.js';
 
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 
-export function mountWorkspaceDashboard({ db, profile, dataService = workspaceData }) {
+export function mountWorkspaceDashboard({ db, profile, flags = null, dataService = workspaceData }) {
+  const activeFlags = flags || (typeof window !== 'undefined' ? window.SafeLift?.saas?.flags : null) || null;
+  const slotLimit = getTierSlotLimit(profile, activeFlags);
   document.getElementById('saas-workspace-backdrop')?.remove();
   const backdrop = document.createElement('div');
   backdrop.id = 'saas-workspace-backdrop';
@@ -68,7 +71,8 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
         await dataService.createLiftPlan(db, profile, {
           title: String(rig.name || tr('wsSavedRigDefault')).slice(0, 100),
           description: tr('wsImportedDesc'),
-          snapshot: dataService.makeLegacyRigSnapshot(state, rig)
+          snapshot: dataService.makeLegacyRigSnapshot(state, rig),
+          flags: activeFlags
         });
         migratedRigIds.push(String(rig.id));
         try { localStorage.setItem(`lp-user-rigs-migrated:${profile.uid}`, JSON.stringify(migratedRigIds.slice(-24))); } catch { /* Keep current-session migration state if storage is unavailable. */ }
@@ -95,7 +99,7 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
       <div class="saas-workspace-toolbar"><label class="saas-workspace-search"><span>⌕</span><input type="search" data-search placeholder="${tr('wsSearchPlaceholder')}"></label><button type="button" class="saas-workspace-secondary" data-action="export-all">${tr('wsExportAllJson')}</button><button type="button" class="saas-workspace-secondary" data-action="import-legacy" ${legacyRigs.some((rig) => !migratedRigIds.includes(String(rig.id))) ? '' : 'hidden'}>${tr('wsImportTitle')}</button><button type="button" class="saas-workspace-primary" data-action="create">＋ ${tr('wsSaveCurrentPlan')}</button></div>
       <div class="saas-workspace-notice" data-notice hidden></div><div class="saas-workspace-list" data-list aria-live="polite"></div>
       <footer class="saas-workspace-footer"><span data-count></span><button type="button" data-action="more" hidden>${tr('wsLoadMore')}</button></footer>
-      <small class="saas-workspace-quota">${tr('wsQuotaNote', { limit: profile.tier === 'premium' || profile.tier === 'admin' ? 200 : 20 })}</small>
+      <small class="saas-workspace-quota">${tr('wsQuotaNote', { limit: slotLimit })}</small>
     </section>`;
     paintTab();
   };
@@ -128,7 +132,7 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
     backdrop.querySelector('[data-action="more"]').hidden = !hasMore;
     const quotaEl = backdrop.querySelector('.saas-workspace-quota');
     if (quotaEl) {
-      const baseQuota = tr('wsQuotaNote', { limit: profile.tier === 'premium' || profile.tier === 'admin' ? 200 : 20 });
+      const baseQuota = tr('wsQuotaNote', { limit: slotLimit });
       quotaEl.textContent = usageQuota
         ? `${baseQuota} · ${tr('wsDailyQuotaHint', { used: usageQuota.writesToday, limit: usageQuota.limit, plans: usageQuota.plansCount, equipment: usageQuota.equipmentCount })}`
         : baseQuota;
@@ -224,7 +228,7 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
     const description = window.prompt(tr('wsPromptNotes'), '') || '';
     const equipmentIds = await chooseEquipmentLinks();
     const analysis = runtime.api.getCurrentLiftPlanSummary?.() || null;
-    await dataService.createLiftPlan(db, profile, { title, description, equipmentIds, snapshot: dataService.makePlanSnapshot(state, analysis) });
+    await dataService.createLiftPlan(db, profile, { title, description, equipmentIds, snapshot: dataService.makePlanSnapshot(state, analysis), flags: activeFlags });
     notice(tr('wsPlanSaved'));
     await loadPage(true);
   }
@@ -248,7 +252,7 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
         const submit = event.currentTarget.querySelector('[type="submit"]');
         submit.disabled = true;
         if (item) await dataService.updateEquipment(db, profile.uid, item.id, values);
-        else await dataService.createEquipment(db, profile, values);
+        else await dataService.createEquipment(db, profile, values, { flags: activeFlags });
         close();
         await loadPage(true);
         notice(tr('wsEquipmentSaved'));
@@ -345,7 +349,7 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
       } else if (actionName === 'archive') {
         await dataService.updateLiftPlan(db, profile.uid, id, { archived: button.dataset.archived === 'true' });
       } else if (actionName === 'duplicate') {
-        await dataService.createLiftPlan(db, profile, { title: `${item.title} (${tr('wsCopySuffix')})`.slice(0, 100), description: item.description, equipmentIds: item.equipmentIds || [], snapshot: item.snapshot });
+        await dataService.createLiftPlan(db, profile, { title: `${item.title} (${tr('wsCopySuffix')})`.slice(0, 100), description: item.description, equipmentIds: item.equipmentIds || [], snapshot: item.snapshot, flags: activeFlags });
       }
       await loadPage(true);
     } catch (error) {

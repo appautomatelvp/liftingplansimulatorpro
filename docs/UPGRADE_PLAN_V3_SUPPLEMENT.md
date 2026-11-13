@@ -99,7 +99,7 @@ Chưa kiểm chứng trong lượt này: nguyên nhân gốc của 9 lỗi layou
 | Bước | Trạng thái | Lệnh đã chạy | Kết quả | Ngày |
 |---|---|---|---|---|
 | T-00 | ✓ | `git status`, `architecture:gate`, `npm test`, `npm run build`, `check:dist`, `test:rules`, `layout.spec.js` | Gate OK; Unit 40/40 (295/295); Build 10.79s + `check:dist` OK; Rules 16/16; Layout E2E 31/36 đạt (chỉ còn 5 ca hoãn UI-008 ×4, UI-003 ×1) | 13/11/2026 |
-| T-01 | □ | | | |
+| T-01 | ✓ | `Select-String`, `architecture:gate`, `npm test`, `npm run build`, `check:dist`, `npm run test:e2e:auth` | Tạo `src/saas/runtime_flags.js` (`applyFlagsToAccess`, `getFreePlanLimit`, `isMaintenance`, `loadFlagsOnce`), nối kill-switch vào `session.js`/`feature_access_ui.js`/`workspace_*`; Unit **41/41 (303/303)**; Gate OK; Build 8.25s + `check:dist` OK; E2E Auth **3/3** | 13/11/2026 |
 | T-02 | □ | | | |
 | T-03 | □ | | | |
 | T-04 | □ | | | |
@@ -121,3 +121,9 @@ Chưa kiểm chứng trong lượt này: nguyên nhân gốc của 9 lỗi layou
 - `npm run build` + `npm run check:dist`: build xong in `10.79s`; `OK: no .map files in dist/`.
 - `npm run test:rules`: **16/16 passed** (3.88s).
 - `npx playwright test e2e/layout.spec.js --reporter=list`: **31 passed, 5 failed** (5.9m) — gồm đúng 5 ca hoãn (`UI-008` ×4 viewport và `UI-003` trên `hd-720p`); `UI-015` đạt 4/4.
+
+### T-01 Làm feature flags thành kill-switch thật (G-02) — 13/11/2026
+- Xác nhận bằng `Select-String` trên `src/**/*.js`: `maintenanceMode`, `disabledModules`, `freePlanLimit` trước đó chỉ xuất hiện trong `admin_dashboard.js`, `telemetry_usage.js` và `keys.js`.
+- Tạo `src/saas/runtime_flags.js` (`applyFlagsToAccess`, `getFreePlanLimit`, `getTierSlotLimit`, `isMaintenance`, `isModuleDisabled`, `loadFlagsOnce`).
+- Nối cờ vào `src/saas/session.js` (đọc một lần mỗi phiên, hiện `#saas-maintenance-banner` và khóa mở workspace với user thường khi bảo trì; `admin`/`support` vẫn qua), `src/saas/feature_access_ui.js` (paywall "tạm tắt" theo `disabledModules` và bảo trì), `src/saas/workspace_data.js` + `src/saas/workspace_dashboard.js` (`getTierSlotLimit` cho giới hạn Free 1–200), `src/saas/saas.css`, `src/i18n/keys.js` (đối xứng VI/EN).
+- Kiểm tra: `architecture:gate` OK; Unit **41/41 file, 303/303 test đạt** (`test/runtime_flags.test.js` 8 ca mới); `npm run build` OK (`8.25s`) + `check:dist` OK; `npm run test:e2e:auth` **3/3 đạt** (gồm ca admin bật/tắt bảo trì và kiểm tra banner/khóa workspace trên Emulator).

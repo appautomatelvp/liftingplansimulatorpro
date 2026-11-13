@@ -176,4 +176,57 @@ test.describe('Firebase Auth & Firestore Emulator SaaS flows', () => {
     await expect(page.locator('#saas-root .saas-auth-status')).toHaveClass(/is-error/, { timeout: 10_000 });
     await expect(page.locator('#saas-root button[type="submit"]')).toBeEnabled();
   });
+
+  test('enforces maintenance feature flag banner and workspace block for standard users while admin clears it', async ({ page, request, context }) => {
+    await createAndVerifyAccount(page, request, {
+      displayName: 'Site Admin',
+      email: 'admin-flags@safelift3d.test',
+      password: 'Password123!'
+    });
+    const adminUid = await page.evaluate(() => window.SafeLift?.saas?.authUser?.uid);
+    expect(adminUid).toBeTruthy();
+
+    const promoteRes = await request.patch(
+      `${FIRESTORE_EMULATOR_URL}/v1/projects/${PROJECT_ID}/databases/(default)/documents/users/${adminUid}?updateMask.fieldPaths=role`,
+      {
+        headers: { Authorization: 'Bearer owner' },
+        data: { fields: { role: { stringValue: 'admin' } } }
+      }
+    );
+    expect(promoteRes.ok()).toBeTruthy();
+
+    await page.goto('/admin');
+    const flagsForm = page.locator('[data-action="flags-form"]');
+    await expect(flagsForm).toBeVisible({ timeout: 15_000 });
+    await flagsForm.locator('input[name="maintenanceMode"]').check();
+    await flagsForm.locator('input[name="maintenanceMessage"]').fill('Emulator maintenance active');
+    await flagsForm.locator('button[type="submit"]').click();
+    await expect(page.locator('.saas-admin-notice')).toBeVisible({ timeout: 10_000 });
+
+    const viewerPage = await (await context.browser().newContext()).newPage();
+    try {
+      await createAndVerifyAccount(viewerPage, request, {
+        displayName: 'Standard Viewer',
+        email: 'viewer-flags@safelift3d.test',
+        password: 'Password123!'
+      });
+      await expect(viewerPage.locator('#saas-maintenance-banner')).toBeVisible({ timeout: 10_000 });
+      await expect(viewerPage.locator('#saas-maintenance-banner')).toContainText('Emulator maintenance active');
+      await expect(viewerPage.locator('#saas-account-widget [data-action="workspace"]')).toBeDisabled();
+      await expect(viewerPage.locator('#saas-workspace-backdrop')).toHaveCount(0);
+
+      // Admin disables maintenance mode and viewer sees normal workspace on reload
+      await flagsForm.locator('input[name="maintenanceMode"]').uncheck();
+      await flagsForm.locator('button[type="submit"]').click();
+      await expect(page.locator('.saas-admin-notice')).toBeVisible({ timeout: 10_000 });
+
+      await viewerPage.reload();
+      await expect(viewerPage.locator('#saas-account-widget')).toBeAttached({ timeout: 15_000 });
+      await expect(viewerPage.locator('#saas-maintenance-banner')).toHaveCount(0);
+      await openWorkspaceDialog(viewerPage);
+      await expect(viewerPage.locator('#saas-workspace-backdrop')).toBeVisible();
+    } finally {
+      await viewerPage.context().close();
+    }
+  });
 });

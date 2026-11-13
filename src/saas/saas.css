@@ -273,6 +273,9 @@ body.saas-locked #labels-container { pointer-events: none !important; }
 .saas-workspace-form-actions .saas-workspace-primary { min-height: 34px; }
 .saas-workspace-form .saas-workspace-close { position: absolute; top: 14px; right: 14px; }
 .saas-account-widget [data-action="workspace"] { border: 1px solid #2e7792; color: #9be5fa; background: #0c2836; }
+.saas-account-widget [data-action="workspace"][aria-disabled="true"] { opacity: .55; cursor: not-allowed; }
+.saas-maintenance-banner { position: fixed; top: 54px; left: 50%; transform: translateX(-50%); z-index: 1200000; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; max-width: min(92vw, 680px); padding: 8px 14px; border: 1px solid rgba(245, 158, 11, .6); border-radius: 10px; color: #fef3c7; background: rgba(69, 26, 3, .95); box-shadow: 0 12px 30px rgba(0, 0, 0, .45); font: 600 12px/1.4 system-ui, sans-serif; }
+.saas-maintenance-banner strong { color: #fbbf24; font-weight: 800; }
 @media (max-width: 720px) {
   .saas-workspace-backdrop { padding: 7px; }
   .saas-workspace-dialog { max-height: calc(100dvh - 14px); border-radius: 12px; }

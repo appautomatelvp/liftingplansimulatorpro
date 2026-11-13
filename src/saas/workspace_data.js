@@ -3,6 +3,7 @@ import {
   serverTimestamp, startAfter
 } from 'firebase/firestore';
 import { readUsageQuota, recordUsageWrite } from './telemetry_usage.js';
+import { getTierSlotLimit } from './runtime_flags.js';
 
 export { readUsageQuota };
 
@@ -179,14 +180,18 @@ export function migrateSnapshot(snapshot, fromVersion = snapshot?.solverVersion)
   };
 }
 
-function maximumSlots(tier) { return tier === 'premium' || tier === 'admin' ? 200 : 20; }
+export function maximumSlots(profileOrTier, flags = null) {
+  const profile = typeof profileOrTier === 'string' ? { tier: profileOrTier } : profileOrTier;
+  return getTierSlotLimit(profile, flags);
+}
 
-async function createInAvailableSlot(db, uid, tier, type, value) {
+async function createInAvailableSlot(db, uid, profileOrTier, type, value, flags = null) {
+  const limitSlots = maximumSlots(profileOrTier, flags);
   const coll = collection(db, 'users', uid, type);
-  const snapshot = await getDocs(query(coll, orderBy('updatedAt', 'desc'), limit(maximumSlots(tier))));
+  const snapshot = await getDocs(query(coll, orderBy('updatedAt', 'desc'), limit(limitSlots)));
   const occupied = new Set(snapshot.docs.map((entry) => entry.id));
-  const slot = Array.from({ length: maximumSlots(tier) }, (_, index) => String(index + 1)).find((id) => !occupied.has(id));
-  if (!slot) throw new Error(`Storage limit reached (${maximumSlots(tier)} ${type === 'equipment' ? 'items' : 'plans'}). Archive or delete an item, or change your plan.`);
+  const slot = Array.from({ length: limitSlots }, (_, index) => String(index + 1)).find((id) => !occupied.has(id));
+  if (!slot) throw new Error(`Storage limit reached (${limitSlots} ${type === 'equipment' ? 'items' : 'plans'}). Archive or delete an item, or change your plan.`);
   const ref = doc(db, 'users', uid, type, slot);
   await runTransaction(db, async (transaction) => {
     if ((await transaction.get(ref)).exists()) throw new Error('A simultaneous save used this slot. Please retry.');
@@ -195,9 +200,9 @@ async function createInAvailableSlot(db, uid, tier, type, value) {
   return slot;
 }
 
-export async function createEquipment(db, profile, input) {
+export async function createEquipment(db, profile, input, options = {}) {
   const value = buildEquipmentRecord(input, profile.uid);
-  const slot = await createInAvailableSlot(db, profile.uid, profile.tier, 'equipment', value);
+  const slot = await createInAvailableSlot(db, profile.uid, profile, 'equipment', value, options?.flags || null);
   await recordUsageWrite(db, profile.uid, { equipmentDelta: 1 }).catch(() => {});
   return slot;
 }
@@ -212,7 +217,7 @@ export async function updateEquipment(db, uid, id, input) {
   });
 }
 
-export async function createLiftPlan(db, profile, { title, description = '', snapshot, archived = false, equipmentIds = [] }) {
+export async function createLiftPlan(db, profile, { title, description = '', snapshot, archived = false, equipmentIds = [], flags = null }) {
   const serialized = typeof snapshot === 'string' ? snapshot : JSON.stringify(snapshot);
   parsePlanSnapshot(serialized);
   const value = {
@@ -221,7 +226,7 @@ export async function createLiftPlan(db, profile, { title, description = '', sna
     revision: 1, solverVersion: SOLVER_VERSION, archived: Boolean(archived), snapshot: serialized,
     equipmentIds: normalizeEquipmentIds(equipmentIds)
   };
-  const slot = await createInAvailableSlot(db, profile.uid, profile.tier, 'liftPlans', value);
+  const slot = await createInAvailableSlot(db, profile.uid, profile, 'liftPlans', value, flags);
   await recordUsageWrite(db, profile.uid, { plansDelta: 1 }).catch(() => {});
   return slot;
 }

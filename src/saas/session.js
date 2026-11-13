@@ -19,7 +19,8 @@ import { needsEmailVerification } from './access.js';
 import { canAccessCms } from './cms_data.js';
 import { getLang, t } from '../i18n/index.js';
 import { saasT } from './i18n.js';
-import { installBoundedErrorCounter } from './telemetry_usage.js';
+import { installBoundedErrorCounter, normalizeFeatureFlags, readFeatureFlags } from './telemetry_usage.js';
+import { isMaintenance, loadFlagsOnce } from './runtime_flags.js';
 import { buildDeveloperContactMailto } from './feedback.js';
 import { mountWorkspaceDashboard } from './workspace_dashboard.js';
 import { trapDialogFocus } from './dialog_accessibility.js';
@@ -45,6 +46,7 @@ function mountAccountWidget(profile, authUser, onSignOut, onWorkspace) {
   const widget = document.createElement('aside');
   widget.id = 'saas-account-widget';
   widget.className = 'saas-account-widget';
+  let maintenanceBlocked = false;
   const render = () => {
     const lang = getLang();
     const roleBadge = profile.role === 'admin'
@@ -52,8 +54,11 @@ function mountAccountWidget(profile, authUser, onSignOut, onWorkspace) {
       : (canAccessCms(profile)
         ? String(profile.role).toUpperCase()
         : (profile.tier === 'premium' ? 'PREMIUM' : 'FREE'));
-    widget.innerHTML = `<span class="saas-account-dot"></span><span class="saas-account-copy"><strong>${escapeHtml(authUser.displayName || authUser.email || 'SafeLift3D user')}</strong><small>${escapeHtml(roleBadge)}</small></span><button type="button" data-action="workspace">${saasT('saasMyWorkspace', null, lang)}</button>${canAccessCms(profile) ? `<a href="/admin">${saasT('saasAdminCms', null, lang)}</a>` : ''}<button type="button" data-action="signout">${saasT('adminSignOut', null, lang)}</button>`;
-    widget.querySelector('[data-action="workspace"]')?.addEventListener('click', onWorkspace);
+    const blockedTitle = maintenanceBlocked ? ` disabled aria-disabled="true" title="${escapeHtml(saasT('maintenanceWorkspaceBlocked', null, lang))}"` : '';
+    widget.innerHTML = `<span class="saas-account-dot"></span><span class="saas-account-copy"><strong>${escapeHtml(authUser.displayName || authUser.email || 'SafeLift3D user')}</strong><small>${escapeHtml(roleBadge)}</small></span><button type="button" data-action="workspace"${blockedTitle}>${saasT('saasMyWorkspace', null, lang)}</button>${canAccessCms(profile) ? `<a href="/admin">${saasT('saasAdminCms', null, lang)}</a>` : ''}<button type="button" data-action="signout">${saasT('adminSignOut', null, lang)}</button>`;
+    widget.querySelector('[data-action="workspace"]')?.addEventListener('click', () => {
+      if (!maintenanceBlocked) onWorkspace();
+    });
     widget.querySelector('[data-action="signout"]')?.addEventListener('click', async (event) => {
       const button = event.currentTarget;
       button.disabled = true;
@@ -72,6 +77,11 @@ function mountAccountWidget(profile, authUser, onSignOut, onWorkspace) {
   const accountMenu = document.getElementById('dropdown-panel-system');
   (accountMenu || document.body).append(widget);
   return {
+    setMaintenance(blocked) {
+      if (maintenanceBlocked === Boolean(blocked)) return;
+      maintenanceBlocked = Boolean(blocked);
+      render();
+    },
     dispose() {
       window.removeEventListener('safelift:language-changed', onLanguageChanged);
       widget.remove();
@@ -152,6 +162,9 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
   let authRun = 0;
   let lastProfileKey = '';
   let pendingAuthNotice = null;
+  let sessionFlags = null;
+  let loadSessionFlags = null;
+  let maintenanceBanner = null;
   let firebase = null;
   const onAdminRoute = window.location.pathname.replace(/\/$/, '') === '/admin';
   const contactButton = document.getElementById('btn-contact-developer');
@@ -159,12 +172,33 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
     const label = contactButton?.querySelector('[data-contact-label]');
     if (label) label.textContent = saasT('saasContactButton');
   };
+  const syncMaintenanceBanner = (profile, flags) => {
+    if (!flags || !isMaintenance(flags, profile)) {
+      maintenanceBanner?.remove();
+      maintenanceBanner = null;
+      return;
+    }
+    if (!maintenanceBanner) {
+      maintenanceBanner = document.createElement('div');
+      maintenanceBanner.id = 'saas-maintenance-banner';
+      maintenanceBanner.className = 'saas-maintenance-banner';
+      maintenanceBanner.setAttribute('role', 'status');
+      maintenanceBanner.setAttribute('aria-live', 'polite');
+    }
+    const lang = getLang();
+    maintenanceBanner.innerHTML = `<strong>${escapeHtml(saasT('maintenanceBannerTitle', null, lang))}:</strong> <span>${escapeHtml(flags.maintenanceMessage || saasT('maintenanceDefaultMsg', null, lang))}</span>`;
+    if (!maintenanceBanner.isConnected) document.body.append(maintenanceBanner);
+  };
+  const onLanguageRefresh = () => {
+    renderContactLabel();
+    syncMaintenanceBanner(window.SafeLift?.saas?.profile, sessionFlags);
+  };
   const onContactClick = () => openDeveloperContact();
   contactButton?.addEventListener('click', onContactClick);
-  window.addEventListener('safelift:language-changed', renderContactLabel);
+  window.addEventListener('safelift:language-changed', onLanguageRefresh);
   renderContactLabel();
 
-  window.SafeLift.saas = { profile: null, authUser: null, db: null, canAccessFeature: () => false };
+  window.SafeLift.saas = { profile: null, authUser: null, db: null, flags: null, canAccessFeature: () => false };
 
   function showInitial(message, isError = false) {
     root.hidden = false;
@@ -210,6 +244,20 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
     clearSplash();
   }
 
+  function applyRuntimeFlags(profile) {
+    if (!loadSessionFlags) {
+      loadSessionFlags = loadFlagsOnce(() => (firebase?.db ? readFeatureFlags(firebase.db) : normalizeFeatureFlags({})));
+    }
+    loadSessionFlags().then((loaded) => {
+      sessionFlags = loaded;
+      const latestProfile = window.SafeLift?.saas?.profile || profile;
+      if (!latestProfile) return;
+      featureAccess.setFlags(loaded);
+      syncMaintenanceBanner(latestProfile, loaded);
+      accountWidget?.setMaintenance(isMaintenance(loaded, latestProfile));
+    }).catch(() => {});
+  }
+
   function handleProfile(profile, authUser) {
     const profileKey = JSON.stringify({ uid: authUser.uid, role: profile.role, tier: profile.tier, status: profile.status, displayName: profile.displayName, email: profile.email });
     if (profileKey === lastProfileKey) return;
@@ -235,9 +283,20 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
     root.hidden = true;
     accountWidget?.dispose();
     accountWidget = mountAccountWidget(profile, authUser, () => signOut(firebase.auth), () => {
+      if (isMaintenance(sessionFlags, window.SafeLift?.saas?.profile || profile)) {
+        syncMaintenanceBanner(window.SafeLift?.saas?.profile || profile, sessionFlags);
+        return;
+      }
       workspaceDashboard?.dispose();
-      workspaceDashboard = mountWorkspaceDashboard({ db: firebase.db, profile });
+      workspaceDashboard = mountWorkspaceDashboard({ db: firebase.db, profile, flags: sessionFlags });
     });
+    if (sessionFlags) {
+      featureAccess.setFlags(sessionFlags);
+      syncMaintenanceBanner(profile, sessionFlags);
+      accountWidget?.setMaintenance(isMaintenance(sessionFlags, profile));
+    } else {
+      applyRuntimeFlags(profile);
+    }
     if (!workspaceStarted) {
       workspaceStarted = true;
       onWorkspaceAuthorized?.({ profile, authUser, db: firebase.db, auth: firebase.auth, featureAccess });
@@ -250,12 +309,17 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
     unsubscribeProfile = null;
     currentUser = null;
     lastProfileKey = '';
+    sessionFlags = null;
+    loadSessionFlags = null;
+    syncMaintenanceBanner(null, null);
+    featureAccess.setFlags(null);
     accountWidget?.dispose();
     accountWidget = null;
     workspaceDashboard?.dispose();
     workspaceDashboard = null;
     window.SafeLift.saas.profile = null;
     window.SafeLift.saas.authUser = null;
+    window.SafeLift.saas.flags = null;
     window.SafeLift.saas.canAccessFeature = () => false;
     featureAccess.setProfile(null);
     adminScreen?.dispose();
@@ -377,7 +441,8 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
       unsubscribeAuth?.();
       unsubscribeProfile?.();
       contactButton?.removeEventListener('click', onContactClick);
-      window.removeEventListener('safelift:language-changed', renderContactLabel);
+      window.removeEventListener('safelift:language-changed', onLanguageRefresh);
+      syncMaintenanceBanner(null, null);
       document.getElementById('saas-contact-dialog')?.remove();
       authScreen?.dispose();
       adminScreen?.dispose();
