@@ -161,7 +161,7 @@ Tôi không chạy được toàn bộ E2E/Rules/Build trong lượt kiểm tra 
 | S-11 | ✓ | `architecture:gate`, `npm test`, `npm run build`, `npm run check:dist` | `migrateSnapshot()` xử lý snapshot cũ (`4.x`/`legacy`), hiện tại (`5.0`), và phiên bản lạ (`UNKNOWN_SOLVER_VERSION`); Unit **37 files, 286/286** đạt (3 fixture test trong `workspace_data.test.js`); Gate OK; Build OK; `check:dist` OK | 13/11/2026 |
 | S-12 | ✓ | `architecture:gate`, `npm test`, `npm run build`, `npm run check:dist` | `exportAllWorkspaceData()` xuất toàn bộ phương án + dụng cụ phân trang cursor, kèm cooldown 10s; Unit **37 files, 287/287** đạt; Gate OK; Build OK; `check:dist` OK | 13/11/2026 |
 | S-13 | ✓ | `npm run test:rules`, `architecture:gate`, `npm test`, `npm run build`, `npm run check:dist` | Rules **15/15** (`users/{uid}/meta/usage` giới hạn ghi/ngày & `config/featureFlags` admin-write); Unit **38 files, 290/290** (`telemetry_usage.test.js`); CMS Feature Flags + bộ đếm lỗi giới hạn bộ nhớ (không spam Firestore); Gate OK; Build OK; `check:dist` OK | 13/11/2026 |
-| S-14 | □ | | | |
+| S-14 | ✓ | `architecture:gate`, `npm test`, `npm run build`, `npm run check:dist` | Giữ `mailto:` miễn phí cho Spark Free (không dùng Cloud Functions/Blaze), chuẩn hóa `buildDeveloperContactMailto()` kèm giới hạn độ dài & cooldown 15s; Unit **39 files, 292/292** (`test/feedback_mailto.test.js`); Gate OK; Build OK; `check:dist` OK | 13/11/2026 |
 | S-15 | □ | | | |
 
 ## E. NHẬT KÝ
@@ -256,3 +256,8 @@ Tôi không chạy được toàn bộ E2E/Rules/Build trong lượt kiểm tra 
 - Tạo `src/saas/telemetry_usage.js` gồm `recordUsageWrite`, `readUsageQuota`, `readFeatureFlags`, `saveFeatureFlags`, `normalizeFeatureFlags` và bộ đếm lỗi trong phiên tối đa `MAX_ERROR_BUFFER = 10` mục trong RAM (không ghi log lỗi không giới hạn lên Firestore).
 - Tích hợp hiển thị quota trong `src/saas/workspace_dashboard.js` và giao diện Feature Flags + bộ đếm lỗi trong `src/saas/admin_dashboard.js`, kèm `test/telemetry_usage.test.js`.
 - Kiểm tra: Rules **15/15** đạt; `architecture:gate` OK; Unit **38 files, 290/290** đạt; `npm run build` OK (5.67s); `npm run check:dist` OK.
+
+### S-14 — Ranh giới Gửi góp ý trên Spark Free (giữ `mailto:`)
+- Theo mặc định an toàn Spark Free (chưa cấp dịch vụ gửi mail miễn phí bên ngoài, không nâng Blaze/Cloud Functions), giữ cơ chế `mailto:` trong `src/saas/session.js`.
+- Tách logic kiểm tra/làm sạch sang `src/saas/feedback.js` (`buildDeveloperContactMailto`): giới hạn `subject <= 120`, `message <= 3000`, mã hóa URI an toàn và cooldown 15 giây; bổ sung unit test tại `test/feedback_mailto.test.js`.
+- Kiểm tra: `architecture:gate` OK; Unit **39 files, 292/292** đạt; `npm run build` OK (5.53s); `npm run check:dist` OK.

@@ -19,6 +19,7 @@ import { needsEmailVerification } from './access.js';
 import { getLang, t } from '../i18n/index.js';
 import { saasT } from './i18n.js';
 import { installBoundedErrorCounter } from './telemetry_usage.js';
+import { buildDeveloperContactMailto } from './feedback.js';
 import { mountWorkspaceDashboard } from './workspace_dashboard.js';
 import { trapDialogFocus } from './dialog_accessibility.js';
 
@@ -83,6 +84,7 @@ function createGoogleProvider() {
 }
 
 function openDeveloperContact() {
+  let lastFeedbackAt = 0;
   const lang = getLang();
   const tr = (key) => saasT(key, null, lang);
   document.getElementById('saas-contact-dialog')?.remove();
@@ -109,11 +111,20 @@ function openDeveloperContact() {
   dialog.querySelector('form')?.addEventListener('submit', (event) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const subject = String(form.get('subject') || '').trim().slice(0, 120);
-    const message = String(form.get('message') || '').trim().slice(0, 3000);
-    if (!subject || !message) return;
-    window.location.href = `mailto:levietphuong.hcmutrans@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
-    close();
+    const now = Date.now();
+    try {
+      const href = buildDeveloperContactMailto({
+        subject: form.get('subject'),
+        message: form.get('message'),
+        lastSentAt: lastFeedbackAt,
+        now
+      });
+      lastFeedbackAt = now;
+      window.location.href = href;
+      close();
+    } catch {
+      /* Keep dialog open when input is blank or cooldown is active. */
+    }
   });
   document.body.append(dialog);
   releaseFocusTrap = trapDialogFocus(dialog.querySelector('[role="dialog"]'), { initialFocus: dialog.querySelector('[name="message"]') });
