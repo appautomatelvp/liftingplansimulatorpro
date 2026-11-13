@@ -151,7 +151,7 @@ Tôi không chạy được toàn bộ E2E/Rules/Build trong lượt kiểm tra 
 | S-01 | ✓ | `Select-String -Path docs ... -Pattern vercel`, `npm run architecture:gate` | `docs/architecture/*` không còn Vercel; gate OK | 13/11/2026 |
 | S-02 | ✓ | `npm test`, `architecture:gate`, `npm run build`, `npx playwright test e2e/saas-accessibility.spec.js` | Unit 277/277 (35 file); Gate OK; Build OK; E2E i18n/a11y 16/16 | 13/11/2026 |
 | S-03 | ✓ | `npm test`, `architecture:gate`, `npm run build`, `npm run check:dist` | Unit 277/277; Gate OK; Build OK; `MAP_COUNT=0` trong `dist/` | 13/11/2026 |
-| S-04 | □ | | | |
+| S-04 | ✓ | `npm test`, `architecture:gate`, `npm run build`, Playwright CSP probe (`vite preview` + `dist/_headers`) | Unit 279/279 (36 file); Gate OK; Build OK; ghi nhận 2 vi phạm inline trong CSP Report-Only | 13/11/2026 |
 | S-05 | □ | | | |
 | S-06 | □ | | | |
 | S-07 | □ | | | |
@@ -198,3 +198,11 @@ Tôi không chạy được toàn bộ E2E/Rules/Build trong lượt kiểm tra 
 - `vite.config.js`: đặt `sourcemap: mode === 'staging'`.
 - Tạo `scripts/check-dist.mjs` và thêm script `check:dist` vào `package.json` (tích hợp vào `npm run ci`).
 - Unit: **35/35 file, 277/277 đạt**; Gate: đạt; Build: đạt (5.84s); `npm run check:dist` & `Get-ChildItem dist -Recurse -Filter *.map`: **0 file `.map`**.
+
+### S-04 — 13/11/2026
+- `public/_headers`: giữ `Cross-Origin-Opener-Policy: same-origin-allow-popups`; bổ sung `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: camera=(), microphone=(), geolocation=()`, và `Content-Security-Policy-Report-Only` (`frame-ancestors 'none'`, `'wasm-unsafe-eval'`, `worker-src 'self' blob:`, Firebase Auth/Firestore/App Check/Google Fonts/reCAPTCHA, `object-src 'none'`).
+- Unit (`test/security_headers.test.js`): **36/36 file, 279/279 test đạt**; Gate: đạt; Build: đạt (5.76s, `dist/_headers` có mặt); `npm run check:dist`: OK.
+- Probe CSP Report-Only trên `vite preview` (Chromium + `dist/_headers`) ghi nhận **2 vi phạm** (đều do inline cũ trong `index.html`, chưa bật enforce):
+  1. `script-src-attr` (`inline`): handler `onclick="document.getElementById('btn-open-liftplan').click()"` tại `index.html:2893`.
+  2. `script-src-elem` (`inline`, `index.html:3205`): `<script>` khởi tạo màn loading (`sha256-v2cQPCjV2X7ddjM6nNQVnj2Qm3h282q6tHBX2W/7bek=`).
+  - Các nguồn khác (style, font, worker, wasm) không phát sinh vi phạm. Sẽ bỏ 2 inline này trước khi chuyển CSP sang enforce.
