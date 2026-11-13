@@ -16,6 +16,7 @@ import { ensureUserProfile, watchUserProfile } from './firebase_data.js';
 import { initializeFirebaseClient, getFirebaseSetupStatus } from './firebase.js';
 import { installFeatureAccessUI } from './feature_access_ui.js';
 import { needsEmailVerification } from './access.js';
+import { canAccessCms } from './cms_data.js';
 import { getLang, t } from '../i18n/index.js';
 import { saasT } from './i18n.js';
 import { installBoundedErrorCounter } from './telemetry_usage.js';
@@ -46,7 +47,12 @@ function mountAccountWidget(profile, authUser, onSignOut, onWorkspace) {
   widget.className = 'saas-account-widget';
   const render = () => {
     const lang = getLang();
-    widget.innerHTML = `<span class="saas-account-dot"></span><span class="saas-account-copy"><strong>${escapeHtml(authUser.displayName || authUser.email || 'SafeLift3D user')}</strong><small>${profile.role === 'admin' ? 'ADMIN' : (profile.tier === 'premium' ? 'PREMIUM' : 'FREE')}</small></span><button type="button" data-action="workspace">${saasT('saasMyWorkspace', null, lang)}</button>${profile.role === 'admin' ? `<a href="/admin">${saasT('saasAdminCms', null, lang)}</a>` : ''}<button type="button" data-action="signout">${saasT('adminSignOut', null, lang)}</button>`;
+    const roleBadge = profile.role === 'admin'
+      ? 'ADMIN'
+      : (canAccessCms(profile)
+        ? String(profile.role).toUpperCase()
+        : (profile.tier === 'premium' ? 'PREMIUM' : 'FREE'));
+    widget.innerHTML = `<span class="saas-account-dot"></span><span class="saas-account-copy"><strong>${escapeHtml(authUser.displayName || authUser.email || 'SafeLift3D user')}</strong><small>${escapeHtml(roleBadge)}</small></span><button type="button" data-action="workspace">${saasT('saasMyWorkspace', null, lang)}</button>${canAccessCms(profile) ? `<a href="/admin">${saasT('saasAdminCms', null, lang)}</a>` : ''}<button type="button" data-action="signout">${saasT('adminSignOut', null, lang)}</button>`;
     widget.querySelector('[data-action="workspace"]')?.addEventListener('click', onWorkspace);
     widget.querySelector('[data-action="signout"]')?.addEventListener('click', async (event) => {
       const button = event.currentTarget;

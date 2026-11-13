@@ -250,3 +250,64 @@ test('usage meta enforces daily write bounds and config/featureFlags is admin-wr
   await assertFails(getDoc(doc(anonDb, 'config', 'featureFlags')));
   await assertFails(getDocs(collection(adminDb, 'config')));
 });
+
+test('granular roles, immutable adminAuditLogs, and catalog metadata permissions are enforced', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    const db = ctx.firestore();
+    await setDoc(doc(db, 'users', 'support-user'), {
+      uid: 'support-user', email: 'support@example.test', displayName: 'Support',
+      role: 'support', tier: 'free', status: 'active', createdAt: new Date(), lastLogin: new Date()
+    });
+    await setDoc(doc(db, 'users', 'catalog-user'), {
+      uid: 'catalog-user', email: 'catalog@example.test', displayName: 'Catalog Editor',
+      role: 'catalog-editor', tier: 'free', status: 'active', createdAt: new Date(), lastLogin: new Date()
+    });
+  });
+
+  const supportDb = env.authenticatedContext('support-user').firestore();
+  const catalogDb = env.authenticatedContext('catalog-user').firestore();
+  const adminDb = env.authenticatedContext('admin-user').firestore();
+  const ownerDb = env.authenticatedContext(ownerUid).firestore();
+
+  // Support may read users list (<=26) and audit logs (<=25), but cannot modify users or write logs/catalog
+  await assertSucceeds(getDocs(query(collection(supportDb, 'users'), limit(10))));
+  await assertFails(updateDoc(doc(supportDb, 'users', ownerUid), { tier: 'premium' }));
+  await assertFails(setDoc(doc(supportDb, 'catalog', 'shackle-25t'), {
+    id: 'shackle-25t', kind: 'hardware', title: 'Shackle 25T', category: 'shackle',
+    wllT: 25, massKg: 14, tier: 'free', enabled: true, notes: '', updatedBy: 'support-user', updatedAt: serverTimestamp()
+  }));
+
+  // Catalog editor can CRUD catalog and log CATALOG_* events, but cannot read/modify users or write USER_ACCESS_UPDATE logs
+  await assertFails(getDocs(query(collection(catalogDb, 'users'), limit(10))));
+  await assertSucceeds(setDoc(doc(catalogDb, 'catalog', 'shackle-25t'), {
+    id: 'shackle-25t', kind: 'hardware', title: 'Shackle 25T', category: 'shackle',
+    wllT: 25, massKg: 14, tier: 'free', enabled: true, notes: 'Crosby G2130', updatedBy: 'catalog-user', updatedAt: serverTimestamp()
+  }));
+  await assertSucceeds(setDoc(doc(catalogDb, 'adminAuditLogs', 'log-cat-1'), {
+    actorUid: 'catalog-user', action: 'CATALOG_UPSERT', targetType: 'catalog', targetId: 'shackle-25t',
+    summary: 'Created shackle-25t', createdAt: serverTimestamp()
+  }));
+  await assertFails(setDoc(doc(catalogDb, 'adminAuditLogs', 'log-cat-illegal'), {
+    actorUid: 'catalog-user', action: 'USER_ACCESS_UPDATE', targetType: 'user', targetId: ownerUid,
+    summary: 'Illegal log', createdAt: serverTimestamp()
+  }));
+
+  // Standard user can read bounded catalog, cannot write catalog or read/write audit logs
+  await assertSucceeds(getDocs(query(collection(ownerDb, 'catalog'), limit(20))));
+  await assertFails(getDocs(query(collection(ownerDb, 'catalog'), limit(51))));
+  await assertFails(setDoc(doc(ownerDb, 'catalog', 'hack'), {
+    id: 'hack', kind: 'hardware', title: 'Hack', category: 'shackle',
+    wllT: 1, massKg: 1, tier: 'free', enabled: true, notes: '', updatedBy: ownerUid, updatedAt: serverTimestamp()
+  }));
+  await assertFails(getDocs(query(collection(ownerDb, 'adminAuditLogs'), limit(10))));
+
+  // Audit logs are append-only: admin can create & read (<=25) and support can read, but nobody can update or delete
+  await assertSucceeds(setDoc(doc(adminDb, 'adminAuditLogs', 'log-adm-1'), {
+    actorUid: 'admin-user', action: 'USER_ACCESS_UPDATE', targetType: 'user', targetId: ownerUid,
+    summary: 'tier -> premium', createdAt: serverTimestamp()
+  }));
+  await assertSucceeds(getDocs(query(collection(supportDb, 'adminAuditLogs'), limit(25))));
+  await assertFails(getDocs(query(collection(supportDb, 'adminAuditLogs'), limit(26))));
+  await assertFails(updateDoc(doc(adminDb, 'adminAuditLogs', 'log-adm-1'), { summary: 'tampered' }));
+  await assertFails(deleteDoc(doc(adminDb, 'adminAuditLogs', 'log-adm-1')));
+});

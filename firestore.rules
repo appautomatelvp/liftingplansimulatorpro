@@ -9,11 +9,15 @@ service cloud.firestore {
       return /databases/$(database)/documents/users/$(uid);
     }
 
-    function activeAdmin() {
+    function activeRole(roles) {
       return signedIn()
         && exists(userPath(request.auth.uid))
-        && get(userPath(request.auth.uid)).data.role == 'admin'
-        && get(userPath(request.auth.uid)).data.status == 'active';
+        && get(userPath(request.auth.uid)).data.status == 'active'
+        && get(userPath(request.auth.uid)).data.role in roles;
+    }
+
+    function activeAdmin() {
+      return activeRole(['admin']);
     }
 
     function activeOwner(uid) {
@@ -46,6 +50,34 @@ service cloud.firestore {
         && request.resource.data.maintenanceMessage is string && request.resource.data.maintenanceMessage.size() <= 300
         && request.resource.data.freePlanLimit is int && request.resource.data.freePlanLimit >= 1 && request.resource.data.freePlanLimit <= 200
         && request.resource.data.disabledModules is list && request.resource.data.disabledModules.size() <= 20
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function validAuditLog() {
+      return request.resource.data.keys().hasOnly(['actorUid', 'action', 'targetType', 'targetId', 'summary', 'createdAt'])
+        && request.resource.data.keys().hasAll(['actorUid', 'action', 'targetType', 'targetId', 'summary', 'createdAt'])
+        && request.resource.data.actorUid == request.auth.uid
+        && request.resource.data.action in ['USER_ACCESS_UPDATE', 'FLAGS_UPDATE', 'CATALOG_UPSERT', 'CATALOG_DELETE']
+        && request.resource.data.targetType in ['user', 'config', 'catalog']
+        && request.resource.data.targetId is string && request.resource.data.targetId.size() > 0 && request.resource.data.targetId.size() <= 128
+        && request.resource.data.summary is string && request.resource.data.summary.size() <= 240
+        && request.resource.data.createdAt == request.time;
+    }
+
+    function validCatalogItem(itemId) {
+      return itemId.matches('^[a-z0-9_-]{2,64}$')
+        && request.resource.data.keys().hasOnly(['id', 'kind', 'title', 'category', 'wllT', 'massKg', 'tier', 'enabled', 'notes', 'updatedBy', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['id', 'kind', 'title', 'category', 'wllT', 'massKg', 'tier', 'enabled', 'notes', 'updatedBy', 'updatedAt'])
+        && request.resource.data.id == itemId
+        && request.resource.data.kind in ['cargo', 'beam', 'sling', 'hardware']
+        && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 100
+        && request.resource.data.category is string && request.resource.data.category.size() <= 60
+        && (request.resource.data.wllT == null || (request.resource.data.wllT is number && request.resource.data.wllT >= 0 && request.resource.data.wllT <= 100000))
+        && (request.resource.data.massKg == null || (request.resource.data.massKg is number && request.resource.data.massKg >= 0 && request.resource.data.massKg <= 10000000))
+        && request.resource.data.tier in ['free', 'premium']
+        && request.resource.data.enabled is bool
+        && request.resource.data.notes is string && request.resource.data.notes.size() <= 300
         && request.resource.data.updatedBy == request.auth.uid
         && request.resource.data.updatedAt == request.time;
     }
@@ -95,8 +127,8 @@ service cloud.firestore {
     }
 
     match /users/{uid} {
-      allow get: if signedIn() && (request.auth.uid == uid || activeAdmin());
-      allow list: if activeAdmin() && request.query.limit != null && request.query.limit <= 26;
+      allow get: if signedIn() && (request.auth.uid == uid || activeRole(['admin', 'support']));
+      allow list: if activeRole(['admin', 'support']) && request.query.limit != null && request.query.limit <= 26;
 
       allow create: if signedIn()
         && request.auth.uid == uid
@@ -170,6 +202,21 @@ service cloud.firestore {
       allow list: if false;
       allow create, update: if activeAdmin() && docId == 'featureFlags' && validFeatureFlags();
       allow delete: if false;
+    }
+
+    match /adminAuditLogs/{logId} {
+      allow get: if activeRole(['admin', 'support']);
+      allow list: if activeRole(['admin', 'support']) && request.query.limit != null && request.query.limit <= 25;
+      allow create: if activeRole(['admin', 'catalog-editor']) && validAuditLog()
+        && (activeAdmin() || request.resource.data.action in ['CATALOG_UPSERT', 'CATALOG_DELETE']);
+      allow update, delete: if false;
+    }
+
+    match /catalog/{itemId} {
+      allow get: if signedIn();
+      allow list: if signedIn() && request.query.limit != null && request.query.limit <= 50;
+      allow create, update: if activeRole(['admin', 'catalog-editor']) && validCatalogItem(itemId);
+      allow delete: if activeRole(['admin', 'catalog-editor']);
     }
 
     match /{document=**} {
