@@ -108,7 +108,7 @@ Chưa kiểm chứng trong lượt này: nguyên nhân gốc của 9 lỗi layou
 | T-07 | ✓ | `architecture:gate`, `npm run test:e2e:auth` | Tạo `e2e/emulator_helpers.js` + `e2e/cms-roles.spec.js`, cập nhật `playwright.auth.config.js` chạy cả `auth.spec.js` và `cms-roles.spec.js`; E2E Emulator **5/5 đạt** (`2.3m`: `user` bị chặn, `support` chỉ đọc/nút `disabled`, `catalog-editor` chỉ thấy catalog, `admin` bắt buộc lý do + ghi dòng audit `before -> after`) | 13/11/2026 |
 | T-08 | ✓ (chờ push lấy run id) | Kiểm tra cú pháp YAML `.github/workflows/ci.yml` + rà indent | Thêm bước `npm run test:e2e:auth`, giữ upload artifact khi lỗi (`playwright-report/` + `test-results/`), giữ không thêm `e2e/layout.spec.js` theo T-05; YAML sạch, không tab | 13/11/2026 |
 | T-09 | ✓ | Đối chiếu `Select-String` + file thực tế | Cập nhật checklist `PRODUCT_UPGRADE_PLAN.md` (`G0.09`, `G1.05`, `G1.07`, `G2.05–G2.06`, `G3.01–G3.05`, `G5.01`, `G6.02`, `G6.04`, "Bước tiếp theo") và `SECURITY_THREAT_MODEL.md` đúng bằng chứng thật (hạng mục staging/MFA/backup giữ `◐`/`□`); `PERFORMANCE.md` giữ nguyên vì Rapier chunk vẫn `4,336.69 kB` | 13/11/2026 |
-| T-10 | □ | | | |
+| T-10 | ✓ | `architecture:gate`, `npm test`, `test:rules`, `build`, `check:dist`, `npm audit --audit-level=high`, `npx playwright test`, `npm run test:e2e:auth`, `git status` | Gate OK; Unit **42/42 (308/308)**; Rules **20/20**; Build **5.89s** + `check:dist` OK; `npm audit`: **0** high+; `npx playwright test` (4 viewport): **47 passed, 20 skipped** (auth/cms chạy qua `test:e2e:auth`), **5 failed đã biết/hoãn theo T-05** (`UI-008` ×4 + `UI-003` ×1 trên `hd-720p`; `UI-015` 4/4, `saas-accessibility` 16/16); `npm run test:e2e:auth` **5/5 passed** | 13/11/2026 |
 
 ## 5. Nhật ký
 
@@ -167,3 +167,15 @@ Chưa kiểm chứng trong lượt này: nguyên nhân gốc của 9 lỗi layou
 ### T-09 Đồng bộ tài liệu (G-09) — 13/11/2026
 - Cập nhật `docs/PRODUCT_UPGRADE_PLAN.md`: đồng bộ `G0.09`, `G1.05`, `G1.06`, `G1.07`, `G2.05`, `G2.06`, `G3.01–G3.05`, `G5.01`, `G6.02`, `G6.04` theo đúng bằng chứng lệnh xanh cục bộ + Emulator (giữ `◐`/`□` cho các phần cần staging/CI remote/MFA/billing), và thay đoạn `Bước tiếp theo khi tiếp tục` bằng trỏ tới `docs/UPGRADE_PLAN_V3_SUPPLEMENT.md`.
 - Cập nhật `docs/SECURITY_THREAT_MODEL.md`: đồng bộ phân quyền 3 vai trò CMS, `adminAuditLogs` bất biến ghi nguyên tử với `reason` và diff `before`/`after`, kill switch `config/featureFlags`, kết quả kiểm chứng Rules Emulator 20/20 + Auth/CMS E2E 5/5 + probe CSP 0 vi phạm. `docs/architecture/PERFORMANCE.md` không cần đổi số đo (chunk `rapier` vẫn `4,336.69 kB`).
+
+### T-10 Rà soát cuối — 13/11/2026
+- `npm run architecture:gate`: đạt (6 shim 7 lines, 28 manifest parts).
+- `npm test -- --reporter=dot`: **42/42 file, 308/308 test đạt** (`36.37s`).
+- `npm run build`: xong trong `5.89s`; `npm run check:dist`: `OK: no .map files in dist/`.
+- `npm audit --audit-level=high`: `found 0 vulnerabilities`.
+- `npm run test:rules`: **20/20 passed** (`4771.74ms`).
+- `npx playwright test --reporter=list` (4 viewport, 72 ca tổng cộng): **47 passed** (`31/36` `layout.spec.js` gồm `UI-015` 4/4; `16/16` `saas-accessibility.spec.js`), **20 skipped** (`auth.spec.js` và `cms-roles.spec.js` cần `VITE_USE_EMULATORS=true`), **5 failed là đúng 5 ca hoãn theo quyết định T-05**:
+  - `UI-008` ×4 viewport (`fhd-1080p`, `hd-720p`, `laptop-768p`, `qhd-1440p`: `#safety-hud` bị `#app-loading-screen` che).
+  - `UI-003` ×1 viewport (`hd-720p`: `dockRightEdge 928.5234375 > drawerLeftEdge + 5 = 925`).
+- `npm run test:e2e:auth`: **5/5 passed** (`2.3m`, chạy 4 ca `e2e/auth.spec.js` + 1 ca `e2e/cms-roles.spec.js` trên Auth + Firestore Emulator).
+- Hạng mục ngoài phạm vi tự động dành cho chủ sản phẩm giữ nguyên ở Mục 3 (push lấy GitHub CI run id, Preview Cloudflare `VITE_APP_ENV=staging` + Google login, bật CSP/App Check enforce, mở lại UI-008/UI-003 sau khi cấu hình xong Firebase).
