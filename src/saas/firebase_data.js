@@ -1,10 +1,16 @@
 import {
   collection,
   doc,
+  endAt,
   getDoc,
   getDocs,
+  limit,
   onSnapshot,
+  orderBy,
+  query,
   serverTimestamp,
+  startAfter,
+  startAt,
   setDoc,
   updateDoc
 } from 'firebase/firestore';
@@ -43,10 +49,27 @@ export function watchUserProfile(db, uid, onProfile, onError) {
   }, onError);
 }
 
-export async function listAllUsers(db) {
-  const snapshot = await getDocs(collection(db, 'users'));
-  return snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() }))
-    .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+export const ADMIN_USERS_PAGE_SIZE = 25;
+
+export async function listUsersPage(db, { cursor = null, emailPrefix = '', pageSize = ADMIN_USERS_PAGE_SIZE } = {}) {
+  const normalizedPrefix = String(emailPrefix).trim().toLowerCase().slice(0, 254);
+  const requestedPageSize = Number(pageSize);
+  const boundedPageSize = Number.isFinite(requestedPageSize)
+    ? Math.min(Math.max(1, Math.floor(requestedPageSize)), ADMIN_USERS_PAGE_SIZE)
+    : ADMIN_USERS_PAGE_SIZE;
+  const constraints = normalizedPrefix
+    ? [orderBy('email'), startAt(normalizedPrefix), endAt(`${normalizedPrefix}\uf8ff`)]
+    : [orderBy('createdAt', 'desc')];
+  if (cursor) constraints.push(startAfter(cursor));
+  constraints.push(limit(boundedPageSize + 1));
+
+  const snapshot = await getDocs(query(collection(db, 'users'), ...constraints));
+  const pageDocs = snapshot.docs.slice(0, boundedPageSize);
+  return {
+    users: pageDocs.map((entry) => ({ id: entry.id, ...entry.data() })),
+    cursor: pageDocs.length ? pageDocs[pageDocs.length - 1] : null,
+    hasMore: snapshot.docs.length > boundedPageSize
+  };
 }
 
 export async function setUserAccess(db, uid, update) {

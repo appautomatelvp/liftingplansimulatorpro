@@ -7,6 +7,7 @@ import {
   collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc, updateDoc
 } from 'firebase/firestore';
 import { readFile } from 'node:fs/promises';
+import { listUsersPage } from '../src/saas/firebase_data.js';
 
 const projectId = 'safelift3d-rules-test';
 const ownerUid = 'free-owner';
@@ -51,6 +52,13 @@ before(async () => {
     ]) {
       await setDoc(doc(db, 'users', uid), {
         ...profile(uid, tier, role), status: uid === lockedUid || uid === 'inactive-admin' ? 'locked' : 'active'
+      });
+    }
+    for (let index = 0; index < 30; index += 1) {
+      const uid = `page-user-${String(index).padStart(2, '0')}`;
+      await setDoc(doc(db, 'users', uid), {
+        ...profile(uid), email: `${index < 3 ? 'alpha' : 'member'}${String(index).padStart(2, '0')}@example.test`,
+        createdAt: new Date(Date.UTC(2026, 0, index + 1))
       });
     }
   });
@@ -107,6 +115,23 @@ test('workspace list is owner-scoped and user profile listing remains admin-only
   await assertFails(getDocs(collection(ownerDb, 'users')));
   await assertSucceeds(getDocs(collection(env.authenticatedContext('admin-user').firestore(), 'users')));
   await assertFails(getDocs(collection(env.authenticatedContext('inactive-admin').firestore(), 'users')));
+});
+
+test('admin user directory paginates with a bounded query and filters by email prefix', async () => {
+  const adminDb = env.authenticatedContext('admin-user').firestore();
+  const firstPage = await listUsersPage(adminDb, { pageSize: 25 });
+  assert.equal(firstPage.users.length, 25);
+  assert.equal(firstPage.hasMore, true);
+  assert.ok(firstPage.cursor);
+
+  const secondPage = await listUsersPage(adminDb, { cursor: firstPage.cursor, pageSize: 25 });
+  assert.equal(secondPage.users.length, 5);
+  assert.equal(secondPage.hasMore, false);
+  assert.equal(new Set([...firstPage.users, ...secondPage.users].map((user) => user.uid)).size, 30);
+
+  const matching = await listUsersPage(adminDb, { emailPrefix: 'ALPHA', pageSize: 2 });
+  assert.deepEqual(matching.users.map((user) => user.email), ['alpha00@example.test', 'alpha01@example.test']);
+  assert.equal(matching.hasMore, true);
 });
 
 test('cross-account reads, updates, and deletes are denied for equipment and lift plans', async () => {
