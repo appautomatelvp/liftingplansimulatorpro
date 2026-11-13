@@ -4,7 +4,7 @@ import {
   assertFails, assertSucceeds, initializeTestEnvironment
 } from '@firebase/rules-unit-testing';
 import {
-  collection, doc, getDoc, getDocs, serverTimestamp, setDoc, updateDoc
+  collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc, updateDoc
 } from 'firebase/firestore';
 import { readFile } from 'node:fs/promises';
 
@@ -12,6 +12,7 @@ const projectId = 'safelift3d-rules-test';
 const ownerUid = 'free-owner';
 const premiumUid = 'premium-owner';
 const otherUid = 'other-user';
+const lockedUid = 'locked-owner';
 let env;
 
 function profile(uid, tier = 'free', role = 'user') {
@@ -45,9 +46,12 @@ before(async () => {
   await env.withSecurityRulesDisabled(async (context) => {
     const db = context.firestore();
     for (const [uid, tier, role] of [
-      [ownerUid, 'free', 'user'], [premiumUid, 'premium', 'user'], [otherUid, 'free', 'user'], ['admin-user', 'admin', 'admin']
+      [ownerUid, 'free', 'user'], [premiumUid, 'premium', 'user'], [otherUid, 'free', 'user'],
+      [lockedUid, 'free', 'user'], ['admin-user', 'admin', 'admin'], ['inactive-admin', 'admin', 'admin']
     ]) {
-      await setDoc(doc(db, 'users', uid), profile(uid, tier, role));
+      await setDoc(doc(db, 'users', uid), {
+        ...profile(uid, tier, role), status: uid === lockedUid || uid === 'inactive-admin' ? 'locked' : 'active'
+      });
     }
   });
 });
@@ -102,4 +106,65 @@ test('workspace list is owner-scoped and user profile listing remains admin-only
   await assertFails(getDocs(collection(ownerDb, 'users', otherUid, 'equipment')));
   await assertFails(getDocs(collection(ownerDb, 'users')));
   await assertSucceeds(getDocs(collection(env.authenticatedContext('admin-user').firestore(), 'users')));
+  await assertFails(getDocs(collection(env.authenticatedContext('inactive-admin').firestore(), 'users')));
+});
+
+test('cross-account reads, updates, and deletes are denied for equipment and lift plans', async () => {
+  const ownerDb = env.authenticatedContext(ownerUid).firestore();
+  await assertSucceeds(setDoc(doc(ownerDb, 'users', ownerUid, 'equipment', '3'), equipment(ownerUid)));
+  await assertSucceeds(setDoc(doc(ownerDb, 'users', ownerUid, 'liftPlans', '3'), plan(ownerUid)));
+
+  const otherDb = env.authenticatedContext(otherUid).firestore();
+  const equipmentRef = doc(otherDb, 'users', ownerUid, 'equipment', '3');
+  const planRef = doc(otherDb, 'users', ownerUid, 'liftPlans', '3');
+  await assertFails(getDoc(equipmentRef));
+  await assertFails(updateDoc(equipmentRef, { notes: 'tampered' }));
+  await assertFails(updateDoc(planRef, { title: 'tampered', revision: 2, updatedAt: serverTimestamp() }));
+  await assertFails(deleteDoc(equipmentRef));
+  await assertFails(deleteDoc(planRef));
+
+  await assertSucceeds(deleteDoc(doc(ownerDb, 'users', ownerUid, 'equipment', '3')));
+});
+
+test('locked users cannot access workspace data, including existing records', async () => {
+  const lockedDb = env.authenticatedContext(lockedUid).firestore();
+  await env.withSecurityRulesDisabled(async (context) => {
+    await setDoc(doc(context.firestore(), 'users', lockedUid, 'equipment', '1'), equipment(lockedUid));
+  });
+  await assertFails(getDoc(doc(lockedDb, 'users', lockedUid, 'equipment', '1')));
+  await assertFails(getDocs(collection(lockedDb, 'users', lockedUid, 'equipment')));
+  await assertFails(setDoc(doc(lockedDb, 'users', lockedUid, 'equipment', '2'), equipment(lockedUid)));
+});
+
+test('profile creation cannot self-assign admin, premium, or a locked status', async () => {
+  const db = env.authenticatedContext('new-user', { email: 'new-user@example.test' }).firestore();
+  const valid = {
+    uid: 'new-user', email: 'new-user@example.test', displayName: 'New user', role: 'user', tier: 'free',
+    status: 'active', createdAt: serverTimestamp(), lastLogin: serverTimestamp()
+  };
+  await assertSucceeds(setDoc(doc(db, 'users', 'new-user'), valid));
+  await assertFails(setDoc(doc(db, 'users', 'self-admin'), { ...valid, uid: 'self-admin', role: 'admin' }));
+
+  const premiumDb = env.authenticatedContext('premium-self', { email: 'premium-self@example.test' }).firestore();
+  await assertFails(setDoc(doc(premiumDb, 'users', 'premium-self'), { ...valid, uid: 'premium-self', email: 'premium-self@example.test', tier: 'premium' }));
+  const lockedProfileDb = env.authenticatedContext('locked-self', { email: 'locked-self@example.test' }).firestore();
+  await assertFails(setDoc(doc(lockedProfileDb, 'users', 'locked-self'), { ...valid, uid: 'locked-self', email: 'locked-self@example.test', status: 'locked' }));
+});
+
+test('rules reject malformed equipment, unknown collections, and unauthorized profile changes', async () => {
+  const ownerDb = env.authenticatedContext(ownerUid).firestore();
+  await assertFails(setDoc(doc(ownerDb, 'users', ownerUid, 'equipment', '4'), { ...equipment(ownerUid), notes: 'x'.repeat(501) }));
+  await assertFails(setDoc(doc(ownerDb, 'users', ownerUid, 'equipment', '5'), { ...equipment(ownerUid), category: 'unsupported' }));
+  await assertFails(setDoc(doc(ownerDb, 'users', ownerUid, 'privateData', '1'), { secret: 'no access' }));
+  await assertFails(updateDoc(doc(ownerDb, 'users', ownerUid), { role: 'admin' }));
+  await assertFails(updateDoc(doc(ownerDb, 'users', ownerUid), { status: 'locked' }));
+});
+
+test('lift-plan rules reject malformed fields and administrators cannot use owner data paths', async () => {
+  const ownerDb = env.authenticatedContext(ownerUid).firestore();
+  await assertFails(setDoc(doc(ownerDb, 'users', ownerUid, 'liftPlans', '4'), { ...plan(ownerUid), revision: 0 }));
+  await assertFails(setDoc(doc(ownerDb, 'users', ownerUid, 'liftPlans', '5'), { ...plan(ownerUid), equipmentIds: Array(21).fill('1') }));
+  const adminDb = env.authenticatedContext('admin-user').firestore();
+  await assertFails(getDocs(collection(adminDb, 'users', ownerUid, 'equipment')));
+  await assertFails(setDoc(doc(adminDb, 'users', ownerUid, 'equipment', '6'), equipment(ownerUid)));
 });
