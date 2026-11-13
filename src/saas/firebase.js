@@ -5,14 +5,27 @@ import { getFirestore } from 'firebase/firestore';
 
 const env = import.meta.env;
 
+// Firebase Web configuration and the App Check site key are public client-side
+// identifiers. Keep these defaults so static hosts that do not expose build
+// variables still initialize the configured SafeLift3D Firebase project.
+const defaultFirebaseConfig = {
+  apiKey: 'AIzaSyBIpTKRD6YwclG_8CVoA0dvfo5Xqo6AJHE',
+  authDomain: 'safelift3d.firebaseapp.com',
+  projectId: 'safelift3d',
+  appId: '1:736616598477:web:1a53b1932ce5c433111284',
+  messagingSenderId: '736616598477',
+  storageBucket: 'safelift3d.firebasestorage.app'
+};
+const defaultAppCheckSiteKey = '6LcT4R0uAAAAAFn1R33TccDuguLZshAlgz-0S2mo';
+
 function readFirebaseConfig() {
   return {
-    apiKey: env.VITE_FIREBASE_API_KEY,
-    authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
-    projectId: env.VITE_FIREBASE_PROJECT_ID,
-    appId: env.VITE_FIREBASE_APP_ID,
-    messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-    storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET
+    apiKey: env.VITE_FIREBASE_API_KEY || defaultFirebaseConfig.apiKey,
+    authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || defaultFirebaseConfig.authDomain,
+    projectId: env.VITE_FIREBASE_PROJECT_ID || defaultFirebaseConfig.projectId,
+    appId: env.VITE_FIREBASE_APP_ID || defaultFirebaseConfig.appId,
+    messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || defaultFirebaseConfig.messagingSenderId,
+    storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || defaultFirebaseConfig.storageBucket
   };
 }
 
@@ -20,7 +33,7 @@ export function getFirebaseSetupStatus() {
   const config = readFirebaseConfig();
   const required = ['apiKey', 'authDomain', 'projectId', 'appId'];
   const missing = required.filter((key) => !config[key]);
-  if (env.PROD && !env.VITE_FIREBASE_APPCHECK_SITE_KEY) missing.push('VITE_FIREBASE_APPCHECK_SITE_KEY');
+  if (env.PROD && !(env.VITE_FIREBASE_APPCHECK_SITE_KEY || defaultAppCheckSiteKey)) missing.push('VITE_FIREBASE_APPCHECK_SITE_KEY');
   return { configured: missing.length === 0, missing, config };
 }
 
@@ -30,7 +43,7 @@ export function initializeFirebaseClient() {
 
   const app = getApps()[0] || initializeApp(setup.config);
   let appCheck = null;
-  const siteKey = env.VITE_FIREBASE_APPCHECK_SITE_KEY;
+  const siteKey = env.VITE_FIREBASE_APPCHECK_SITE_KEY || defaultAppCheckSiteKey;
 
   if (siteKey) {
     if (env.DEV && env.VITE_FIREBASE_APPCHECK_DEBUG === 'true') {
