@@ -36,7 +36,7 @@
 
 **Existing controls:** Firestore Rules require the authenticated UID to match the user path and the profile to be active; records include `ownerUid`; record schemas and allowed paths are constrained; catch-all access is denied. Client helpers address the signed-in user's subcollections.
 
-**Gaps / actions:** current Emulator evidence covers only six cases. Add explicit negative tests for cross-user get/list/create/update/delete, locked users, profile role/tier tampering, invalid fields, oversized payloads, slot limits, and admin boundaries. Repeat with staging data before release; never rely solely on the client-side UID checks.
+**Gaps / actions:** the Emulator now verifies 12 cases, including cross-user get/list/update/delete, locked-user access, profile role/tier tampering, invalid fields, oversized payloads, slot limits, and admin boundaries. Add create-path and additional quota/concurrency cases as the data model expands; repeat with staging data before release. Never rely solely on client-side UID checks.
 
 ### 4. Firestore cost amplification and document flooding
 
@@ -97,7 +97,7 @@
 ## Release priorities
 
 1. Finish G0.03/G0.05: confirm OAuth hosts, staging App Check, production release gates, and backup/restore evidence.
-2. Expand G0.07 Emulator cases for denial boundaries and quota/schema abuse before relying on the current six passing rules tests.
+2. Keep expanding G0.07 Emulator cases for denial boundaries and quota/schema abuse as backend features are added; 12 Firestore Rules cases currently pass in CI.
 3. Complete G0.08 cost/error alerts and G0.09 admin MFA/audit controls before opening CMS capabilities or customer data at scale.
 4. Do not launch feedback sending or billing until the corresponding server-side rate-limit, secret handling, audit, idempotency, and abuse controls are implemented and tested.
 
@@ -105,5 +105,5 @@
 
 - Repository state reviewed 2026-11-13; Firestore rules and workspace data validators inspected.
 - Local application suite: 266 tests passed; architecture gate and production/staging builds passed in the preceding verification.
-- GitHub CI run `43413026519` passed for commit `5071357` (`feat: configure isolated Firebase staging`); a Cloudflare Pages Preview deployment exists for that commit.
+- GitHub CI run `43415934866` passed for commit `125599c` (`test: expand firestore security rules coverage`), including the 12 Firestore Rules Emulator cases; a Cloudflare Pages Preview deployment exists for the earlier staging configuration commit `5071357`.
 - These checks do not prove live Preview OAuth, App Check enforcement, production backup/restore, or the state of Firebase Console settings not visible to the repository.
