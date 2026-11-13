@@ -2890,7 +2890,7 @@
 
         <div class="pt-2 border-t border-slate-800 flex items-center justify-between gap-2">
             <span class="text-[10px] text-slate-400">Kiểm tra tự động thời gian thực</span>
-            <button onclick="document.getElementById('btn-open-liftplan').click()" class="pendant-btn yellow !py-1 !px-2.5 text-xs font-bold">
+            <button id="btn-comp-hud-export" type="button" class="pendant-btn yellow !py-1 !px-2.5 text-xs font-bold">
                 📋 Xuất Hồ Sơ Lift Plan
             </button>
         </div>
@@ -3202,27 +3202,7 @@
         </button>
     </div>
 
-    <script>
-      (function () {
-        var y = document.getElementById('app-loading-year');
-        if (y) y.textContent = String(new Date().getFullYear());
-        var lang = 'vi';
-        try {
-          var savedLang = localStorage.getItem('safelift3d.lang');
-          if (savedLang === 'en' || savedLang === 'vi') lang = savedLang;
-        } catch (e) {}
-        document.documentElement.lang = lang;
-        var status = document.getElementById('app-loading-status');
-        var developer = document.getElementById('app-loading-developer');
-        if (lang === 'en') {
-          if (status) status.textContent = 'Loading Physics Engine…';
-          if (developer) developer.textContent = 'Developed by Lê Việt Phương (Mr)';
-        } else {
-          if (status) status.textContent = 'Đang tải Physics Engine…';
-          if (developer) developer.textContent = 'Phát triển bởi Lê Việt Phương (Mr)';
-        }
-      })();
-    </script>
+    <script src="/loading-screen-init.js"></script>
     <script type="module" src="/src/main.js"></script>
     <!-- SafeLift3D · Developed by Lê Việt Phương (Mr) -->
 </body>

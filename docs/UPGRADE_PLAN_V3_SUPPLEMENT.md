@@ -104,7 +104,7 @@ Chưa kiểm chứng trong lượt này: nguyên nhân gốc của 9 lỗi layou
 | T-03 | ✓ | `architecture:gate`, `npm test`, `npm run build`, `check:dist`, `npm run test:e2e:auth` | Tạo `src/saas/catalog_client.js` (cache RAM, `limit<=50`, lọc `enabled` & tier, fallback `[]`), nối picker vào `workspace_dashboard.js` tab Dụng cụ; Unit **42/42 (307/307)** (`test/catalog_client.test.js` 3 ca mới); Gate OK; Build 5.83s + `check:dist` OK; E2E Auth **4/4** | 13/11/2026 |
 | T-04 | ✓ | `architecture:gate`, `npm test`, `npm run build`, `check:dist`, `test:rules` | Chọn phương án 2 để tránh chi phí đọc `getAfter` trên Spark và giữ tương thích CRUD trực tiếp: đổi nhãn `wsDailyQuotaHint` sang ước lượng phía client, ghi rõ giới hạn telemetry trong `SECURITY_THREAT_MODEL.md`; Rules **20/20**; Unit **42/42 (307/307)**; Build 5.66s + `check:dist` OK | 13/11/2026 |
 | T-05 | ◐ (UI-015 đã sửa test 4/4; UI-008/UI-003 hoãn) | `npx playwright test e2e/layout.spec.js -g "UI-015"`, `npx playwright test e2e/saas-accessibility.spec.js` | Đúng phạm vi đã chốt: không sửa UI-008/UI-003; `UI-015` đạt **4/4** (`20.5s`); `saas-accessibility.spec.js` đạt **16/16** (`1.8m`) | 13/11/2026 |
-| T-06 | □ | | | |
+| T-06 | ✓ | `architecture:gate`, `npm test`, `npm run build`, `check:dist`, probe Playwright CSP `dist/_headers` | Bỏ `onclick` inline ở `index.html` (`#btn-comp-hud-export` nối qua `src/ui/controllers/index.js`), tách script màn loading sang `public/loading-screen-init.js`; thêm test `security_headers.test.js`; Unit **42/42 (308/308)**; Build 5.76s; Probe CSP `/` & `/admin` **0 vi phạm** (`Content-Security-Policy-Report-Only` giữ nguyên cho chủ sản phẩm bật enforce) | 13/11/2026 |
 | T-07 | □ | | | |
 | T-08 | □ | | | |
 | T-09 | □ | | | |
@@ -147,3 +147,9 @@ Chưa kiểm chứng trong lượt này: nguyên nhân gốc của 9 lỗi layou
 ### T-05 Xác nhận phạm vi Layout E2E (UI-015 đạt, UI-008/UI-003 hoãn) — 13/11/2026
 - Giữ nguyên quyết định của chủ sản phẩm: không sửa UI-008 (`#safety-hud`) và UI-003 (`hd-720p` dock/drawer), không nới/xóa test của chúng.
 - Kiểm tra lại: `npx playwright test e2e/layout.spec.js -g "UI-015" --reporter=list` → **4/4 passed** (`20.5s`); `npx playwright test e2e/saas-accessibility.spec.js --reporter=list` → **16/16 passed** (`1.8m`).
+
+### T-06 CSP enforce-ready (G-07) — 13/11/2026
+- `index.html` + `src/ui/controllers/index.js`: bỏ thuộc tính `onclick` inline trên nút xuất hồ sơ Lift Plan trong HUD (`#btn-comp-hud-export`), thay bằng `addEventListener('click', ...)` kèm dọn dẹp trong `dispose()`.
+- `public/loading-screen-init.js`: tách đoạn `<script>` inline khởi tạo năm/ngôn ngữ màn loading ra file `/loading-screen-init.js` phục vụ từ `'self'`; giữ nguyên `Content-Security-Policy-Report-Only` trong `public/_headers` (quyết định bật enforce thuộc về chủ sản phẩm).
+- `test/security_headers.test.js`: bổ sung assert bảo đảm `index.html` không còn `<script>` inline hay thuộc tính `on*=`.
+- Kiểm tra: `architecture:gate` OK; Unit **42/42 file, 308/308 test đạt** (`36.98s`); `npm run build` (`5.76s`) + `check:dist` OK; probe Playwright đọc trực tiếp header `Content-Security-Policy-Report-Only` từ `dist/_headers` trên route `/` và `/admin` ghi nhận `TOTAL_CSP_VIOLATIONS=0`, `CSP_CONSOLE=0`.

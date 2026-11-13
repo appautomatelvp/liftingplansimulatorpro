@@ -34,4 +34,11 @@ describe('public/_headers security policy', () => {
     expect(raw).toContain('/assets/models/*');
     expect(raw).toContain('Cache-Control: public, max-age=86400');
   });
+
+  it('keeps index.html free of inline scripts and inline event handlers for strict script-src readiness', () => {
+    const html = readFileSync(path.resolve('index.html'), 'utf8');
+    expect(html).not.toMatch(/<script(?![^>]*\bsrc=)[^>]*>/i);
+    expect(html).not.toMatch(/\son[a-z]+\s*=\s*["']/i);
+    expect(html).toContain('src="/loading-screen-init.js"');
+  });
 });
