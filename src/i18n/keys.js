@@ -63,7 +63,8 @@ export const KEYS = {
     splashWarm: 'Ổn định góc máy & làm nóng khung hình…',
     splashReady: 'Sẵn sàng — SafeLift3D đã khởi tạo.',
     splashConnecting: 'Kết nối dịch vụ đám mây…',
-    brandReady: 'SẴN SÀNG'
+    brandReady: 'SẴN SÀNG',
+    authVerifyAccountError: 'Không thể xác minh tài khoản. Kiểm tra kết nối và thử lại.'
   },
   en: {
     brandTagline: 'Heavy Rigging & Lift Planner · CAE Digital Twin',
@@ -124,7 +125,8 @@ export const KEYS = {
     splashWarm: 'Stabilizing view & warming frames…',
     splashReady: 'Ready — SafeLift3D is initialized.',
     splashConnecting: 'Connecting cloud services…',
-    brandReady: 'READY'
+    brandReady: 'READY',
+    authVerifyAccountError: 'Could not verify your account. Check your connection and try again.'
   }
 };
 

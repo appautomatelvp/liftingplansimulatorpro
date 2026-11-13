@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { restoreAuthActions } from '../src/saas/auth_screen.js';
+import { KEYS } from '../src/i18n/keys.js';
 
 describe('authentication action recovery', () => {
   it('restores labels and enables buttons after a failed sign-in', () => {
@@ -20,5 +21,10 @@ describe('authentication action recovery', () => {
     restoreAuthActions(root, 'create', { signIn: 'Sign in', create: 'Create account' });
 
     expect(submit).toEqual({ disabled: false, textContent: 'Create account' });
+  });
+
+  it('provides sanitized account-verification fallback copy without exposing rules internals', () => {
+    expect(KEYS.en.authVerifyAccountError).not.toMatch(/firestore|rules/i);
+    expect(KEYS.vi.authVerifyAccountError).not.toMatch(/firestore|rules/i);
   });
 });

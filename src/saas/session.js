@@ -2,6 +2,8 @@ import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
   onAuthStateChanged,
+  reload,
+  sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
@@ -13,7 +15,8 @@ import { mountAdminDashboard } from './admin_dashboard.js';
 import { ensureUserProfile, watchUserProfile } from './firebase_data.js';
 import { initializeFirebaseClient, getFirebaseSetupStatus } from './firebase.js';
 import { installFeatureAccessUI } from './feature_access_ui.js';
-import { getLang } from '../i18n/index.js';
+import { needsEmailVerification } from './access.js';
+import { getLang, t } from '../i18n/index.js';
 import { mountWorkspaceDashboard } from './workspace_dashboard.js';
 import { trapDialogFocus } from './dialog_accessibility.js';
 
@@ -152,6 +155,7 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
         create(email, password, displayName) {
           return createUserWithEmailAndPassword(firebase.auth, email, password).then(async (credential) => {
             if (displayName) await updateProfile(credential.user, { displayName });
+            await sendEmailVerification(credential.user);
             return credential;
           });
         },
@@ -244,7 +248,7 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
     firebase = { configured: false, auth: null, db: null };
     window.SafeLift.saas.db = null;
     const profile = { uid: 'local-developer', email: 'local@localhost', displayName: 'Local Developer', role: 'user', tier: 'free', status: 'active' };
-    const authUser = { uid: profile.uid, email: profile.email, displayName: profile.displayName };
+    const authUser = { uid: profile.uid, email: profile.email, displayName: profile.displayName, emailVerified: true };
     handleProfile(profile, authUser);
     return { dispose() { featureAccess.dispose(); } };
   }
@@ -272,6 +276,7 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
       async create(email, password, displayName) {
         const credential = await createUserWithEmailAndPassword(firebase.auth, email, password);
         if (displayName) await updateProfile(credential.user, { displayName });
+        await sendEmailVerification(credential.user);
         return credential;
       },
       google() { return signInWithPopup(firebase.auth, createGoogleProvider()); },
@@ -285,14 +290,7 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
   });
   clearSplash();
 
-  unsubscribeAuth = onAuthStateChanged(firebase.auth, async (authUser) => {
-    if (!authUser) {
-      if (currentUser) showSignedOut();
-      else if (!workspaceStarted && onAdminRoute) showInitial();
-      return;
-    }
-    currentUser = authUser;
-    const run = ++authRun;
+  async function completeAuthorizedSession(authUser, run) {
     if (authScreen) authScreen.showMessage(getLang() === 'en' ? 'Checking account access…' : 'Đang kiểm tra quyền tài khoản…');
     try {
       const profile = await ensureUserProfile(firebase.db, authUser);
@@ -315,11 +313,37 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
         authScreen?.showMessage(getLang() === 'en' ? error.message : 'Tài khoản đang bị khóa. Vui lòng liên hệ SafeLift3D.', true);
         await signOut(firebase.auth);
       } else {
-        authScreen?.showMessage(getLang() === 'en'
-          ? 'Could not verify your account. Check your connection and Firestore rules.'
-          : 'Không thể xác minh tài khoản. Kiểm tra kết nối và Firestore rules.', true);
+        authScreen?.showMessage(t('authVerifyAccountError', getLang()), true);
       }
     }
+  }
+
+  unsubscribeAuth = onAuthStateChanged(firebase.auth, async (authUser) => {
+    if (!authUser) {
+      if (currentUser) showSignedOut();
+      else if (!workspaceStarted && onAdminRoute) showInitial();
+      return;
+    }
+    currentUser = authUser;
+    const run = ++authRun;
+    if (needsEmailVerification(authUser)) {
+      authScreen?.showVerificationPending({
+        email: authUser.email,
+        onResend: () => sendEmailVerification(firebase.auth.currentUser || authUser),
+        onCheckVerified: async () => {
+          const target = firebase.auth.currentUser || authUser;
+          await reload(target);
+          if (needsEmailVerification(target)) return false;
+          if (typeof target.getIdToken === 'function') await target.getIdToken(true);
+          authScreen?.clearVerificationPending();
+          await completeAuthorizedSession(target, run);
+          return true;
+        },
+        onSignOut: () => signOut(firebase.auth)
+      });
+      return;
+    }
+    await completeAuthorizedSession(authUser, run);
   });
 
   return {
