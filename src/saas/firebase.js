@@ -2,8 +2,10 @@ import { initializeApp, getApps } from 'firebase/app';
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { validateDeploymentEnvironment } from './deployment_environment.js';
 
 const env = import.meta.env;
+const appEnvironment = env.VITE_APP_ENV || 'development';
 
 // Firebase Web configuration and the App Check site key are public client-side
 // identifiers. Keep these defaults so static hosts that do not expose build
@@ -19,13 +21,14 @@ const defaultFirebaseConfig = {
 const defaultAppCheckSiteKey = '6LcT4R0uAAAAAFn1R33TccDuguLZshAlgz-0S2mo';
 
 function readFirebaseConfig() {
+  const useIsolatedConfig = appEnvironment === 'preview' || appEnvironment === 'staging';
   return {
-    apiKey: env.VITE_FIREBASE_API_KEY || defaultFirebaseConfig.apiKey,
-    authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || defaultFirebaseConfig.authDomain,
-    projectId: env.VITE_FIREBASE_PROJECT_ID || defaultFirebaseConfig.projectId,
-    appId: env.VITE_FIREBASE_APP_ID || defaultFirebaseConfig.appId,
-    messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || defaultFirebaseConfig.messagingSenderId,
-    storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || defaultFirebaseConfig.storageBucket
+    apiKey: env.VITE_FIREBASE_API_KEY || (useIsolatedConfig ? '' : defaultFirebaseConfig.apiKey),
+    authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || (useIsolatedConfig ? '' : defaultFirebaseConfig.authDomain),
+    projectId: env.VITE_FIREBASE_PROJECT_ID || (useIsolatedConfig ? '' : defaultFirebaseConfig.projectId),
+    appId: env.VITE_FIREBASE_APP_ID || (useIsolatedConfig ? '' : defaultFirebaseConfig.appId),
+    messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || (useIsolatedConfig ? '' : defaultFirebaseConfig.messagingSenderId),
+    storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || (useIsolatedConfig ? '' : defaultFirebaseConfig.storageBucket)
   };
 }
 
@@ -34,7 +37,12 @@ export function getFirebaseSetupStatus() {
   const required = ['apiKey', 'authDomain', 'projectId', 'appId'];
   const missing = required.filter((key) => !config[key]);
   if (env.PROD && !(env.VITE_FIREBASE_APPCHECK_SITE_KEY || defaultAppCheckSiteKey)) missing.push('VITE_FIREBASE_APPCHECK_SITE_KEY');
-  return { configured: missing.length === 0, missing, config };
+  const deployment = validateDeploymentEnvironment({
+    environment: appEnvironment,
+    projectId: config.projectId,
+    productionProjectId: defaultFirebaseConfig.projectId
+  });
+  return { configured: missing.length === 0 && deployment.valid, missing, config, deployment };
 }
 
 export function initializeFirebaseClient() {

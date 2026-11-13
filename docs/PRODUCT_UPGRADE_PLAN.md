@@ -2,7 +2,7 @@
 
 **Mục tiêu:** đưa SafeLift3D từ một trình mô phỏng nâng hạ có đăng nhập thành nền tảng chuyên nghiệp cho người dùng, khách hàng và đội ngũ quản trị. Hai ảnh người dùng gửi là nguồn artwork chuẩn cho logo SafeLift3D và nền bãi container. Tên, email và số điện thoại nhà phát triển được người dùng xác nhận để hiển thị công khai.
 
-**Trạng thái triển khai (13/11/2026):** lỗi vật lý được hoãn theo chỉ đạo người dùng. G1 đã có artwork gốc cho logo/nền, bộ icon, thông tin nhà phát triển, giao diện đăng nhập song ngữ, loading và menu liên hệ; các tiêu chí nghiệm thu accessibility, reduced motion, bản dịch toàn bộ mô phỏng và xử lý timeout vẫn cần kiểm tra. G2 đã có kho dụng cụ/lift plan theo tài khoản, dữ liệu có schema và giới hạn, cùng Firestore Rules owner-scoped. Rules đã được phát hành lên Firebase production và kiểm thử bằng Firestore Emulator (6/6); bộ ứng dụng hiện đạt 259/259 kiểm thử. Chưa nghiệm thu đầy đủ CRUD chéo tài khoản, migration dữ liệu cũ và end-to-end trên bản web production. G0 mới có cấu hình Cloudflare Pages, khởi tạo App Check phía client và Emulator Firestore; còn thiếu CI GitHub, môi trường staging tách biệt, diễn tập backup/restore, dashboard/cảnh báo chi phí và rà soát quyền admin/MFA. G3 hiện chỉ có CMS quản lý user cơ bản. G4 chưa có thanh toán/ledger/webhook; G5 mới mở email soạn sẵn bằng `mailto`, chưa có ticket/backend/chống spam; G6 chưa có SLO/giám sát/incident runbook. Các thay đổi mã nguồn hiện nằm ở working tree, chưa commit/push; vì vậy chưa xác nhận toàn bộ bản ứng dụng mới nhất đã được phát hành lên Cloudflare Pages.
+**Trạng thái triển khai (13/11/2026):** lỗi vật lý được hoãn theo chỉ đạo người dùng. G1 đã có artwork gốc cho logo/nền, bộ icon, thông tin nhà phát triển, giao diện đăng nhập song ngữ, loading và menu liên hệ; các tiêu chí nghiệm thu accessibility, reduced motion, bản dịch toàn bộ mô phỏng và xử lý timeout vẫn cần kiểm tra. G2 đã có kho dụng cụ/lift plan theo tài khoản, dữ liệu có schema và giới hạn, cùng Firestore Rules owner-scoped. Rules đã được phát hành lên Firebase production và kiểm thử bằng Firestore Emulator (6/6); bộ ứng dụng hiện đạt 262/262 kiểm thử. Chưa nghiệm thu đầy đủ CRUD chéo tài khoản, migration dữ liệu cũ và end-to-end trên bản web production. G0 có workflow CI mới trong commit local và rào chắn cấu hình Preview/Staging đã được kiểm thử; GitHub chưa nhận được commit vì token OAuth hiện tại thiếu quyền `workflow`. Chưa có Firebase project biệt lập cho Preview/Staging, xác nhận build variables trên Cloudflare, diễn tập backup/restore, dashboard/cảnh báo chi phí hoặc rà soát admin/MFA. G3 hiện chỉ có CMS quản lý user cơ bản. G4 chưa có thanh toán/ledger/webhook; G5 mới mở email soạn sẵn bằng `mailto`, chưa có ticket/backend/chống spam; G6 chưa có SLO/giám sát/incident runbook. Commit CI hiện nằm trên nhánh local `codex/safelift-g0-ci`; thay đổi sản phẩm khác vẫn còn trong working tree và chưa được phát hành lên Cloudflare Pages.
 
 ## 0. Checklist thực thi theo thứ tự
 
@@ -11,9 +11,9 @@ Ký hiệu: **✓** hoàn tất và có bằng chứng; **◐** đã có một p
 ### G0 — Nền tảng, bảo mật và chi phí
 
 - [✓] **G0.01** Cloudflare Pages và tên miền `safelift3d.com` đã được thiết lập trước đó; cấu hình build nằm trong `wrangler.toml`.
-- [◐] **G0.02** Đã thêm `.github/workflows/ci.yml`; các lệnh architecture gate, 259 test, build và Rules Emulator đều đạt trên máy. Chưa có lần chạy GitHub Actions vì workflow chưa được đẩy lên GitHub.
-- [□] **G0.03** Chuẩn hóa Cloudflare Preview, Staging và Production; chặn phát hành production khi kiểm tra thất bại.
-- [□] **G0.04** Rà soát secrets trong Git/history/bundle và dùng GitHub/Cloudflare secret store; xác nhận không có bí mật server trong frontend.
+- [◐] **G0.02** Đã thêm `.github/workflows/ci.yml`; architecture gate, 262 test, Production build và Rules Emulator (6/6) đều đạt trên máy. Chưa có lần chạy GitHub Actions vì workflow chưa được đẩy lên GitHub; GitHub từ chối OAuth token hiện tại do thiếu scope `workflow`.
+- [◐] **G0.03** Đã thêm `VITE_APP_ENV`, lệnh build Preview/Staging, mẫu env riêng và chốt chặn build khi Preview/Staging thiếu Firebase project riêng hoặc trỏ vào Production; đã thử cả đường build bị chặn lẫn Preview dùng project thử nghiệm. Chưa có Firebase staging riêng, Cloudflare variables theo môi trường hoặc cổng phát hành Production được xác minh.
+- [◐] **G0.04** Đã rà 32 commit có thể truy cập và mã nguồn hiện tại: chỉ phát hiện Firebase Web API key trong `src/saas/firebase.js` (định danh client công khai), không thấy private key/payment/webhook secret theo các mẫu đã kiểm tra. Chưa có `gitleaks`, chưa rà cài đặt secret trực tiếp trong GitHub/Cloudflare và cần bổ sung secret scanner cho CI.
 - [◐] **G0.05** Rà soát Firebase Auth/domain, App Check, Rules, backup và quyền admin; Rules đã phát hành nhưng enforcement App Check và backup/restore chưa xác nhận.
 - [□] **G0.06** Viết threat model cho đăng ký, leo quyền, spam, webhook giả và truy cập chéo.
 - [◐] **G0.07** Emulator test: Firestore Rules đã có 6 ca đạt; Auth/Functions và các ca locked/support/billing chưa có.
@@ -71,7 +71,7 @@ Ký hiệu: **✓** hoàn tất và có bằng chứng; **◐** đã có một p
 - [□] **G6.04** Backup mã hóa, diễn tập restore, incident runbook và rollback.
 - [□] **G6.05** Chỉ sau các cổng trên mới mở R2 upload, collaboration, SSO hoặc analytics sâu.
 
-**Bước đang thực hiện:** hoàn tất G0.02 bằng lần chạy GitHub Actions đầu tiên sau khi workflow được đẩy lên GitHub; sau đó chuyển đúng thứ tự sang G0.03 (tách Preview/Staging/Production và chặn production khi CI lỗi).
+**Bước đang thực hiện:** G0.02 đã sẵn sàng và tất cả lệnh kiểm tra chạy qua local, nhưng chờ cấp scope `workflow` cho phiên GitHub để đẩy commit và thấy lần Actions đầu tiên. Sau đó hoàn tất phần còn lại của G0.03: tạo/cấu hình Firebase staging và nhập biến Preview/Staging vào Cloudflare Pages; cuối cùng bật cổng Production chỉ phát hành sau CI xanh.
 
 ## 1. Hiện trạng đã kiểm tra trong repository
 
