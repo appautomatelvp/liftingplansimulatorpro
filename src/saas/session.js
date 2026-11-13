@@ -39,7 +39,17 @@ function mountAccountWidget(profile, authUser, onSignOut) {
   const render = () => {
     const en = getLang() === 'en';
     widget.innerHTML = `<span class="saas-account-dot"></span><span class="saas-account-copy"><strong>${escapeHtml(authUser.displayName || authUser.email || 'SafeLift3D user')}</strong><small>${profile.role === 'admin' ? 'ADMIN' : (profile.tier === 'premium' ? 'PREMIUM' : 'FREE')}</small></span>${profile.role === 'admin' ? `<a href="/admin">${en ? 'Admin CMS' : 'CMS quản trị'}</a>` : ''}<button type="button" data-action="signout">${en ? 'Sign out' : 'Đăng xuất'}</button>`;
-    widget.querySelector('[data-action="signout"]')?.addEventListener('click', onSignOut);
+    widget.querySelector('[data-action="signout"]')?.addEventListener('click', async (event) => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      try {
+        await onSignOut();
+      } catch (error) {
+        console.error('[SafeLift3D] Sign-out failed', error);
+        button.disabled = false;
+        button.textContent = en ? 'Sign out failed — retry' : 'Đăng xuất lỗi — thử lại';
+      }
+    });
   };
   const onLanguageChanged = () => render();
   render();
@@ -77,6 +87,7 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
   window.SafeLift.saas = { profile: null, authUser: null, db: null, canAccessFeature: () => false };
 
   function showInitial(message, isError = false) {
+    root.hidden = false;
     if (authScreen) authScreen.dispose();
     authScreen = mountAuthScreen(root, {
       lang: getLang,
