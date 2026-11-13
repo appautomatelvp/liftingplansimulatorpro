@@ -157,7 +157,7 @@ Tôi không chạy được toàn bộ E2E/Rules/Build trong lượt kiểm tra 
 | S-07 | ✓ | Playwright boot probe, `npm test`, `architecture:gate`, `npm run build`, `npm run check:dist`, `e2e/saas-accessibility.spec.js` | Boot CAD models: 55 req (35,541,005 B, 7,667 ms) -> 5 req (544,761 B, 7,401 ms; -98.5%); Rapier 0 req lúc boot; Unit 282/282; Gate OK; Build OK; `check:dist` OK; E2E SaaS 16/16 | 13/11/2026 |
 | S-08 | ✓ | `npm audit --audit-level=high`, `architecture:gate`, `npm test`, `npm run build`, `npm run check:dist`, đọc rà soát YAML `.github/workflows/ci.yml` | `npm audit`: 0 high/critical; Unit 282/282; Gate OK; Build OK; `check:dist` OK; CI giới hạn `push` nhánh `master` + thêm `check:dist`, `audit`, Playwright SaaS & upload report | 13/11/2026 |
 | S-09 | ✓ | `architecture:gate`, `npm test`, `npm run build`, `npm run check:dist` | Unit **37 files, 285/285** đạt (thêm `test/i18n_keys.test.js`); `SAAS_KEYS` đồng nhất EN/VI trong `src/i18n/keys.js`; Gate OK; Build OK; `check:dist` OK | 13/11/2026 |
-| S-10 | □ | | | |
+| S-10 | ✓ | `firebase emulators:exec --only auth,firestore` (`playwright.auth.config.js`), `npm run test:rules`, `npm test`, `architecture:gate`, `npm run build`, `npm run check:dist` | Auth + Firestore Emulator E2E (`e2e/auth.spec.js`): **2/2** đạt (đăng ký, pending verify, verify email qua Emulator REST, CRUD & reload, sai mật khẩu, cách ly user B, khóa `locked`, lỗi mạng); sửa bug mất thông báo khóa trong `session.js`; Rules **14/14**; Unit **285/285**; Gate OK; Build OK; `check:dist` OK | 13/11/2026 |
 | S-11 | □ | | | |
 | S-12 | □ | | | |
 | S-13 | □ | | | |
@@ -232,3 +232,9 @@ Tôi không chạy được toàn bộ E2E/Rules/Build trong lượt kiểm tra 
 - Tập trung toàn bộ chuỗi song ngữ EN/VI của SaaS (`admin_dashboard.js`, `feature_access_ui.js`, `session.js`, `workspace_dashboard.js`, `auth_screen.js`) vào `SAAS_KEYS` (gộp vào `KEYS.vi` / `KEYS.en`) trong `src/i18n/keys.js`, kèm helper `saasT(key, vars, lang)` trong `src/saas/i18n.js`.
 - Thêm `test/i18n_keys.test.js` kiểm tra đối xứng 100% khóa EN/VI, placeholder `{var}` khớp nhau và không còn `getLang()==='en'` / `lang()==='en'` rải rác trong `src/saas/*.js`.
 - Kiểm tra: `architecture:gate` OK; Unit **37 files, 285/285** đạt; `npm run build` OK (5.45s); `npm run check:dist` OK.
+
+### S-10 — Auth + Firestore Emulator & Playwright E2E luồng Auth/CRUD thực (G1)
+- Cấu hình Auth Emulator (`port: 9099`) và Hub (`port: 4401`) trong `firebase.json`; nối `connectAuthEmulator`/`connectFirestoreEmulator` chỉ khi `import.meta.env.DEV && VITE_USE_EMULATORS === 'true'` trong `src/saas/firebase.js` (bỏ qua App Check khi chạy Emulator local).
+- Viết `playwright.auth.config.js`, `e2e/auth.spec.js` và script `test:e2e:auth` trong `package.json`: kiểm thử đầy đủ đăng ký -> pending verification -> xác minh qua Auth Emulator oobCodes -> tạo thiết bị & lift plan -> reload giữ phiên -> đăng xuất -> sai mật khẩu -> cách ly user B -> tự ngắt khi bị chuyển `status: 'locked'` -> chịu lỗi mạng.
+- Phát hiện và sửa lỗi thực tế trong `src/saas/session.js`: thêm `pendingAuthNotice` để giữ thông báo tài khoản bị khóa sau khi `signOut()` kích hoạt `showSignedOut()`.
+- Kiểm tra: Auth+Firestore E2E **2/2** đạt; Rules **14/14** đạt; Unit **37 files, 285/285** đạt; `architecture:gate` OK; `npm run build` OK (5.58s); `npm run check:dist` OK.

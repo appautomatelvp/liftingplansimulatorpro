@@ -1,12 +1,13 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { connectAuthEmulator, getAuth } from 'firebase/auth';
+import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 import { validateDeploymentEnvironment } from './deployment_environment.js';
 import { requiresAppCheckSiteKey, resolveAppCheckSiteKey } from './app_check_config.js';
 
 const env = import.meta.env;
 const appEnvironment = env.VITE_APP_ENV || 'development';
+let emulatorsConnected = false;
 
 // Firebase Web configuration and the App Check site key are public client-side
 // identifiers. Keep these defaults so static hosts that do not expose build
@@ -29,12 +30,17 @@ function readAppCheckSiteKey() {
   });
 }
 
+function isEmulatorMode() {
+  return Boolean(env.DEV && env.VITE_USE_EMULATORS === 'true');
+}
+
 function readFirebaseConfig() {
   const useIsolatedConfig = appEnvironment === 'preview' || appEnvironment === 'staging';
+  const useEmulators = isEmulatorMode();
   return {
     apiKey: env.VITE_FIREBASE_API_KEY || (useIsolatedConfig ? '' : defaultFirebaseConfig.apiKey),
     authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || (useIsolatedConfig ? '' : defaultFirebaseConfig.authDomain),
-    projectId: env.VITE_FIREBASE_PROJECT_ID || (useIsolatedConfig ? '' : defaultFirebaseConfig.projectId),
+    projectId: env.VITE_FIREBASE_PROJECT_ID || (useEmulators ? 'safelift3d-rules-test' : (useIsolatedConfig ? '' : defaultFirebaseConfig.projectId)),
     appId: env.VITE_FIREBASE_APP_ID || (useIsolatedConfig ? '' : defaultFirebaseConfig.appId),
     messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || (useIsolatedConfig ? '' : defaultFirebaseConfig.messagingSenderId),
     storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || (useIsolatedConfig ? '' : defaultFirebaseConfig.storageBucket)
@@ -65,7 +71,7 @@ export function initializeFirebaseClient() {
   let appCheck = null;
   const siteKey = readAppCheckSiteKey();
 
-  if (siteKey) {
+  if (!isEmulatorMode() && siteKey) {
     if (env.DEV && env.VITE_FIREBASE_APPCHECK_DEBUG === 'true') {
       self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
     }
@@ -73,12 +79,17 @@ export function initializeFirebaseClient() {
       provider: new ReCaptchaEnterpriseProvider(siteKey),
       isTokenAutoRefreshEnabled: true
     });
-  } else if (requiresAppCheckSiteKey({ buildIsProduction: env.PROD, environment: appEnvironment })) {
+  } else if (!isEmulatorMode() && requiresAppCheckSiteKey({ buildIsProduction: env.PROD, environment: appEnvironment })) {
     throw new Error('Firebase App Check reCAPTCHA v3 site key is required in production.');
   }
 
   // App Check is initialized before obtaining Auth or Firestore instances.
   const auth = getAuth(app);
   const db = getFirestore(app);
+  if (isEmulatorMode() && !emulatorsConnected) {
+    connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+    connectFirestoreEmulator(db, '127.0.0.1', 8080);
+    emulatorsConnected = true;
+  }
   return { ...setup, app, auth, db, appCheck };
 }

@@ -132,6 +132,7 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
   let workspaceStarted = false;
   let authRun = 0;
   let lastProfileKey = '';
+  let pendingAuthNotice = null;
   let firebase = null;
   const onAdminRoute = window.location.pathname.replace(/\/$/, '') === '/admin';
   const contactButton = document.getElementById('btn-contact-developer');
@@ -240,7 +241,9 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
     featureAccess.setProfile(null);
     adminScreen?.dispose();
     adminScreen = null;
-    if (firebase?.configured) showInitial();
+    const notice = pendingAuthNotice;
+    pendingAuthNotice = null;
+    if (firebase?.configured) showInitial(notice?.message, Boolean(notice?.isError));
     else if (import.meta.env.DEV && import.meta.env.VITE_AUTH_DEV_BYPASS === 'true') return;
     onSignedOut?.();
   }
@@ -300,6 +303,7 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
       unsubscribeProfile?.();
       unsubscribeProfile = watchUserProfile(firebase.db, authUser.uid, (freshProfile) => {
         if (!freshProfile || freshProfile.status !== 'active') {
+          pendingAuthNotice = { message: saasT('saasAccountSuspended'), isError: true };
           if (authScreen) authScreen.showMessage(saasT('saasAccountSuspended'), true);
           signOut(firebase.auth).catch((error) => console.error('[SafeLift3D] Sign-out failed', error));
           return;
@@ -311,7 +315,9 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
       if (run !== authRun) return;
       console.error('[SafeLift3D] Account profile could not be loaded', error);
       if (error?.code === 'safelift/account-suspended') {
-        authScreen?.showMessage(saasT('saasAccountSuspendedContact'), true);
+        const suspendedMsg = saasT('saasAccountSuspendedContact');
+        pendingAuthNotice = { message: suspendedMsg, isError: true };
+        authScreen?.showMessage(suspendedMsg, true);
         await signOut(firebase.auth);
       } else {
         authScreen?.showMessage(t('authVerifyAccountError', getLang()), true);

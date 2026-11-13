@@ -14,6 +14,7 @@
     "test": "vitest run",
     "test:rules": "firebase emulators:exec --only firestore --project safelift3d-rules-test \"node --test test/firestore-rules-emulator.mjs\"",
     "test:ui": "playwright test",
+    "test:e2e:auth": "npx --yes firebase-tools@15.12.0 emulators:exec --only auth,firestore --project safelift3d-rules-test \"npx playwright test -c playwright.auth.config.js --reporter=list\"",
     "test:all": "vitest run && playwright test",
     "architecture:gate": "node scripts/architecture-gate.mjs",
     "check:dist": "node scripts/check-dist.mjs",
