@@ -1383,6 +1383,14 @@
                 ? (state.lang === 'en' ? 'Marks' : 'Nhãn')
                 : (state.lang === 'en' ? 'Hide' : 'Ẩn');
             syncSoundButton();
+            if (typeof syncOogCargoUI === 'function') syncOogCargoUI(false);
+            if (typeof document !== 'undefined' && typeof window !== 'undefined' && window.SafeLift?.cargoDerivedLast) {
+                const dynEl = document.querySelector('[data-i18n-dynamic="cargo-derived"]');
+                const fmt = window.SafeLift.i18n?.formatCargoDerivedLabel;
+                if (dynEl && typeof fmt === 'function') {
+                    dynEl.textContent = fmt({ ...window.SafeLift.cargoDerivedLast, lang: state.lang });
+                }
+            }
             if (state.gear.selection.length) openGearEditor();
             if (typeof updateUnitDisplayElements === 'function') updateUnitDisplayElements();
             if (typeof syncCableControlsSelection === 'function') syncCableControlsSelection();

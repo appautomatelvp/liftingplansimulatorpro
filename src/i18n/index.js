@@ -1,4 +1,5 @@
 import { KEYS, SPLASH_STAGES } from './keys.js';
+import { formatCargoDerivedLabel, formatCargoCrateLabel } from './cargo_labels.js';
 import { BRAND, COPYRIGHT, applyDocumentBrand } from '../saas/branding.js';
 
 const SUPPORTED = new Set(['vi', 'en']);
@@ -78,6 +79,8 @@ export function createI18nApi() {
     toggleLang,
     t,
     L,
+    formatCargoDerivedLabel,
+    formatCargoCrateLabel,
     splashMessage,
     applyDataI18n,
     KEYS,
