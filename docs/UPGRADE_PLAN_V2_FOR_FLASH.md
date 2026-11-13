@@ -152,7 +152,7 @@ Tôi không chạy được toàn bộ E2E/Rules/Build trong lượt kiểm tra 
 | S-02 | ✓ | `npm test`, `architecture:gate`, `npm run build`, `npx playwright test e2e/saas-accessibility.spec.js` | Unit 277/277 (35 file); Gate OK; Build OK; E2E i18n/a11y 16/16 | 13/11/2026 |
 | S-03 | ✓ | `npm test`, `architecture:gate`, `npm run build`, `npm run check:dist` | Unit 277/277; Gate OK; Build OK; `MAP_COUNT=0` trong `dist/` | 13/11/2026 |
 | S-04 | ✓ | `npm test`, `architecture:gate`, `npm run build`, Playwright CSP probe (`vite preview` + `dist/_headers`) | Unit 279/279 (36 file); Gate OK; Build OK; ghi nhận 2 vi phạm inline trong CSP Report-Only | 13/11/2026 |
-| S-05 | □ | | | |
+| S-05 | ✓ | `npm test`, `architecture:gate`, `npm run build`, `npm run test:rules` | Unit 281/281 (36 file); Gate OK; Build OK; Rules 13/13 (gồm 2 ca `email_verified`) | 13/11/2026 |
 | S-06 | □ | | | |
 | S-07 | □ | | | |
 | S-08 | □ | | | |
@@ -206,3 +206,9 @@ Tôi không chạy được toàn bộ E2E/Rules/Build trong lượt kiểm tra 
   1. `script-src-attr` (`inline`): handler `onclick="document.getElementById('btn-open-liftplan').click()"` tại `index.html:2893`.
   2. `script-src-elem` (`inline`, `index.html:3205`): `<script>` khởi tạo màn loading (`sha256-v2cQPCjV2X7ddjM6nNQVnj2Qm3h282q6tHBX2W/7bek=`).
   - Các nguồn khác (style, font, worker, wasm) không phát sinh vi phạm. Sẽ bỏ 2 inline này trước khi chuyển CSP sang enforce.
+
+### S-05 — 13/11/2026
+- `src/saas/access.js`: thêm hàm thuần `needsEmailVerification(user)` (chỉ chặn tài khoản `password` chưa xác minh; Google/federated bỏ qua).
+- `src/saas/auth_screen.js` & `src/saas/session.js`: gọi `sendEmailVerification` khi tạo tài khoản; chặn vào workspace với màn hình chờ xác minh (gồm "Tôi đã xác minh" gọi `reload()` + `getIdToken(true)`, nút gửi lại có cooldown 60s và nút đổi tài khoản); đổi thông báo lỗi `session.js:319` sang key `authVerifyAccountError` trong `src/i18n/keys.js` (không nhắc "Firestore rules").
+- `firestore.rules` (tách riêng ở commit S-05b để dễ rollback): yêu cầu `request.auth.token.email_verified == true` khi `create` hồ sơ `users/{uid}`.
+- Unit (`test/saas_access.test.js`, `test/auth_screen.test.js`): **36/36 file, 281/281 test đạt**; Gate: đạt; Build: đạt; Rules Emulator: **13/13 ca đạt** (thêm ca `unverified` bị từ chối và `verified` được phép). E2E Auth Emulator sẽ chạy ở **S-10**.

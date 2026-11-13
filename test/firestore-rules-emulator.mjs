@@ -162,7 +162,7 @@ test('locked users cannot access workspace data, including existing records', as
 });
 
 test('profile creation cannot self-assign admin, premium, or a locked status', async () => {
-  const db = env.authenticatedContext('new-user', { email: 'new-user@example.test' }).firestore();
+  const db = env.authenticatedContext('new-user', { email: 'new-user@example.test', email_verified: true }).firestore();
   const valid = {
     uid: 'new-user', email: 'new-user@example.test', displayName: 'New user', role: 'user', tier: 'free',
     status: 'active', createdAt: serverTimestamp(), lastLogin: serverTimestamp()
@@ -170,10 +170,22 @@ test('profile creation cannot self-assign admin, premium, or a locked status', a
   await assertSucceeds(setDoc(doc(db, 'users', 'new-user'), valid));
   await assertFails(setDoc(doc(db, 'users', 'self-admin'), { ...valid, uid: 'self-admin', role: 'admin' }));
 
-  const premiumDb = env.authenticatedContext('premium-self', { email: 'premium-self@example.test' }).firestore();
+  const premiumDb = env.authenticatedContext('premium-self', { email: 'premium-self@example.test', email_verified: true }).firestore();
   await assertFails(setDoc(doc(premiumDb, 'users', 'premium-self'), { ...valid, uid: 'premium-self', email: 'premium-self@example.test', tier: 'premium' }));
-  const lockedProfileDb = env.authenticatedContext('locked-self', { email: 'locked-self@example.test' }).firestore();
+  const lockedProfileDb = env.authenticatedContext('locked-self', { email: 'locked-self@example.test', email_verified: true }).firestore();
   await assertFails(setDoc(doc(lockedProfileDb, 'users', 'locked-self'), { ...valid, uid: 'locked-self', email: 'locked-self@example.test', status: 'locked' }));
+});
+
+test('profile creation rejects unverified email tokens and allows verified tokens', async () => {
+  const unverifiedDb = env.authenticatedContext('unverified-user', { email: 'unverified@example.test', email_verified: false }).firestore();
+  const base = {
+    email: 'unverified@example.test', displayName: 'Unverified', role: 'user', tier: 'free',
+    status: 'active', createdAt: serverTimestamp(), lastLogin: serverTimestamp()
+  };
+  await assertFails(setDoc(doc(unverifiedDb, 'users', 'unverified-user'), { ...base, uid: 'unverified-user' }));
+
+  const verifiedDb = env.authenticatedContext('verified-user', { email: 'verified@example.test', email_verified: true }).firestore();
+  await assertSucceeds(setDoc(doc(verifiedDb, 'users', 'verified-user'), { ...base, uid: 'verified-user', email: 'verified@example.test', displayName: 'Verified' }));
 });
 
 test('rules reject malformed equipment, unknown collections, and unauthorized profile changes', async () => {

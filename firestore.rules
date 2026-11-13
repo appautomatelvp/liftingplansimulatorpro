@@ -86,6 +86,7 @@ service cloud.firestore {
           'uid', 'email', 'displayName', 'role', 'tier', 'createdAt', 'lastLogin', 'status'
         ])
         && request.resource.data.uid == uid
+        && request.auth.token.email_verified == true
         && request.resource.data.email == request.auth.token.email
         && request.resource.data.role == 'user'
         && request.resource.data.tier == 'free'
