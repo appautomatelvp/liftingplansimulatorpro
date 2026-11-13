@@ -10,7 +10,7 @@
 - Firestore currently stores user profiles and bounded equipment/lift-plan metadata. The client caps page reads at 20 records and plan snapshots at 48,000 bytes. Free accounts have 20 slots per collection; Premium/admin profiles can use up to 200.
 - The deployed rules allow owners to access their own equipment and plans, reject unmatched paths, and reserve role assignment for trusted provisioning. Admins can list users and change tier/status under the current rules.
 - No payment processor, webhook endpoint, feedback backend, email queue, Cloudflare Worker/Function, or Firebase Functions code is present in the current application boundary. Those are future features and must not be treated as protected merely because they appear in the product plan.
-- Firebase staging `safelift3d-staging` is isolated from production in the current Cloudflare Preview variables. A Preview deployment exists, but real OAuth sign-in and App Check behavior on its hostname have not been verified. Backup/restore and production release-gate drills are also outstanding.
+- Firebase staging `safelift3d-staging` is isolated from production in the current Cloudflare Preview variables. A Preview deployment exists, but real OAuth sign-in and App Check behavior on its hostname have not been verified. Neither Firestore database has a scheduled backup; production delete protection is enabled, staging delete protection was already enabled, and restore/release-gate drills are outstanding.
 
 ## Threats, controls, and remaining work
 
@@ -92,7 +92,9 @@
 
 **Existing controls:** GitHub CI runs tests, architecture checks, Firestore Rules Emulator, and Gitleaks against repository history; workflow actions are pinned to commit SHAs; production and staging are split; staging Firestore delete protection is enabled.
 
-**Gaps / actions:** backup retention, encryption/access policy, and a restore drill are not verified. Define recovery point/time targets and test restore. Continue dependency/action review and secret scanning. Firebase web config and App Check site keys are public identifiers; any service-account, payment, signing, or email private key must stay in a server-side secret store and must be rotated if exposed.
+**Existing controls:** production Firestore delete protection has now been enabled; staging database already had it enabled. This reduces accidental database deletion but does not back up data.
+
+**Gaps / actions:** CLI inspection confirmed there is no scheduled backup on either database. Backup retention, encryption/access policy, and a restore drill remain outstanding. Define recovery point/time targets and test restore. Continue dependency/action review and secret scanning. Firebase web config and App Check site keys are public identifiers; any service-account, payment, signing, or email private key must stay in a server-side secret store and must be rotated if exposed.
 
 ## Release priorities
 
