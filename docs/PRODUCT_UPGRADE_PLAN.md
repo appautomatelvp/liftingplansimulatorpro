@@ -11,8 +11,8 @@ Ký hiệu: **✓** hoàn tất và có bằng chứng; **◐** đã có một p
 ### G0 — Nền tảng, bảo mật và chi phí
 
 - [✓] **G0.01** Cloudflare Pages và tên miền `safelift3d.com` đã được thiết lập trước đó; cấu hình build nằm trong `wrangler.toml`.
-- [✓] **G0.02** `.github/workflows/ci.yml` chạy xanh trên GitHub Actions run `43405419649`: architecture gate, unit/regression, Firestore Rules Emulator (6/6) và Cloudflare Pages build. Đã cấu hình action v5, Node 24 và Ubuntu 24.04. Secret scan vẫn theo G0.04.
-- [◐] **G0.03** Đã thêm `VITE_APP_ENV`, lệnh build Preview/Staging, mẫu env riêng và chốt chặn build khi Preview/Staging thiếu Firebase project riêng hoặc trỏ vào Production; đã thử cả đường build bị chặn lẫn Preview dùng project thử nghiệm. Chưa có Firebase staging riêng, Cloudflare variables theo môi trường hoặc cổng phát hành Production được xác minh.
+- [✓] **G0.02** `.github/workflows/ci.yml` chạy xanh trên GitHub Actions run `43406465282`: architecture gate, unit/regression, Firestore Rules Emulator (6/6) và Cloudflare Pages build. Dùng checkout v6, setup-node v5, setup-java v5, Node 24 và Ubuntu 24.04.
+- [◐] **G0.03** Đã thêm `VITE_APP_ENV`, lệnh build Preview/Staging, mẫu env riêng và chốt chặn build khi Preview/Staging thiếu Firebase project riêng hoặc trỏ vào Production; đã thử cả đường build bị chặn lẫn Preview dùng project thử nghiệm. Đã bảo vệ GitHub `master`: bắt buộc PR, CI và Gitleaks xanh; chặn force-push/xóa nhánh và áp dụng cả admin. Chưa có Firebase staging riêng hoặc variables Preview/Staging trong Cloudflare.
 - [◐] **G0.04** Gitleaks đã quét toàn bộ lịch sử Git thành công trong CI `43406091655`; rà thủ công 32 commit và mã nguồn hiện tại chỉ thấy Firebase Web API key trong `src/saas/firebase.js` (định danh client công khai). Danh sách GitHub repository secrets hiện rỗng. Chưa thể rà secrets/variables trong Cloudflare; không thấy private key/payment/webhook secret theo các mẫu đã kiểm tra.
 - [◐] **G0.05** Rà soát Firebase Auth/domain, App Check, Rules, backup và quyền admin; Rules đã phát hành nhưng enforcement App Check và backup/restore chưa xác nhận.
 - [□] **G0.06** Viết threat model cho đăng ký, leo quyền, spam, webhook giả và truy cập chéo.
@@ -71,7 +71,7 @@ Ký hiệu: **✓** hoàn tất và có bằng chứng; **◐** đã có một p
 - [□] **G6.04** Backup mã hóa, diễn tập restore, incident runbook và rollback.
 - [□] **G6.05** Chỉ sau các cổng trên mới mở R2 upload, collaboration, SSO hoặc analytics sâu.
 
-**Bước đang thực hiện:** tiếp tục G0.03: xác nhận Firebase staging tách biệt và các biến Preview/Staging trong Cloudflare Pages; sau đó thiết lập cổng Production chỉ phát hành sau CI xanh. Nhánh GitHub hiện đã có CI xanh; chưa merge hay phát hành production.
+**Bước đang thực hiện:** hoàn tất phần còn lại của G0.03 bằng Firebase staging riêng và biến Preview/Staging trong Cloudflare Pages. Cổng phát hành đã được bật trên GitHub `master`; CI `43406465282` và secret scan đều xanh. Firebase CLI đang dùng token hết hạn; cần đăng nhập lại trong PowerShell bằng `firebase login --reauth`, rồi mới tạo/kiểm tra project staging. Chưa merge hay phát hành production.
 
 ## 1. Hiện trạng đã kiểm tra trong repository
 
