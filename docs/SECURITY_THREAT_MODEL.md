@@ -10,7 +10,7 @@
 - Firestore currently stores user profiles and bounded equipment/lift-plan metadata. The client caps page reads at 20 records and plan snapshots at 48,000 bytes. Free accounts have 20 slots per collection; Premium/admin profiles can use up to 200.
 - The deployed rules allow owners to access their own equipment and plans, reject unmatched paths, and reserve role assignment for trusted provisioning. Admins can list users and change tier/status under the current rules.
 - No payment processor, webhook endpoint, feedback backend, email queue, Cloudflare Worker/Function, or Firebase Functions code is present in the current application boundary. Those are future features and must not be treated as protected merely because they appear in the product plan.
-- Firebase staging `safelift3d-staging` is isolated from production in the current Cloudflare Preview variables. A Preview deployment exists, but real OAuth sign-in and App Check behavior on its hostname have not been verified. Neither Firestore database has a scheduled backup; production delete protection is enabled, staging delete protection was already enabled, and restore/release-gate drills are outstanding.
+- Firebase staging `safelift3d-staging` is isolated from production in the current Cloudflare Preview variables. The Preview OAuth hostname is authorized, a staging-specific App Check key is registered and saved in Cloudflare Preview, and deployment `9dbadb26-b7d1-46b2-b769-8bd0466f0af7` succeeded. Real OAuth sign-in and App Check assessments/metrics on that deployment are not yet verified; enforcement remains off. No Firestore backup schedule exists: creating the production daily/7-day schedule returned HTTP 403 requiring billing to be enabled. Production delete protection is enabled, staging delete protection was already enabled, and restore/release-gate drills are outstanding.
 
 ## Threats, controls, and remaining work
 
@@ -52,7 +52,7 @@
 
 **Existing controls:** deployment validation distinguishes production from staging; Preview has separate Firebase staging variables; the App Check resolver deliberately avoids falling back to the production site key in isolated preview/staging builds; production builds require a site key.
 
-**Gaps / actions:** the Preview site key and Firebase App Check enforcement are not configured/verified. Production enforcement state is not independently verified. Confirm each hostname in Firebase, configure a distinct staging key, observe valid traffic, then enable enforcement service by service. Validate environment isolation in CI and inspect the built bundle. App Check reduces unauthorized client traffic but does not replace Firestore Rules, quotas, or server authorization.
+**Gaps / actions:** a staging-specific Preview site key is configured, but live App Check assessments and valid traffic metrics are not yet verified. Enforcement remains off until valid clients are observed. Production enforcement state is not independently verified. Confirm hostnames, observe valid traffic, then enable enforcement service by service. Validate environment isolation in CI and inspect the built bundle. App Check reduces unauthorized client traffic but does not replace Firestore Rules, quotas, or server authorization.
 
 ### 6. OAuth redirect/domain errors
 
@@ -60,7 +60,7 @@
 
 **Existing controls:** Google sign-in uses Firebase Auth and the app uses configured Firebase projects.
 
-**Gaps / actions:** `safelift3d.com` was previously reported as needing to be added as an authorized domain; the staging Preview hostname is not confirmed. Verify the exact production and Preview hosts in Firebase Authentication → Settings → Authorized domains, then test sign-in and sign-out on both. Do not broaden redirect domains unnecessarily. Firebase API/DNS access was unavailable during the latest CLI verification, so this remains unverified.
+**Gaps / actions:** staging Preview hostname `codex-safelift-g0-ci.safelift3d.pages.dev` has been added to Firebase authorized domains. Test real sign-in and sign-out on both production and Preview. Do not broaden redirect domains unnecessarily. `safelift3d.com` is already in the production configuration.
 
 ### 7. Feedback/email abuse and personal information exposure
 
@@ -94,7 +94,7 @@
 
 **Existing controls:** production Firestore delete protection has now been enabled; staging database already had it enabled. This reduces accidental database deletion but does not back up data.
 
-**Gaps / actions:** CLI inspection confirmed there is no scheduled backup on either database. Backup retention, encryption/access policy, and a restore drill remain outstanding. Define recovery point/time targets and test restore. Continue dependency/action review and secret scanning. Firebase web config and App Check site keys are public identifiers; any service-account, payment, signing, or email private key must stay in a server-side secret store and must be rotated if exposed.
+**Gaps / actions:** CLI inspection confirmed there is no scheduled backup on either database. Creating a daily production schedule with 7-day retention returned HTTP 403 because Google requires billing to be enabled; billing was not enabled. Backup retention, encryption/access policy, and a restore drill remain outstanding. Define recovery point/time targets and test restore after the project owner enables billing. Continue dependency/action review and secret scanning. Firebase web config and App Check site keys are public identifiers; any service-account, payment, signing, or email private key must stay in a server-side secret store and must be rotated if exposed.
 
 ## Release priorities
 
@@ -106,6 +106,6 @@
 ## Evidence captured
 
 - Repository state reviewed 2026-11-13; Firestore rules and workspace data validators inspected.
-- Local application suite: 266 tests passed; architecture gate and production/staging builds passed in the preceding verification.
-- GitHub CI run `43415934866` passed for commit `125599c` (`test: expand firestore security rules coverage`), including the 12 Firestore Rules Emulator cases; a Cloudflare Pages Preview deployment exists for the earlier staging configuration commit `5071357`.
+- Local application suite: 266/266 tests passed after Vite 6.4.6/Vitest 4.1.12 update; architecture gate and production build passed. `npm audit` reports 0 vulnerabilities. The bundle still emits a large-chunk warning.
+- GitHub CI run `43415934866` passed for commit `125599c` (`test: expand firestore security rules coverage`), including the 12 Firestore Rules Emulator cases. Cloudflare Preview deployment `9dbadb26-b7d1-46b2-b769-8bd0466f0af7` for commit `7854c43` built and deployed successfully after the staging App Check key was added. The build log reported 5 dependency vulnerabilities and large bundle warnings; these are not login/App Check test results.
 - These checks do not prove live Preview OAuth, App Check enforcement, production backup/restore, or the state of Firebase Console settings not visible to the repository.

@@ -48,6 +48,7 @@ function liftingSim() {
         '  const CAE = deps.CAE;',
         '  const GFX = deps.GFX;',
         '  const RIG = deps.RIG;',
+        '  const XPBDCableDynamics = deps.XPBDCableDynamics;',
         '  const runtime = deps.runtime || null;',
         '  const autoBoot = deps.autoBoot !== false;',
         body,
@@ -55,6 +56,7 @@ function liftingSim() {
         '    getState: () => (typeof state !== "undefined" ? state : null),',
         '    getPhy: () => (typeof phy !== "undefined" ? phy : null),',
         '    getRigSpec: typeof getRigSpec === "function" ? () => getRigSpec() : null,',
+        '    getCurrentLiftPlanSummary: typeof getCurrentLiftPlanSummary === "function" ? getCurrentLiftPlanSummary : null,',
         '    bootSimulator: typeof bootSimulator === "function" ? bootSimulator : null,',
         '    pretensionRig: typeof pretensionRig === "function" ? pretensionRig : null,',
         '    stepPhysicsEngine: typeof stepPhysicsEngine === "function" ? stepPhysicsEngine : null,',
@@ -103,7 +105,9 @@ export default defineConfig(({ mode }) => {
       port: 5173
     },
     test: {
-      exclude: ['**/node_modules/**', '**/dist/**', '**/e2e/**']
+      exclude: ['**/node_modules/**', '**/dist/**', '**/e2e/**'],
+      // Headless physics regression cases run several thousand simulation steps.
+      testTimeout: 15000
     }
   };
 });
