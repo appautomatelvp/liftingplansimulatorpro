@@ -26,9 +26,9 @@
 
 **Threat:** a user edits their profile to grant admin/premium access, unlock a locked account, or change another user's profile.
 
-**Existing controls:** self-updates are restricted to `lastLogin`; self-created profiles require the fixed user/free/active values; role changes cannot be made by the client; admin changes are limited to tier/status values. Locked/banned users fail the active-owner check.
+**Existing controls:** self-updates are restricted to `lastLogin`; self-created profiles require `uid`, matching verified token email (`email_verified == true`), `role: user`, `tier: free`, and `status: active`; role changes cannot be made by the client; admin changes are limited to `tier`/`status` on other accounts (`request.auth.uid != uid`, preventing self-lockout). Locked/banned users fail the active-owner check. CMS separates `admin`, `support` (read-only users/audit), and `catalog-editor` (catalog + `CATALOG_*` audit only).
 
-**Gaps / actions:** the current admin model is a single `admin` role without MFA enforcement, separation of duties, just-in-time access, or immutable audit events. Provision roles through a trusted operator path, require MFA for privileged accounts, and add server-written audit records before expanding CMS actions. Verify locked-user and admin negative cases in the Emulator suite.
+**Gaps / actions:** privileged accounts (`admin`, `support`, `catalog-editor`) are provisioned through trusted Firebase Console / Admin paths without enforced MFA or time-boxed just-in-time grants yet. Client UI guards and runtime flags (`config/featureFlags` kill-switch) are convenience layers backed by `firestore.rules`; continue verifying negative role cases in Rules Emulator (20/20) and `e2e/cms-roles.spec.js`.
 
 ### 3. Cross-account reads/writes and insecure direct object references
 
@@ -82,9 +82,9 @@
 
 **Threat:** stolen admin credentials or an overly broad operator role enables user enumeration, account locking, or entitlement manipulation.
 
-**Existing controls:** Firestore admin access requires an active profile with `role == admin`; client cannot assign that role.
+**Existing controls:** Firestore admin access requires an active profile matching `activeRole(...)` (`admin`, `support`, or `catalog-editor` per path); client cannot self-assign roles or unlock itself; `adminAuditLogs` are append-only (`allow update, delete: if false`), require a non-empty `reason` for `USER_ACCESS_UPDATE`, cap `before`/`after` serialized diffs at 400 chars (sensitive keys stripped), and are written atomically via `writeBatch` (`commitWithAudit`) alongside CMS mutations.
 
-**Gaps / actions:** MFA, admin access reviews, role separation, audit trail, and break-glass procedure are not verified. Enforce MFA for administrators, minimize the number of admins, log actor/target/reason and before/after values in a trusted append-only path, and alert on privileged changes. Do not place admin secrets in client code.
+**Gaps / actions:** MFA, privileged account reviews, time-boxed temporary grants, and external alerting/SIEM export remain unverified/unconfigured. Enforce MFA for privileged accounts, minimize operator count, and preserve append-only audit logs. Never place admin secrets in client code.
 
 ### 10. Data loss, malicious dependency/build changes, and secret leakage
 
@@ -98,14 +98,13 @@
 
 ## Release priorities
 
-1. Finish G0.03/G0.05: confirm OAuth hosts, staging App Check, production release gates, and backup/restore evidence.
-2. Keep expanding G0.07 Emulator cases for denial boundaries and quota/schema abuse as backend features are added; 12 Firestore Rules cases currently pass in CI.
-3. Complete G0.08 cost/error alerts and G0.09 admin MFA/audit controls before opening CMS capabilities or customer data at scale.
-4. Do not launch feedback sending or billing until the corresponding server-side rate-limit, secret handling, audit, idempotency, and abuse controls are implemented and tested.
+1. Finish G0.03/G0.05: push branch for remote GitHub CI run id, confirm live Google OAuth sign-in on Cloudflare Preview (`VITE_APP_ENV=staging`), App Check metrics/enforcement, production release gates, and backup/restore strategy.
+2. Keep running the expanded Firestore Rules Emulator suite (currently 20/20 cases) and Auth + CMS Emulator E2E suite (`npm run test:e2e:auth`: 5/5 cases) on every change to rules or SaaS flows.
+3. Enforce MFA for privileged accounts (`G0.09`) and decide when to promote `Content-Security-Policy-Report-Only` to enforcing mode after owner staging verification (local `dist/` CSP probe recorded 0 violations).
+4. Do not launch server-side feedback email sending or billing until the corresponding server-side rate-limit, secret handling, audit, idempotency, and abuse controls are implemented and tested.
 
 ## Evidence captured
 
-- Repository state reviewed 2026-11-13; Firestore rules and workspace data validators inspected.
-- Local application suite: 266/266 tests passed after Vite 6.4.6/Vitest 4.1.12 update; architecture gate and production build passed. `npm audit` reports 0 vulnerabilities. The bundle still emits a large-chunk warning.
-- GitHub CI run `43415934866` passed for commit `125599c` (`test: expand firestore security rules coverage`), including the 12 Firestore Rules Emulator cases. Cloudflare Preview deployment `9dbadb26-b7d1-46b2-b769-8bd0466f0af7` for commit `7854c43` built and deployed successfully after the staging App Check key was added. The build log reported 5 dependency vulnerabilities and large bundle warnings; these are not login/App Check test results.
-- These checks do not prove live Preview OAuth, App Check enforcement, production backup/restore, or the state of Firebase Console settings not visible to the repository.
+- Repository state updated and verified 2026-11-13 (V2 + V3 T-00–T-09): `firestore.rules`, `src/saas/runtime_flags.js`, `src/saas/cms_data.js`, `src/saas/catalog_client.js`, `src/saas/admin_dashboard.js`, `src/saas/workspace_dashboard.js`, `index.html`, and `public/_headers` inspected and exercised.
+- Local & Emulator checks verified before remote CI push: `architecture:gate` OK; Vitest 42/42 files (308/308 tests) passed; `npm run test:rules` passed 20/20; `npm run build` + `check:dist` (0 `.map` files in `dist/`); Playwright `dist/` CSP Report-Only probe (`/` and `/admin`) observed 0 violations; `npm run test:e2e:auth` passed 5/5 on Auth + Firestore Emulators.
+- Remote GitHub CI run `43415934866` (earlier commit `125599c`) and Cloudflare Preview deployment `9dbadb26-b7d1-46b2-b769-8bd0466f0af7` (`7854c43`) predate V2/V3 changes; remote CI on the new branch commits, live Preview OAuth sign-in, App Check enforcement, and production backup/restore remain unverified until the product owner pushes and tests staging.

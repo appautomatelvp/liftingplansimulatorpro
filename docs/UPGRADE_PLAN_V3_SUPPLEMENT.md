@@ -107,7 +107,7 @@ Chưa kiểm chứng trong lượt này: nguyên nhân gốc của 9 lỗi layou
 | T-06 | ✓ | `architecture:gate`, `npm test`, `npm run build`, `check:dist`, probe Playwright CSP `dist/_headers` | Bỏ `onclick` inline ở `index.html` (`#btn-comp-hud-export` nối qua `src/ui/controllers/index.js`), tách script màn loading sang `public/loading-screen-init.js`; thêm test `security_headers.test.js`; Unit **42/42 (308/308)**; Build 5.76s; Probe CSP `/` & `/admin` **0 vi phạm** (`Content-Security-Policy-Report-Only` giữ nguyên cho chủ sản phẩm bật enforce) | 13/11/2026 |
 | T-07 | ✓ | `architecture:gate`, `npm run test:e2e:auth` | Tạo `e2e/emulator_helpers.js` + `e2e/cms-roles.spec.js`, cập nhật `playwright.auth.config.js` chạy cả `auth.spec.js` và `cms-roles.spec.js`; E2E Emulator **5/5 đạt** (`2.3m`: `user` bị chặn, `support` chỉ đọc/nút `disabled`, `catalog-editor` chỉ thấy catalog, `admin` bắt buộc lý do + ghi dòng audit `before -> after`) | 13/11/2026 |
 | T-08 | ✓ (chờ push lấy run id) | Kiểm tra cú pháp YAML `.github/workflows/ci.yml` + rà indent | Thêm bước `npm run test:e2e:auth`, giữ upload artifact khi lỗi (`playwright-report/` + `test-results/`), giữ không thêm `e2e/layout.spec.js` theo T-05; YAML sạch, không tab | 13/11/2026 |
-| T-09 | □ | | | |
+| T-09 | ✓ | Đối chiếu `Select-String` + file thực tế | Cập nhật checklist `PRODUCT_UPGRADE_PLAN.md` (`G0.09`, `G1.05`, `G1.07`, `G2.05–G2.06`, `G3.01–G3.05`, `G5.01`, `G6.02`, `G6.04`, "Bước tiếp theo") và `SECURITY_THREAT_MODEL.md` đúng bằng chứng thật (hạng mục staging/MFA/backup giữ `◐`/`□`); `PERFORMANCE.md` giữ nguyên vì Rapier chunk vẫn `4,336.69 kB` | 13/11/2026 |
 | T-10 | □ | | | |
 
 ## 5. Nhật ký
@@ -163,3 +163,7 @@ Chưa kiểm chứng trong lượt này: nguyên nhân gốc của 9 lỗi layou
 ### T-08 Nâng CI (G-06) — 13/11/2026
 - `.github/workflows/ci.yml`: giữ Java 21, `architecture:gate`, `npm test`, `test:rules`, `build`, `check:dist`, `e2e/saas-accessibility.spec.js`, đồng thời thêm bước `Run Auth and CMS Emulator E2E tests` (`npm run test:e2e:auth`) và giữ `Upload Playwright artifacts on failure` (`playwright-report/` + `test-results/`, `if-no-files-found: ignore`). Không thêm `e2e/layout.spec.js` chừng nào UI-008/UI-003 còn hoãn theo T-05.
 - Kiểm tra cục bộ: xác nhận cấu trúc YAML (97 dòng trước EOF, 0 tab, đúng indent 2 dấu cách), `hasAuthE2E: true`, `hasLayoutSpec: false`. Chưa ghi "CI xanh" cho đến khi chủ sản phẩm push và có run id thật.
+
+### T-09 Đồng bộ tài liệu (G-09) — 13/11/2026
+- Cập nhật `docs/PRODUCT_UPGRADE_PLAN.md`: đồng bộ `G0.09`, `G1.05`, `G1.06`, `G1.07`, `G2.05`, `G2.06`, `G3.01–G3.05`, `G5.01`, `G6.02`, `G6.04` theo đúng bằng chứng lệnh xanh cục bộ + Emulator (giữ `◐`/`□` cho các phần cần staging/CI remote/MFA/billing), và thay đoạn `Bước tiếp theo khi tiếp tục` bằng trỏ tới `docs/UPGRADE_PLAN_V3_SUPPLEMENT.md`.
+- Cập nhật `docs/SECURITY_THREAT_MODEL.md`: đồng bộ phân quyền 3 vai trò CMS, `adminAuditLogs` bất biến ghi nguyên tử với `reason` và diff `before`/`after`, kill switch `config/featureFlags`, kết quả kiểm chứng Rules Emulator 20/20 + Auth/CMS E2E 5/5 + probe CSP 0 vi phạm. `docs/architecture/PERFORMANCE.md` không cần đổi số đo (chunk `rapier` vẫn `4,336.69 kB`).

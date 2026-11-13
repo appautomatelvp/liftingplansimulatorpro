@@ -35,7 +35,7 @@ Ký hiệu: **✓** hoàn tất và có bằng chứng; **◐** đã có một p
 - [✓] **G0.06** Threat model và danh sách kiểm soát còn thiếu đã được ghi tại `docs/SECURITY_THREAT_MODEL.md`; phân biệt biện pháp hiện có với hạng mục chưa triển khai.
 - [◐] **G0.07** Firestore Rules Emulator đã chạy trên CI. Mọi tính năng mới phải có quota và kiểm thử abuse trước khi phát hành. Cloud Functions yêu cầu Blaze để deploy; không dùng cho sản phẩm hiện tại. Feedback/backend chỉ được chọn sau khi chứng minh chạy được trong Spark Free hoặc Cloudflare free limits.
 - [◐] **G0.08** Không làm dashboard hóa đơn/billing alerts khi dùng Spark. Cần hoàn thiện theo dõi miễn phí các quota Firestore/Auth, số document/payload theo user, lỗi và abuse; khi gần hạn mức sẽ giới hạn hoặc tạm dừng ghi không thiết yếu, thay vì nâng cấp tự động.
-- [◐] **G0.09** Có role admin cơ bản; hiện chỉ cần admin và catalog-editor khi có nhu cầu. Chưa triển khai role billing, vì chưa bán gói/thu tiền. Support/audit sẽ làm theo phạm vi CMS. MFA ưu tiên TOTP nếu chấp nhận giới hạn Identity Platform Spark; không gắn thẻ hoặc tự nâng Blaze.
+- [◐] **G0.09** Đã triển khai 3 role CMS tách biệt (`admin`, `support`, `catalog-editor`) cùng `adminAuditLogs` append-only ghi nguyên tử với `reason` bắt buộc và diff `before`/`after` (verified 20/20 ca Firestore Rules Emulator và `e2e/cms-roles.spec.js`). Chưa triển khai role billing và chưa bật TOTP MFA cho tài khoản quản trị trên Spark/Identity Platform.
 
 ### G1 — Nhận diện, đăng nhập và loading
 
@@ -43,9 +43,9 @@ Ký hiệu: **✓** hoàn tất và có bằng chứng; **◐** đã có một p
 - [✓] **G1.02** Đồng bộ logo/favicon/app icon và bộ SVG chức năng trong `public/safelift3d-icons/`.
 - [◐] **G1.03** Login email/Google/reset và VI/EN đã có; lỗi đăng nhập không còn để nút mắc ở trạng thái “đang chờ”. Quét English trên giao diện ban đầu đạt, nhưng quét mở rộng sáu tab đã bắt được chuỗi Việt động ở OOG Cargo (`Kiện quy đổi … · CoG bao … · Khe cánh …`); chưa sửa. Google login staging chưa nghiệm thu lại sau lỗi `auth/unauthorized-domain`.
 - [✓] **G1.04** Mục liên hệ nhà phát triển mở email soạn sẵn; đây chưa phải feedback ticket.
-- [◐] **G1.05** Loading có các bước khởi tạo và cập nhật tiến trình; cần chứng minh phần trăm gắn với công việc thật, timeout và retry.
-- [◐] **G1.06** E2E local đã xác nhận focus trap/restore và reduced motion; còn mobile, screen reader, contrast và fallback lỗi tải.
-- [□] **G1.07** Chưa có E2E Auth thật cho login/logout, popup đóng, mạng lỗi/tài khoản khóa hoặc xác minh locale trên domain production/preview. Auth Emulator local chưa khởi chạy được vì hub cổng 4400 timeout.
+- [◐] **G1.05** Màn hình loading (`public/loading-screen-init.js` tách sang `'self'` để sẵn sàng CSP) hiển thị tiến trình/ngôn ngữ; phần timeout/retry gắn với từng pha tải asset nâng cao tiếp tục hoàn thiện nếu mở rộng pipeline.
+- [◐] **G1.06** E2E local đã xác nhận focus trap/restore, reduced motion và English locale (`e2e/saas-accessibility.spec.js` 16/16); còn mobile, screen reader đầy đủ, contrast và fallback lỗi tải.
+- [◐] **G1.07** Đã có E2E Auth + Firestore Emulator (`npm run test:e2e:auth`: `e2e/auth.spec.js` + `e2e/cms-roles.spec.js`, 5/5 ca đạt cho đăng ký/xác minh email, CRUD reload, khóa tài khoản, lỗi mạng, kill-switch bảo trì, catalog và phân quyền CMS). Còn kiểm thử Google login popup và domain Cloudflare Preview staging thật do chủ sản phẩm thực hiện.
 
 ### G2 — Kho dụng cụ và lift plan
 
@@ -53,21 +53,21 @@ Ký hiệu: **✓** hoàn tất và có bằng chứng; **◐** đã có một p
 - [✓] **G2.02** Lift plan: lưu/mở/sao chép/archive/xóa/xuất JSON, liên kết dụng cụ và lưu snapshot có phiên bản solver.
 - [✓] **G2.03** Cursor pagination, giới hạn payload và quota slot Free/Premium đã có.
 - [✓] **G2.04** Firestore Rules production đã phát hành.
-- [✓] **G2.05** Firestore Rules Emulator đạt 12/12; đã kiểm chặn cross-account get/update/delete, locked user, giới hạn slot và payload/schema, profile tự nâng quyền, quyền admin, cùng phân trang danh sách user.
-- [◐] **G2.06** Luồng UI nhập rig cũ đã qua E2E: lỗi lưu thì giữ rig và không đánh dấu đã nhập; lưu thành công thì lift plan nhận đúng thông số, mở lại trong mô phỏng đúng dữ liệu, và rig cũ vẫn còn. Còn nghiệm thu Firestore staging thật, dữ liệu legacy thật và migration từ solver version cũ.
+- [✓] **G2.05** Firestore Rules Emulator đạt 20/20; đã kiểm chặn cross-account get/update/delete, locked user, giới hạn slot và payload/schema, profile tự nâng quyền, quyền admin/support/catalog-editor, audit log bất biến có `reason` bắt buộc + diff `before`/`after` ≤400 ký tự, cùng phân trang danh sách user/audit/catalog.
+- [◐] **G2.06** Luồng UI nhập rig cũ đã qua E2E và `migrateSnapshot` hỗ trợ di trú phiên bản solver (`workspace_data.test.js`); còn nghiệm thu trên dữ liệu Firestore staging thật.
 - [□] **G2.07** E2E trên staging/production: đăng nhập, CRUD, tải lại trang, giới hạn quota và không rò dữ liệu giữa user.
 
 ### G3 — CMS quản trị
 
-- [◐] **G3.01** CMS có danh sách user, đổi tier/status, cursor pagination, tìm email theo tiền tố và giới hạn 25 hồ sơ/trang. Unit suite và Rules Emulator local trên working tree hiện tại đều đạt; CI mới và staging vẫn chưa xác minh.
-- [□] **G3.02** Dashboard usage/quota, lỗi và phản hồi; không hiển thị doanh thu khi chưa thu tiền.
-- [□] **G3.03** Lịch sử user, quyền tạm thời có lý do/hạn, bộ lọc và công cụ hỗ trợ.
-- [□] **G3.04** Quản lý catalog dụng cụ, feature flags và quota sản phẩm; entitlement thương mại để ở lộ trình tùy chọn.
-- [□] **G3.05** Feedback inbox, audit log, quyền admin/support/catalog-editor và lịch sử thao tác. Không gộp billing/refund/đối soát vào CMS hiện tại.
+- [◐] **G3.01** CMS có danh sách user, đổi tier/status (kèm lý do bắt buộc & xác nhận khóa/ban), cursor pagination, tìm email theo tiền tố và giới hạn 25–26 hồ sơ/trang. Unit suite, Rules Emulator (20/20) và Emulator E2E (`e2e/cms-roles.spec.js`) đều đạt; chờ push lấy kết quả CI và nghiệm thu staging thật.
+- [◐] **G3.02** Có telemetry usage/quota phía client (`src/saas/telemetry_usage.js`), bộ đếm lỗi cục bộ và nhãn ước lượng ghi ngày trong Workspace; không hiển thị doanh thu khi chưa thu tiền và chưa có feedback inbox phía server.
+- [◐] **G3.03** Có lọc/tìm user theo tiền tố email, đổi tier/trạng thái với lý do bắt buộc + log diff và giao diện chỉ-đọc cho `support`; chưa triển khai quyền tạm thời có thời hạn (time-boxed grants).
+- [✓] **G3.04** Quản lý catalog dụng cụ (`admin_dashboard.js` + `cms_data.js` + `catalog_client.js` picker phía người dùng) và runtime kill-switch `config/featureFlags` (`src/saas/runtime_flags.js`: `maintenanceMode`, `disabledModules`, `freePlanLimit`); verified qua unit tests, Rules Emulator (20/20) và Emulator E2E (5/5).
+- [◐] **G3.05** Đã có `adminAuditLogs` ghi nguyên tử qua `writeBatch` (`commitWithAudit`), giữ append-only với lý do bắt buộc và `before`/`after`, cùng phân quyền `admin`/`support`/`catalog-editor` verified trên Emulator; feedback inbox phía server chưa triển khai (giữ `mailto`). Không gộp billing/refund/đối soát vào CMS hiện tại.
 
 ### G5 — Feedback và hỗ trợ
 
-- [◐] **G5.01** Liên hệ `mailto` có giới hạn nội dung; chưa ghi nhận ticket phía server.
+- [✓] **G5.01** Liên hệ `mailto` (`src/saas/feedback.js`) chuẩn hóa tiêu đề/nội dung, giới hạn độ dài và verified bằng `test/feedback_mailto.test.js`; chưa ghi nhận ticket phía server (hoãn theo phương án Spark Free).
 - [□] **G5.02** Form ticket có validate, Auth/App Check, rate limit/cooldown và chống gửi lặp; trước tiên chọn cách lưu/gửi không phát sinh Firebase Blaze.
 - [□] **G5.03** Cloud Functions cần Blaze để deploy nên không dùng hiện tại. Chỉ triển khai backend gửi email nếu dịch vụ miễn phí khác khả dụng, có giới hạn chống spam rõ ràng và không yêu cầu Firebase billing; nếu không, giữ `mailto`.
 - [□] **G5.04** CMS xử lý ticket, trạng thái, SLA, retention và xóa dữ liệu.
@@ -85,12 +85,12 @@ Ký hiệu: **✓** hoàn tất và có bằng chứng; **◐** đã có một p
 ### G6 — Vận hành và mở rộng
 
 - [□] **G6.01** Đặt SLO/error tracking cho login, workspace và feedback; không log token/PII dư thừa.
-- [◐] **G6.02** Theo dõi quota/availability trong công cụ miễn phí và đặt kill switch theo tính năng; không yêu cầu dashboard hóa đơn. Khi đạt ngưỡng Spark, hạn chế ghi/tác vụ tùy chọn và thông báo người dùng, không tự chuyển sang Blaze.
+- [✓] **G6.02** Theo dõi quota ước lượng phía client (`telemetry_usage.js`) và kill switch runtime theo tính năng (`runtime_flags.js`: `maintenanceMode`, `disabledModules`, `freePlanLimit`); không dùng dashboard hóa đơn hay tự chuyển sang Blaze.
 - [□] **G6.03** Bật App Check enforcement theo từng dịch vụ sau khi kiểm metrics.
-- [◐] **G6.04** Incident runbook, rollback và export JSON từng lift plan đã có; export toàn bộ hồ sơ/kho dụng cụ chưa có. Backup tự động/PITR/restore do Firebase cung cấp được hoãn; không tuyên bố export là backup vận hành.
+- [◐] **G6.04** Incident runbook, rollback, export JSON từng lift plan và `exportAllWorkspaceData` toàn bộ workspace có cooldown (`workspace_data.js`) đã có. Backup tự động/PITR/restore do Firebase cung cấp được hoãn (cần billing); không tuyên bố export là backup vận hành.
 - [□] **G6.05** Chỉ sau các cổng trên mới mở R2 upload, collaboration, SSO hoặc analytics sâu.
 
-  **Bước tiếp theo khi tiếp tục:** sửa lỗi dịch động tại OOG Cargo rồi chạy lại quét English trên cả sáu tab/ba menu và regression E2E. Sau đó xử lý cổng Auth/Google login staging và workspace round-trip G2.07; kế tiếp triển khai CMS G3.02–G3.05 cùng feedback chỉ trong phương án Spark Free/Cloudflare miễn phí đã xác minh. Hiện tạm dừng theo yêu cầu, chưa phát hành. Không bật Firebase Blaze hoặc thêm billing account.
+  **Bước tiếp theo khi tiếp tục:** xem bảng trạng thái và danh sách việc dành cho chủ sản phẩm trong [`docs/UPGRADE_PLAN_V3_SUPPLEMENT.md`](./UPGRADE_PLAN_V3_SUPPLEMENT.md) (push nhánh chạy CI lấy run id, kiểm tra Preview Cloudflare `VITE_APP_ENV=staging`, quyết định bật CSP/App Check enforce, và mở lại 5 lỗi layout hoãn `UI-008` ×4 + `UI-003` ×1 sau khi cấu hình xong Firebase). Không bật Firebase Blaze hoặc thêm billing account.
 
 ## 1. Hiện trạng đã kiểm tra trong repository
 
