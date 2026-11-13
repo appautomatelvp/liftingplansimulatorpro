@@ -10,6 +10,7 @@ const COPY = {
     cooldown: 'Too many rapid attempts. Try again in {seconds}s.', suspended: 'This account is suspended. Contact SafeLift3D support.', unknown: 'Unable to complete the request. Please try again.',
     invalidCredential: 'Email or password is incorrect.', invalidEmail: 'Enter a valid email address.', weakPassword: 'Use a password with at least 6 characters.', emailInUse: 'An account already exists for this email.', popupClosed: 'The Google sign-in window was closed.', tooMany: 'Too many attempts. Try again later.', network: 'Network error. Check your connection and try again.', emailRequired: 'Enter your email address first.',
     unauthorizedDomain: 'This website is not authorized for sign-in. Add its domain in Firebase Authentication settings.', providerDisabled: 'This sign-in method is disabled in Firebase Authentication.', accountDisabled: 'This account has been disabled. Contact SafeLift3D support.',
+    accountExistsWithOtherProvider: 'This email already uses another sign-in method. Sign in that way first, then link Google.',
     verifyEmail: 'Check your email for the password reset link.', accountCreated: 'Your account was created.', toggle: 'Tiếng Việt'
   },
   vi: {
@@ -19,6 +20,7 @@ const COPY = {
     cooldown: 'Bạn thao tác quá nhanh. Thử lại sau {seconds} giây.', suspended: 'Tài khoản đang bị khóa. Vui lòng liên hệ SafeLift3D.', unknown: 'Không thể hoàn tất yêu cầu. Vui lòng thử lại.',
     invalidCredential: 'Email hoặc mật khẩu không chính xác.', invalidEmail: 'Vui lòng nhập địa chỉ email hợp lệ.', weakPassword: 'Mật khẩu cần có ít nhất 6 ký tự.', emailInUse: 'Email này đã được đăng ký.', popupClosed: 'Cửa sổ đăng nhập Google đã bị đóng.', tooMany: 'Bạn đã thử quá nhiều lần. Hãy thử lại sau.', network: 'Lỗi kết nối mạng. Kiểm tra kết nối rồi thử lại.', emailRequired: 'Hãy nhập địa chỉ email trước.',
     unauthorizedDomain: 'Tên miền này chưa được cho phép đăng nhập. Hãy thêm tên miền trong Firebase Authentication.', providerDisabled: 'Phương thức đăng nhập này đang bị tắt trong Firebase Authentication.', accountDisabled: 'Tài khoản đã bị vô hiệu hóa. Vui lòng liên hệ SafeLift3D.',
+    accountExistsWithOtherProvider: 'Email này đã dùng phương thức đăng nhập khác. Hãy đăng nhập bằng phương thức đó trước rồi liên kết Google.',
     verifyEmail: 'Hãy kiểm tra email để nhận liên kết đặt lại mật khẩu.', accountCreated: 'Tài khoản đã được tạo.', toggle: 'English'
   }
 };
@@ -56,7 +58,8 @@ function messageFor(error, copy) {
     'auth/network-request-failed': copy.network,
     'auth/unauthorized-domain': copy.unauthorizedDomain,
     'auth/operation-not-allowed': copy.providerDisabled,
-    'auth/user-disabled': copy.accountDisabled
+    'auth/user-disabled': copy.accountDisabled,
+    'auth/account-exists-with-different-credential': copy.accountExistsWithOtherProvider
   };
   return known[error?.code] || copy.unknown;
 }
@@ -169,6 +172,7 @@ export function mountAuthScreen(container, { lang, configured, actions, onLangua
   return {
     setLanguage() { render(); },
     showMessage(message, isError = false) { showStatus(message, isError); },
+    showError(error) { showStatus(messageFor(error, COPY[lang()] || COPY.en), true); },
     dispose() { if (countdownTimer) clearInterval(countdownTimer); root.remove(); }
   };
 }
