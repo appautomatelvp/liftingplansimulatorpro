@@ -388,7 +388,7 @@ export class AssemblyEngine {
 
         const header = [
             '# ==============================================================================',
-            '# CAE INDUSTRIAL DIGITAL TWIN SPECIFICATION - LIFTING PLAN SIMULATOR PRO',
+            '# CAE INDUSTRIAL DIGITAL TWIN SPECIFICATION - SAFELIFT3D',
             '# Architecture: CAE Physical Twin & Metric Standard (1 Unit = 1.0 Meter)',
             `# ASSET_NAME: ${name}`,
             '# SPEC_KEY: composite_cargo',

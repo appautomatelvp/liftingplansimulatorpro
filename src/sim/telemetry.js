@@ -372,7 +372,9 @@
                 const cogEl = document.getElementById('hud-cog');
                 if (cogEl) cogEl.textContent = `${state.cogX.toFixed(2)} / ${state.cogZ.toFixed(2)} m`;
                 const spanEl = document.getElementById('hud-span');
-                if (spanEl) spanEl.textContent = `${span.spanX.toFixed(2)} × ${span.spanZ.toFixed(2)} m · nén ${(phy.beamCompression || 0).toFixed(1)} t`;
+                if (spanEl) spanEl.textContent = state.lang === 'en'
+                    ? `${span.spanX.toFixed(2)} × ${span.spanZ.toFixed(2)} m · compression ${(phy.beamCompression || 0).toFixed(1)} t`
+                    : `${span.spanX.toFixed(2)} × ${span.spanZ.toFixed(2)} m · nén ${(phy.beamCompression || 0).toFixed(1)} t`;
                 document.getElementById('hud-tilt').textContent = phy.tiltDeg.toFixed(1) + '°';
                 document.getElementById('hud-clear').textContent = phy.groundClearance.toFixed(2) + ' m';
                 const dmg = document.getElementById('hud-damage');
@@ -383,7 +385,9 @@
                     const h = phy.hoist;
                     if (h && typeof hoistElasticEnabled === 'function' && hoistElasticEnabled()) {
                         const daf = h.daf || 0;
-                        dafEl.textContent = `${daf.toFixed(2)} (đỉnh ${(h.dafPeak || 1).toFixed(2)}) · ${(h.tensionN / 9806.65).toFixed(1)} t · giãn ${(h.stretchMm || 0).toFixed(0)} mm`;
+                        dafEl.textContent = state.lang === 'en'
+                            ? `${daf.toFixed(2)} (peak ${(h.dafPeak || 1).toFixed(2)}) · ${(h.tensionN / 9806.65).toFixed(1)} t · stretch ${(h.stretchMm || 0).toFixed(0)} mm`
+                            : `${daf.toFixed(2)} (đỉnh ${(h.dafPeak || 1).toFixed(2)}) · ${(h.tensionN / 9806.65).toFixed(1)} t · giãn ${(h.stretchMm || 0).toFixed(0)} mm`;
                         dafEl.className = 'hud-val font-mono font-bold ' + (daf > 1.35 ? 'text-red-400' : (daf > 1.15 ? 'text-amber-300' : 'text-amber-200'));
                     } else {
                         dafEl.textContent = state.lang === 'en' ? 'rigid hook (select a crane)' : 'móc cứng (chọn cẩu)';
@@ -396,24 +400,30 @@
                     const live = w.vector ? w.vector.length() : 0;
                     const rainMm = w.rainMmH != null ? w.rainMmH : ((state.weather && state.weather.rainMmH) || 0);
                     const rainN = w.rainForceN || 0;
-                    windEl.textContent = `${live.toFixed(1)} m/s · mưa ${rainMm.toFixed(0)} · ${(w.forceN / 1000).toFixed(2)} kN · dạt ${(w.driftDeg || 0).toFixed(1)}°`;
+                    windEl.textContent = state.lang === 'en'
+                        ? `${live.toFixed(1)} m/s · rain ${rainMm.toFixed(0)} mm/h · ${(w.forceN / 1000).toFixed(2)} kN · drift ${(w.driftDeg || 0).toFixed(1)}°`
+                        : `${live.toFixed(1)} m/s · mưa ${rainMm.toFixed(0)} mm/h · ${(w.forceN / 1000).toFixed(2)} kN · dạt ${(w.driftDeg || 0).toFixed(1)}°`;
                     windEl.className = 'hud-val font-mono font-bold ' + ((w.driftDeg || 0) > 3 || rainMm >= 40 ? 'text-amber-300' : 'text-sky-300');
                     // Site panel: once airborne, show the measured values next to the design estimate
                     if (phy.groundClearance > 0.05 && phy.windDesign) {
                         const fEl = document.getElementById('val-wind-force');
-                        if (fEl) fEl.textContent = `${(w.forceN / 1000).toFixed(2)} kN thực (tk ${phy.windDesign.forceKN.toFixed(2)} kN)`;
+                        if (fEl) fEl.textContent = state.lang === 'en'
+                            ? `${(w.forceN / 1000).toFixed(2)} kN measured (design ${phy.windDesign.forceKN.toFixed(2)} kN)`
+                            : `${(w.forceN / 1000).toFixed(2)} kN thực (tk ${phy.windDesign.forceKN.toFixed(2)} kN)`;
                         const dEl = document.getElementById('val-wind-drift');
-                        if (dEl) dEl.textContent = `${(w.driftDeg || 0).toFixed(2)}° đo (tk ${phy.windDesign.driftDeg.toFixed(2)}°)`;
+                        if (dEl) dEl.textContent = state.lang === 'en'
+                            ? `${(w.driftDeg || 0).toFixed(2)}° measured (design ${phy.windDesign.driftDeg.toFixed(2)}°)`
+                            : `${(w.driftDeg || 0).toFixed(2)}° đo (tk ${phy.windDesign.driftDeg.toFixed(2)}°)`;
                     }
                     const rEl = document.getElementById('val-rain-force');
                     if (rEl) rEl.textContent = `${(rainN / 1000).toFixed(2)} kN`;
                     const rainValLive = document.getElementById('val-rain-mmh');
                     if (rainValLive && state.wind && state.wind.vary) {
-                        let rainLabel = 'Khô';
-                        if (rainMm >= 80) rainLabel = 'Rất lớn';
-                        else if (rainMm >= 40) rainLabel = 'Mưa lớn';
-                        else if (rainMm >= 15) rainLabel = 'Mưa vừa';
-                        else if (rainMm >= 2) rainLabel = 'Mưa nhỏ';
+                        let rainLabel = state.lang === 'en' ? 'Dry' : 'Khô';
+                        if (rainMm >= 80) rainLabel = state.lang === 'en' ? 'Very heavy' : 'Rất lớn';
+                        else if (rainMm >= 40) rainLabel = state.lang === 'en' ? 'Heavy' : 'Mưa lớn';
+                        else if (rainMm >= 15) rainLabel = state.lang === 'en' ? 'Moderate' : 'Mưa vừa';
+                        else if (rainMm >= 2) rainLabel = state.lang === 'en' ? 'Light' : 'Mưa nhỏ';
                         rainValLive.textContent = `${rainMm.toFixed(0)} mm/h · ${rainLabel}`;
                     }
                 }
@@ -715,7 +725,9 @@
                 const elTen = document.getElementById('v-sel-tension');
                 const elAng = document.getElementById('v-sel-angle');
                 const elSwl = document.getElementById('v-sel-swl');
-                if (elTen) elTen.innerHTML = `Lực căng T: <b class="text-white">${tensionT.toFixed(2)} T</b> (${utilPct}%)`;
+                if (elTen) elTen.innerHTML = state.lang === 'en'
+                    ? `Leg tension: <b class="text-white">${tensionT.toFixed(2)} t</b> (${utilPct}%)`
+                    : `Lực căng T: <b class="text-white">${tensionT.toFixed(2)} T</b> (${utilPct}%)`;
                 if (elAng) elAng.innerHTML = `Góc α: <b class="text-sky-300">${angleDeg.toFixed(1)}°</b> · LAF: <b class="${zoneColor}">${laf.toFixed(3)}</b>`;
                 if (elSwl) elSwl.innerHTML = `WLL: ${wllT.toFixed(1)} T · <span class="${zoneColor}">[${zoneText}]</span>`;
             }

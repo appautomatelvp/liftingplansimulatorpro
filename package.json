@@ -1,5 +1,5 @@
 {
-  "name": "lifting-plan-simulator-pro",
+  "name": "safelift3d",
   "private": true,
   "type": "module",
   "engines": {
@@ -19,7 +19,11 @@
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.21.0",
     "cannon-es": "^0.20.0",
+    "firebase": "^13.3.0",
     "three": "^0.170.0"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.14.7"
   },
   "devDependencies": {
     "@playwright/test": "^1.65.0",

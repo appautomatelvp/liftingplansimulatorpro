@@ -851,7 +851,7 @@ export class LiftPlanModel {
     <!-- Top Print & Action Controls -->
     <div class="no-print" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
         <div>
-            <span style="font-size: 14px; font-weight: bold; color: #38bdf8;">Lifting Plan Simulator Pro - Professional Engineering Export</span>
+            <span style="font-size: 14px; font-weight: bold; color: #38bdf8;">SafeLift3D - Professional Engineering Export</span>
         </div>
         <div style="display: flex; gap: 10px;">
             <button class="print-btn" onclick="window.print()">🖨️ In Báo Cáo / Lưu PDF</button>
@@ -1065,7 +1065,7 @@ export class LiftPlanModel {
 
     <!-- Document Footer -->
     <div style="text-align: center; font-size: 10.5px; color: #64748b; margin-top: 16px;">
-        Xuất từ Lifting Plan Simulator Pro (Industrial CAE Engine) · Tuân thủ toàn diện các quy chuẩn quốc tế ASME P30.1, ASME B30.9, ASME B30.20, OSHA 1926 &amp; DNV-ST-N001.
+        Xuất từ SafeLift3D (Industrial CAE Engine) · Developed by Lê Việt Phương · Tuân thủ ASME P30.1, ASME B30.9, ASME B30.20, OSHA 1926 &amp; DNV-ST-N001.
     </div>
 </body>
 </html>`;

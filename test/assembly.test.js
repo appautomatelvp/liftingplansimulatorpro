@@ -116,7 +116,7 @@ describe('3D Composite & Assembly Engine (CAE Physics & OBJ Standard)', () => {
     it('5. Round-trip header parser correctly recovers engineering parameters from OBJ comment header', () => {
         const sampleOBJ = [
             '# ==============================================================================',
-            '# CAE INDUSTRIAL DIGITAL TWIN SPECIFICATION - LIFTING PLAN SIMULATOR PRO',
+            '# CAE INDUSTRIAL DIGITAL TWIN SPECIFICATION - SAFELIFT3D',
             '# ASSET_NAME: FlatRack_Loaded_Custom_Skid',
             '# SPEC_KEY: composite_cargo',
             '# DIMENSIONS_LWH: 12.190,3.250,2.440',

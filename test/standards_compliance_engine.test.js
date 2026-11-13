@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import * as CAE from '../src/core/index.js';
 
-describe('ANTIGRAVITY / LIFTING PLAN PRO — International Standards Compliance Suite', () => {
+describe('SAFELIFT3D — International Standards Compliance Suite', () => {
 
     describe('1. Steel Grades & ASME BTH-1 (Structural Lifting Devices)', () => {
         it('provides verified mechanical properties for structural steel grades', () => {

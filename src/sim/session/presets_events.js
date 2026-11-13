@@ -153,6 +153,24 @@
         let currentDrawerTab = 'cargo';
         let isDrawerOpen = false;
 
+        function syncDrawerHeaderLanguage() {
+            const tabTitles = {
+                cargo: { icon: '📦', title: '1. Hàng Hóa & Trọng Tâm', sub: 'Kích thước, Khối lượng, Trọng tâm CoG & Hướng xoay', titleEn: '1. Cargo & Centre of Gravity', subEn: 'Dimensions, mass, centre of gravity (CoG) and orientation' },
+                lugs: { icon: '📍', title: '2. Điểm Nâng & Tai Cẩu', sub: 'Vị trí Pad-eye, Bích hàn & Bảo vệ góc cáp', titleEn: '2. Lifting Points & Pad-eyes', subEn: 'Pad-eye locations, welded plates and sling corner protection' },
+                rig: { icon: '🟠', title: '3. Dầm Ngáng & Đòn Gánh', sub: 'Spreader, Lifting Beam, Tầng 1 & Tầng 2', titleEn: '3. Spreaders & Lifting Beams', subEn: 'Spreader beams, lifting beams, tiers 1 and 2' },
+                gear: { icon: '⛓️', title: '4. Cáp Treo & Phụ Kiện', sub: 'Sling cáp/xích, Shackle ma ní & Tải an toàn WLL', titleEn: '4. Slings & Hardware', subEn: 'Wire-rope and chain slings, shackles and rated working loads (WLL)' },
+                crane: { icon: '🏗️', title: '5. Thiết Bị Cẩu & Móc', sub: 'Cần trục Liebherr, Móc cẩu & Biểu đồ tải LMI', titleEn: '5. Crane & Hook Block', subEn: 'Liebherr cranes, hook blocks and live load charts (LMI)' },
+                site: { icon: '🌍', title: '6. Hiện Trường & Sàn Kê', sub: 'Nền đất, Đà kê dunnage & Tải trọng gió', titleEn: '6. Jobsite & Ground Support', subEn: 'Ground conditions, timber dunnage and wind loads' }
+            };
+            const t = tabTitles[currentDrawerTab] || tabTitles.cargo;
+            const titleEl = document.getElementById('drawer-header-title');
+            const iconEl = document.getElementById('drawer-header-icon');
+            const subEl = document.getElementById('drawer-header-sub');
+            if (titleEl) titleEl.textContent = state.lang === 'en' ? t.titleEn : t.title;
+            if (iconEl) iconEl.textContent = t.icon;
+            if (subEl) subEl.textContent = state.lang === 'en' ? t.subEn : t.sub;
+        }
+
         function openRightDrawer(tabName) {
             if (tabName) currentDrawerTab = tabName;
             const drawer = document.getElementById('right-side-drawer');
@@ -187,22 +205,8 @@
                 btn.classList.toggle('active', btn.dataset.drawerTab === currentDrawerTab);
             });
 
-            // Header titles & icons
-            const tabTitles = {
-                cargo: { icon: '📦', title: '1. Hàng Hóa & Trọng Tâm', sub: 'Kích thước, Khối lượng, Trọng tâm CoG & Hướng xoay' },
-                lugs: { icon: '📍', title: '2. Điểm Nâng & Tai Cẩu', sub: 'Vị trí Pad-eye, Bích hàn & Bảo vệ góc cáp' },
-                rig: { icon: '🟠', title: '3. Dầm Ngáng & Đòn Gánh', sub: 'Spreader, Lifting Beam, Tầng 1 & Tầng 2' },
-                gear: { icon: '⛓️', title: '4. Cáp Treo & Phụ Kiện', sub: 'Sling cáp/xích, Shackle ma ní & Tải an toàn WLL' },
-                crane: { icon: '🏗️', title: '5. Thiết Bị Cẩu & Móc', sub: 'Cần trục Liebherr, Móc cẩu & Biểu đồ tải LMI' },
-                site: { icon: '🌍', title: '6. Hiện Trường & Sàn Kê', sub: 'Nền đất, Đà kê dunnage & Tải trọng gió' }
-            };
-            const t = tabTitles[currentDrawerTab] || tabTitles.cargo;
-            const titleEl = document.getElementById('drawer-header-title');
-            const iconEl = document.getElementById('drawer-header-icon');
-            const subEl = document.getElementById('drawer-header-sub');
-            if (titleEl) titleEl.textContent = t.title;
-            if (iconEl) iconEl.textContent = t.icon;
-            if (subEl) subEl.textContent = t.sub;
+            // Header titles & icons follow the selected language.
+            syncDrawerHeaderLanguage();
 
             drawer.classList.remove('drawer-closed');
             drawer.classList.add('drawer-open');
@@ -555,37 +559,759 @@
             'Tự động tách nền & đùn khối nổi 3D': 'Remove the background and extrude a 3D solid'
         };
 
+        // Complete the English coverage for the full 3D workspace shell and
+        // all six engineering panels. Keep exact source phrases here so the
+        // language switch never relies on browser auto-translation.
+        Object.assign(UI_EN, {
+            '📌 Đã lưu mốc ban đầu': '📌 Initial baseline saved',
+            '👁️ Hiển Thị': '👁️ Display',
+            '✨ Đồ Họa': '✨ Graphics',
+            '📋 Hồ Sơ & Chuẩn': '📋 Plans & Standards',
+            '⚙️ Hệ Thống': '⚙️ System',
+            'Tạo Phương Án': 'Create Lift Plan',
+            'Thông Số (1-6)': 'Parameters (1–6)',
+            'Chỉ Số Tải & An Toàn': 'LOAD & SAFETY INDICATORS',
+            'Hư hại tải động:': 'Dynamic load damage:',
+            'DAF cáp cẩu:': 'Hoist-rope DAF:',
+            'Thời tiết:': 'Weather:',
+            'Mô Phỏng:': 'SIMULATION:',
+            '🪝 TỜI:': '🪝 HOIST:',
+            '🪝 Tời:': '🪝 Hoist:',
+            'Tốc độ:': 'SPEED:',
+            'Chậm': 'Slow',
+            'Nhanh': 'Fast',
+            'Cần:': 'SLEW:',
+            'Cam:': 'CAMERA:',
+            'Giữ': 'Hold',
+            'Thời Gian Thực VN (Real-Time) · Sàn bê tông phẳng': 'Vietnam local time · Flat concrete testbed',
+            '3. DẦM NGÁNG & ĐÒN GÁNH': '3. SPREADERS & LIFTING BEAMS',
+            '3. Dầm Ngáng & Đòn Gánh': '3. Spreaders & Lifting Beams',
+            '3. Dầm ngáng & đòn gánh': '3. Spreaders & Lifting Beams',
+            'Spreader, Lifting Beam, Tầng 1 & Tầng 2': 'Spreader, lifting beam, tier 1 & tier 2',
+            'Spreader, Lifting Beam, Tầng 1 & Tầng 2': 'Spreader, lifting beam, tiers 1 and 2',
+            '✕ Đóng': '✕ Close',
+            'Các trang hiệu chỉnh': 'Adjustment panels',
+            '📦 1. Hàng hóa': '📦 1. Cargo',
+            '📍 2. Điểm nâng': '📍 2. Lifting Points',
+            '🟠 3. Dầm ngáng': '🟠 3. Spreaders',
+            '⛓️ 4. Cáp treo': '⛓️ 4. Slings',
+            '🏗️ 5. Cẩu 3D': '🏗️ 5. 3D Crane',
+            '🌍 6. Hiện trường': '🌍 6. Jobsite',
+            'Tạo phương án kéo hàng (Wizard)': 'Lift plan wizard',
+            '1.1 Chủng Loại Kiện Hàng — Cargo & Load Types': '1.1 Cargo and load types',
+            'Container tiêu chuẩn': 'Standard container',
+            'Container mặt bằng': 'Flat rack container',
+            'Container hở mái': 'Open-top container',
+            'ISO Tank · Bồn chứa': 'ISO tank · Storage tank',
+            'Siêu trường siêu trọng': 'Out-of-gauge cargo',
+            'Máy biến áp': 'Transformer',
+            'Bồn áp lực': 'Pressure vessel',
+            'Tua-bin điện gió': 'Wind turbine',
+            'Máy xúc / Xe cơ giới': 'Excavator / Vehicle',
+            'Tàu kéo / Vỏ tàu thủy': 'Tugboat / Vessel hull',
+            'Ống thép siêu trường': 'Oversize steel pipe',
+            'Xe bus / Xe cơ giới · 3D CAD 1:1': 'Bus / Vehicle · 1:1 3D CAD',
+            '1.2 Kích Thước Hình Học & Khối Lượng — Geometry & Mass': '1.2 Geometry and mass',
+            '2.44m (Chuẩn)': '2.44 m (standard)',
+            'Khối lượng:': 'Mass:',
+            '2B. Hàng Quá Khổ Flat Rack (OOG)': '2B. Flat rack out-of-gauge cargo (OOG)',
+            '📦 Có Hàng: BẬT': '📦 Cargo loaded: ON',
+            '⛺ Mở Bạt (Xem Hàng)': '⛺ Open cover (view cargo)',
+            'Cao hàng (Ø):': 'Cargo height (Ø):',
+            'Rộng hàng:': 'Cargo width:',
+            'Dài hàng:': 'Cargo length:',
+            'Flat Rack: 2 cánh chặn quá dài. ΔL trước/sau chỉnh dài & lệch kiện nhưng mỗi đầu cách cánh ≥40 cm. OW vẫn được OOG. OH trừ thớt đáy.': 'Flat rack: two end stops restrain overlength cargo. Adjust front/rear ΔL and cargo offset while keeping at least 40 cm clearance at each end. OW remains OOG; OH excludes the bottom dunnage.',
+            'OH — So với nóc cont:': 'OH — above container top:',
+            'OW trái (−Z):': 'Left OW (−Z):',
+            'OW phải (+Z):': 'Right OW (+Z):',
+            'ΔL trước (cách cánh ≥40cm):': 'Front ΔL (≥40 cm from stop):',
+            'ΔL sau (cách cánh ≥40cm):': 'Rear ΔL (≥40 cm from stop):',
+            'Kiện quy đổi': 'Cargo envelope',
+            'Khe cánh': 'End-stop clearance',
+            'Xoay hướng kiện hàng tự do trước khi kéo (không bắt buộc song song với beam/spreader) để thử nghiệm các góc móc cáp xiên và kiểm tra lực vặn, xoay khi nâng.': 'Rotate the cargo freely before hoisting; it does not need to be parallel to the beam or spreader. Use this to explore skewed sling angles and assess torsion and rotation during lifting.',
+            '180° Đảo': '180° Reverse',
+            'Móc cẩu (hook):': 'Crane hook:',
+            'Xoay được': 'Swivelling',
+            'Khóa hướng': 'Orientation locked',
+            '1.3 Trọng Tâm Kiện Hàng — Center of Gravity (CoG)': '1.3 Cargo centre of gravity (CoG)',
+            '1.4 Góc Xoay, Hướng Xoay & Hướng Kéo': '1.4 Cargo orientation and pull direction',
+            'Thẳng đứng (0°)': 'Vertical (0°)',
+            '2.1 Điểm Nâng & Tai Cẩu — Lifting Points & Pad-eyes': '2.1 Lifting points and pad-eyes',
+            'hàn sát vỏ thật của kiện. Kéo': 'are welded directly to the cargo shell. Drag an LP',
+            'trên bề mặt 3D hoặc chỉnh tọa độ bên dưới.': 'on the 3D surface or edit its coordinates below.',
+            'Pad-eye / Lug Plate (Tai cẩu / Bích cẩu)': 'Pad-eye / lug plate',
+            'Vị trí Pad-eye / Lug Plate:': 'Pad-eye / lug plate location:',
+            'Khoảng cách dọc |X| (cả 4):': 'Longitudinal spacing |X| (all 4):',
+            'Khoảng cách ngang |Z| (cả 4):': 'Transverse spacing |Z| (all 4):',
+            'Cao độ Pad-eye / Lug Plate (Y):': 'Pad-eye / lug plate elevation (Y):',
+            'Turnbuckle — Tăng đơ chỉnh cáp (ΔL):': 'Turnbuckle — sling length adjustment (ΔL):',
+            '3.1 Chủng Loại Dầm Ngáng — Spreaders & Lifting Beams': '3.1 Spreader and lifting-beam types',
+            'Dầm ngáng lắp ghép (Nén)': 'Modular spreader beam (compression)',
+            'Dầm nâng (Chịu uốn)': 'Lifting beam (bending)',
+            'Dầm ngáng chữ H / Khung': 'H-beam spreader / frame',
+            'Ngáng STS bung 20/40/45ft · twistlock': 'Extendable STS spreader 20/40/45 ft · twistlocks',
+            '2-4-4 · dầm lớn→nhỏ = 2 cáp/đầu': '2-4-4 · two slings per end between beam tiers',
+            '2-4-4 · giàn nén, 2 hangers/dầm phụ': '2-4-4 · compression truss, two hangers per sub-beam',
+            'Chùm cáp 4 nhánh (Master Link)': 'Four-leg bridle (master link)',
+            '2 cáp/thanh (4 upper) · ôm đáy': 'Two slings per beam (four upper legs) · basket hitch',
+            '3.2 Kích Thước Dầm Ngáng (Spreader Span)': '3.2 Spreader dimensions and span',
+            '⚡ Tự Khớp Kiện': '⚡ Fit to cargo',
+            'Ngáng STS chỉ bung': 'STS spreader only extends to',
+            '. Số đo là': '. Dimensions show',
+            '(ISO 1161 / 668) — không phải kích thước phủ bì container.': '(ISO 1161 / 668), not the container overall dimensions.',
+            '3 cỡ chuẩn': '3 standard sizes',
+            'khoảng cách tâm twistlock': 'twistlock centre spacing',
+            'Pitch twistlock đang chọn': 'Selected twistlock pitch',
+            'Tự trọng: ~10.5 t': 'Self-weight: ~10.5 t',
+            'Cách bắt kiện': 'Cargo connection',
+            'Gắp trực tiếp': 'Direct pick',
+            'Twistlock chụp góc ISO — không cáp / ma ní / xích dưới ngáng': 'ISO corner castings connect directly by twistlock — no lower slings, shackles or chains',
+            'Dùng cáp / xích': 'Use slings / chains',
+            'Điểm ma ní dưới ngáng → cáp/xích → tai cẩu kiện như dầm thường': 'Lower spreader shackle → sling/chain → cargo pad-eye, as with a standard beam',
+            'Twin-lift 2×20 ft — hai cont cạnh nhau (8 twistlock, CAD twin)': 'Twin lift 2×20 ft — adjacent containers (8 twistlocks, twin CAD)',
+            'Twin-lift chỉ': 'Twin lift only supports two containers',
+            '(gồm chốt giữa). Không treo cáp 4 góc ngoài.': '(including the centre locks). Do not rig the four outer corners with slings.',
+            'gắp twistlock': 'by twistlock',
+            'Đồng bộ ngáng ↔ container (mặc định cùng cỡ ISO)': 'Synchronize spreader ↔ container (same ISO size by default)',
+            'Bật: đổi một bên thì bên kia theo. Tắt: chỉnh ngáng hoặc container': 'On: changing either side updates the other. Off: adjust the spreader or container',
+            ', cái còn lại giữ nguyên.': '; the other remains unchanged.',
+            'độc lập': 'independently',
+            'Chiều Dài Dầm (L):': 'Beam length (L):',
+            'Tự trọng: ~1061 kg': 'Self-weight: ~1061 kg',
+            'Quy cách:': 'Standard lengths:',
+            '🌲 3.3 CẤU TRÚC PHÂN TẦNG CÁP & GÓC NÂNG': '🌲 3.3 Sling tiers and lift angles',
+            '🌲 3.3 Cấu Trúc Phân Tầng Cáp & Góc Nâng': '🌲 3.3 Sling tiers and lift angles',
+            'Góc kéo β:': 'Pull angle β:',
+            'Góc đứng α:': 'Angle from vertical α:',
+            'Hệ số TF (LAF):': 'Tension factor (LAF):',
+            'Độ dài nhánh T1 (L₁):': 'Tier 1 leg length (L₁):',
+            'Nấc dài:': 'Length presets:',
+            'Góc kéo Tầng 1 (β ngang):': 'Tier 1 pull angle (β from horizontal):',
+            '40° (tải cao)': '40° (higher leg load)',
+            '50° mặc định': '50° default',
+            '55° (êm)': '55° (smoother)',
+            'Nấc góc:': 'Angle presets:',
+            'Nhánh T1:': 'Tier 1 legs:',
+            'Cáp treo giữa hệ 3 tầng — mặc định số chẵn 2–4 m, chỉnh thủ công được': 'Three-tier intermediate hangers — even 2–4 m defaults; manual adjustment available',
+            'Độ dài hanger (H):': 'Hanger length (H):',
+            'Nấc chuẩn:': 'Standard presets:',
+            'Nhánh H:': 'Hanger legs:',
+            'Góc nghiêng α: 62.0°': 'Angle from vertical α: 62.0°',
+            '🎯 Đang chọn: Cáp L1-1': '🎯 Selected: Upper sling L1-1',
+            'Lực căng T: 0.00 T': 'Leg tension: 0.00 t',
+            'Góc α: 60.0°': 'Angle α: 60.0°',
+            'Hệ số TF:': 'Tension factor:',
+            'Độ dài nhánh T2 (L₂):': 'Tier 2 leg length (L₂):',
+            'Nhánh T2:': 'Tier 2 legs:',
+            'Nâng Tối Thiểu (β = 40°)': 'Minimum lift (β = 40°)',
+            'Mặc định 50° / 8·2 m': 'Recommended 50° / 8·2 m',
+            'Tinh chỉnh riêng sợi đang chọn': 'Adjust selected leg',
+            '⚡ Áp dụng cả tầng': '⚡ Apply to entire tier',
+            '4.1 Chủng Loại Cáp & Phụ Kiện Treo — Slings & Hardware': '4.1 Sling and hardware types',
+            'Dây cáp thép': 'Wire-rope sling',
+            'Dây xích cẩu': 'Chain sling',
+            'Cáp vải dẹt': 'Flat webbing sling',
+            'Cáp vải tròn': 'Round sling',
+            'Cáp vòng kín': 'Endless sling',
+            'Ma ní móng ngựa': 'Bow shackle',
+            'Ma ní chữ D': 'D-shackle',
+            'Móc chốt xỏ': 'Clevis hook',
+            'Móc khuyên tròn': 'Eye hook',
+            'Móc xoay 360°': '360° swivel hook',
+            'Bu-lông vòng': 'Eye bolt',
+            'Kẹp tôn': 'Plate clamp',
+            'Cân cẩu điện tử': 'Dynamometer',
+            '📋 BẢNG THIẾT BỊ RÁP BỘ HOÀN CHỈNH (RIGGING BOM)': '📋 COMPLETE RIGGING BILL OF MATERIALS (BOM)',
+            '🪝 Móc & Khuyên:': '🪝 Hooks & master links:',
+            '⛓️ Dây cáp (Slings):': '⛓️ Slings:',
+            '🔩 Ma ní (Shackles):': '🔩 Shackles:',
+            '⚖️ Dầm & Tăng đơ:': '⚖️ Beams & turnbuckles:',
+            'WLL / SWL (Tải an toàn danh định nhánh):': 'WLL / SWL (rated working load per leg):',
+            'Kích thước thân cáp (Ø / W):': 'Sling body size (Ø / W):',
+            'Khối lượng tự động:': 'Calculated mass:',
+            'Toàn bộ cụm cáp tuân thủ chuẩn': 'The complete sling assembly complies with',
+            'Đầu cáp có': 'Sling ends use',
+            ', gom vào': ', gathered into',
+            '. Chỉnh ΔL ≠ 0 lắp': '. For ΔL ≠ 0, use',
+            'Thimble (Bẹn)': 'Thimble',
+            'Ferrule (Ép chì)': 'Ferrule',
+            '4.2 Độ Dãn Cáp Hooke & Siêu Tĩnh 4 Nhánh': '4.2 Hookean sling stretch and four-leg statics',
+            'Vật Liệu Cáp:': 'Sling material:',
+            'Cáp Thép IWRC (E=105 GPa)': 'IWRC wire rope (E = 105 GPa)',
+            'Xích Thép Gr100 (E=195 GPa)': 'Grade 100 chain (E = 195 GPa)',
+            'Cáp Vải Polyester (E=2.8 GPa)': 'Polyester webbing (E = 2.8 GPa)',
+            'Tính Chất Kiện Hàng:': 'Cargo behavior:',
+            'Vật Cứng (Siêu tĩnh 4 nhánh)': 'Rigid (four-leg statically indeterminate)',
+            'Vật Mềm (Chia đều 4 nhánh)': 'Flexible (equal load share across four legs)',
+            'Lệch tải đường chéo (Skew Share):': 'Diagonal load imbalance (skew share):',
+            'Võng Dầm/Sàn (w):': 'Beam/deck deflection (w):',
+            'Xoắn Thân (ϕ):': 'Body torsion (ϕ):',
+            'Võng Dầm:': 'Beam deflection:',
+            'Phóng đại thị giác:': 'Visual exaggeration:',
+            '📊 4.3 Thông Số Kỹ Thuật & Tải Trọng Cáp': '📊 4.3 Sling engineering data and loads',
+            'Sling Angle (Góc cáp α)': 'Sling angle α',
+            'Ngang β: 90.0°': 'From horizontal β: 90.0°',
+            '⚖️ Khấu Trừ Khối Lượng Hệ Treo (Deductions)': '⚖️ Rigging mass deductions',
+            'Kiện hàng tịnh (Net Cargo):': 'Net cargo:',
+            'Ngáng / Dầm nâng (Spreader/Beam):': 'Spreader / lifting beam:',
+            'Dây cáp + Ma ní + Tăng đơ:': 'Slings + shackles + turnbuckles:',
+            'Cụm puly móc + Cáp tời (Hook Block):': 'Hook block + hoist rope:',
+            'TỔNG TẢI TÍNH CẨU (GROSS LOAD):': 'TOTAL CRANE LOAD (GROSS LOAD):',
+            'TENSION FORCE — LỰC CĂNG NHÁNH CÁP (LP1 → LP4)': 'TENSION FORCE — LEG LOADS (LP1 → LP4)',
+            '5.1 Thiết Bị Cẩu 3D & Đầu Hook — 3D Cranes': '5.1 3D cranes and hook block',
+            '🪝 Cụm Móc & Cáp Treo': '🪝 Hook block and hoist rope',
+            'Chỉ hiện Đầu Hook · Góc nhìn 360°': 'Hook block only · 360° view',
+            '🏗️ Cẩu Bánh Lốp LTM': '🏗️ LTM mobile crane',
+            'Liebherr LTM 1200 · Chân chống H': 'Liebherr LTM 1200 · H outriggers',
+            '🚜 Cẩu Bánh Xích LR': '🚜 LR crawler crane',
+            'Liebherr LR 1300 · Cần giàn thép': 'Liebherr LR 1300 · lattice boom',
+            '🏭 Cầu Trục Xưởng Test': '🏭 Test workshop overhead crane',
+            '5.2 Bảng Tải Trọng Cẩu & LMI Thực Tế': '5.2 Crane load chart and live LMI',
+            '🟢 AN TOÀN': '🟢 SAFE',
+            'Dòng Cần Cẩu:': 'Crane model:',
+            'Liebherr LR 1300 (300T Xích)': 'Liebherr LR 1300 (300 t crawler)',
+            'Kato KR-500 (50T Bánh Béo)': 'Kato KR-500 (50 t rough-terrain)',
+            'Độ Mở Chân Chống:': 'Outrigger spread:',
+            '100% Tiêu Chuẩn (8.3m)': '100% full spread (8.3 m)',
+            '75% Thu Hẹp (6.2m)': '75% spread (6.2 m)',
+            '50% Hạn Chế (4.4m)': '50% restricted spread (4.4 m)',
+            'Bán Kính R:': 'Radius R:',
+            'Chiều Dài Cần:': 'Boom length:',
+            'Góc Ngẩng Cần:': 'Boom angle:',
+            'Sức Nâng Tối Đa:': 'Maximum capacity:',
+            'Tải cẩu:': 'Crane load:',
+            '75% Giám Sát': '75% monitoring threshold',
+            '100% Quá Tải': '100% overload',
+            'Điều chỉnh Chiều Dài Cần (Boom Length):': 'Adjust boom length:',
+            'Điều chỉnh Góc Ngẩng Cần (Boom Angle):': 'Adjust boom angle:',
+            'BỘI SUẤT PALĂNG & CỤM MÓC CẨU': 'REEVING AND HOOK BLOCK',
+            'Số Nhánh Cáp Luồn (Reeving):': 'Number of rope falls (reeving):',
+            '2 Nhánh (Tối đa 21.0 T)': '2 falls (max. 21.0 t)',
+            '4 Nhánh (Tối đa 42.0 T)': '4 falls (max. 42.0 t)',
+            '6 Nhánh (Tối đa 63.0 T)': '6 falls (max. 63.0 t)',
+            '8 Nhánh (Tối đa 84.0 T)': '8 falls (max. 84.0 t)',
+            '12 Nhánh (Tối đa 126.0 T)': '12 falls (max. 126.0 t)',
+            'Khối Lượng Móc (Hook Tare):': 'Hook-block mass:',
+            'Sức Nâng Dây Tời Palăng:': 'Hoist-rope capacity:',
+            'Lực Kéo Đơn Nhánh:': 'Single-fall line pull:',
+            '6.1 Sàn Thử Kỹ Thuật — Testbed Environment': '6.1 Engineering testbed environment',
+            '🌤️ Môi Trường Theo Giờ VN (Real-Time)': '🌤️ Local-time environment',
+            'Tự động theo giờ Việt Nam (nắng vàng ban ngày / xưởng đêm) · Lưới 1m/5m': 'Follows Vietnam local time (daylight / night workshop) · 1 m / 5 m grid',
+            '🌤️ Sàn Thử Bê Tông Ngoài Trời': '🌤️ Outdoor concrete testbed',
+            'Mặt phẳng rộng 200m · Ánh sáng tự nhiên': '200 m test area · Natural lighting',
+            '📄 Bản Vẽ Lift Plan (ASME)': '📄 Lift plan drawing (ASME)',
+            'Nền sáng kỹ thuật · Tối ưu in hồ sơ & soi cáp': 'Technical light background · Optimized for reports and sling inspection',
+            '6.2 Sàn Kê & Tấm Lót Đà Gỗ (Timber Dunnage)': '6.2 Timber dunnage and mats',
+            '🟢 ĐẠT CHUẨN NÉN': '🟢 WITHIN BEARING LIMIT',
+            'Đà Gỗ Phẳng': 'Level timber dunnage',
+            'Tiêu chuẩn': 'Standard',
+            'Đà Nền Đất': 'Soil-supported dunnage',
+            'Nền đất lún': 'Settling soil',
+            'Đà Lệch Bậc': 'Stepped dunnage',
+            'Lệch cao độ': 'Uneven elevation',
+            'Số Thanh Kê / Cấu Hình:': 'Dunnage count / layout:',
+            '2 Thanh Đà (2 Đầu Kiện)': '2 beams (at cargo ends)',
+            '3 Thanh Đà (2 Đầu + Giữa)': '3 beams (ends + centre)',
+            '4 Thanh Đà (Phân Bố Đều)': '4 beams (evenly spaced)',
+            'Mảng Đà Chữ Thập (Grid Mat)': 'Cross-grid mat',
+            'Tiết Diện Thanh Gỗ (B×H):': 'Timber section (W×H):',
+            '150 × 150 mm (Gỗ Hộp)': '150 × 150 mm (sawn timber)',
+            '200 × 200 mm (Chuẩn Heavy)': '200 × 200 mm (heavy duty)',
+            '250 × 250 mm (Gỗ Tàu Biển)': '250 × 250 mm (marine timber)',
+            '300 × 300 mm (Siêu Tải)': '300 × 300 mm (heavy load)',
+            'Loại Gỗ / Vật Liệu:': 'Timber / material:',
+            'Gỗ Cứng Nhóm II (Lim/Táu, 14 MPa)': 'Group II hardwood (14 MPa)',
+            'Gỗ Thông / Tràm Xẻ (8 MPa)': 'Pine / acacia timber (8 MPa)',
+            'Dầm Thép Hình I/H (Steel Beam)': 'I/H-section steel beam',
+            'Chiều Dài Thanh Đà (m):': 'Dunnage length (m):',
+            'Áp Lực Tiếp Xúc Mặt Gỗ:': 'Timber bearing pressure:',
+            'Giới Hạn Nén Cho Phép:': 'Allowable bearing limit:',
+            'ĐỊA CHẤT & ÁP LỰC TIẾP ĐẤT CỦA KIỆN (CARGO GBP)': 'GROUND CONDITIONS AND CARGO BEARING PRESSURE (GBP)',
+            '🟢 AN TOÀN NỀN': '🟢 GROUND SAFE',
+            'Nền Đất Vị Trí Hạ Kiện:': 'Ground beneath set-down area:',
+            'Bê Tông Cảng / Sàn Đúc (350 T/m²)': 'Port concrete / cast slab (350 t/m²)',
+            'Cấp Phối Đá Dăm K98 (30 T/m²)': 'K98 compacted aggregate (30 t/m²)',
+            'Đất Sét Cứng Lu Lèn (15 T/m²)': 'Compacted stiff clay (15 t/m²)',
+            'Đất Mềm Bãi Bồi / Cát Lấp (5 T/m²)': 'Soft alluvial soil / fill sand (5 t/m²)',
+            'Độ Dốc Nền Đặt Kiện (°):': 'Cargo set-down ground slope (°):',
+            'Áp Lực Đè Nền:': 'Ground bearing pressure:',
+            'Hệ Số An Toàn Nền:': 'Ground safety factor:',
+            'SF = 18.1 (Đạt)': 'SF = 18.1 (PASS)',
+            'ÁP LỰC CHÂN CHỐNG CẨU & TẤM LÓT ĐẤT (GBP)': 'CRANE OUTRIGGER AND MAT BEARING PRESSURE (GBP)',
+            '🟡 CẢNH BÁO NỀN YẾU': '🟡 WEAK GROUND WARNING',
+            'Khảo Sát Nền Đất Vị Trí Cẩu:': 'Ground beneath crane:',
+            'Đá Dăm K98 (30.6 T/m²)': 'K98 aggregate (30.6 t/m²)',
+            'Sàn Bê Tông (250 T/m²)': 'Concrete slab (250 t/m²)',
+            'Đất Sét Cứng (15.3 T/m²)': 'Stiff clay (15.3 t/m²)',
+            'Đất Mềm / Cát Lấp (5.1 T/m²)': 'Soft soil / fill sand (5.1 t/m²)',
+            'Tấm Lót Chân Chống (Mat):': 'Outrigger mat:',
+            'Thép Hộp 2.0m × 2.0m (4.0m²)': 'Steel box mat 2.0 × 2.0 m (4.0 m²)',
+            'Chỉ Đĩa Chân Ø0.6m (0.28m²)': 'Foot plate only Ø0.6 m (0.28 m²)',
+            'Đà Gỗ 1.2m × 1.2m (1.44m²)': 'Timber mat 1.2 × 1.2 m (1.44 m²)',
+            'Tấm Gỗ 1.6m × 1.6m (2.56m²)': 'Timber mat 1.6 × 1.6 m (2.56 m²)',
+            'Thép Tấm 2.4m × 3.0m (7.2m²)': 'Steel plate 2.4 × 3.0 m (7.2 m²)',
+            'PHẢN LỰC 4 CHÂN CHỐNG (OUTRIGGER REACTIONS):': 'FOUR OUTRIGGER REACTIONS:',
+            'P2 (Trước-T):': 'P2 (front-right):',
+            'P1 (Trước-P):': 'P1 (front-left):',
+            'Áp lực đè nền:': 'Ground bearing pressure:',
+            'Mat tối thiểu:': 'Minimum mat size:',
+            '6.3 Tải Trọng Gió & Môi Trường Hiện Trường': '6.3 Wind loads and site conditions',
+            '🟢 GIÓ AN TOÀN (CẤP 3)': '🟢 WIND SAFE (BEAUFORT 3)',
+            'Mưa nghiêng theo hướng gió; mưa ≥ ~18 mm/h sẽ thỉnh thoảng': 'Rain follows the wind; at ≥18 mm/h, occasional',
+            'để thấy kiện đong đưa.': 'to see cargo swing.',
+            'chớp chân trời': 'distant lightning',
+            'Nhấc thử / Kéo': 'Trial lift / Hoist',
+            'Vận Tốc Gió Hiện Trường:': 'Site wind speed:',
+            '3.5 m/s (12.6 km/h) · Beaufort 3 · biến thiên': '3.5 m/s (12.6 km/h) · Beaufort 3 · variable',
+            '0 m/s (Yên ả)': '0 m/s (calm)',
+            '≤ 9.8 m/s (Chuẩn cẩu)': '≤9.8 m/s (crane limit)',
+            '12.8 m/s (Cảnh báo)': '12.8 m/s (warning)',
+            '≥ 15 m/s (Dừng cẩu)': '≥15 m/s (stop crane)',
+            'Hướng Gió Thổi:': 'Wind direction:',
+            'Gió Dọc Kiện (0° - Đầu Kiện)': 'Along cargo (0° — end)',
+            'Gió Ngang Thân Kiện (90° - Mạn Trái)': 'Across cargo (90° — port side)',
+            'Gió Đuôi Kiện (180°)': 'From cargo rear (180°)',
+            'Gió Mạn Phải (270°)': 'From starboard side (270°)',
+            'Mô Phỏng Gió Giật (+30%)': 'Simulate gusts (+30%)',
+            'Biến thiên thời tiết (tự dao động)': 'Variable weather (automatic)',
+            'Mưa hiện trường:': 'Site rainfall:',
+            '0 mm/h · Khô': '0 mm/h · Dry',
+            '0 khô': '0 dry',
+            '15 vừa': '15 moderate',
+            '40 lớn': '40 heavy',
+            '80+ rất lớn': '80+ very heavy',
+            'Lực Gió Ngang (Fwind):': 'Lateral wind force (Fwind):',
+            'Độ Dạt / Lệch Cáp:': 'Drift / sling deflection:',
+            '0.07° (Đạt chuẩn)': '0.07° (within limit)',
+            '0 mm/h · Khô': '0 mm/h · Dry',
+            'SF = 18.1 (Đạt)': 'SF = 18.1 (PASS)',
+            '": Đầu cáp có': '": Cable ends use',
+            ': Đầu cáp có': ': Cable ends use',
+            'mưa nghiêng theo hướng gió': 'rain driven by wind direction',
+            '· nén ': '· compression ',
+            '📏 m (Mét)': '📏 m (metric)',
+            'Gió nhẹ gần như không lắc kiện nặng — kéo gió ≥ 10–15 m/s + mưa ≥ 40 mm/h rồi': 'Light winds barely move heavy cargo. Increase wind to ≥10–15 m/s and rain to ≥40 mm/h, then',
+            '. Gió nhẹ gần như không lắc kiện nặng — kéo gió ≥ 10–15 m/s + mưa ≥ 40 mm/h rồi': '. Light winds barely move heavy cargo. Increase wind to ≥10–15 m/s and rain to ≥40 mm/h, then',
+            'Lực mưa (Frain):': 'Rain force (Frain):',
+            'Chọn dùng': 'Select',
+            'Heavy Lift / Out of Gauge (OOG) — Hàng siêu trường siêu trọng': 'Heavy lift / out-of-gauge (OOG)',
+            'Kiện máy công nghiệp đóng khung dầm thép gia cường': 'Industrial machinery in a reinforced steel frame',
+            'Transformer — Máy biến áp': 'Transformer',
+            'Máy biến áp lực 110kV có cánh tản nhiệt & sứ cách điện': '110 kV power transformer with radiators and bushings',
+            'Pressure Vessel — Bồn áp lực': 'Pressure vessel',
+            'Bồn trụ ngang ASME có tai cẩu hàn trên thân vỏ tròn': 'ASME horizontal vessel with pad-eyes welded to the shell',
+            'Wind Turbine Nacelle — Tua-bin điện gió': 'Wind turbine nacelle',
+            'Cụm máy phát điện gió nặng, lệch tâm CoG về phía Hub': 'Heavy wind-turbine generator with CoG offset toward the hub',
+            'Excavator / Heavy Machinery — Máy xúc / Xe cơ giới nặng': 'Excavator / heavy machinery',
+            'Máy xúc đào bánh xích công trường, cần gầu vươn': 'Crawler excavator with extended boom',
+            'Tugboat / Vessel Hull — Tàu kéo / Vỏ tàu thủy': 'Tugboat / vessel hull',
+            'Thân tàu chữ V có sống mũi, cabin lái & đệm chống va': 'V-hull with bow keel, wheelhouse and fenders',
+            'Offshore Process Skid (OOG) — Cụm bơm dầu khí siêu trọng': 'Offshore process skid (OOG)',
+            'Khung skid thép I-beam, đường ống mặt bích & cụm bơm đôi': 'I-beam skid frame, flanged pipework and twin pumps',
+            'Vehicle — Xe bus / Xe cơ giới': 'Vehicle',
+            'Mô hình 3D CAD 1:1 thân xe bus, trọng tâm thấp gần sàn': '1:1 3D CAD bus model with a low CoG near the deck',
+            '💡 Chọn bất kỳ thiết kế 3D nào trong danh sách để': '💡 Select a 3D design from the list to',
+            'hoặc bấm': 'or click',
+            'Xem trước 3D': 'Preview 3D',
+            '"Đưa Vào Sơ Đồ Cẩu"': '"Add to Lift Plan"',
+            'Đang chọn: Container ISO': 'Selected: ISO container',
+            '🔍 BUỒNG XEM TRƯỚC MÔ HÌNH IN 3D / CAD': '🔍 3D PRINT / CAD MODEL PREVIEW',
+            'Mesh: Chuẩn CAD | Xoay chuột để kiểm tra khối 3D': 'CAD mesh | Drag to inspect the 3D model',
+            'Xuất File 3D (.OBJ)': 'Export 3D file (.OBJ)',
+            'Đưa Vào Sơ Đồ Làm Hàng': 'Add to lift plan',
+            '2. Tạo Từ Ảnh (AI)': '2. Create from photo (AI)',
+            '3. Ghép Tổ Hợp 3D': '3. Assemble 3D composition',
+            'Phân Loại Vào Kho Thư Viện (Asset Category):': 'Library category:',
+            '🗃️ 1. Cargo & Load Types — Hàng hóa & Kiện hàng': '🗃️ 1. Cargo and load types',
+            '🪝 2. Rigging Hardware & Gears — Dụng cụ nâng hạ & Phụ kiện': '🪝 2. Rigging hardware and gear',
+            '🟠 4. Spreaders & Lifting Beams — Dầm ngáng & Đòn gánh': '🟠 4. Spreaders and lifting beams',
+            '🏗️ 5. Cranes & Hook Blocks — Phương tiện cần cẩu': '🏗️ 5. Cranes and hook blocks',
+            'Kích Thước (L × W × H) & Khối Lượng Kiện 3D': '3D cargo dimensions (L × W × H) and mass',
+            'Dài L (m):': 'Length L (m):',
+            'Rộng W (m):': 'Width W (m):',
+            'Tải Trọng (T):': 'Load (t):',
+            '⚡ Lọc bỏ nội thất & Giữ vỏ ngoài sắc nét (Chống lag)': '⚡ Remove interior and preserve exterior detail (reduce lag)',
+            'Chế độ tối ưu:': 'Optimization mode:',
+            '✨ Lọc sạch ruột & Giữ 100% vỏ nét (Khuyên dùng)': '✨ Remove interior; preserve full exterior detail (recommended)',
+            'Tối ưu nhẹ (Lọc ruột + Max 50k tris)': 'Light optimization (remove interior + max 50k triangles)',
+            'Tối ưu cao (Max 25k tris cho máy yếu)': 'High optimization (max 25k triangles for low-end devices)',
+            'Nguyên bản (Không lọc, không nén)': 'Original (no filtering or compression)',
+            '✨ Tự động co giãn & tối ưu vỏ bọc 3D khi nạp': '✨ Auto-scale and optimize the 3D shell on import',
+            '🔄 Cập Nhật Kích Thước (Live Resize)': '🔄 Update dimensions (live resize)',
+            'Chuẩn Hóa Tỷ Lệ & Tọa Độ Metric 1:1': 'Normalize scale and metric coordinates to 1:1',
+            'Quy Chuẩn Đối Chiếu (Standard Spec):': 'Reference specification:',
+            'ISO Container 20ft — Container tiêu chuẩn': 'ISO 20 ft container',
+            'ISO Container 40ft — Container tiêu chuẩn': 'ISO 40 ft container',
+            'Flat Rack Container — Container mặt bằng': 'Flat rack container',
+            'Open Top Container — Container hở mái': 'Open-top container',
+            'Tank Container (ISO Tank) — Container bồn chứa': 'Tank container (ISO tank)',
+            'Reefer Container — Container lạnh': 'Reefer container',
+            'Heavy Lift / Out of Gauge (OOG) — Siêu trường siêu trọng': 'Heavy lift / out-of-gauge (OOG)',
+            'Excavator / Heavy Machinery — Máy xúc / Xe cơ giới': 'Excavator / heavy machinery',
+            'Modular Spreader Beam — Dầm ngáng lắp ghép': 'Modular spreader beam',
+            'Lifting Beam / H-Beam Spreader — Dầm nâng chữ H': 'Lifting beam / H-beam spreader',
+            'Bow Shackle / D-Shackle — Ma ní móng ngựa / Chữ D': 'Bow shackle / D-shackle',
+            'STS Gantry Crane — Cẩu bờ Post-Panamax': 'STS gantry crane — Post-Panamax',
+            'Mobile Harbor Crane — Cẩu chân đế LHM 550': 'Mobile harbour crane — LHM 550',
+            'Đơn Vị File Gốc:': 'Source file units:',
+            '✨ Tự Động (Auto-Detect)': '✨ Automatic (auto-detect)',
+            'Milimét (mm - CAD / STEP)': 'Millimetres (mm — CAD / STEP)',
+            'Mét (m - GLTF / Blender)': 'Metres (m — GLTF / Blender)',
+            'Centimét (cm - 3ds Max)': 'Centimetres (cm — 3ds Max)',
+            'Trục Thẳng Đứng (Up):': 'Up axis:',
+            '✨ Tự Động (Auto)': '✨ Automatic',
+            'Y-Up (Chuẩn WebGL / GLB)': 'Y-up (WebGL / GLB standard)',
+            'Chế Độ Tỷ Lệ (Mode):': 'Scale mode:',
+            '✨ Tự Động (Auto CAD/AI)': '✨ Automatic (CAD / AI)',
+            'Tin Đơn Vị CAD (Strict 1:1)': 'Trust CAD units (strict 1:1)',
+            'Khớp Đồng Dạng AI (No Distortion)': 'AI proportion match (no distortion)',
+            'Báo Cáo Thẩm Định Tỷ Lệ:': 'Scale validation report:',
+            '🟢 ĐẠT CHUẨN': '🟢 PASS',
+            'Đơn vị:': 'Units:',
+            'Hệ số Scale:': 'Scale factor:',
+            'Kích thước đo:': 'Measured dimensions:',
+            'Sai lệch chuẩn:': 'Standard deviation:',
+            'Vỏ ngoài chống lag:': 'Optimized outer shell:',
+            'Đã tối ưu 60 FPS': 'Optimized for 60 FPS',
+            'Hỗ trợ trực tiếp các định dạng thiết kế máy in 3D & CAD công nghiệp:': 'Directly supports 3D-printing and industrial CAD formats:',
+            '. Hệ thống sẽ tự động chuẩn hóa tỷ lệ mét, căn tâm và tạo cạnh sắc nét.': '. The system normalizes metric scale, centres the model and sharpens edges.',
+            'Màu Sơn CAD:': 'CAD material colour:',
+            '⚙️ Tạo Mẫu Khối Cơ Khí In 3D (Demo STL)': '⚙️ Create a mechanical 3D-print demo (STL)',
+            '💾 Lưu Vào Thư Viện 3D': '💾 Save to 3D library',
+            'Tải lên': 'Upload',
+            '(Kiện hàng máy móc, Xe cộ, Tàu thuyền, Ngáng cẩu...). Hệ thống sẽ tự động tách nền, quét biên dạng 3D (Silhouette & Depth Relief Extrusion) kết hợp AI để dựng thành mô hình 3D tương ứng.': '(Machinery, vehicles, vessels, spreaders, and more.) The system removes the background, detects the silhouette and depth, then uses AI to build a corresponding 3D model.',
+            '1 tấm hình chụp vật thể': 'one photo of the object',
+            'Độ dày đùn khối 3D (Depth):': '3D extrusion depth:',
+            'Ngưỡng tách nền (Threshold):': 'Background removal threshold:',
+            '🤖 AI Nhận Diện & Tối Ưu Khối 3D': '🤖 AI recognition and 3D optimization',
+            '💾 Lưu Mô Hình Vào Thư Viện': '💾 Save model to library',
+            'Xưởng Ghép Tổ Hợp & Tùy Biến 3D': '3D assembly and customization workshop',
+            'Đặt Tên Kiện Hàng Tổ Hợp 3D:': 'Name this 3D assembly:',
+            'Mẫu Tổ Hợp Thực Tế Khuyên Dùng:': 'Recommended real-world assemblies:',
+            '1 Click nạp trọn bộ': 'Load complete setup in one click',
+            '📦 Flat Rack 20ft + Máy Biến Áp Điện Lực 45T': '📦 20 ft flat rack + 45 t power transformer',
+            '🚜 Sàn Kê Platform 40ft + Máy Xúc Bánh Xích 32T': '🚜 40 ft platform + 32 t crawler excavator',
+            '🪵 Sàn Kê Platform 20ft + 2 Kiện Thùng Gỗ Nặng': '🪵 20 ft platform + two heavy timber crates',
+            '🛢️ Flat Rack 40ft + Bồn Áp Lực Nằm Ngang 35T': '🛢️ 40 ft flat rack + 35 t horizontal pressure vessel',
+            '🚗 Container Hở Mái 20ft + Xe Bán Tải SUV': '🚗 20 ft open-top container + pickup / SUV',
+            '🛠️ [Tự Tạo Mới Từ Đầu — Blank Canvas]': '🛠️ [Start from scratch — blank canvas]',
+            'Sàn Kê Platform Deck': 'Platform deck',
+            'Container Hở Mái (Open Top)': 'Open-top container',
+            'Container Kín (Dry Container)': 'Dry container',
+            'Máy Biến Áp (Transformer)': 'Transformer',
+            'Máy Xúc Bánh Xích (Excavator)': 'Crawler excavator',
+            'Bồn Áp Lực (Pressure Vessel)': 'Pressure vessel',
+            'Kiện Thùng Gỗ / Khung Thép (Crate)': 'Timber crate / steel frame',
+            'Tua-bin Điện Gió (Wind Nacelle)': 'Wind turbine nacelle',
+            'Vehicle (Xe bus / Xe cơ giới)': 'Vehicle (bus / heavy machinery)',
+            'Tàu Thủy / Vỏ Tàu (Vessel Hull)': 'Vessel hull',
+            'Cụm Thiết Bị Siêu Trường (OOG Skid)': 'Out-of-gauge equipment skid',
+            '➕ Thêm Kiện': '➕ Add cargo',
+            '📊 THÔNG SỐ VẬT THỂ TỔ HỢP:': '📊 ASSEMBLY OBJECT DATA:',
+            '📐 Kích thước phủ bì:': '📐 Overall dimensions:',
+            '⚖️ Trọng tâm CoG:': '⚖️ Centre of gravity (CoG):',
+            '⚓ Điểm móc cẩu:': '⚓ Lifting points:',
+            '4 Gù đúc ISO tiêu chuẩn': '4 standard ISO corner castings',
+            '🟢 Cân bằng tốt': '🟢 Well balanced',
+            'Lưu Thư Viện & Cẩu': 'Save to library and crane',
+            'Giữ Ctrl + kéo khung chuột để chọn nhiều thiết bị. Shift + kéo để xoay góc camera. Cuộn panel để chỉnh thông số.': 'Hold Ctrl and drag a box to select multiple items. Shift-drag to rotate the camera. Scroll the panel to adjust parameters.',
+            'Kiểm Định An Toàn Quốc Tế': 'International safety checks',
+            'Đánh Giá Tổng Thể:': 'Overall assessment:',
+            '🟢 ĐẠT CHUẨN ASME / ISO': '🟢 COMPLIES WITH ASME / ISO',
+            'Kiểm tra tự động thời gian thực': 'Real-time automatic checks',
+            '📋 Xuất Hồ Sơ Lift Plan': '📋 Export lift plan',
+            'Xếp Khối Phương Án': 'Lift plan sequence',
+            'Danh sách trên → dưới · nối 3D trực tiếp': 'Top-to-bottom list · linked directly to the 3D view',
+            '✅ Áp dụng & đóng': '✅ Apply and close',
+            '← Chọn tầng · 3D cập nhật bên này': '← Select a tier · 3D updates here',
+            '🔄 Đồng Bộ Hiện Trường 3D': '🔄 Sync with 3D jobsite',
+            '📋 Chép JSON': '📋 Copy JSON',
+            '💾 Tải JSON': '💾 Download JSON',
+            '🖨️ In / Xuất PDF': '🖨️ Print / export PDF',
+            '📄 Bản Báo Cáo Kỹ Thuật (Executive Report)': '📄 Engineering report',
+            '💻 Dữ Liệu Gốc JSON (Schema)': '💻 Source JSON data (schema)',
+            'Camera · Góc nhìn': 'Camera · Viewpoint',
+            '1. Góc nhìn cố định': '1. Fixed viewpoints',
+            'Chọn góc cố định sẽ chuyển sang chế độ': 'Selecting a fixed viewpoint switches to',
+            'trên thanh Cam dưới.': 'the matching camera mode below.',
+            '2. Điểm focus (khi Auto / Góc)': '2. Focus target (Auto / Angle modes)',
+            'Tự động (kiện + móc)': 'Automatic (cargo + hook)',
+            'Trọng tâm CoG': 'Centre of gravity (CoG)',
+            'Tâm kiện': 'Cargo centre',
+            'Đỉnh kiện': 'Cargo top',
+            'Móc cẩu': 'Crane hook',
+            'Tai cẩu LP1': 'Pad-eye LP1',
+            'Tai cẩu LP2': 'Pad-eye LP2',
+            'Tai cẩu LP3': 'Pad-eye LP3',
+            'Tai cẩu LP4': 'Pad-eye LP4',
+            'Tọa độ tùy chỉnh…': 'Custom coordinates…',
+            '= cinematic tự xoay ·': '= cinematic auto-rotation ·',
+            '= đứng yên ·': '= stationary ·',
+            '= mỗi lần nhấn sang góc tiếp theo (12 góc quanh kiện) ·': '= each click advances to the next of 12 views around the cargo ·',
+            '= flycam chuyên nghiệp, xoay liên tục quanh kiện.\n                Điều khiển nhanh ở hàng': '= professional flycam, continuously orbiting the cargo.\n                Quick controls are in the row',
+            'dưới cùng.': 'at the bottom.',
+            'Tùy Chọn Hiển Thị 3D': '3D display options',
+            'Tất Cả': 'All',
+            'Ẩn Hết': 'Hide all',
+            'Lực kéo từng nhánh cáp': 'Tension in each sling leg',
+            'Góc giữa các cáp (β, α)': 'Sling angles (β, α)',
+            'Góc nền, vạch vàng & đỏ': 'Ground plane and guide lines',
+            'Chịu lực móc cẩu & Cao độ Y': 'Hook load and elevation Y',
+            'Chịu lực ma ní & Điểm neo LP': 'Shackle loads and lifting points',
+            'Chiều dài cáp & Tăng đơ (ΔL)': 'Sling length and turnbuckles (ΔL)',
+            'Trọng tâm kiện hàng (CoG)': 'Cargo centre of gravity (CoG)',
+            'Mũi tên véc-tơ lực 3D': '3D force vectors',
+            'Nét vẽ khung viền CAD': 'CAD edge outlines',
+            'Bảng số liệu kỹ thuật (HUD)': 'Engineering data HUD',
+            'Đồ Họa & Môi Trường CAE': 'CAE graphics and environment',
+            'Ánh sáng & Môi trường:': 'Lighting and environment:',
+            '🌤️ Theo Giờ Việt Nam (Thời Gian Thực)': '🌤️ Vietnam local time (real-time)',
+            '☁️ Bãi Thử Nghiệm (Day)': '☁️ Test yard (day)',
+            '📄 Bản Vẽ CAD (Print)': '📄 CAD drawing (print)',
+            '🌅 Chiều Nắng Hoàng Hôn': '🌅 Sunset',
+            '🌃 Xưởng Đêm Chiếu Sáng': '🌃 Illuminated night workshop',
+            'Chất lượng đồ họa CAE:': 'CAE graphics quality:',
+            '💎 Ultra (Chi tiết cao nhất)': '💎 Ultra (maximum detail)',
+            '⚡ High (1080p / Cân bằng ~60 FPS)': '⚡ High (1080p / balanced ~60 FPS)',
+            '📐 Studio (Kỹ thuật CAD)': '📐 Studio (engineering CAD)',
+            '🔋 Performance (Máy yếu)': '🔋 Performance (low-end device)',
+            'Tải file HDRI ngoài:': 'Load external HDRI:',
+            '🌆 Chọn File HDRI': '🌆 Choose HDRI file',
+            '📋 Hồ Sơ Kỹ Thuật & Thư Viện': '📋 Engineering documents and library',
+            'Kiểm Định An Toàn (ASME/ISO)': 'Safety checks (ASME / ISO)',
+            'Hồ Sơ Lift Plan ASME P30.1': 'ASME P30.1 lift plan',
+            'Tạo Phương Án Kéo (Wizard)': 'Lift plan wizard',
+            'Xuất Báo Cáo PDF': 'Export PDF report',
+            'Thư Viện 3D & Upload CAD': '3D library and CAD upload',
+            '⚙️ Cài Đặt Hệ Thống': '⚙️ System settings',
+            'Âm thanh (M):': 'Sound (M):',
+            'Ngôn ngữ:': 'Language:',
+            'Hệ đo lường:': 'Units:',
+            '📏 m (Mét)': '📏 m (metric)',
+            'Toàn màn hình (H):': 'Fullscreen (H):',
+            'Tời:': 'Hoist:',
+            'SẴN SÀNG': 'READY',
+            '📊 CHỈ SỐ TẢI & AN TOÀN': '📊 LOAD & SAFETY INDICATORS',
+            'Chỉ Số Tải & An Toàn': 'Load & Safety Indicators',
+            '🟢 AN TOÀN NỀN': '🟢 GROUND SAFE',
+            '🟡 CẢNH BÁO NỀN YẾU': '🟡 WEAK GROUND WARNING',
+            '🟢 GIÓ AN TOÀN (CẤP 3)': '🟢 WIND SAFE (BEAUFORT 3)',
+            'CHUẨN AN TOÀN': 'WITHIN LIMITS',
+            'Đang kéo trực tiếp Trọng Tâm (CoG) 3D của kiện hàng...': 'Dragging the cargo centre of gravity (CoG) in 3D…',
+            'Đang kéo trực tiếp Điểm Neo LP': 'Dragging lifting point LP',
+            ' trên mặt kiện hàng...': ' on the cargo surface…',
+            'Đang kéo xoay hướng kiện hàng trên nền đất...': 'Rotating cargo orientation on the ground…',
+            'Chưa thiết lập trạng thái ban đầu (Hãy bấm Đặt Mốc Đầu trước)': 'Initial state not set (click Set Home first)',
+            'Hạ đất — hạ êm từ từ theo tốc độ cài đặt đến khi kiện chạm đất an toàn.': 'Set down — lower smoothly at the configured speed until the cargo lands safely.',
+            'Nhấc thử — nâng kiện êm ái đến 3.0 m cách đất rồi giữ treo.': 'Trial lift — smoothly hoist the cargo to 3.0 m clearance and hold it suspended.',
+            '🟡 CẢNH BÁO AN TOÀN': '🟡 SAFETY WARNING',
+            'Móc cứng (chọn cẩu)': 'Rigid hook (select a crane)',
+            'móc cứng (chọn cẩu)': 'rigid hook (select a crane)',
+            'Khô': 'Dry',
+            'Rất lớn': 'Very heavy',
+            'Mưa lớn': 'Heavy rain',
+            'Mưa vừa': 'Moderate rain',
+            'Đang chọn:': 'Selected:',
+            'Đang chọn cáp': 'Selected sling',
+            'Cảnh báo': 'Warning',
+            'Quá tải cẩu': 'Crane overload',
+            'Đạt chuẩn': 'Within limits',
+            'Bật âm thanh mô phỏng (M)': 'Enable simulation audio (M)',
+            'Tắt âm thanh mô phỏng (M)': 'Mute simulation audio (M)',
+            'Auto — đưa kiện về góc cinematic rule-of-thirds (1/3), dễ nhìn nhất': 'Auto — frame the cargo using the cinematic rule of thirds',
+            'Giữ — camera đứng yên tại góc hiện tại': 'Hold — keep the camera at its current angle',
+            'Góc — mỗi lần nhấn chuyển 1/12 góc cinematic quanh kiện (chiều kim đồng hồ)': 'Angle — each click advances clockwise to the next of 12 cinematic views',
+            'Flycam — giả lập góc quay bay chuyên nghiệp, xoay liên tục quanh kiện': 'Flycam — professional aerial view orbiting continuously around the cargo',
+            'Hạ nhanh 1.0m': 'Lower quickly by 1.0 m',
+            'Hạ nhích 0.2m': 'Lower gradually by 0.2 m',
+            'Kéo nhích 0.2m': 'Hoist gradually by 0.2 m',
+            'Kéo nhanh 1.0m': 'Hoist quickly by 1.0 m',
+            'Độ cao chuẩn (10.1m)': 'Standard height (10.1 m)',
+            'Hạ thử sát đất 200mm': 'Lower to 200 mm above ground',
+            'Tốc độ hoist (nâng/hạ kiện) — hook & spreader dùng chung': 'Hoist speed — shared by hook and spreader',
+            'Tốc độ nâng/hạ kiện — hook & spreader cùng một tốc độ (1× ≈ 0.22 m/s)': 'Cargo hoist/lowering speed — hook and spreader move together (1× ≈ 0.22 m/s)',
+            'Góc nhìn camera 3D & Chế độ bám': '3D camera views and tracking modes',
+            'Tùy chọn ẩn/hiện CAD, X-Ray, véc-tơ lực và các chỉ số kỹ thuật 3D': 'Show or hide CAD, X-ray, force vectors and 3D engineering data',
+            'Cấu hình đồ họa & Ánh sáng môi trường CAE': 'CAE graphics and environment lighting settings',
+            'Hồ sơ Lift Plan, Tiêu chuẩn an toàn & Thư viện 3D': 'Lift plans, safety standards and 3D library',
+            'Cài đặt hệ thống, đơn vị, âm thanh & toàn màn hình': 'System, units, audio and fullscreen settings',
+            'Tạo phương án kéo hàng theo trình tự câu hỏi — dựng 3D trực tiếp': 'Build a lift plan with a guided workflow and live 3D preview',
+            'Mở/Đóng Bảng Thông Số Kỹ Thuật (Phím 1-6 / Esc)': 'Open or close the engineering panels (keys 1–6 / Esc)',
+            'Hệ số tải động cáp cẩu (lực căng cáp cẩu / tải tĩnh) · đỉnh': 'Hoist-rope dynamic amplification factor (peak rope tension / static load)',
+            'Lực khí động thực tế lên kiện hàng (gió + mưa biến thiên) và góc dạt đo được': 'Measured wind and rain loads on cargo and resulting drift angle',
+            'Khôi phục trạng thái xuất phát ban đầu': 'Restore the initial state',
+            'Đóng bảng hiệu chỉnh (Phím Esc)': 'Close the adjustment panel (Esc)',
+            'Tạo phương án kéo theo trình tự câu hỏi': 'Create a lift plan using the guided workflow',
+            'Đặt lại góc xoay về 0° chuẩn': 'Reset orientation to the 0° datum',
+            'Chọn hướng của Dầm/Spreader khi kiện xoay': 'Set beam/spreader orientation as the cargo rotates',
+            'Dầm giữ nguyên hướng cẩu (0°), kiện xoay lệch góc để mô phỏng kéo xiên': 'Keep the beam aligned with the crane (0°) while the cargo skews to simulate an angled lift',
+            'Dầm tự động xoay song song theo kiện hàng': 'Automatically keep the beam parallel to the cargo',
+            'Móc xoay được thì bộ treo theo mặt phẳng cáp; khóa móc thì dao động xoắn phụ thuộc chiều dài cáp': 'With a swivel hook, the rig follows the sling plane; with a locked hook, torsional response depends on sling length',
+            'Móc có bạc đạn xoay — bộ nâng theo kiện khi kéo xiên': 'Swivel-bearing hook — rig follows the cargo during an angled pull',
+            'Móc khóa hướng — lắc/xoắn chủ yếu qua chiều dài cáp': 'Orientation-locked hook — swing and twist depend mainly on sling length',
+            'Click hoặc kéo trên sơ đồ mặt bằng để đặt nhanh Trọng tâm CoG': 'Click or drag on the plan view to position the CoG',
+            'Tự động căn chỉnh chiều dài dầm khớp với bề rộng kiện hàng (đảm bảo cáp dưới thả đứng 90°)': 'Automatically fit beam length to cargo width so the lower slings hang vertically',
+            'Twistlock gắp trực tiếp trên nóc container': 'Direct pick from container top twistlocks',
+            'Ma ní + cáp/xích từ ngáng xuống tai kiện': 'Shackle and sling/chain from spreader to cargo pad-eye',
+            'Quy cách chuẩn Container 40ft (12.2m)': 'Standard 40 ft container length (12.2 m)',
+            'Góc xoay kiện trên nền đất': 'Cargo ground orientation',
+            'Đóng': 'Close',
+            'Giảm 15°': 'Decrease by 15°',
+            'Giảm 5°': 'Decrease by 5°',
+            'Tăng 5°': 'Increase by 5°',
+            'Tăng 15°': 'Increase by 15°',
+            'Giảm 1.0m': 'Decrease by 1.0 m',
+            'Giảm 0.2m': 'Decrease by 0.2 m',
+            'Giảm 50mm': 'Decrease by 50 mm',
+            'Tăng 50mm': 'Increase by 50 mm',
+            'Tăng 0.2m': 'Increase by 0.2 m',
+            'Tăng 1.0m': 'Increase by 1.0 m',
+            'Giảm 0.5m': 'Decrease by 0.5 m',
+            'Giảm 0.1m': 'Decrease by 0.1 m',
+            'Tăng 0.1m': 'Increase by 0.1 m',
+            'Tăng 0.5m': 'Increase by 0.5 m',
+            'Lower Leg L2-1 (Đầu Dầm Trái ➔ Lug LP1)': 'Lower leg L2-1 (left beam end ➔ pad-eye LP1)',
+            'Lower Leg L2-2 (Đầu Dầm Phải ➔ Lug LP2)': 'Lower leg L2-2 (right beam end ➔ pad-eye LP2)',
+            'Lower Leg L2-3 (Đầu Dầm Phải ➔ Lug LP3)': 'Lower leg L2-3 (right beam end ➔ pad-eye LP3)',
+            'Lower Leg L2-4 (Đầu Dầm Trái ➔ Lug LP4)': 'Lower leg L2-4 (left beam end ➔ pad-eye LP4)',
+            'Chuyển ngôn ngữ sang Tiếng Anh': 'Switch language to English',
+            'Chuyển đổi Mét (m) ⇄ Feet (ft)': 'Switch between metres (m) and feet (ft)',
+            'Mặc định gần hook — số chẵn 8 m': 'Near-hook default — even 8 m length',
+            'Cáp trên 10 m — số chẵn': 'Upper sling 10 m — even length',
+            'Cáp dưới mặc định — số chẵn 2 m': 'Lower sling default — even 2 m length',
+            'Cáp dưới 4 m — số chẵn': 'Lower sling 4 m — even length',
+            'Xuất vật thể 3D hiện tại thành file Wavefront .OBJ chuẩn công nghiệp để lưu trữ hoặc đưa sang phần mềm CAD/3D khác': 'Export the current 3D object as an industry-standard Wavefront .OBJ for archiving or use in other CAD/3D software',
+            'VD: Turbine Điện Gió 65T...': 'e.g. 65 t wind turbine…',
+            'Dùng AI nhận diện vật thể trong ảnh và tối ưu cấu trúc 3D + thông số tải trọng': 'Use AI to identify the object and optimize its 3D structure and load data',
+            'Xóa toàn bộ để làm lại từ đầu': 'Clear everything and start over',
+            'Đặt lại thông số mặc định theo tiêu chuẩn': 'Restore standard defaults',
+            'Cắt cáp mô phỏng đứt nhánh': 'Cut a sling to simulate failure',
+            'Nối lại cáp đã đứt': 'Reeve the broken sling',
+            'Đồng bộ lại stack 3D': 'Resynchronize the 3D stack',
+            'Cập nhật lại số liệu theo hiện trường 3D hiện tại': 'Refresh values from the current 3D jobsite',
+            'Sao chép dữ liệu JSON vào Clipboard': 'Copy JSON data to clipboard',
+            'Tải file .liftplan.json về máy tính': 'Download the .liftplan.json file',
+            'In hoặc Xuất file PDF hồ sơ chuẩn quốc tế': 'Print or export the international-standard report as PDF',
+            'Điểm camera bám theo': 'Camera tracking target',
+            'Tải file môi trường HDRI riêng (.hdr / .exr)': 'Load a custom HDRI environment (.hdr / .exr)',
+            'Lower Leg L2-1 (Đầu Dầm Trái ➔ Lug LP1)': 'Lower leg L2-1 (left beam end ➔ pad-eye LP1)',
+            'Lower Leg L2-2 (Đầu Dầm Phải ➔ Lug LP2)': 'Lower leg L2-2 (right beam end ➔ pad-eye LP2)',
+            'Lower Leg L2-3 (Đầu Dầm Phải ➔ Lug LP3)': 'Lower leg L2-3 (right beam end ➔ pad-eye LP3)',
+            'Lower Leg L2-4 (Đầu Dầm Trái ➔ Lug LP4)': 'Lower leg L2-4 (left beam end ➔ pad-eye LP4)',
+            'Góc kéo thấp nhất trong dải làm việc β = 40° (tải cáp cao hơn) — tiết kiệm headroom; gear được chọn theo MBL/WLL/SWL tại β=40°': 'Minimum working angle β = 40° (higher sling load) — saves headroom; gear is selected by MBL/WLL/SWL at β = 40°',
+            'Áp dụng mặc định làm việc: góc kéo β = 50° (dải 40–55°), cáp trên 8/10 m, cáp dưới 2/4 m (số chẵn); gear tự chọn theo WLL/SWL/MBL': 'Apply recommended setup: β = 50° (40–55° range), upper slings 8/10 m, lower slings 2/4 m; gear selected by WLL/SWL/MBL',
+            'Tự động tính quy cách theo WLL chuẩn ASME/EN': 'Automatically size to ASME/EN WLL',
+            'Ngưỡng cảnh báo 75%': '75% warning threshold',
+            'Ngưỡng Cẩu Nguy Hiểm ASME P30.1 (85%)': 'ASME P30.1 crane danger threshold (85%)',
+            'Chuyển ngôn ngữ sang Tiếng Việt': 'Switch language to Vietnamese',
+            'Các trang hiệu chỉnh': 'Adjustment panels'
+        });
+
         function libText(s) {
             if (!s) return '';
             if (state.lang !== 'en') return s;
             return UI_EN[s] || s;
         }
 
+        const UI_VI = Object.entries(UI_EN).reduce((dict, [vi, en]) => {
+            // Keep the first Vietnamese phrase for duplicate English labels.
+            if (!Object.prototype.hasOwnProperty.call(dict, en)) dict[en] = vi;
+            return dict;
+        }, Object.create(null));
+
+        function applyTextTranslation(node) {
+            const raw = node && node.nodeValue;
+            if (!raw || !raw.trim()) return;
+            const phrase = raw.trim();
+            const normalized = phrase.replace(/\s+/g, ' ');
+            if (!node.__vi) {
+                node.__vi = UI_EN[phrase] ? phrase
+                    : (UI_EN[normalized] ? normalized
+                        : (UI_VI[phrase] || UI_VI[normalized] || phrase));
+            }
+            const en = UI_EN[node.__vi];
+            if (!en) return;
+            const lead = raw.match(/^\s*/)[0];
+            const tail = raw.match(/\s*$/)[0];
+            const translated = lead + (state.lang === 'en' ? en : node.__vi) + tail;
+            if (raw !== translated) node.nodeValue = translated;
+        }
+
+        const I18N_ATTRIBUTES = [
+            ['title', 'viTitle'],
+            ['placeholder', 'viPlaceholder'],
+            ['aria-label', 'viAriaLabel'],
+            ['alt', 'viAlt']
+        ];
+
+        function applyAttributeTranslations(el) {
+            I18N_ATTRIBUTES.forEach(([attribute, sourceKey]) => {
+                const current = el.getAttribute(attribute);
+                if (!current) return;
+                if (!el.dataset[sourceKey]) {
+                    el.dataset[sourceKey] = UI_EN[current] ? current : (UI_VI[current] || current);
+                }
+                const translated = UI_EN[el.dataset[sourceKey]];
+                if (translated) {
+                    const value = state.lang === 'en' ? translated : el.dataset[sourceKey];
+                    if (current !== value) el.setAttribute(attribute, value);
+                }
+            });
+        }
+
         function applyPhrases(root) {
             const walker = document.createTreeWalker(root || document.body, NodeFilter.SHOW_TEXT);
             const nodes = [];
             while (walker.nextNode()) nodes.push(walker.currentNode);
-            nodes.forEach(node => {
-                const raw = node.nodeValue;
-                if (!raw || !raw.trim()) return;
-                if (!node.__vi) node.__vi = raw.trim();
-                const en = UI_EN[node.__vi];
-                if (!en) return;
-                const lead = raw.match(/^\s*/)[0];
-                const tail = raw.match(/\s*$/)[0];
-                node.nodeValue = lead + (state.lang === 'en' ? en : node.__vi) + tail;
+            nodes.forEach(applyTextTranslation);
+            (root || document.body).querySelectorAll('[title], [placeholder], [aria-label], [alt]').forEach(applyAttributeTranslations);
+        }
+
+        let localeObserverStarted = false;
+        function observeLiveTranslations() {
+            if (localeObserverStarted || typeof MutationObserver === 'undefined' || !document.body) return;
+            localeObserverStarted = true;
+            const observer = new MutationObserver(records => {
+                records.forEach(record => {
+                    if (record.type === 'characterData') {
+                        applyTextTranslation(record.target);
+                        return;
+                    }
+                    if (record.type === 'attributes') {
+                        applyAttributeTranslations(record.target);
+                        return;
+                    }
+                    record.addedNodes.forEach(node => {
+                        if (node.nodeType === Node.TEXT_NODE) {
+                            applyTextTranslation(node);
+                        } else if (node.nodeType === Node.ELEMENT_NODE) {
+                            applyPhrases(node);
+                        }
+                    });
+                });
             });
-            (root || document.body).querySelectorAll('[title]').forEach(el => {
-                if (!el.dataset.viTitle) el.dataset.viTitle = el.getAttribute('title') || '';
-                const en = UI_EN[el.dataset.viTitle];
-                if (!en) return;
-                el.setAttribute('title', state.lang === 'en' ? en : el.dataset.viTitle);
+            observer.observe(document.body, {
+                subtree: true,
+                childList: true,
+                characterData: true,
+                attributes: true,
+                attributeFilter: ['title', 'placeholder', 'aria-label', 'alt']
             });
         }
 
         function applyLang() {
             applyPhrases(document.body);
-            document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = bi(el.dataset.i18n); });
+            observeLiveTranslations();
+            const api = (typeof window !== 'undefined' && window.SafeLift && window.SafeLift.i18n) ? window.SafeLift.i18n : null;
+            if (api && typeof api.setLang === 'function') api.setLang(state.lang);
+            if (api && typeof api.applyDataI18n === 'function') {
+                api.applyDataI18n(document);
+            } else {
+                document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = bi(el.dataset.i18n); });
+            }
+            document.querySelectorAll('[data-i18n-title]').forEach(el => {
+                if (el.dataset.i18nTitle) el.setAttribute('title', bi(el.dataset.i18nTitle));
+            });
             const buttons = {
                 'btn-reset-initial': ['Hạ đất', 'Set down'],
                 'btn-set-baseline': ['📌 Đặt Mốc Đầu', '📌 Set Home'],
@@ -631,7 +1357,16 @@
                 btn.title = btn.textContent;
             });
             const langBtn = document.getElementById('btn-lang');
-            if (langBtn) langBtn.textContent = state.lang === 'vi' ? 'EN' : 'VI';
+            if (langBtn) {
+                langBtn.textContent = state.lang === 'vi' ? 'EN' : 'VI';
+                const viAction = state.lang === 'vi' ? 'Chuyển ngôn ngữ sang Tiếng Anh' : 'Chuyển ngôn ngữ sang Tiếng Việt';
+                const enAction = state.lang === 'vi' ? 'Switch language to English' : 'Switch language to Vietnamese';
+                langBtn.setAttribute('aria-label', state.lang === 'vi' ? viAction : enAction);
+                // Keep the translation source aligned when this label changes its action target.
+                langBtn.dataset.viAriaLabel = viAction;
+                langBtn.dataset.viTitle = viAction;
+                langBtn.title = langBtn.getAttribute('aria-label');
+            }
             toggleLeftPanel(state.leftCollapsed);
             toggleRightPanel(state.rightCollapsed);
             const full = document.getElementById('btn-fullscreen-view');
@@ -649,7 +1384,10 @@
                 : (state.lang === 'en' ? 'Hide' : 'Ẩn');
             syncSoundButton();
             if (state.gear.selection.length) openGearEditor();
+            if (typeof updateUnitDisplayElements === 'function') updateUnitDisplayElements();
+            if (typeof syncCableControlsSelection === 'function') syncCableControlsSelection();
             if (typeof syncSlingSlidersFromState === 'function') syncSlingSlidersFromState();
+            syncDrawerHeaderLanguage();
         }
 
         function syncSoundButton() {
@@ -680,7 +1418,12 @@
             }
             const langBtn = document.getElementById('btn-lang');
             if (langBtn) langBtn.addEventListener('click', () => {
-                state.lang = state.lang === 'vi' ? 'en' : 'vi';
+                const api = (typeof window !== 'undefined' && window.SafeLift && window.SafeLift.i18n) ? window.SafeLift.i18n : null;
+                if (api && typeof api.toggleLang === 'function') {
+                    state.lang = api.toggleLang();
+                } else {
+                    state.lang = state.lang === 'vi' ? 'en' : 'vi';
+                }
                 applyLang();
             });
 

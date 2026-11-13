@@ -1240,39 +1240,44 @@
             return finishCargoGroup(group);
         }
 
-        const I18N = {
-            vi: {
-                hudHook: 'Tải Móc', hudHookUtil: '% SWL Móc', hudGross: 'Tổng Tải', hudRig: 'Bộ Treo',
-                hudBeta: 'Góc β', hudTf: 'Hệ số TF', hudLeg: '% SWL Cáp', hudMbl: 'MBL Min',
-                hudRadius: 'Bán kính R', hudCog: 'Lệch CoG', hudTilt: 'Nghiêng', hudClear: 'Cách Sàn', hudSpan: 'Nhịp dầm',
-                gearAuto: 'Theo thông số chung', gearCut: 'Cắt cáp', gearRepair: 'Nối lại', gearClear: 'Bỏ chọn',
-                cutTool: 'Cắt',
-                cutToolTitle: 'Kéo cắt cáp: bật rồi bấm vào cáp/xích để cắt đúng chỗ',
-                memLen: 'Chiều dài làm việc', pickA: 'Điểm bắt cáp A (từ tâm)', pickB: 'Điểm bắt cáp B (từ tâm)',
-                memSwl: 'SWL thanh', memMass: 'Tự trọng thanh', beamSwl: 'SWL cả bộ dầm', beamSf: 'Hệ số an toàn SF',
-                autoVal: 'Tự động', mixedVal: 'Khác nhau',
-                memTop: 'Dầm ngáng trên', memLowPlus: 'Dầm ngáng dưới +X', memLowMinus: 'Dầm ngáng dưới −X',
-                memTubular: 'Ngáng ống Modulift', memMain: 'Dầm nâng chữ H', memRailPos: 'Thanh dọc +Z', memRailNeg: 'Thanh dọc −Z',
-                memEndPos: 'Thanh đầu +X', memEndNeg: 'Thanh đầu −X', memBarPos: 'Dầm vòng +X', memBarNeg: 'Dầm vòng −X', memTruss: 'Dầm giàn trên',
-                gearBeam: 'Bộ dầm ngáng', gearHook: 'Móc cẩu', gearAsm: 'SWL bộ dầm'
-            },
-            en: {
-                hudHook: 'Hook Load', hudHookUtil: '% Hook SWL', hudGross: 'Gross Load', hudRig: 'Rigging',
-                hudBeta: 'Angle β', hudTf: 'TF Factor', hudLeg: '% Leg SWL', hudMbl: 'MBL Min',
-                hudRadius: 'Radius R', hudCog: 'CoG Off', hudTilt: 'Tilt', hudClear: 'Clearance', hudSpan: 'Span',
-                gearAuto: 'Use global', gearCut: 'Cut sling', gearRepair: 'Reeve', gearClear: 'Clear',
-                cutTool: 'Cut',
-                cutToolTitle: 'Cable scissors: turn on, then click a rope/chain to cut at that point',
-                memLen: 'Working length', pickA: 'Pick point A from centre', pickB: 'Pick point B from centre',
-                memSwl: 'Member SWL', memMass: 'Member self-weight', beamSwl: 'Assembly SWL', beamSf: 'Factor of safety',
-                autoVal: 'Automatic', mixedVal: 'Mixed',
-                memTop: 'Upper spreader beam', memLowPlus: 'Lower spreader +X', memLowMinus: 'Lower spreader −X',
-                memTubular: 'Modulift tubular strut', memMain: 'H-section lifting beam', memRailPos: 'Longitudinal +Z', memRailNeg: 'Longitudinal −Z',
-                memEndPos: 'End beam +X', memEndNeg: 'End beam −X', memBarPos: 'Basket beam +X', memBarNeg: 'Basket beam −X', memTruss: 'Upper truss beam',
-                gearBeam: 'Spreader assembly', gearHook: 'Hook', gearAsm: 'Assembly SWL'
-            }
-        };
+        // Prefer centralized SafeLift3D i18n (src/i18n); fall back to local pack.
+        const I18N = (typeof window !== 'undefined' && window.SafeLift && window.SafeLift.i18n && window.SafeLift.i18n.KEYS)
+            ? window.SafeLift.i18n.KEYS
+            : {
+                vi: {
+                    hudHook: 'Tải Móc', hudHookUtil: '% SWL Móc', hudGross: 'Tổng Tải', hudRig: 'Bộ Treo',
+                    hudBeta: 'Góc β', hudTf: 'Hệ số TF', hudLeg: '% SWL Cáp', hudMbl: 'MBL Min',
+                    hudRadius: 'Bán kính R', hudCog: 'Lệch CoG', hudTilt: 'Nghiêng', hudClear: 'Cách Sàn', hudSpan: 'Nhịp dầm',
+                    gearAuto: 'Theo thông số chung', gearCut: 'Cắt cáp', gearRepair: 'Nối lại', gearClear: 'Bỏ chọn',
+                    cutTool: 'Cắt',
+                    cutToolTitle: 'Kéo cắt cáp: bật rồi bấm vào cáp/xích để cắt đúng chỗ',
+                    memLen: 'Chiều dài làm việc', pickA: 'Điểm bắt cáp A (từ tâm)', pickB: 'Điểm bắt cáp B (từ tâm)',
+                    memSwl: 'SWL thanh', memMass: 'Tự trọng thanh', beamSwl: 'SWL cả bộ dầm', beamSf: 'Hệ số an toàn SF',
+                    autoVal: 'Tự động', mixedVal: 'Khác nhau',
+                    memTop: 'Dầm ngáng trên', memLowPlus: 'Dầm ngáng dưới +X', memLowMinus: 'Dầm ngáng dưới −X',
+                    memTubular: 'Ngáng ống Modulift', memMain: 'Dầm nâng chữ H', memRailPos: 'Thanh dọc +Z', memRailNeg: 'Thanh dọc −Z',
+                    memEndPos: 'Thanh đầu +X', memEndNeg: 'Thanh đầu −X', memBarPos: 'Dầm vòng +X', memBarNeg: 'Dầm vòng −X', memTruss: 'Dầm giàn trên',
+                    gearBeam: 'Bộ dầm ngáng', gearHook: 'Móc cẩu', gearAsm: 'SWL bộ dầm'
+                },
+                en: {
+                    hudHook: 'Hook Load', hudHookUtil: '% Hook SWL', hudGross: 'Gross Load', hudRig: 'Rigging',
+                    hudBeta: 'Angle β', hudTf: 'TF Factor', hudLeg: '% Leg SWL', hudMbl: 'MBL Min',
+                    hudRadius: 'Radius R', hudCog: 'CoG Off', hudTilt: 'Tilt', hudClear: 'Clearance', hudSpan: 'Span',
+                    gearAuto: 'Use global', gearCut: 'Cut sling', gearRepair: 'Reeve', gearClear: 'Clear',
+                    cutTool: 'Cut',
+                    cutToolTitle: 'Cable scissors: turn on, then click a rope/chain to cut at that point',
+                    memLen: 'Working length', pickA: 'Pick point A from centre', pickB: 'Pick point B from centre',
+                    memSwl: 'Member SWL', memMass: 'Member self-weight', beamSwl: 'Assembly SWL', beamSf: 'Factor of safety',
+                    autoVal: 'Automatic', mixedVal: 'Mixed',
+                    memTop: 'Upper spreader beam', memLowPlus: 'Lower spreader +X', memLowMinus: 'Lower spreader −X',
+                    memTubular: 'Modulift tubular strut', memMain: 'H-section lifting beam', memRailPos: 'Longitudinal +Z', memRailNeg: 'Longitudinal −Z',
+                    memEndPos: 'End beam +X', memEndNeg: 'End beam −X', memBarPos: 'Basket beam +X', memBarNeg: 'Basket beam −X', memTruss: 'Upper truss beam',
+                    gearBeam: 'Spreader assembly', gearHook: 'Hook', gearAsm: 'Assembly SWL'
+                }
+            };
         function t(key) {
+            const api = (typeof window !== 'undefined' && window.SafeLift && window.SafeLift.i18n) ? window.SafeLift.i18n : null;
+            if (api && typeof api.t === 'function') return api.t(key, state.lang);
             const pack = I18N[state.lang] || I18N.en;
             return pack[key] || key;
         }
@@ -1280,6 +1285,8 @@
             return t(key);
         }
         function L(en, vi) {
+            const api = (typeof window !== 'undefined' && window.SafeLift && window.SafeLift.i18n) ? window.SafeLift.i18n : null;
+            if (api && typeof api.L === 'function') return api.L(en, vi, state.lang);
             return state.lang === 'en' ? en : vi;
         }
 

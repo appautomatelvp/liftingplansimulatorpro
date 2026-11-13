@@ -39,7 +39,7 @@ async function assertTrulyVisibleAndClickable(page, selector, label = selector) 
   return result.rect;
 }
 
-test.describe('Lifting Plan Simulator - Layout & Collision Avoidance E2E', () => {
+test.describe('SafeLift3D - Layout & Collision Avoidance E2E', () => {
 
   test.beforeEach(async ({ page }) => {
     // Navigate to simulator app

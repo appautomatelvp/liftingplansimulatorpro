@@ -100,7 +100,7 @@
                 extraCables: []
             },
             rigFit: 'fixed',
-            lang: 'vi',
+            lang: (typeof window !== 'undefined' && window.__SAFELIFT_BOOT_LANG__) || 'vi',
 
             // Visual & UI Toggles
             xrayCargo: false,
@@ -401,19 +401,33 @@
 
         const MATS = {};
 
+        function splashText(key, fallbackVi, fallbackEn) {
+            const i18n = (typeof window !== 'undefined' && window.SafeLift && window.SafeLift.i18n) ? window.SafeLift.i18n : null;
+            if (i18n && typeof i18n.t === 'function') return i18n.t(key, state.lang);
+            return state.lang === 'en' ? (fallbackEn || fallbackVi) : fallbackVi;
+        }
+
         function updateLoadingProgress(percent, message) {
             const bar = document.getElementById('app-loading-bar');
             const txt = document.getElementById('app-loading-status');
             const pct = document.getElementById('app-loading-pct');
+            const stream = document.getElementById('app-loading-stream');
             if (bar) bar.style.width = percent + '%';
             if (txt && message) txt.textContent = message;
             if (pct) pct.textContent = Math.round(percent) + '%';
+            if (stream) {
+                const lanes = ['sys://physics', 'xpbd-solver', 'rigging-catalog', 'asme-compliance', 'viewport'];
+                const idx = Math.min(lanes.length - 1, Math.floor((percent / 100) * lanes.length));
+                stream.textContent = lanes.slice(0, idx + 1).join(' · ');
+            }
         }
 
         function finishLoadingScreen(opts) {
             const holdMs = (opts && opts.holdMs != null) ? opts.holdMs : 520;
             const fadeMs = (opts && opts.fadeMs != null) ? opts.fadeMs : 700;
-            updateLoadingProgress(100, (opts && opts.message) || 'Sàn mô phỏng sẵn sàng — khung hình cinematic đã khóa!');
+            updateLoadingProgress(100, (opts && opts.message) || splashText('splashReady',
+                'Sẵn sàng — SafeLift3D đã khởi tạo.',
+                'Ready — SafeLift3D is initialized.'));
             setTimeout(() => {
                 document.body.classList.add('app-ready');
                 const loader = document.getElementById('app-loading-screen');
@@ -490,17 +504,40 @@
         }
 
         function bootSimulator() {
-            updateLoadingProgress(15, 'Khởi tạo vật liệu thép rèn PBR, cáp xoắn IWRC & sàn thử tải...');
+            const yearEl = document.getElementById('app-loading-year');
+            if (yearEl) yearEl.textContent = String(new Date().getFullYear());
+            const tagline = document.getElementById('app-loading-tagline');
+            if (tagline) {
+                tagline.textContent = state.lang === 'en'
+                    ? 'HEAVY RIGGING & LIFT PLANNER · CAE DIGITAL TWIN'
+                    : 'MÔ PHỎNG NÂNG HẠ & LẬP PHƯƠNG ÁN · DIGITAL TWIN CAE';
+            }
+
+            updateLoadingProgress(8, splashText('splashPhysics', 'Đang tải Physics Engine…', 'Loading Physics Engine…'));
+            updateLoadingProgress(15, splashText('splashMaterials',
+                'Khởi tạo vật liệu PBR, cáp IWRC & sàn thử tải…',
+                'Initializing PBR steel, IWRC rope & test deck…'));
             initMaterials();
-            updateLoadingProgress(35, 'Thiết lập mặt bằng kỹ thuật phẳng & ánh sáng Studio...');
+            updateLoadingProgress(35, splashText('splashScene',
+                'Thiết lập mặt bằng kỹ thuật & ánh sáng Studio…',
+                'Setting up engineering ground plane & studio lighting…'));
             initScene();
-            updateLoadingProgress(55, 'Lắp ráp cụm Puli Hook, Master Link, Ma ní Crosby & Tai cẩu...');
+            updateLoadingProgress(55, splashText('splashHook',
+                'Lắp ráp Puli Hook, Master Link, ma ní & tai cẩu…',
+                'Assembling hook block, master link, shackles & pad-eyes…'));
             buildHookAndRiggingPool();
-            updateLoadingProgress(75, 'Khởi tạo thiết bị nâng, dầm ngáng Spreader & giải tích lực...');
+            updateLoadingProgress(75, splashText('splashGear',
+                'Khởi tạo thiết bị nâng, dầm Spreader & giải tích lực…',
+                'Initializing lifting gear, spreader beams & force analysis…'));
             applyStartupAssemblyPreset();
             buildCraneVehicle();
             rebuildCargoAndRig(true);
-            updateLoadingProgress(88, 'Đồng bộ kiểm định an toàn ASME B30.9 / B30.20 / P30.1...');
+            updateLoadingProgress(82, splashText('splashCatalog',
+                'Khởi tạo Rigging Catalog…',
+                'Initializing Rigging Catalog…'));
+            updateLoadingProgress(88, splashText('splashCompliance',
+                'Nạp quy tắc kiểm tra ASME B30.9 / B30.20 / P30.1…',
+                'Loading ASME B30.9 / B30.20 / P30.1 compliance checks…'));
             init3DLibraryStudio();
             initComplianceUI();
             setupUIEvents();
@@ -519,9 +556,13 @@
 
             // Keep the loading screen up while drawer layout settles and the hero
             // camera is snapped under the overlay — first visible frame must already be cinematic.
-            updateLoadingProgress(92, 'Canh khung hình cinematic (rule of thirds)...');
+            updateLoadingProgress(92, splashText('splashCamera',
+                'Canh khung hình cinematic…',
+                'Framing cinematic camera…'));
             const warmAndReveal = () => {
-                updateLoadingProgress(96, 'Ổn định góc máy & làm nóng khung hình...');
+                updateLoadingProgress(96, splashText('splashWarm',
+                    'Ổn định góc máy & làm nóng khung hình…',
+                    'Stabilizing view & warming frames…'));
                 if (typeof window.invalidateUiSafeNdcCache === 'function') {
                     window.invalidateUiSafeNdcCache();
                 }
@@ -547,12 +588,15 @@
                         requestAnimationFrame(warmTick);
                         return;
                     }
-                    updateLoadingProgress(100, 'Sẵn sàng — góc nhìn cinematic đã khóa!');
+                    const readyMsg = splashText('splashReady',
+                        'Sẵn sàng — SafeLift3D đã khởi tạo.',
+                        'Ready — SafeLift3D is initialized.');
+                    updateLoadingProgress(100, readyMsg);
                     animate();
                     finishLoadingScreen({
                         holdMs: 640,
                         fadeMs: 850,
-                        message: 'Sẵn sàng — góc nhìn cinematic đã khóa!'
+                        message: readyMsg
                     });
                 };
                 requestAnimationFrame(warmTick);

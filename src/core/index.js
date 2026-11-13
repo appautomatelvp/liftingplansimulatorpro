@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * LIFTING PLAN SIMULATOR PRO - CAE INDUSTRIAL PHYSICS ARCHITECTURE
+ * SAFELIFT3D - CAE INDUSTRIAL PHYSICS ARCHITECTURE
  * Core Four-Module System Architecture Entry Point
  * ============================================================================
  */

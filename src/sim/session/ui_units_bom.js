@@ -357,7 +357,7 @@
 
             const btnUnitHeader = document.getElementById('btn-unit-toggle');
             if (btnUnitHeader) {
-                btnUnitHeader.innerHTML = isImp ? '📐 ft (Feet)' : '📏 m (Mét)';
+                btnUnitHeader.innerHTML = isImp ? '📐 ft (Feet)' : (state.lang === 'en' ? '📏 m (Metric)' : '📏 m (Mét)');
                 btnUnitHeader.title = isImp
                     ? (state.lang === 'en' ? 'Switch to Metric (m)' : 'Chuyển sang Hệ Mét (m)')
                     : (state.lang === 'en' ? 'Switch to Imperial (ft)' : 'Chuyển sang Hệ Feet/Inch (ft)');
@@ -491,12 +491,16 @@
                 // Tier 2: Lower Legs (Beam ➔ Cargo Lugs)
                 for (let i = 0; i < nLugs; i++) {
                     let parentBranch = '';
+                    let parentBranchEn = '';
                     if (isBasket) {
                         parentBranch = (i === 0 || i === 3) ? 'Nhánh Dầm Trước' : 'Nhánh Dầm Sau';
+                        parentBranchEn = (i === 0 || i === 3) ? 'Front Beam Branch' : 'Rear Beam Branch';
                     } else if (isFrame) {
                         parentBranch = `Khung Góc ${i + 1}`;
+                        parentBranchEn = `Frame Corner ${i + 1}`;
                     } else {
                         parentBranch = (i === 0 || i === 3) ? 'Đầu Dầm Trái' : 'Đầu Dầm Phải';
+                        parentBranchEn = (i === 0 || i === 3) ? 'Left Beam End' : 'Right Beam End';
                     }
                     tier2.push({
                         id: `L2-${i + 1}`,
@@ -505,7 +509,7 @@
                         index: i,
                         tier: 2,
                         titleVi: `Cáp dưới L2-${i + 1} (${parentBranch} ➔ Tai cẩu LP${i + 1})`,
-                        titleEn: `Lower Leg L2-${i + 1} (${parentBranch} ➔ Lug LP${i + 1})`,
+                        titleEn: `Lower Leg L2-${i + 1} (${parentBranchEn} ➔ Lug LP${i + 1})`,
                         shortLabel: `L2-${i + 1}`,
                         branch: `LP${i + 1}`
                     });
@@ -749,7 +753,9 @@
             const elTen = document.getElementById('v-sel-tension');
             const elAng = document.getElementById('v-sel-angle');
             const elSwl = document.getElementById('v-sel-swl');
-            if (elTen) elTen.textContent = `Lực căng T: ${tensionT.toFixed(2)} T`;
+            if (elTen) elTen.textContent = state.lang === 'en'
+                ? `Leg tension: ${tensionT.toFixed(2)} t`
+                : `Lực căng T: ${tensionT.toFixed(2)} T`;
             if (elAng) elAng.textContent = `Góc α: ${angleDeg.toFixed(1)}°`;
             if (elSwl) elSwl.textContent = `WLL: ${wllT.toFixed(1)} T`;
 
@@ -882,7 +888,9 @@
                     lblLowerAngle.className = 'text-emerald-400 font-bold';
                 } else {
                     const deg = Math.atan2(dispLower, horizL) * 180 / Math.PI;
-                    lblLowerAngle.textContent = `Góc nghiêng α: ${deg.toFixed(1)}°`;
+                    lblLowerAngle.textContent = state.lang === 'en'
+                        ? `Angle from vertical α: ${deg.toFixed(1)}°`
+                        : `Góc nghiêng α: ${deg.toFixed(1)}°`;
                     lblLowerAngle.className = 'text-amber-300 font-bold';
                 }
             }
@@ -912,7 +920,9 @@
                 if (numSlingDia && document.activeElement !== numSlingDia) numSlingDia.value = spec.diaMm;
                 if (readoutMass) {
                     const singleMassKg = spec.computeMassKg(upperM, 1);
-                    readoutMass.textContent = `~${spec.linearMassKgPerM.toFixed(2)} kg/m · ${singleMassKg.toFixed(1)} kg/sợi`;
+                    readoutMass.textContent = state.lang === 'en'
+                        ? `~${spec.linearMassKgPerM.toFixed(2)} kg/m · ${singleMassKg.toFixed(1)} kg/leg`
+                        : `~${spec.linearMassKgPerM.toFixed(2)} kg/m · ${singleMassKg.toFixed(1)} kg/sợi`;
                 }
             }
 

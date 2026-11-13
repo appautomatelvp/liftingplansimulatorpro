@@ -35,6 +35,7 @@ export default defineConfig({
   webServer: {
     command: 'npm run dev',
     url: 'http://localhost:5174',
+    env: { VITE_AUTH_DEV_BYPASS: 'true' },
     reuseExistingServer: true,
     timeout: 120000
   }

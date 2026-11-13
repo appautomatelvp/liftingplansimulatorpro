@@ -1,5 +1,5 @@
 /**
- * audio.js — High-Fidelity Procedural Industrial Audio Engine for Lifting Plan Simulator Pro.
+ * audio.js — High-Fidelity Procedural Industrial Audio Engine for SafeLift3D.
  * Synthesizes realistic, physically-accurate, zero-dependency sound effects via Web Audio API:
  * 1. Construction Crane Winch:
  *    - Heavy 6-cylinder diesel engine combustion throb (32–52 Hz) with rhythmic diesel clatter.
