@@ -29,6 +29,27 @@ service cloud.firestore {
           && itemId.matches('^([1-9]|[1-9][0-9]|1[0-9][0-9]|200)$'));
     }
 
+    function validUsageDoc() {
+      return request.resource.data.keys().hasOnly(['dayKey', 'writesToday', 'plansCount', 'equipmentCount', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['dayKey', 'writesToday', 'plansCount', 'equipmentCount', 'updatedAt'])
+        && request.resource.data.dayKey is string && request.resource.data.dayKey.size() == 10
+        && request.resource.data.writesToday is int && request.resource.data.writesToday >= 0 && request.resource.data.writesToday <= 200
+        && request.resource.data.plansCount is int && request.resource.data.plansCount >= 0 && request.resource.data.plansCount <= 200
+        && request.resource.data.equipmentCount is int && request.resource.data.equipmentCount >= 0 && request.resource.data.equipmentCount <= 200
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function validFeatureFlags() {
+      return request.resource.data.keys().hasOnly(['maintenanceMode', 'maintenanceMessage', 'freePlanLimit', 'disabledModules', 'updatedBy', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['maintenanceMode', 'maintenanceMessage', 'freePlanLimit', 'disabledModules', 'updatedBy', 'updatedAt'])
+        && request.resource.data.maintenanceMode is bool
+        && request.resource.data.maintenanceMessage is string && request.resource.data.maintenanceMessage.size() <= 300
+        && request.resource.data.freePlanLimit is int && request.resource.data.freePlanLimit >= 1 && request.resource.data.freePlanLimit <= 200
+        && request.resource.data.disabledModules is list && request.resource.data.disabledModules.size() <= 20
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt == request.time;
+    }
+
     function validEquipment(uid) {
       return request.resource.data.keys().hasOnly([
           'ownerUid', 'schemaVersion', 'name', 'category', 'manufacturer', 'model', 'wllT', 'lengthM', 'massKg',
@@ -130,6 +151,25 @@ service cloud.firestore {
           && request.resource.data.updatedAt == request.time;
         allow delete: if activeOwner(uid) && resource.data.ownerUid == uid;
       }
+
+      match /meta/{docId} {
+        allow get: if activeOwner(uid) && docId == 'usage';
+        allow list: if false;
+        allow create: if activeOwner(uid) && docId == 'usage' && validUsageDoc()
+          && request.resource.data.writesToday <= 1;
+        allow update: if activeOwner(uid) && docId == 'usage' && validUsageDoc()
+          && ((request.resource.data.dayKey != resource.data.dayKey && request.resource.data.writesToday <= 1)
+            || (request.resource.data.dayKey == resource.data.dayKey
+              && request.resource.data.writesToday == resource.data.writesToday + 1));
+        allow delete: if false;
+      }
+    }
+
+    match /config/{docId} {
+      allow get: if signedIn() && docId == 'featureFlags';
+      allow list: if false;
+      allow create, update: if activeAdmin() && docId == 'featureFlags' && validFeatureFlags();
+      allow delete: if false;
     }
 
     match /{document=**} {

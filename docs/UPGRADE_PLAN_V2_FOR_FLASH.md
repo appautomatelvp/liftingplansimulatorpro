@@ -160,7 +160,7 @@ Tôi không chạy được toàn bộ E2E/Rules/Build trong lượt kiểm tra 
 | S-10 | ✓ | `firebase emulators:exec --only auth,firestore` (`playwright.auth.config.js`), `npm run test:rules`, `npm test`, `architecture:gate`, `npm run build`, `npm run check:dist` | Auth + Firestore Emulator E2E (`e2e/auth.spec.js`): **2/2** đạt (đăng ký, pending verify, verify email qua Emulator REST, CRUD & reload, sai mật khẩu, cách ly user B, khóa `locked`, lỗi mạng); sửa bug mất thông báo khóa trong `session.js`; Rules **14/14**; Unit **285/285**; Gate OK; Build OK; `check:dist` OK | 13/11/2026 |
 | S-11 | ✓ | `architecture:gate`, `npm test`, `npm run build`, `npm run check:dist` | `migrateSnapshot()` xử lý snapshot cũ (`4.x`/`legacy`), hiện tại (`5.0`), và phiên bản lạ (`UNKNOWN_SOLVER_VERSION`); Unit **37 files, 286/286** đạt (3 fixture test trong `workspace_data.test.js`); Gate OK; Build OK; `check:dist` OK | 13/11/2026 |
 | S-12 | ✓ | `architecture:gate`, `npm test`, `npm run build`, `npm run check:dist` | `exportAllWorkspaceData()` xuất toàn bộ phương án + dụng cụ phân trang cursor, kèm cooldown 10s; Unit **37 files, 287/287** đạt; Gate OK; Build OK; `check:dist` OK | 13/11/2026 |
-| S-13 | □ | | | |
+| S-13 | ✓ | `npm run test:rules`, `architecture:gate`, `npm test`, `npm run build`, `npm run check:dist` | Rules **15/15** (`users/{uid}/meta/usage` giới hạn ghi/ngày & `config/featureFlags` admin-write); Unit **38 files, 290/290** (`telemetry_usage.test.js`); CMS Feature Flags + bộ đếm lỗi giới hạn bộ nhớ (không spam Firestore); Gate OK; Build OK; `check:dist` OK | 13/11/2026 |
 | S-14 | □ | | | |
 | S-15 | □ | | | |
 
@@ -250,3 +250,9 @@ Tôi không chạy được toàn bộ E2E/Rules/Build trong lượt kiểm tra 
 - Thêm nút "Xuất tất cả (JSON)" / "Export all (JSON)" trong `src/saas/workspace_dashboard.js` + khóa i18n trong `src/i18n/keys.js`.
 - Thêm unit test kiểm tra xuất nhiều trang cursor và cooldown trong `test/workspace_data.test.js`.
 - Kiểm tra: `architecture:gate` OK; Unit **37 files, 287/287** đạt; `npm run build` OK (5.79s); `npm run check:dist` OK.
+
+### S-13 — Theo dõi quota Spark Free, Feature Flags CMS & giám sát lỗi giới hạn
+- Bổ sung Rules & test Emulator trước cho `users/{uid}/meta/usage` (giới hạn `writesToday <= 200` mỗi ngày UTC, đếm tăng tuần tự, cấm delete) và `config/featureFlags` (`allow get` người dùng đã đăng nhập, `allow write` chỉ admin).
+- Tạo `src/saas/telemetry_usage.js` gồm `recordUsageWrite`, `readUsageQuota`, `readFeatureFlags`, `saveFeatureFlags`, `normalizeFeatureFlags` và bộ đếm lỗi trong phiên tối đa `MAX_ERROR_BUFFER = 10` mục trong RAM (không ghi log lỗi không giới hạn lên Firestore).
+- Tích hợp hiển thị quota trong `src/saas/workspace_dashboard.js` và giao diện Feature Flags + bộ đếm lỗi trong `src/saas/admin_dashboard.js`, kèm `test/telemetry_usage.test.js`.
+- Kiểm tra: Rules **15/15** đạt; `architecture:gate` OK; Unit **38 files, 290/290** đạt; `npm run build` OK (5.67s); `npm run check:dist` OK.

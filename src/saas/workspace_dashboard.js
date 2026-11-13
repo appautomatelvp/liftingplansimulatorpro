@@ -18,6 +18,7 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
   let items = [];
   let pendingTabReload = false;
   let lastExportAt = 0;
+  let usageQuota = null;
   let releaseWorkspaceFocus = () => {};
   let onKey = null;
   const legacyRigs = readLegacyRigs();
@@ -125,6 +126,13 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
     }
     backdrop.querySelector('[data-count]').textContent = tr('wsPageCount', { count: items.length });
     backdrop.querySelector('[data-action="more"]').hidden = !hasMore;
+    const quotaEl = backdrop.querySelector('.saas-workspace-quota');
+    if (quotaEl) {
+      const baseQuota = tr('wsQuotaNote', { limit: profile.tier === 'premium' || profile.tier === 'admin' ? 200 : 20 });
+      quotaEl.textContent = usageQuota
+        ? `${baseQuota} · ${tr('wsDailyQuotaHint', { used: usageQuota.writesToday, limit: usageQuota.limit, plans: usageQuota.plansCount, equipment: usageQuota.equipmentCount })}`
+        : baseQuota;
+    }
   }
 
   function renderPlan(item) {
@@ -186,8 +194,12 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
     const list = backdrop.querySelector('[data-list]');
     if (!items.length && list) list.innerHTML = `<div class="saas-workspace-loading">${tr('wsLoadingLibrary')}</div>`;
     try {
-      const page = await dataService.listWorkspacePage(db, profile.uid, requestedTab, { cursor });
+      const [page, quota] = await Promise.all([
+        dataService.listWorkspacePage(db, profile.uid, requestedTab, { cursor }),
+        db && typeof dataService.readUsageQuota === 'function' ? dataService.readUsageQuota(db, profile.uid).catch(() => null) : Promise.resolve(null)
+      ]);
       if (requestedTab !== tab) return;
+      if (quota) usageQuota = quota;
       items = reset ? page.items : [...items, ...page.items];
       cursor = page.cursor;
       hasMore = page.hasMore;

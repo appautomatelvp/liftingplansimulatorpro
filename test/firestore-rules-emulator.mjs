@@ -220,3 +220,33 @@ test('rules enforce serverTimestamp for lastLogin, block admin self-lockout, and
   await assertSucceeds(getDocs(query(collection(adminDb, 'users'), limit(26))));
   await assertFails(getDocs(query(collection(adminDb, 'users'), limit(27))));
 });
+
+test('usage meta enforces daily write bounds and config/featureFlags is admin-write only', async () => {
+  const ownerDb = env.authenticatedContext(ownerUid).firestore();
+  const otherDb = env.authenticatedContext(otherUid).firestore();
+  const adminDb = env.authenticatedContext('admin-user').firestore();
+  const anonDb = env.unauthenticatedContext().firestore();
+
+  const usageRef = doc(ownerDb, 'users', ownerUid, 'meta', 'usage');
+  await assertFails(setDoc(usageRef, { dayKey: '2026-11-13', writesToday: 10, plansCount: 1, equipmentCount: 0, updatedAt: serverTimestamp() }));
+  await assertSucceeds(setDoc(usageRef, { dayKey: '2026-11-13', writesToday: 1, plansCount: 1, equipmentCount: 0, updatedAt: serverTimestamp() }));
+  await assertSucceeds(updateDoc(usageRef, { writesToday: 2, plansCount: 2, updatedAt: serverTimestamp() }));
+  await assertFails(updateDoc(usageRef, { writesToday: 5, updatedAt: serverTimestamp() }));
+  await assertFails(setDoc(doc(otherDb, 'users', ownerUid, 'meta', 'usage'), { dayKey: '2026-11-13', writesToday: 1, plansCount: 0, equipmentCount: 0, updatedAt: serverTimestamp() }));
+  await assertFails(deleteDoc(usageRef));
+
+  const flagsRef = doc(adminDb, 'config', 'featureFlags');
+  const validFlags = {
+    maintenanceMode: false,
+    maintenanceMessage: '',
+    freePlanLimit: 20,
+    disabledModules: [],
+    updatedBy: 'admin-user',
+    updatedAt: serverTimestamp()
+  };
+  await assertFails(setDoc(doc(ownerDb, 'config', 'featureFlags'), { ...validFlags, updatedBy: ownerUid }));
+  await assertSucceeds(setDoc(flagsRef, validFlags));
+  await assertSucceeds(getDoc(doc(ownerDb, 'config', 'featureFlags')));
+  await assertFails(getDoc(doc(anonDb, 'config', 'featureFlags')));
+  await assertFails(getDocs(collection(adminDb, 'config')));
+});

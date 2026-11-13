@@ -1,6 +1,7 @@
 import { getLang, setLang } from '../i18n/index.js';
 import { saasT } from './i18n.js';
 import { listUsersPage, setUserAccess } from './firebase_data.js';
+import { getSessionErrorSummary, normalizeFeatureFlags, readFeatureFlags, saveFeatureFlags } from './telemetry_usage.js';
 
 export function mountAdminDashboard(container, { db, profile, authUser, signOut }) {
   const root = document.createElement('main');
@@ -15,11 +16,14 @@ export function mountAdminDashboard(container, { db, profile, authUser, signOut 
   let loading = false;
   let status = '';
   let error = false;
+  let flags = normalizeFeatureFlags({});
+  let flagsBusy = false;
   const isAdmin = profile.role === 'admin';
 
   const render = () => {
     const lang = getLang();
     const tr = (key, vars) => saasT(key, vars, lang);
+    const errorSummary = getSessionErrorSummary();
     if (!isAdmin) {
       root.innerHTML = `<section class="saas-admin-card"><div class="saas-auth-brand"><img class="saas-auth-mark" src="/safelift3d-icons/branding/main-logo.svg" alt="SafeLift3D — Heavy Rigging & Lift Planner"></div><h1>${tr('adminRequiredTitle')}</h1><p>${tr('adminRequiredBody')}</p><div class="saas-admin-actions"><a href="/">${tr('adminReturnWorkspace')}</a><button type="button" data-action="signout">${tr('adminSignOut')}</button></div></section>`;
       root.querySelector('[data-action="signout"]')?.addEventListener('click', signOut);
@@ -40,10 +44,44 @@ export function mountAdminDashboard(container, { db, profile, authUser, signOut 
           ${users.length ? '' : `<tr><td colspan="5" class="saas-empty-row">${loading ? tr('adminLoadingUsers') : tr('adminNoUsers')}</td></tr>`}
         </tbody></table></div>
         <nav class="saas-admin-pagination" aria-label="${tr('adminPagesAria')}"><span>${tr('adminPageNumber', { page: pageIndex + 1 })}</span><div><button type="button" class="saas-secondary-button" data-action="previous" ${pageIndex === 0 || loading ? 'disabled' : ''}>${tr('adminPrevious')}</button><button type="button" class="saas-secondary-button" data-action="next" ${!hasMore || loading ? 'disabled' : ''}>${tr('adminNext')}</button></div></nav>
+      </section>
+      <section class="saas-admin-card">
+        <div class="saas-admin-title-row"><div><h2>${tr('adminFlagsTitle')}</h2><p>${tr('adminFlagsSubtitle')}</p></div></div>
+        <form class="saas-admin-search" data-action="flags-form">
+          <label><input type="checkbox" name="maintenanceMode" ${flags.maintenanceMode ? 'checked' : ''}> ${tr('adminMaintenanceLabel')}</label>
+          <label>${tr('adminMaintenanceMsgLabel')}<input type="text" name="maintenanceMessage" maxlength="300" value="${escapeHtml(flags.maintenanceMessage)}"></label>
+          <label>${tr('adminFreeLimitLabel')}<input type="number" name="freePlanLimit" min="1" max="200" value="${escapeHtml(flags.freePlanLimit)}"></label>
+          <label>${tr('adminDisabledModulesLabel')}<input type="text" name="disabledModules" maxlength="400" value="${escapeHtml(flags.disabledModules.join(', '))}"></label>
+          <div><button type="submit" class="saas-secondary-button" ${flagsBusy ? 'disabled' : ''}>${tr('adminSaveFlags')}</button></div>
+        </form>
+        <small>${tr('adminSessionErrorsLabel', { count: errorSummary.totalCount })}</small>
       </section>`;
     root.querySelector('[data-action="signout"]')?.addEventListener('click', signOut);
     root.querySelector('[data-action="language"]')?.addEventListener('click', () => { setLang(lang === 'en' ? 'vi' : 'en'); render(); });
     root.querySelector('[data-action="refresh"]')?.addEventListener('click', loadUsers);
+    root.querySelector('[data-action="flags-form"]')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (flagsBusy) return;
+      const form = new FormData(event.currentTarget);
+      flagsBusy = true;
+      render();
+      try {
+        flags = await saveFeatureFlags(db, authUser.uid, {
+          maintenanceMode: form.get('maintenanceMode') === 'on',
+          maintenanceMessage: form.get('maintenanceMessage') || '',
+          freePlanLimit: Number(form.get('freePlanLimit') || 20),
+          disabledModules: form.get('disabledModules') || ''
+        });
+        status = saasT('adminFlagsSaved');
+        error = false;
+      } catch {
+        status = saasT('adminFlagsError');
+        error = true;
+      } finally {
+        flagsBusy = false;
+        render();
+      }
+    });
     root.querySelector('[data-action="search-form"]')?.addEventListener('submit', (event) => {
       event.preventDefault();
       emailPrefix = root.querySelector('#admin-user-search')?.value.trim().toLowerCase() || '';
@@ -107,7 +145,10 @@ export function mountAdminDashboard(container, { db, profile, authUser, signOut 
   }
 
   render();
-  if (isAdmin) loadUsers();
+  if (isAdmin) {
+    loadUsers();
+    readFeatureFlags(db).then((loaded) => { flags = loaded; render(); }).catch(() => {});
+  }
   return { dispose() { root.remove(); } };
 }
 

@@ -2,6 +2,9 @@ import {
   collection, doc, getDocs, limit, orderBy, query, runTransaction,
   serverTimestamp, startAfter
 } from 'firebase/firestore';
+import { readUsageQuota, recordUsageWrite } from './telemetry_usage.js';
+
+export { readUsageQuota };
 
 export const MAX_PAGE_SIZE = 20;
 export const MAX_PLAN_BYTES = 48_000;
@@ -194,7 +197,9 @@ async function createInAvailableSlot(db, uid, tier, type, value) {
 
 export async function createEquipment(db, profile, input) {
   const value = buildEquipmentRecord(input, profile.uid);
-  return createInAvailableSlot(db, profile.uid, profile.tier, 'equipment', value);
+  const slot = await createInAvailableSlot(db, profile.uid, profile.tier, 'equipment', value);
+  await recordUsageWrite(db, profile.uid, { equipmentDelta: 1 }).catch(() => {});
+  return slot;
 }
 
 export async function updateEquipment(db, uid, id, input) {
@@ -216,7 +221,9 @@ export async function createLiftPlan(db, profile, { title, description = '', sna
     revision: 1, solverVersion: SOLVER_VERSION, archived: Boolean(archived), snapshot: serialized,
     equipmentIds: normalizeEquipmentIds(equipmentIds)
   };
-  return createInAvailableSlot(db, profile.uid, profile.tier, 'liftPlans', value);
+  const slot = await createInAvailableSlot(db, profile.uid, profile.tier, 'liftPlans', value);
+  await recordUsageWrite(db, profile.uid, { plansDelta: 1 }).catch(() => {});
+  return slot;
 }
 
 export async function updateLiftPlan(db, uid, id, patch) {
@@ -246,6 +253,7 @@ export async function deleteWorkspaceItem(db, uid, type, id) {
     if (!current.exists() || current.data().ownerUid !== uid) throw new Error('Record was not found.');
     transaction.delete(ref);
   });
+  await recordUsageWrite(db, uid, type === 'equipment' ? { equipmentDelta: -1 } : { plansDelta: -1 }).catch(() => {});
 }
 
 export async function listWorkspacePage(db, uid, type, { cursor = null, pageSize = MAX_PAGE_SIZE, archived = null } = {}) {

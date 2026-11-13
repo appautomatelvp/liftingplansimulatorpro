@@ -18,6 +18,7 @@ import { installFeatureAccessUI } from './feature_access_ui.js';
 import { needsEmailVerification } from './access.js';
 import { getLang, t } from '../i18n/index.js';
 import { saasT } from './i18n.js';
+import { installBoundedErrorCounter } from './telemetry_usage.js';
 import { mountWorkspaceDashboard } from './workspace_dashboard.js';
 import { trapDialogFocus } from './dialog_accessibility.js';
 
@@ -120,6 +121,7 @@ function openDeveloperContact() {
 
 export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onSignedOut }) {
   document.body.classList.add('saas-locked');
+  installBoundedErrorCounter();
   const root = ensureRoot();
   const featureAccess = installFeatureAccessUI();
   let authScreen = null;
