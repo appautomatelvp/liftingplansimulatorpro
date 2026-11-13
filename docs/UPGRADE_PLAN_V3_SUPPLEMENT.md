@@ -100,7 +100,7 @@ Chưa kiểm chứng trong lượt này: nguyên nhân gốc của 9 lỗi layou
 |---|---|---|---|---|
 | T-00 | ✓ | `git status`, `architecture:gate`, `npm test`, `npm run build`, `check:dist`, `test:rules`, `layout.spec.js` | Gate OK; Unit 40/40 (295/295); Build 10.79s + `check:dist` OK; Rules 16/16; Layout E2E 31/36 đạt (chỉ còn 5 ca hoãn UI-008 ×4, UI-003 ×1) | 13/11/2026 |
 | T-01 | ✓ | `Select-String`, `architecture:gate`, `npm test`, `npm run build`, `check:dist`, `npm run test:e2e:auth` | Tạo `src/saas/runtime_flags.js` (`applyFlagsToAccess`, `getFreePlanLimit`, `isMaintenance`, `loadFlagsOnce`), nối kill-switch vào `session.js`/`feature_access_ui.js`/`workspace_*`; Unit **41/41 (303/303)**; Gate OK; Build 8.25s + `check:dist` OK; E2E Auth **3/3** | 13/11/2026 |
-| T-02 | □ | | | |
+| T-02 | ✓ | `architecture:gate`, `npm test`, `npm run build`, `check:dist`, `test:rules`, `npm run test:e2e:auth` | Rules 20/20 (4 ca audit âm tính mới); `cms_data.js` ghi nguyên tử qua `writeBatch` (`commitWithAudit`), `reason` + `before`/`after` trong `admin_dashboard.js`; Unit **41/41 (304/304)**; Gate OK; Build 6.04s + `check:dist` OK; E2E Auth **3/3** | 13/11/2026 |
 | T-03 | □ | | | |
 | T-04 | □ | | | |
 | T-05 | ◐ (UI-015 chỉ sửa test; UI-008/UI-003 hoãn) | | | |
@@ -127,3 +127,9 @@ Chưa kiểm chứng trong lượt này: nguyên nhân gốc của 9 lỗi layou
 - Tạo `src/saas/runtime_flags.js` (`applyFlagsToAccess`, `getFreePlanLimit`, `getTierSlotLimit`, `isMaintenance`, `isModuleDisabled`, `loadFlagsOnce`).
 - Nối cờ vào `src/saas/session.js` (đọc một lần mỗi phiên, hiện `#saas-maintenance-banner` và khóa mở workspace với user thường khi bảo trì; `admin`/`support` vẫn qua), `src/saas/feature_access_ui.js` (paywall "tạm tắt" theo `disabledModules` và bảo trì), `src/saas/workspace_data.js` + `src/saas/workspace_dashboard.js` (`getTierSlotLimit` cho giới hạn Free 1–200), `src/saas/saas.css`, `src/i18n/keys.js` (đối xứng VI/EN).
 - Kiểm tra: `architecture:gate` OK; Unit **41/41 file, 303/303 test đạt** (`test/runtime_flags.test.js` 8 ca mới); `npm run build` OK (`8.25s`) + `check:dist` OK; `npm run test:e2e:auth` **3/3 đạt** (gồm ca admin bật/tắt bảo trì và kiểm tra banner/khóa workspace trên Emulator).
+
+### T-02 Audit log đủ trường, ghi nguyên tử (G-04) — 13/11/2026
+- `firestore.rules`: mở rộng `validAuditLog()` hỗ trợ `reason` (≤200 ký tự, **bắt buộc không rỗng** khi `action == 'USER_ACCESS_UPDATE'`) và `before`/`after` (chuỗi JSON ≤400 ký tự mỗi trường), giữ append-only (`update, delete: if false`).
+- `src/saas/cms_data.js`: thêm `serializeAuditState` (lọc các trường nhạy cảm như token/password), `buildAuditLogEntry`, và `commitWithAudit` dùng `writeBatch` để ghi mutation + `adminAuditLogs` nguyên tử cho `setUserAccessWithAudit`, `saveFeatureFlagsWithAudit`, `saveCatalogItem`, `deleteCatalogItem`; bỏ nuốt lỗi.
+- `src/saas/admin_dashboard.js` + `src/i18n/keys.js`: yêu cầu nhập lý do ở form inline `#admin-access-reason` trước khi đổi gói/trạng thái user, hộp thoại xác nhận `window.confirm` trước khi `locked`/`banned`, ô lý do tuỳ chọn cho feature flags/catalog, và hiển thị `reason` + `before -> after` trong bảng audit.
+- Kiểm tra: `npm run test:rules` **20/20 passed** (gồm 4 ca mới cho reason bắt buộc, giới hạn 400 ký tự `before`/`after`, `support` bị từ chối ghi log, và `update`/`delete` log bị từ chối); `architecture:gate` OK; Unit **41/41 file, 304/304 test đạt** (`test/cms_data.test.js` kiểm tra `commitWithAudit` nguyên tử & rollback); `npm run build` (`6.04s`) + `check:dist` OK; `npm run test:e2e:auth` **3/3 đạt**.

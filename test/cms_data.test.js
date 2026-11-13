@@ -1,11 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   buildAuditLogEntry,
   canAccessCms,
   canEditUsersAndFlags,
   canManageCatalog,
   canReadUsersAndAudit,
-  normalizeCatalogItem
+  commitWithAudit,
+  normalizeCatalogItem,
+  serializeAuditState
 } from '../src/saas/cms_data.js';
 
 describe('CMS roles, immutable audit entry builder, and catalog validation', () => {
@@ -34,17 +36,82 @@ describe('CMS roles, immutable audit entry builder, and catalog validation', () 
     expect(canAccessCms(regular)).toBe(false);
   });
 
-  it('builds bounded audit log entries and rejects invalid actions or targets', () => {
+  it('builds bounded audit log entries, requires reason for USER_ACCESS_UPDATE, and strips sensitive keys', () => {
     const entry = buildAuditLogEntry({
       actorUid: 'adm-1',
       action: 'USER_ACCESS_UPDATE',
       targetType: 'user',
       targetId: 'u-99',
-      summary: 'x'.repeat(300)
+      summary: 'x'.repeat(300),
+      reason: 'Paid annual plan',
+      before: { tier: 'free', idToken: 'secret-jwt' },
+      after: { tier: 'premium', password: 'never' }
     });
     expect(entry.summary.length).toBe(240);
+    expect(entry.reason).toBe('Paid annual plan');
+    expect(entry.before).toBe('{"tier":"free"}');
+    expect(entry.after).toBe('{"tier":"premium"}');
+    expect(serializeAuditState({ long: 'a'.repeat(500) }).length).toBeLessThanOrEqual(400);
+
+    expect(() => buildAuditLogEntry({ actorUid: 'adm-1', action: 'USER_ACCESS_UPDATE', targetType: 'user', targetId: 'u-99', reason: '   ' })).toThrow(/Reason is required/);
     expect(() => buildAuditLogEntry({ actorUid: 'adm-1', action: 'DROP_TABLE', targetType: 'user', targetId: 'u1' })).toThrow(/Unsupported audit action/);
     expect(() => buildAuditLogEntry({ actorUid: 'adm-1', action: 'FLAGS_UPDATE', targetType: 'config', targetId: '' })).toThrow(/Target ID/);
+  });
+
+  it('commits mutation and audit log atomically via commitWithAudit and never commits writes when audit validation or batch fails', async () => {
+    const ops = [];
+    const mockBatch = {
+      update: vi.fn((ref, data) => ops.push(['update', ref, data])),
+      set: vi.fn((ref, data) => ops.push(['set', ref, data])),
+      commit: vi.fn().mockResolvedValue(undefined)
+    };
+    await commitWithAudit(
+      {},
+      (batch) => batch.update('users/u1', { tier: 'premium' }),
+      {
+        actorUid: 'adm-1',
+        action: 'USER_ACCESS_UPDATE',
+        targetType: 'user',
+        targetId: 'u1',
+        summary: 'tier->premium',
+        reason: 'Support ticket #42'
+      },
+      {
+        createBatch: () => mockBatch,
+        createLogRef: () => 'adminAuditLogs/auto-id',
+        timestamp: () => 'SERVER_TS'
+      }
+    );
+    expect(mockBatch.update).toHaveBeenCalledTimes(1);
+    expect(mockBatch.set).toHaveBeenCalledWith('adminAuditLogs/auto-id', expect.objectContaining({
+      actorUid: 'adm-1',
+      action: 'USER_ACCESS_UPDATE',
+      reason: 'Support ticket #42',
+      createdAt: 'SERVER_TS'
+    }));
+    expect(mockBatch.commit).toHaveBeenCalledTimes(1);
+
+    const rejectedBatch = { update: vi.fn(), set: vi.fn(), commit: vi.fn() };
+    await expect(commitWithAudit(
+      {},
+      (batch) => batch.update('users/u1', { status: 'locked' }),
+      { actorUid: 'adm-1', action: 'USER_ACCESS_UPDATE', targetType: 'user', targetId: 'u1', reason: '' },
+      { createBatch: () => rejectedBatch, createLogRef: () => 'adminAuditLogs/auto' }
+    )).rejects.toThrow(/Reason is required/);
+    expect(rejectedBatch.update).not.toHaveBeenCalled();
+    expect(rejectedBatch.commit).not.toHaveBeenCalled();
+
+    const failingBatch = {
+      update: vi.fn(),
+      set: vi.fn(),
+      commit: vi.fn().mockRejectedValue(new Error('PERMISSION_DENIED'))
+    };
+    await expect(commitWithAudit(
+      {},
+      (batch) => batch.update('users/u1', { status: 'locked' }),
+      { actorUid: 'adm-1', action: 'USER_ACCESS_UPDATE', targetType: 'user', targetId: 'u1', reason: 'Abuse' },
+      { createBatch: () => failingBatch, createLogRef: () => 'adminAuditLogs/auto' }
+    )).rejects.toThrow(/PERMISSION_DENIED/);
   });
 
   it('normalizes catalog metadata items and rejects invalid IDs or bounds', () => {

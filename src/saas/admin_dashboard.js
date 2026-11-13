@@ -1,9 +1,8 @@
 import { getLang, setLang } from '../i18n/index.js';
 import { saasT } from './i18n.js';
-import { listUsersPage, setUserAccess } from './firebase_data.js';
-import { getSessionErrorSummary, normalizeFeatureFlags, readFeatureFlags, saveFeatureFlags } from './telemetry_usage.js';
+import { listUsersPage } from './firebase_data.js';
+import { getSessionErrorSummary, normalizeFeatureFlags, readFeatureFlags } from './telemetry_usage.js';
 import {
-  appendAuditLog,
   canAccessCms,
   canEditUsersAndFlags,
   canManageCatalog,
@@ -11,7 +10,9 @@ import {
   deleteCatalogItem,
   listAuditLogs,
   listCatalogItems,
-  saveCatalogItem
+  saveCatalogItem,
+  saveFeatureFlagsWithAudit,
+  setUserAccessWithAudit
 } from './cms_data.js';
 
 const EMPTY_CATALOG_DRAFT = () => ({
@@ -47,6 +48,8 @@ export function mountAdminDashboard(container, { db, profile, authUser, signOut 
   let loading = false;
   let status = '';
   let error = false;
+  let accessReason = '';
+  let flagsReason = '';
   let flags = normalizeFeatureFlags({});
   let flagsBusy = false;
   let auditLogs = [];
@@ -77,6 +80,7 @@ export function mountAdminDashboard(container, { db, profile, authUser, signOut 
         ${canEditUsers ? '' : `<div class="saas-admin-notice" role="note">${tr('adminReadOnlyHint')}</div>`}
         <div class="saas-admin-stats"><div><span>${tr('adminStatUsers')}</span><strong>${users.length}</strong></div><div><span>${tr('adminStatActive')}</span><strong>${users.filter((u) => u.status === 'active').length}</strong></div><div><span>${tr('adminStatPremium')}</span><strong>${users.filter((u) => u.tier === 'premium').length}</strong></div></div>
         <form class="saas-admin-search" data-action="search-form"><label for="admin-user-search">${tr('adminSearchLabel')}</label><div><input id="admin-user-search" type="search" maxlength="254" autocomplete="off" placeholder="${tr('adminSearchPlaceholder')}" value="${escapeHtml(emailPrefix)}"><button type="submit" class="saas-secondary-button">${tr('adminSearchButton')}</button><button type="button" class="saas-secondary-button" data-action="clear-search" ${emailPrefix ? '' : 'disabled'}>${tr('adminClearButton')}</button></div><small>${tr('adminSearchHint')}</small></form>
+        ${canEditUsers ? `<div class="saas-admin-search"><label for="admin-access-reason">${tr('adminAccessReasonLabel')}<input id="admin-access-reason" type="text" maxlength="200" placeholder="${escapeHtml(tr('adminAccessReasonPlaceholder'))}" value="${escapeHtml(accessReason)}"></label></div>` : ''}
         <div class="saas-table-wrap"><table class="saas-users-table"><thead><tr><th>${tr('adminColUser')}</th><th>${tr('adminColRole')}</th><th>${tr('adminColTier')}</th><th>${tr('adminColStatus')}</th><th>${tr('adminColActions')}</th></tr></thead><tbody>
           ${users.map((user) => {
             const actionDisabled = !canEditUsers;
@@ -96,15 +100,19 @@ export function mountAdminDashboard(container, { db, profile, authUser, signOut 
           <label>${tr('adminMaintenanceMsgLabel')}<input type="text" name="maintenanceMessage" maxlength="300" value="${escapeHtml(flags.maintenanceMessage)}" ${canEditUsers ? '' : 'disabled'}></label>
           <label>${tr('adminFreeLimitLabel')}<input type="number" name="freePlanLimit" min="1" max="200" value="${escapeHtml(flags.freePlanLimit)}" ${canEditUsers ? '' : 'disabled'}></label>
           <label>${tr('adminDisabledModulesLabel')}<input type="text" name="disabledModules" maxlength="400" value="${escapeHtml(flags.disabledModules.join(', '))}" ${canEditUsers ? '' : 'disabled'}></label>
+          <label>${tr('adminFlagsReasonLabel')}<input id="admin-flags-reason" type="text" name="flagsReason" maxlength="200" placeholder="${escapeHtml(tr('adminFlagsReasonPlaceholder'))}" value="${escapeHtml(flagsReason)}" ${canEditUsers ? '' : 'disabled'}></label>
           <div><button type="submit" class="saas-secondary-button" ${flagsBusy || !canEditUsers ? 'disabled' : ''}>${tr('adminSaveFlags')}</button></div>
         </form>
         <small>${tr('adminSessionErrorsLabel', { count: errorSummary.totalCount })}</small>
       </section>
       <section class="saas-admin-card">
         <div class="saas-admin-title-row"><div><h2>${tr('adminAuditTitle')}</h2><p>${tr('adminAuditSubtitle')}</p></div><button type="button" class="saas-secondary-button" data-action="refresh-audit" ${auditLoading ? 'disabled' : ''}>${auditLoading ? tr('adminLoading') : tr('adminRefresh')}</button></div>
-        <div class="saas-table-wrap"><table class="saas-users-table"><thead><tr><th>${tr('adminAuditColTime')}</th><th>${tr('adminAuditColActor')}</th><th>${tr('adminAuditColAction')}</th><th>${tr('adminAuditColTarget')}</th><th>${tr('adminAuditColSummary')}</th></tr></thead><tbody>
-          ${auditLogs.map((entry) => `<tr><td>${escapeHtml(formatAuditTime(entry.createdAt))}</td><td><small>${escapeHtml(entry.actorUid || '')}</small></td><td><span class="saas-pill">${escapeHtml(entry.action || '')}</span></td><td>${escapeHtml(`${entry.targetType || ''}:${entry.targetId || ''}`)}</td><td>${escapeHtml(entry.summary || '')}</td></tr>`).join('')}
-          ${auditLogs.length ? '' : `<tr><td colspan="5" class="saas-empty-row">${auditLoading ? tr('adminLoading') : tr('adminAuditEmpty')}</td></tr>`}
+        <div class="saas-table-wrap"><table class="saas-users-table"><thead><tr><th>${tr('adminAuditColTime')}</th><th>${tr('adminAuditColActor')}</th><th>${tr('adminAuditColAction')}</th><th>${tr('adminAuditColTarget')}</th><th>${tr('adminAuditColReason')}</th><th>${tr('adminAuditColDiff')}</th><th>${tr('adminAuditColSummary')}</th></tr></thead><tbody>
+          ${auditLogs.map((entry) => {
+            const diffText = entry.before || entry.after ? `${entry.before || '∅'} → ${entry.after || '∅'}` : '—';
+            return `<tr><td>${escapeHtml(formatAuditTime(entry.createdAt))}</td><td><small>${escapeHtml(entry.actorUid || '')}</small></td><td><span class="saas-pill">${escapeHtml(entry.action || '')}</span></td><td>${escapeHtml(`${entry.targetType || ''}:${entry.targetId || ''}`)}</td><td>${escapeHtml(entry.reason || '—')}</td><td><small>${escapeHtml(diffText)}</small></td><td>${escapeHtml(entry.summary || '')}</td></tr>`;
+          }).join('')}
+          ${auditLogs.length ? '' : `<tr><td colspan="7" class="saas-empty-row">${auditLoading ? tr('adminLoading') : tr('adminAuditEmpty')}</td></tr>`}
         </tbody></table></div>
       </section>` : '';
 
@@ -143,26 +151,28 @@ export function mountAdminDashboard(container, { db, profile, authUser, signOut 
     root.querySelector('[data-action="refresh"]')?.addEventListener('click', loadUsers);
     root.querySelector('[data-action="refresh-audit"]')?.addEventListener('click', loadAudit);
     root.querySelector('[data-action="refresh-catalog"]')?.addEventListener('click', loadCatalog);
+    root.querySelector('#admin-access-reason')?.addEventListener('input', (event) => {
+      accessReason = event.currentTarget.value;
+    });
+    root.querySelector('#admin-flags-reason')?.addEventListener('input', (event) => {
+      flagsReason = event.currentTarget.value;
+    });
     root.querySelector('[data-action="flags-form"]')?.addEventListener('submit', async (event) => {
       event.preventDefault();
       if (flagsBusy || !canEditUsers) return;
       const form = new FormData(event.currentTarget);
+      const reasonInput = String(form.get('flagsReason') || flagsReason || '').trim();
+      const beforeFlags = { ...flags };
       flagsBusy = true;
       render();
       try {
-        flags = await saveFeatureFlags(db, authUser.uid, {
+        flags = await saveFeatureFlagsWithAudit(db, authUser.uid, {
           maintenanceMode: form.get('maintenanceMode') === 'on',
           maintenanceMessage: form.get('maintenanceMessage') || '',
           freePlanLimit: Number(form.get('freePlanLimit') || 20),
           disabledModules: form.get('disabledModules') || ''
-        });
-        await appendAuditLog(db, {
-          actorUid: authUser.uid,
-          action: 'FLAGS_UPDATE',
-          targetType: 'config',
-          targetId: 'featureFlags',
-          summary: `maintenance=${flags.maintenanceMode}, freeLimit=${flags.freePlanLimit}`
-        }).catch(() => {});
+        }, { reason: reasonInput, beforeFlags });
+        flagsReason = '';
         status = saasT('adminFlagsSaved');
         error = false;
         loadAudit();
@@ -195,18 +205,31 @@ export function mountAdminDashboard(container, { db, profile, authUser, signOut 
     });
     root.querySelectorAll('[data-tier], [data-status]').forEach((button) => button.addEventListener('click', async () => {
       if (!canEditUsers) return;
+      const cleanReason = String(root.querySelector('#admin-access-reason')?.value || accessReason || '').trim();
+      if (!cleanReason) {
+        status = saasT('adminReasonRequired');
+        error = true;
+        render();
+        root.querySelector('#admin-access-reason')?.focus();
+        return;
+      }
       const update = button.dataset.tier ? { tier: button.dataset.tier } : { status: button.dataset.status };
       const targetUid = button.dataset.uid;
+      const targetUser = users.find((u) => u.uid === targetUid || u.id === targetUid) || null;
+      if ((update.status === 'locked' || update.status === 'banned') && typeof window.confirm === 'function') {
+        const confirmed = window.confirm(saasT('adminConfirmDangerousStatus', {
+          status: update.status,
+          target: targetUser?.email || targetUid
+        }));
+        if (!confirmed) return;
+      }
       button.disabled = true;
       try {
-        await setUserAccess(db, targetUid, update);
-        await appendAuditLog(db, {
-          actorUid: authUser.uid,
-          action: 'USER_ACCESS_UPDATE',
-          targetType: 'user',
-          targetId: targetUid,
-          summary: JSON.stringify(update)
-        }).catch(() => {});
+        await setUserAccessWithAudit(db, authUser.uid, targetUid, update, {
+          reason: cleanReason,
+          beforeUser: targetUser
+        });
+        accessReason = '';
         status = saasT('adminAccessUpdated');
         error = false;
         await loadUsers(false);
@@ -227,6 +250,8 @@ export function mountAdminDashboard(container, { db, profile, authUser, signOut 
       event.preventDefault();
       if (catalogBusy || !canEditCatalog) return;
       const form = new FormData(event.currentTarget);
+      const id = String(form.get('id') || '').trim().toLowerCase();
+      const existingItem = catalogItems.find((item) => item.id === id) || null;
       catalogBusy = true;
       render();
       try {
@@ -240,7 +265,7 @@ export function mountAdminDashboard(container, { db, profile, authUser, signOut 
           tier: form.get('tier'),
           enabled: form.get('enabled') === 'on',
           notes: form.get('notes')
-        });
+        }, { beforeItem: existingItem });
         status = saasT('adminCatalogSaved', { id: saved.id });
         error = false;
         catalogDraft = EMPTY_CATALOG_DRAFT();
@@ -273,10 +298,11 @@ export function mountAdminDashboard(container, { db, profile, authUser, signOut 
     root.querySelectorAll('[data-catalog-delete]').forEach((button) => button.addEventListener('click', async () => {
       if (catalogBusy || !canEditCatalog) return;
       const itemId = button.dataset.catalogDelete;
+      const existingItem = catalogItems.find((item) => item.id === itemId) || null;
       catalogBusy = true;
       render();
       try {
-        await deleteCatalogItem(db, authUser.uid, itemId);
+        await deleteCatalogItem(db, authUser.uid, itemId, { beforeItem: existingItem });
         status = saasT('adminCatalogDeleted', { id: itemId });
         error = false;
         if (catalogDraft.id === itemId) catalogDraft = EMPTY_CATALOG_DRAFT();

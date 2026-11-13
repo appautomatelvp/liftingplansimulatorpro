@@ -55,13 +55,26 @@ service cloud.firestore {
     }
 
     function validAuditLog() {
-      return request.resource.data.keys().hasOnly(['actorUid', 'action', 'targetType', 'targetId', 'summary', 'createdAt'])
+      return request.resource.data.keys().hasOnly([
+          'actorUid', 'action', 'targetType', 'targetId', 'summary', 'reason', 'before', 'after', 'createdAt'
+        ])
         && request.resource.data.keys().hasAll(['actorUid', 'action', 'targetType', 'targetId', 'summary', 'createdAt'])
         && request.resource.data.actorUid == request.auth.uid
         && request.resource.data.action in ['USER_ACCESS_UPDATE', 'FLAGS_UPDATE', 'CATALOG_UPSERT', 'CATALOG_DELETE']
         && request.resource.data.targetType in ['user', 'config', 'catalog']
         && request.resource.data.targetId is string && request.resource.data.targetId.size() > 0 && request.resource.data.targetId.size() <= 128
         && request.resource.data.summary is string && request.resource.data.summary.size() <= 240
+        && (!('reason' in request.resource.data)
+          || (request.resource.data.reason is string && request.resource.data.reason.size() <= 200))
+        && (request.resource.data.action != 'USER_ACCESS_UPDATE'
+          || ('reason' in request.resource.data
+            && request.resource.data.reason is string
+            && request.resource.data.reason.size() > 0
+            && request.resource.data.reason.size() <= 200))
+        && (!('before' in request.resource.data)
+          || (request.resource.data.before is string && request.resource.data.before.size() <= 400))
+        && (!('after' in request.resource.data)
+          || (request.resource.data.after is string && request.resource.data.after.size() <= 400))
         && request.resource.data.createdAt == request.time;
     }
 

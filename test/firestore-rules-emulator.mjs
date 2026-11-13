@@ -301,13 +301,51 @@ test('granular roles, immutable adminAuditLogs, and catalog metadata permissions
   }));
   await assertFails(getDocs(query(collection(ownerDb, 'adminAuditLogs'), limit(10))));
 
-  // Audit logs are append-only: admin can create & read (<=25) and support can read, but nobody can update or delete
+  // Audit logs are append-only with required reason for USER_ACCESS_UPDATE and bounded before/after diffs
   await assertSucceeds(setDoc(doc(adminDb, 'adminAuditLogs', 'log-adm-1'), {
     actorUid: 'admin-user', action: 'USER_ACCESS_UPDATE', targetType: 'user', targetId: ownerUid,
-    summary: 'tier -> premium', createdAt: serverTimestamp()
+    summary: 'tier -> premium', reason: 'Verified engineering invoice',
+    before: '{"tier":"free","status":"active"}', after: '{"tier":"premium","status":"active"}',
+    createdAt: serverTimestamp()
   }));
   await assertSucceeds(getDocs(query(collection(supportDb, 'adminAuditLogs'), limit(25))));
   await assertFails(getDocs(query(collection(supportDb, 'adminAuditLogs'), limit(26))));
+});
+
+test('audit logs reject USER_ACCESS_UPDATE without a non-empty reason', async () => {
+  const adminDb = env.authenticatedContext('admin-user').firestore();
+  await assertFails(setDoc(doc(adminDb, 'adminAuditLogs', 'log-missing-reason'), {
+    actorUid: 'admin-user', action: 'USER_ACCESS_UPDATE', targetType: 'user', targetId: ownerUid,
+    summary: 'tier -> premium', createdAt: serverTimestamp()
+  }));
+  await assertFails(setDoc(doc(adminDb, 'adminAuditLogs', 'log-empty-reason'), {
+    actorUid: 'admin-user', action: 'USER_ACCESS_UPDATE', targetType: 'user', targetId: ownerUid,
+    summary: 'tier -> premium', reason: '', createdAt: serverTimestamp()
+  }));
+});
+
+test('audit logs reject before/after diffs longer than 400 characters', async () => {
+  const adminDb = env.authenticatedContext('admin-user').firestore();
+  await assertFails(setDoc(doc(adminDb, 'adminAuditLogs', 'log-huge-before'), {
+    actorUid: 'admin-user', action: 'FLAGS_UPDATE', targetType: 'config', targetId: 'featureFlags',
+    summary: 'updated flags', before: 'x'.repeat(401), createdAt: serverTimestamp()
+  }));
+  await assertFails(setDoc(doc(adminDb, 'adminAuditLogs', 'log-huge-after'), {
+    actorUid: 'admin-user', action: 'FLAGS_UPDATE', targetType: 'config', targetId: 'featureFlags',
+    summary: 'updated flags', after: 'y'.repeat(401), createdAt: serverTimestamp()
+  }));
+});
+
+test('support role cannot create adminAuditLogs entries', async () => {
+  const supportDb = env.authenticatedContext('support-user').firestore();
+  await assertFails(setDoc(doc(supportDb, 'adminAuditLogs', 'log-support-write'), {
+    actorUid: 'support-user', action: 'FLAGS_UPDATE', targetType: 'config', targetId: 'featureFlags',
+    summary: 'support tried log write', createdAt: serverTimestamp()
+  }));
+});
+
+test('adminAuditLogs remain strictly immutable against update and delete', async () => {
+  const adminDb = env.authenticatedContext('admin-user').firestore();
   await assertFails(updateDoc(doc(adminDb, 'adminAuditLogs', 'log-adm-1'), { summary: 'tampered' }));
   await assertFails(deleteDoc(doc(adminDb, 'adminAuditLogs', 'log-adm-1')));
 });
