@@ -7,6 +7,8 @@ export const MAX_PAGE_SIZE = 20;
 export const MAX_PLAN_BYTES = 48_000;
 export const PLAN_SCHEMA_VERSION = 1;
 export const SOLVER_VERSION = '5.0';
+export const EXPORT_COOLDOWN_MS = 10_000;
+export const MAX_EXPORT_PAGES = 15;
 
 const EQUIPMENT_CATEGORIES = new Set(['hook', 'sling', 'chain', 'shackle', 'spreader', 'lifting_beam', 'crane', 'other']);
 const SNAPSHOT_FIELDS = [
@@ -257,4 +259,103 @@ export async function listWorkspacePage(db, uid, type, { cursor = null, pageSize
   let items = docs.map((entry) => ({ id: entry.id, ...entry.data() }));
   if (type === 'liftPlans' && archived !== null) items = items.filter((item) => Boolean(item.archived) === archived);
   return { items, cursor: docs.length ? docs[docs.length - 1] : null, hasMore };
+}
+
+function serializeTimestamp(value) {
+  if (value && typeof value.toDate === 'function') return value.toDate().toISOString();
+  return value || null;
+}
+
+async function collectAllPages(db, uid, type, fetchPage) {
+  const results = [];
+  let cursor = null;
+  for (let pageIndex = 0; pageIndex < MAX_EXPORT_PAGES; pageIndex++) {
+    const page = await fetchPage(db, uid, type, { cursor, pageSize: MAX_PAGE_SIZE });
+    results.push(...(page.items || []));
+    if (!page.hasMore || !page.cursor || page.cursor === cursor) break;
+    cursor = page.cursor;
+  }
+  return results;
+}
+
+export async function exportAllWorkspaceData({
+  db,
+  profile,
+  fetchPage = listWorkspacePage,
+  cooldownMs = EXPORT_COOLDOWN_MS,
+  lastExportAt = 0,
+  now = Date.now()
+} = {}) {
+  if (!profile?.uid) throw new Error('Account profile is required to export data.');
+  const elapsed = now - Number(lastExportAt || 0);
+  if (lastExportAt > 0 && elapsed < cooldownMs) {
+    const retryAfterSec = Math.max(1, Math.ceil((cooldownMs - elapsed) / 1000));
+    const err = new Error(`Export cooldown active (${retryAfterSec}s).`);
+    err.code = 'safelift/export-cooldown';
+    err.retryAfterSec = retryAfterSec;
+    throw err;
+  }
+
+  const [rawPlans, rawEquipment] = await Promise.all([
+    collectAllPages(db, profile.uid, 'liftPlans', fetchPage),
+    collectAllPages(db, profile.uid, 'equipment', fetchPage)
+  ]);
+
+  const liftPlans = rawPlans.map((item) => {
+    let parsedSnapshot = null;
+    let snapshotError = null;
+    if (typeof item.snapshot === 'string') {
+      try {
+        parsedSnapshot = parsePlanSnapshot(item.snapshot);
+      } catch (err) {
+        snapshotError = err?.message || 'Unable to parse snapshot';
+      }
+    }
+    return {
+      id: item.id,
+      schemaVersion: item.schemaVersion ?? PLAN_SCHEMA_VERSION,
+      title: item.title || '',
+      description: item.description || '',
+      revision: Number(item.revision) || 1,
+      solverVersion: item.solverVersion || '',
+      archived: Boolean(item.archived),
+      equipmentIds: Array.isArray(item.equipmentIds) ? item.equipmentIds : [],
+      createdAt: serializeTimestamp(item.createdAt),
+      updatedAt: serializeTimestamp(item.updatedAt),
+      snapshot: parsedSnapshot,
+      ...(snapshotError ? { snapshotError } : {})
+    };
+  });
+
+  const equipment = rawEquipment.map((item) => ({
+    id: item.id,
+    schemaVersion: item.schemaVersion ?? 1,
+    name: item.name || '',
+    category: item.category || 'other',
+    manufacturer: item.manufacturer || '',
+    model: item.model || '',
+    wllT: item.wllT ?? null,
+    lengthM: item.lengthM ?? null,
+    massKg: item.massKg ?? null,
+    safetyFactor: item.safetyFactor ?? null,
+    certificateNo: item.certificateNo || '',
+    inspectionExpiry: item.inspectionExpiry || '',
+    notes: item.notes || '',
+    createdAt: serializeTimestamp(item.createdAt),
+    updatedAt: serializeTimestamp(item.updatedAt)
+  }));
+
+  return {
+    schemaVersion: 1,
+    exportedAt: new Date(now).toISOString(),
+    account: {
+      uid: profile.uid,
+      email: profile.email || '',
+      displayName: profile.displayName || '',
+      role: profile.role || 'user',
+      tier: profile.tier || 'free'
+    },
+    liftPlans,
+    equipment
+  };
 }

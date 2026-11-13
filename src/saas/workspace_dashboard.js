@@ -17,6 +17,7 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
   let searchText = '';
   let items = [];
   let pendingTabReload = false;
+  let lastExportAt = 0;
   let releaseWorkspaceFocus = () => {};
   let onKey = null;
   const legacyRigs = readLegacyRigs();
@@ -90,7 +91,7 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
     backdrop.innerHTML = `<section class="saas-workspace-dialog" role="dialog" aria-modal="true" aria-labelledby="saas-workspace-title">
       <header class="saas-workspace-header"><div><span class="saas-workspace-kicker">SAFELIFT3D · PERSONAL LIBRARY</span><h2 id="saas-workspace-title">${tr('wsTitle')}</h2><p>${tr('wsSubtitle')}</p></div><button type="button" class="saas-workspace-close" data-action="close" aria-label="${tr('saasClose')}">×</button></header>
       <nav class="saas-workspace-tabs"><button type="button" data-tab="liftPlans">${tr('wsTabPlans')}</button><button type="button" data-tab="equipment">${tr('wsTabEquipment')}</button></nav>
-      <div class="saas-workspace-toolbar"><label class="saas-workspace-search"><span>⌕</span><input type="search" data-search placeholder="${tr('wsSearchPlaceholder')}"></label><button type="button" class="saas-workspace-secondary" data-action="import-legacy" ${legacyRigs.some((rig) => !migratedRigIds.includes(String(rig.id))) ? '' : 'hidden'}>${tr('wsImportTitle')}</button><button type="button" class="saas-workspace-primary" data-action="create">＋ ${tr('wsSaveCurrentPlan')}</button></div>
+      <div class="saas-workspace-toolbar"><label class="saas-workspace-search"><span>⌕</span><input type="search" data-search placeholder="${tr('wsSearchPlaceholder')}"></label><button type="button" class="saas-workspace-secondary" data-action="export-all">${tr('wsExportAllJson')}</button><button type="button" class="saas-workspace-secondary" data-action="import-legacy" ${legacyRigs.some((rig) => !migratedRigIds.includes(String(rig.id))) ? '' : 'hidden'}>${tr('wsImportTitle')}</button><button type="button" class="saas-workspace-primary" data-action="create">＋ ${tr('wsSaveCurrentPlan')}</button></div>
       <div class="saas-workspace-notice" data-notice hidden></div><div class="saas-workspace-list" data-list aria-live="polite"></div>
       <footer class="saas-workspace-footer"><span data-count></span><button type="button" data-action="more" hidden>${tr('wsLoadMore')}</button></footer>
       <small class="saas-workspace-quota">${tr('wsQuotaNote', { limit: profile.tier === 'premium' || profile.tier === 'admin' ? 200 : 20 })}</small>
@@ -286,6 +287,31 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
       if (actionName === 'close') { closeWorkspace(); return; }
       if (actionName === 'create') { if (tab === 'equipment') await openEquipmentForm(); else await savePlan(); return; }
       if (actionName === 'import-legacy') { openLegacyRigPicker(); return; }
+      if (actionName === 'export-all') {
+        button.disabled = true;
+        try {
+          const now = Date.now();
+          const bundle = await dataService.exportAllWorkspaceData({ db, profile, lastExportAt, now });
+          lastExportAt = now;
+          const payload = JSON.stringify(bundle, null, 2);
+          const url = URL.createObjectURL(new Blob([payload], { type: 'application/json' }));
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `safelift3d-workspace-${new Date(now).toISOString().slice(0, 10)}.json`;
+          link.click();
+          window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+          notice(tr('wsExportAllSuccess', { plans: bundle.liftPlans.length, equipment: bundle.equipment.length }));
+        } catch (exportErr) {
+          if (exportErr?.code === 'safelift/export-cooldown') {
+            notice(tr('wsExportCooldown', { seconds: exportErr.retryAfterSec }), true);
+          } else {
+            throw exportErr;
+          }
+        } finally {
+          if (button.isConnected) button.disabled = false;
+        }
+        return;
+      }
       if (actionName === 'more') { await loadPage(false); return; }
       if (!item) return;
       button.disabled = true;

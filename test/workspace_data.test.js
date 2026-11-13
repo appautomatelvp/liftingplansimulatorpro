@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildEquipmentRecord, makeLegacyRigSnapshot, makePlanSnapshot, MAX_PLAN_BYTES, migrateSnapshot, parsePlanSnapshot, SOLVER_VERSION } from '../src/saas/workspace_data.js';
+import { buildEquipmentRecord, exportAllWorkspaceData, makeLegacyRigSnapshot, makePlanSnapshot, MAX_PLAN_BYTES, migrateSnapshot, parsePlanSnapshot, SOLVER_VERSION } from '../src/saas/workspace_data.js';
 
 describe('SafeLift personal workspace data', () => {
   it('normalizes equipment fields and rejects invalid engineering values', () => {
@@ -112,5 +112,44 @@ describe('SafeLift personal workspace data', () => {
     expect(unknownResult.compatible).toBe(false);
     expect(unknownResult.warnings).toContain('UNKNOWN_SOLVER_VERSION');
     expect(unknownResult.snapshot.inputs.weight).toBe(80);
+  });
+
+  it('exports all user lift plans and equipment across cursor pages with cooldown enforcement', async () => {
+    const validSnap = makePlanSnapshot({ cargoType: 'container', weight: 18 });
+    const planPages = [
+      { items: [{ id: '1', title: 'Plan A', revision: 1, solverVersion: '5.0', snapshot: validSnap, createdAt: { toDate: () => new Date('2026-01-01T00:00:00Z') } }], cursor: 'c1', hasMore: true },
+      { items: [{ id: '2', title: 'Plan B', revision: 2, solverVersion: '5.0', snapshot: 'not-json' }], cursor: 'c2', hasMore: false }
+    ];
+    const equipPages = [
+      { items: [{ id: '1', name: 'Hook 40T', category: 'hook', wllT: 40 }], cursor: null, hasMore: false }
+    ];
+    let planIdx = 0;
+    let equipIdx = 0;
+    const fetchPage = async (_db, _uid, type) => (type === 'liftPlans' ? planPages[planIdx++] : equipPages[equipIdx++]);
+
+    const exported = await exportAllWorkspaceData({
+      db: {},
+      profile: { uid: 'u1', email: 'eng@safelift3d.test', displayName: 'Eng', role: 'user', tier: 'free' },
+      fetchPage,
+      now: 100_000,
+      lastExportAt: 0
+    });
+
+    expect(exported.account).toMatchObject({ uid: 'u1', email: 'eng@safelift3d.test', tier: 'free' });
+    expect(exported.liftPlans).toHaveLength(2);
+    expect(exported.liftPlans[0].snapshot.inputs.weight).toBe(18);
+    expect(exported.liftPlans[0].createdAt).toBe('2026-01-01T00:00:00.000Z');
+    expect(exported.liftPlans[1].snapshot).toBeNull();
+    expect(exported.liftPlans[1].snapshotError).toBeTruthy();
+    expect(exported.equipment).toHaveLength(1);
+    expect(exported.equipment[0].name).toBe('Hook 40T');
+
+    await expect(() => exportAllWorkspaceData({
+      db: {},
+      profile: { uid: 'u1' },
+      fetchPage,
+      now: 105_000,
+      lastExportAt: 100_000
+    })).rejects.toMatchObject({ code: 'safelift/export-cooldown', retryAfterSec: 5 });
   });
 });
