@@ -1,11 +1,10 @@
 import {
   createUserWithEmailAndPassword,
-  getRedirectResult,
   GoogleAuthProvider,
   onAuthStateChanged,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
-  signInWithRedirect,
+  signInWithPopup,
   signOut,
   updateProfile
 } from 'firebase/auth';
@@ -107,7 +106,7 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
             return credential;
           });
         },
-        google() { return signInWithRedirect(firebase.auth, createGoogleProvider()); },
+        google() { return signInWithPopup(firebase.auth, createGoogleProvider()); },
         reset(email) { return sendPasswordResetEmail(firebase.auth, email); }
       },
       onLanguageChange() {
@@ -218,7 +217,7 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
         if (displayName) await updateProfile(credential.user, { displayName });
         return credential;
       },
-      google() { return signInWithRedirect(firebase.auth, createGoogleProvider()); },
+      google() { return signInWithPopup(firebase.auth, createGoogleProvider()); },
       reset(email) { return sendPasswordResetEmail(firebase.auth, email); }
     },
     onLanguageChange() {
@@ -228,11 +227,6 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
     }
   });
   clearSplash();
-
-  getRedirectResult(firebase.auth).catch((error) => {
-    console.error('[SafeLift3D] Google redirect sign-in failed', error);
-    authScreen?.showError(error);
-  });
 
   unsubscribeAuth = onAuthStateChanged(firebase.auth, async (authUser) => {
     if (!authUser) {
