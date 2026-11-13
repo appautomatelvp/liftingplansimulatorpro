@@ -106,7 +106,7 @@ Chưa kiểm chứng trong lượt này: nguyên nhân gốc của 9 lỗi layou
 | T-05 | ◐ (UI-015 đã sửa test 4/4; UI-008/UI-003 hoãn) | `npx playwright test e2e/layout.spec.js -g "UI-015"`, `npx playwright test e2e/saas-accessibility.spec.js` | Đúng phạm vi đã chốt: không sửa UI-008/UI-003; `UI-015` đạt **4/4** (`20.5s`); `saas-accessibility.spec.js` đạt **16/16** (`1.8m`) | 13/11/2026 |
 | T-06 | ✓ | `architecture:gate`, `npm test`, `npm run build`, `check:dist`, probe Playwright CSP `dist/_headers` | Bỏ `onclick` inline ở `index.html` (`#btn-comp-hud-export` nối qua `src/ui/controllers/index.js`), tách script màn loading sang `public/loading-screen-init.js`; thêm test `security_headers.test.js`; Unit **42/42 (308/308)**; Build 5.76s; Probe CSP `/` & `/admin` **0 vi phạm** (`Content-Security-Policy-Report-Only` giữ nguyên cho chủ sản phẩm bật enforce) | 13/11/2026 |
 | T-07 | ✓ | `architecture:gate`, `npm run test:e2e:auth` | Tạo `e2e/emulator_helpers.js` + `e2e/cms-roles.spec.js`, cập nhật `playwright.auth.config.js` chạy cả `auth.spec.js` và `cms-roles.spec.js`; E2E Emulator **5/5 đạt** (`2.3m`: `user` bị chặn, `support` chỉ đọc/nút `disabled`, `catalog-editor` chỉ thấy catalog, `admin` bắt buộc lý do + ghi dòng audit `before -> after`) | 13/11/2026 |
-| T-08 | □ | | | |
+| T-08 | ✓ (chờ push lấy run id) | Kiểm tra cú pháp YAML `.github/workflows/ci.yml` + rà indent | Thêm bước `npm run test:e2e:auth`, giữ upload artifact khi lỗi (`playwright-report/` + `test-results/`), giữ không thêm `e2e/layout.spec.js` theo T-05; YAML sạch, không tab | 13/11/2026 |
 | T-09 | □ | | | |
 | T-10 | □ | | | |
 
@@ -159,3 +159,7 @@ Chưa kiểm chứng trong lượt này: nguyên nhân gốc của 9 lỗi layou
 - Tạo `e2e/cms-roles.spec.js` kiểm tra 4 vai trò trên Auth + Firestore Emulator: `user` thường vào `/admin` thấy thông báo `Cần quyền quản trị viên`; `support` thấy bảng user + audit nhưng nút đổi tier/trạng thái/cờ bị `disabled` và không thấy catalog; `catalog-editor` chỉ thấy catalog; `admin` thiếu lý do bị chặn, nhập lý do đổi tier thành công và xuất hiện dòng audit `USER_ACCESS_UPDATE` kèm lý do và diff `free -> premium`.
 - Cập nhật `playwright.auth.config.js` `testMatch: ['**/auth.spec.js', '**/cms-roles.spec.js']`.
 - Kiểm tra: `architecture:gate` OK; `npm run test:e2e:auth` **5/5 passed** (`2.3m`).
+
+### T-08 Nâng CI (G-06) — 13/11/2026
+- `.github/workflows/ci.yml`: giữ Java 21, `architecture:gate`, `npm test`, `test:rules`, `build`, `check:dist`, `e2e/saas-accessibility.spec.js`, đồng thời thêm bước `Run Auth and CMS Emulator E2E tests` (`npm run test:e2e:auth`) và giữ `Upload Playwright artifacts on failure` (`playwright-report/` + `test-results/`, `if-no-files-found: ignore`). Không thêm `e2e/layout.spec.js` chừng nào UI-008/UI-003 còn hoãn theo T-05.
+- Kiểm tra cục bộ: xác nhận cấu trúc YAML (97 dòng trước EOF, 0 tab, đúng indent 2 dấu cách), `hasAuthE2E: true`, `hasLayoutSpec: false`. Chưa ghi "CI xanh" cho đến khi chủ sản phẩm push và có run id thật.
