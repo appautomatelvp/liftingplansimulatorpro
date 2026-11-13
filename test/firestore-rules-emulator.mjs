@@ -4,7 +4,7 @@ import {
   assertFails, assertSucceeds, initializeTestEnvironment
 } from '@firebase/rules-unit-testing';
 import {
-  collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc, updateDoc
+  collection, deleteDoc, doc, getDoc, getDocs, limit, query, serverTimestamp, setDoc, updateDoc
 } from 'firebase/firestore';
 import { readFile } from 'node:fs/promises';
 import { listUsersPage } from '../src/saas/firebase_data.js';
@@ -108,13 +108,16 @@ test('users may change lastLogin only; admin may change tier/status, not role', 
   await assertFails(updateDoc(doc(adminDb, 'users', ownerUid), { role: 'admin' }));
 });
 
-test('workspace list is owner-scoped and user profile listing remains admin-only', async () => {
+test('workspace list is owner-scoped and user profile listing remains admin-only with bounded limit', async () => {
   const ownerDb = env.authenticatedContext(ownerUid).firestore();
   await assertSucceeds(getDocs(collection(ownerDb, 'users', ownerUid, 'equipment')));
   await assertFails(getDocs(collection(ownerDb, 'users', otherUid, 'equipment')));
-  await assertFails(getDocs(collection(ownerDb, 'users')));
-  await assertSucceeds(getDocs(collection(env.authenticatedContext('admin-user').firestore(), 'users')));
-  await assertFails(getDocs(collection(env.authenticatedContext('inactive-admin').firestore(), 'users')));
+  await assertFails(getDocs(query(collection(ownerDb, 'users'), limit(25))));
+  const adminDb = env.authenticatedContext('admin-user').firestore();
+  await assertSucceeds(getDocs(query(collection(adminDb, 'users'), limit(25))));
+  await assertFails(getDocs(collection(adminDb, 'users')));
+  await assertFails(getDocs(query(collection(adminDb, 'users'), limit(100))));
+  await assertFails(getDocs(query(collection(env.authenticatedContext('inactive-admin').firestore(), 'users'), limit(25))));
 });
 
 test('admin user directory paginates with a bounded query and filters by email prefix', async () => {
@@ -204,4 +207,16 @@ test('lift-plan rules reject malformed fields and administrators cannot use owne
   const adminDb = env.authenticatedContext('admin-user').firestore();
   await assertFails(getDocs(collection(adminDb, 'users', ownerUid, 'equipment')));
   await assertFails(setDoc(doc(adminDb, 'users', ownerUid, 'equipment', '6'), equipment(ownerUid)));
+});
+
+test('rules enforce serverTimestamp for lastLogin, block admin self-lockout, and cap user list limit', async () => {
+  const ownerDb = env.authenticatedContext(ownerUid).firestore();
+  await assertFails(updateDoc(doc(ownerDb, 'users', ownerUid), { lastLogin: 'not-a-timestamp' }));
+  await assertFails(updateDoc(doc(ownerDb, 'users', ownerUid), { lastLogin: new Date(Date.UTC(2026, 0, 1)) }));
+
+  const adminDb = env.authenticatedContext('admin-user').firestore();
+  await assertFails(updateDoc(doc(adminDb, 'users', 'admin-user'), { status: 'locked' }));
+  await assertFails(updateDoc(doc(adminDb, 'users', 'admin-user'), { tier: 'free' }));
+  await assertSucceeds(getDocs(query(collection(adminDb, 'users'), limit(26))));
+  await assertFails(getDocs(query(collection(adminDb, 'users'), limit(27))));
 });

@@ -153,7 +153,7 @@ Tôi không chạy được toàn bộ E2E/Rules/Build trong lượt kiểm tra 
 | S-03 | ✓ | `npm test`, `architecture:gate`, `npm run build`, `npm run check:dist` | Unit 277/277; Gate OK; Build OK; `MAP_COUNT=0` trong `dist/` | 13/11/2026 |
 | S-04 | ✓ | `npm test`, `architecture:gate`, `npm run build`, Playwright CSP probe (`vite preview` + `dist/_headers`) | Unit 279/279 (36 file); Gate OK; Build OK; ghi nhận 2 vi phạm inline trong CSP Report-Only | 13/11/2026 |
 | S-05 | ✓ | `npm test`, `architecture:gate`, `npm run build`, `npm run test:rules` | Unit 281/281 (36 file); Gate OK; Build OK; Rules 13/13 (gồm 2 ca `email_verified`) | 13/11/2026 |
-| S-06 | □ | | | |
+| S-06 | ✓ | `npm run test:rules`, `npm test`, `architecture:gate`, `npm run build` | Rules 14/14 (tăng từ 12); Unit 281/281; Gate OK; Build OK | 13/11/2026 |
 | S-07 | □ | | | |
 | S-08 | □ | | | |
 | S-09 | □ | | | |
@@ -212,3 +212,7 @@ Tôi không chạy được toàn bộ E2E/Rules/Build trong lượt kiểm tra 
 - `src/saas/auth_screen.js` & `src/saas/session.js`: gọi `sendEmailVerification` khi tạo tài khoản; chặn vào workspace với màn hình chờ xác minh (gồm "Tôi đã xác minh" gọi `reload()` + `getIdToken(true)`, nút gửi lại có cooldown 60s và nút đổi tài khoản); đổi thông báo lỗi `session.js:319` sang key `authVerifyAccountError` trong `src/i18n/keys.js` (không nhắc "Firestore rules").
 - `firestore.rules` (tách riêng ở commit S-05b để dễ rollback): yêu cầu `request.auth.token.email_verified == true` khi `create` hồ sơ `users/{uid}`.
 - Unit (`test/saas_access.test.js`, `test/auth_screen.test.js`): **36/36 file, 281/281 test đạt**; Gate: đạt; Build: đạt; Rules Emulator: **13/13 ca đạt** (thêm ca `unverified` bị từ chối và `verified` được phép). E2E Auth Emulator sẽ chạy ở **S-10**.
+
+### S-06 — 13/11/2026
+- `firestore.rules`: yêu cầu `lastLogin == request.time` (cả `create` có `createdAt == request.time && lastLogin == request.time`), chặn admin tự đổi `tier`/`status` của chính mình (`request.auth.uid != uid`), bỏ `'admin'` thừa khỏi `allowedSlot`, và ép `list` users phải có `request.query.limit != null && request.query.limit <= 26`.
+- Mở rộng `test/firestore-rules-emulator.mjs`: **14/14 ca đạt** (thêm các ca kiểm tra `lastLogin` sai kiểu/không phải serverTimestamp, tự khoá admin, list không limit hoặc `limit(27)`/`limit(100)` bị từ chối, `limit(25)`/`limit(26)` được phép). Unit **281/281**, Gate OK, Build OK.

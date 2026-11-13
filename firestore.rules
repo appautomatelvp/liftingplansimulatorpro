@@ -25,7 +25,7 @@ service cloud.firestore {
 
     function allowedSlot(uid, itemId) {
       return itemId.matches('^([1-9]|1[0-9]|20)$')
-        || (get(userPath(uid)).data.tier in ['premium', 'admin']
+        || (get(userPath(uid)).data.tier == 'premium'
           && itemId.matches('^([1-9]|[1-9][0-9]|1[0-9][0-9]|200)$'));
     }
 
@@ -75,7 +75,7 @@ service cloud.firestore {
 
     match /users/{uid} {
       allow get: if signedIn() && (request.auth.uid == uid || activeAdmin());
-      allow list: if activeAdmin();
+      allow list: if activeAdmin() && request.query.limit != null && request.query.limit <= 26;
 
       allow create: if signedIn()
         && request.auth.uid == uid
@@ -90,15 +90,19 @@ service cloud.firestore {
         && request.resource.data.email == request.auth.token.email
         && request.resource.data.role == 'user'
         && request.resource.data.tier == 'free'
-        && request.resource.data.status == 'active';
+        && request.resource.data.status == 'active'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.lastLogin == request.time;
 
       // Account holders can only change their sign-in metadata. They cannot grant themselves access.
       allow update: if signedIn()
         && request.auth.uid == uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastLogin']);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastLogin'])
+        && request.resource.data.lastLogin == request.time;
 
-      // Admins may manage tier/status only; role assignment is reserved for trusted provisioning.
+      // Admins may manage tier/status of other users only; prevents self-lockout and role escalation.
       allow update: if activeAdmin()
+        && request.auth.uid != uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['tier', 'status'])
         && request.resource.data.tier in ['free', 'premium']
         && request.resource.data.status in ['active', 'locked', 'banned'];
