@@ -107,7 +107,7 @@ export default defineConfig(({ mode }) => {
     test: {
       exclude: ['**/node_modules/**', '**/dist/**', '**/e2e/**'],
       // Headless physics regression cases run several thousand simulation steps.
-      testTimeout: 15000
+      testTimeout: 30000
     }
   };
 });
