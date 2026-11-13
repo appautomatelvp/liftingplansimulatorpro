@@ -443,327 +443,208 @@
             studioControls.update();
         }
 
-        async function preloadStandardPortAssets() {
-            try {
-                const loaders = new (window.CAE?.AssetLoaders || AssetLoaders)();
+        const portAssetRequests = new Map();
+        const isoRealisticSuite = [
+            { file: 'iso_20ft_dc_22g1.obj', keys: ['container', 'container_22g1', 'container_20ft_glb'], specKey: 'container_20ft' },
+            { file: 'iso_20ft_hc_25g1.obj', keys: ['iso20hc'], specKey: 'container_20fthc' },
+            { file: 'iso_40ft_dc_42g1.obj', keys: ['iso40', 'container_40ft_glb'], specKey: 'container_40ft' },
+            { file: 'iso_40ft_hc_45g1.obj', keys: ['iso40hc'], specKey: 'container_40fthc' },
+            { file: 'iso_45ft_hc_l5g1.obj', keys: ['iso45hc'], specKey: 'container_45fthc' },
+            { file: 'iso_10ft_dc_12g1.obj', keys: ['container10'], specKey: 'container_10ft' },
+            { file: 'iso_53ft_hc.obj', keys: ['iso53hc'], specKey: 'container_53fthc' },
+            { file: 'iso_20ft_ot_22u1.obj', keys: ['opentop'], specKey: 'opentop_container' },
+            { file: 'iso_40ft_ot_42u1.obj', keys: ['opentop40'], specKey: 'container_opentop40' },
+            { file: 'iso_40ft_fr_45p3.obj', keys: ['flatrack'], specKey: 'flatrack_container' },
+            { file: 'iso_20ft_fr_22p3.obj', keys: ['flatrack20'], specKey: 'container_flatrack20' },
+            { file: 'iso_20ft_tk_22k2.obj', keys: ['isotank'], specKey: 'tank_container' },
+            { file: 'iso_40ft_rh_45r1.obj', keys: ['reefer', 'reefer_40hc'], specKey: 'reefer_container' },
+            { file: 'iso_20ft_rf_22r1.obj', keys: ['reefer20'], specKey: 'container_reefer20' },
+            { file: 'iso_40ft_pl_49p0.obj', keys: ['platform'], specKey: 'container_platform40' },
+            { file: 'iso_20ft_pl_29p0.obj', keys: ['platform20'], specKey: 'container_platform20' },
+            { file: 'iso_20ft_hh_28u1.obj', keys: ['halfheight'], specKey: 'container_halfheight' },
+            { file: 'iso_20ft_bk_22b0.obj', keys: ['drybulk'], specKey: 'container_drybulk' }
+        ];
 
-                const paintIsoRealistic = (root) => {
-                    root.traverse(child => {
-                        if (!child.isMesh) return;
-                        child.castShadow = true;
-                        child.receiveShadow = true;
-                        child.visible = true;
-                        if (child.geometry && !child.geometry.attributes.normal) {
-                            child.geometry.computeVertexNormals();
-                        }
-                        // Promote MTL Phong → Standard; DoubleSide avoids see-through from inverted OBJ faces
-                        const mats = Array.isArray(child.material) ? child.material : [child.material];
-                        const upgraded = mats.map(m => {
-                            if (!m) {
-                                return new THREE.MeshStandardMaterial({
-                                    color: 0x64748b, roughness: 0.45, metalness: 0.35,
-                                    side: THREE.DoubleSide, name: 'ISO_RealisticV2_Fallback'
-                                });
-                            }
-                            const name = m.name || child.name || 'ISO_RealisticV2';
-                            const isSteel = /steel|galv|cast|stainless|hinge|corner|cavity/i.test(name);
-                            const c = (m.color && m.color.clone) ? m.color.clone() : new THREE.Color(0x94a3b8);
-                            // Already Standard: still force opaque + double-sided for CAD fidelity
-                            if (m.isMeshStandardMaterial || m.isMeshPhysicalMaterial) {
-                                m.side = THREE.DoubleSide;
-                                m.transparent = false;
-                                m.opacity = 1;
-                                m.depthWrite = true;
-                                m.needsUpdate = true;
-                                return m;
-                            }
-                            const std = new THREE.MeshStandardMaterial({
-                                color: c,
-                                roughness: Math.max(0.18, 1 - ((m.shininess || 30) / 120)),
-                                metalness: isSteel ? 0.72 : 0.22,
-                                side: THREE.DoubleSide,
-                                transparent: false,
-                                opacity: 1,
-                                name
-                            });
-                            return std;
+        function loadPortAssetOnce(cacheKey, loaderFn) {
+            if (portAssetRequests.has(cacheKey)) return portAssetRequests.get(cacheKey);
+            const promise = Promise.resolve().then(loaderFn);
+            portAssetRequests.set(cacheKey, promise);
+            return promise;
+        }
+
+        function paintIsoRealisticRoot(root) {
+            root.traverse(child => {
+                if (!child.isMesh) return;
+                child.castShadow = true;
+                child.receiveShadow = true;
+                child.visible = true;
+                if (child.geometry && !child.geometry.attributes.normal) {
+                    child.geometry.computeVertexNormals();
+                }
+                const mats = Array.isArray(child.material) ? child.material : [child.material];
+                const upgraded = mats.map(m => {
+                    if (!m) {
+                        return new THREE.MeshStandardMaterial({
+                            color: 0x64748b, roughness: 0.45, metalness: 0.35,
+                            side: THREE.DoubleSide, name: 'ISO_RealisticV2_Fallback'
                         });
-                        child.material = Array.isArray(child.material) ? upgraded : upgraded[0];
+                    }
+                    const name = m.name || child.name || 'ISO_RealisticV2';
+                    const isSteel = /steel|galv|cast|stainless|hinge|corner|cavity/i.test(name);
+                    const c = (m.color && m.color.clone) ? m.color.clone() : new THREE.Color(0x94a3b8);
+                    if (m.isMeshStandardMaterial || m.isMeshPhysicalMaterial) {
+                        m.side = THREE.DoubleSide;
+                        m.transparent = false;
+                        m.opacity = 1;
+                        m.depthWrite = true;
+                        m.needsUpdate = true;
+                        return m;
+                    }
+                    return new THREE.MeshStandardMaterial({
+                        color: c,
+                        roughness: Math.max(0.18, 1 - ((m.shininess || 30) / 120)),
+                        metalness: isSteel ? 0.72 : 0.22,
+                        side: THREE.DoubleSide,
+                        transparent: false,
+                        opacity: 1,
+                        name
                     });
-                    root.userData.isNormalizedAsset = true;
-                    root.userData.keepMaterials = true;
-                    root.userData.isoRealisticV2 = true;
-                };
+                });
+                child.material = Array.isArray(child.material) ? upgraded : upgraded[0];
+            });
+            root.userData.isNormalizedAsset = true;
+            root.userData.keepMaterials = true;
+            root.userData.isoRealisticV2 = true;
+        }
 
-                // Full ISO Realistic V2 suite (dedicated CAD per type — no stretch/lengthen)
-                const isoRealisticSuite = [
-                    { file: 'iso_20ft_dc_22g1.obj', keys: ['container', 'container_22g1', 'container_20ft_glb'], specKey: 'container_20ft' },
-                    { file: 'iso_20ft_hc_25g1.obj', keys: ['iso20hc'], specKey: 'container_20fthc' },
-                    { file: 'iso_40ft_dc_42g1.obj', keys: ['iso40', 'container_40ft_glb'], specKey: 'container_40ft' },
-                    { file: 'iso_40ft_hc_45g1.obj', keys: ['iso40hc'], specKey: 'container_40fthc' },
-                    { file: 'iso_45ft_hc_l5g1.obj', keys: ['iso45hc'], specKey: 'container_45fthc' },
-                    { file: 'iso_10ft_dc_12g1.obj', keys: ['container10'], specKey: 'container_10ft' },
-                    { file: 'iso_53ft_hc.obj', keys: ['iso53hc'], specKey: 'container_53fthc' },
-                    { file: 'iso_20ft_ot_22u1.obj', keys: ['opentop'], specKey: 'opentop_container' },
-                    { file: 'iso_40ft_ot_42u1.obj', keys: ['opentop40'], specKey: 'container_opentop40' },
-                    { file: 'iso_40ft_fr_45p3.obj', keys: ['flatrack'], specKey: 'flatrack_container' },
-                    { file: 'iso_20ft_fr_22p3.obj', keys: ['flatrack20'], specKey: 'container_flatrack20' },
-                    { file: 'iso_20ft_tk_22k2.obj', keys: ['isotank'], specKey: 'tank_container' },
-                    { file: 'iso_40ft_rh_45r1.obj', keys: ['reefer', 'reefer_40hc'], specKey: 'reefer_container' },
-                    { file: 'iso_20ft_rf_22r1.obj', keys: ['reefer20'], specKey: 'container_reefer20' },
-                    { file: 'iso_40ft_pl_49p0.obj', keys: ['platform'], specKey: 'container_platform40' },
-                    { file: 'iso_20ft_pl_29p0.obj', keys: ['platform20'], specKey: 'container_platform20' },
-                    { file: 'iso_20ft_hh_28u1.obj', keys: ['halfheight'], specKey: 'container_halfheight' },
-                    { file: 'iso_20ft_bk_22b0.obj', keys: ['drybulk'], specKey: 'container_drybulk' }
-                ];
-
-                isoRealisticSuite.forEach(entry => {
-                    // Keep full CAD: do NOT cull "interior" (tank barrel, floors, door gear live inside outer AABB)
-                    loaders.loadFromUrl(`/assets/models/${entry.file}`, {
-                        specKey: entry.specKey,
+        function ensureCargoPortAsset(cargoType) {
+            if (!cargoType) return;
+            const loaders = new (window.CAE?.AssetLoaders || AssetLoaders)();
+            const isoEntry = isoRealisticSuite.find(entry => entry.keys.includes(cargoType));
+            if (isoEntry) {
+                loadPortAssetOnce(`iso:${isoEntry.file}`, () =>
+                    loaders.loadFromUrl(`/assets/models/${isoEntry.file}`, {
+                        specKey: isoEntry.specKey,
                         cullInterior: false,
                         optimizeHull: false,
                         mode: 'cad_strict'
-                    })
-                        .then(res => {
-                            paintIsoRealistic(res.root);
-                            entry.keys.forEach(k => { customCargoMeshes[k] = res.root; });
-                            if (typeof rebuildCargoAndRig === 'function' && entry.keys.includes(state.cargoType)) {
-                                if (activeCargoVisual) activeCargoVisual.userData.meshKey = '';
-                                rebuildCargoAndRig(false);
-                            } else if (typeof rebuildCargo3D === 'function' && entry.keys.includes(state.cargoType)) {
-                                rebuildCargo3D();
-                            }
-                        }).catch(e => {
-                            console.warn(`[AssetManager] ${entry.file} load notice:`, e);
-                        });
-                });
-
-                // CONTS20FT.obj — design reference / fallback if Realistic V2 20ft DC is missing
-                loaders.loadFromUrl('/assets/models/conts20ft.obj', { specKey: 'container_20ft' })
-                    .then(res => {
-                        res.root.traverse(child => {
-                            if (child.isMesh) {
-                                child.castShadow = true;
-                                child.receiveShadow = true;
-                                if (Array.isArray(child.material)) {
-                                    child.material = [
-                                        new THREE.MeshStandardMaterial({
-                                            color: 0x1d4ed8,
-                                            roughness: 0.42,
-                                            metalness: 0.28,
-                                            name: 'ContainerBody_MarinePaint'
-                                        }),
-                                        new THREE.MeshStandardMaterial({
-                                            color: 0xe2e8f0,
-                                            roughness: 0.22,
-                                            metalness: 0.85,
-                                            name: 'ContainerHardware_GalvanizedSteel'
-                                        })
-                                    ];
-                                }
-                            }
-                        });
-                        res.root.userData.isNormalizedAsset = true;
-                        customCargoMeshes['container_conts20ft'] = res.root;
-                        if (!customCargoMeshes['container_22g1']) {
-                            customCargoMeshes['container_22g1'] = res.root;
-                            customCargoMeshes['container'] = res.root;
-                            customCargoMeshes['container_20ft_glb'] = res.root;
-                            if (typeof rebuildCargo3D === 'function' && (
-                                state.cargoType === 'container' ||
-                                state.cargoType === 'container_20ft_glb'
-                            )) {
-                                rebuildCargo3D();
-                            }
-                        }
-                    }).catch(e => {
-                        console.warn('[AssetManager] conts20ft.obj load notice:', e);
-                    });
-
-                // Legacy ThermoKing reefer only if Realistic V2 RH not yet loaded
-                loaders.loadFromUrl('/assets/models/container_reefer_40hc_real_v2.obj', {
-                    specKey: 'reefer_container',
-                    targetDimensions: { x: 12.192, y: 2.896, z: 2.438 }
-                }).then(res => {
-                    if (customCargoMeshes['reefer']?.userData?.isoRealisticV2) return;
-                    const whitePaintMat = new THREE.MeshStandardMaterial({
-                        color: 0xf8fafc, roughness: 0.32, metalness: 0.18, name: 'Reefer_White'
-                    });
-                    const carrierBlueMat = new THREE.MeshStandardMaterial({
-                        color: 0x1e3a8a, roughness: 0.38, metalness: 0.28, name: 'Carrier_PrimeLine_Blue'
-                    });
-                    const darkMachineryMat = new THREE.MeshStandardMaterial({
-                        color: 0x0f172a, roughness: 0.55, metalness: 0.65, name: 'Reefer_DarkMachinery'
-                    });
-                    const galvHardwareMat = new THREE.MeshStandardMaterial({
-                        color: 0xe2e8f0, roughness: 0.20, metalness: 0.88, name: 'Reefer_GalvSteel'
-                    });
-                    const ctrlPanelMat = new THREE.MeshStandardMaterial({
-                        color: 0x1e293b, roughness: 0.35, metalness: 0.45, name: 'Reefer_Controller'
-                    });
-                    const rubberGasketMat = new THREE.MeshStandardMaterial({
-                        color: 0x090d16, roughness: 0.92, metalness: 0.05, name: 'Reefer_Rubber'
-                    });
-                    const cautionYellowMat = new THREE.MeshStandardMaterial({
-                        color: 0xfacc15, roughness: 0.40, metalness: 0.15, name: 'Reefer_SafetyYellow'
-                    });
-
-                    res.root.traverse(child => {
-                        if (child.isMesh) {
-                            child.castShadow = true;
-                            child.receiveShadow = true;
-                            const mName = child.name || '';
-                            const mtlName = child.material?.name || '';
-                            if (mName.includes('Door_Locking') || mName.includes('ThermoKing_Bolts') || mtlName === 'Galvanized_Steel') {
-                                child.material = galvHardwareMat;
-                            } else if (mName === 'Door_Rubber_Gaskets' || mtlName === 'Black_Rubber') {
-                                child.material = rubberGasketMat;
-                            } else if (mName === 'ThermoKing_Unit' && mtlName !== 'Galvanized_Steel') {
-                                child.material = carrierBlueMat;
-                            } else if (mName.includes('ThermoKing_Fan') || mName === 'ThermoKing_Compressor' || mtlName === 'Dark_Chassis') {
-                                child.material = darkMachineryMat;
-                            } else if (mName === 'ThermoKing_Controller') {
-                                child.material = ctrlPanelMat;
-                            } else if (mName === 'ThermoKing_Cable_Tray') {
-                                child.material = cautionYellowMat;
-                            } else {
-                                child.material = whitePaintMat;
-                            }
-                        }
-                    });
-                    res.root.userData.keepMaterials = true;
-                    customCargoMeshes['reefer'] = res.root;
-                    customCargoMeshes['reefer_40hc'] = res.root;
-                    if (typeof rebuildCargo3D === 'function' && state.cargoType === 'reefer') {
-                        rebuildCargo3D();
-                    }
-                }).catch(e => {
-                    console.warn('[AssetManager] container_reefer_40hc_real_v2.obj load notice:', e);
-                });
-
-                // High-fidelity bus / vehicle CAD body (replaces procedural utility pickup)
-                loaders.loadFromUrl('/assets/models/bus.obj', {
-                    specKey: 'generic_cargo',
-                    targetDimensions: { x: 9.0, y: 2.80, z: 2.38 },
-                    forceExactDimensions: true,
-                    mode: 'cad_strict'
-                }).then(res => {
-                    const bodyMat = new THREE.MeshStandardMaterial({
-                        color: 0x38bdf8,
-                        roughness: 0.38,
-                        metalness: 0.22,
-                        name: 'Vehicle_BodyPaint'
-                    });
-                    const glassMat = new THREE.MeshStandardMaterial({
-                        color: 0x0f172a,
-                        roughness: 0.12,
-                        metalness: 0.55,
-                        transparent: true,
-                        opacity: 0.72,
-                        name: 'Vehicle_Glass'
-                    });
-                    const darkMat = new THREE.MeshStandardMaterial({
-                        color: 0x111827,
-                        roughness: 0.55,
-                        metalness: 0.45,
-                        name: 'Vehicle_Trim'
-                    });
-                    const pickMat = (child) => {
-                        const matName = Array.isArray(child.material)
-                            ? (child.material[0]?.name || '')
-                            : (child.material?.name || '');
-                        const n = `${child.name || ''} ${matName}`.toLowerCase();
-                        if (n.includes('glass') || n.includes('window') || n.includes('wind') || n.startsWith('glass')) return glassMat;
-                        if (n.includes('wheel') || n.includes('tyre') || n.includes('tire') || n.includes('chassis') || n.includes('under') || /^w_/.test(n)) return darkMat;
-                        return bodyMat;
-                    };
-                    res.root.traverse(child => {
-                        if (!child.isMesh) return;
-                        child.castShadow = true;
-                        child.receiveShadow = true;
-                        child.material = pickMat(child);
-                    });
-                    res.root.name = 'Vehicle_Bus_CAD';
-                    customCargoMeshes['car'] = res.root;
-                    if (typeof rebuildCargoAndRig === 'function' && state.cargoType === 'car') {
-                        if (activeCargoVisual) activeCargoVisual.userData.meshKey = '';
-                        rebuildCargoAndRig(true);
-                    }
-                }).catch(e => {
-                    console.warn('[AssetManager] bus.obj load notice:', e);
-                });
-
-                loaders.loadFromUrl('/assets/models/container_20ft.glb', { specKey: 'container_20ft' })
-                    .then(res => {
-                        // Prefer Realistic V2 OBJ; GLB only as last-resort fallback
-                        if (!customCargoMeshes['container_20ft_glb']) customCargoMeshes['container_20ft_glb'] = res.root;
-                        if (!customCargoMeshes['container']) customCargoMeshes['container'] = res.root;
-                    }).catch(() => {});
-
-                loaders.loadFromUrl('/assets/models/container_40ft.glb', { specKey: 'container_40ft' })
-                    .then(res => {
-                        if (customCargoMeshes['iso40']?.userData?.isoRealisticV2) return;
-                        customCargoMeshes['container_40ft_glb'] = res.root;
-                        customCargoMeshes['iso40'] = res.root;
-                        if (typeof rebuildCargo3D === 'function' && (state.cargoType === 'iso40' || state.cargoType === 'container_40ft_glb')) {
-                            rebuildCargo3D();
-                        }
-                        if (typeof rebuildCargoAndRig === 'function' && (state.cargoType === 'iso40' || state.cargoType === 'container_40ft_glb')) {
+                    }).then(res => {
+                        paintIsoRealisticRoot(res.root);
+                        isoEntry.keys.forEach(k => { customCargoMeshes[k] = res.root; });
+                        if (typeof rebuildCargoAndRig === 'function' && isoEntry.keys.includes(state.cargoType)) {
+                            if (activeCargoVisual) activeCargoVisual.userData.meshKey = '';
                             rebuildCargoAndRig(false);
                         }
-                    }).catch(() => {});
+                    }).catch(e => {
+                        console.warn(`[AssetManager] ${isoEntry.file} load notice:`, e);
+                    })
+                );
+                return;
+            }
+            if (cargoType === 'car') {
+                loadPortAssetOnce('cargo:bus', () =>
+                    loaders.loadFromUrl('/assets/models/bus.obj', {
+                        specKey: 'generic_cargo',
+                        targetDimensions: { x: 9.0, y: 2.80, z: 2.38 },
+                        forceExactDimensions: true,
+                        mode: 'cad_strict'
+                    }).then(res => {
+                        const bodyMat = new THREE.MeshStandardMaterial({
+                            color: 0x38bdf8, roughness: 0.38, metalness: 0.22, name: 'Vehicle_BodyPaint'
+                        });
+                        const glassMat = new THREE.MeshStandardMaterial({
+                            color: 0x0f172a, roughness: 0.12, metalness: 0.55, transparent: true, opacity: 0.72, name: 'Vehicle_Glass'
+                        });
+                        const darkMat = new THREE.MeshStandardMaterial({
+                            color: 0x111827, roughness: 0.55, metalness: 0.45, name: 'Vehicle_Trim'
+                        });
+                        res.root.traverse(child => {
+                            if (!child.isMesh) return;
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                            const matName = Array.isArray(child.material)
+                                ? (child.material[0]?.name || '')
+                                : (child.material?.name || '');
+                            const n = `${child.name || ''} ${matName}`.toLowerCase();
+                            if (n.includes('glass') || n.includes('window') || n.includes('wind') || n.startsWith('glass')) child.material = glassMat;
+                            else if (n.includes('wheel') || n.includes('tyre') || n.includes('tire') || n.includes('chassis') || n.includes('under') || /^w_/.test(n)) child.material = darkMat;
+                            else child.material = bodyMat;
+                        });
+                        res.root.name = 'Vehicle_Bus_CAD';
+                        customCargoMeshes['car'] = res.root;
+                        if (typeof rebuildCargoAndRig === 'function' && state.cargoType === 'car') {
+                            if (activeCargoVisual) activeCargoVisual.userData.meshKey = '';
+                            rebuildCargoAndRig(true);
+                        }
+                    }).catch(e => {
+                        console.warn('[AssetManager] bus.obj load notice:', e);
+                    })
+                );
+            }
+        }
 
-                // STS telescopic spreader CAD suite (RAM / Bromma style OBJs)
-                const stsPaint = (root) => {
-                    root.traverse(child => {
-                        if (!child.isMesh) return;
-                        child.castShadow = true;
-                        child.receiveShadow = true;
-                        const n = (child.name || '').toLowerCase();
-                        const isFlip = n.includes('flip') || n.includes('guide');
-                        const isHazard = n.includes('hazard') || n.includes('stripe');
-                        const isSteel = n.includes('steel') || n.includes('head') || n.includes('hpu') || n.includes('grey');
-                        let mat;
-                        if (isFlip) mat = (MATS.stsFlipperRed || MATS.craneSafetyRed || MATS.redMaster).clone();
-                        else if (isHazard) mat = (MATS.stsHazardStripe || MATS.yellowHazard).clone();
-                        else if (isSteel) mat = (MATS.stsGreyBox || MATS.darkSteel || MATS.gunmetal).clone();
-                        else mat = (MATS.spreaderYellow || MATS.craneYellow || MATS.yellowHazard).clone();
-                        child.material = mat;
-                    });
-                    root.userData.isNormalizedAsset = true;
-                    root.userData.stsCad = true;
-                };
-                const loadSts = (file, key, specKey) => {
-                    loaders.loadFromUrl(`/assets/models/${file}`, { specKey })
+        function ensureBeamPortAsset(beamType, stsSizeFt = 40, stsTwinLift = false) {
+            const loaders = new (window.CAE?.AssetLoaders || AssetLoaders)();
+            if (beamType === 'container_spreader') {
+                const target = stsTwinLift
+                    ? { file: 'STS_Spreader_2x20ft_TwinLift.obj', key: 'sts_spreader_twin' }
+                    : (Number(stsSizeFt) <= 20
+                        ? { file: 'STS_Spreader_20ft_Retracted.obj', key: 'sts_spreader_20' }
+                        : (Number(stsSizeFt) >= 45
+                            ? { file: 'STS_Spreader_45ft_Extended.obj', key: 'sts_spreader_45' }
+                            : { file: 'STS_Spreader_40ft_Master.obj', key: 'sts_spreader_40' }));
+                loadPortAssetOnce(`beam:${target.key}`, () =>
+                    loaders.loadFromUrl(`/assets/models/${target.file}`, { specKey: target.key })
                         .then(res => {
-                            stsPaint(res.root);
-                            customBeamMeshes[key] = res.root;
+                            res.root.traverse(child => {
+                                if (!child.isMesh) return;
+                                child.castShadow = true;
+                                child.receiveShadow = true;
+                                const n = (child.name || '').toLowerCase();
+                                const isFlip = n.includes('flip') || n.includes('guide');
+                                const isHazard = n.includes('hazard') || n.includes('stripe');
+                                const isSteel = n.includes('steel') || n.includes('head') || n.includes('hpu') || n.includes('grey');
+                                if (isFlip) child.material = (MATS.stsFlipperRed || MATS.craneSafetyRed || MATS.redMaster).clone();
+                                else if (isHazard) child.material = (MATS.stsHazardStripe || MATS.yellowHazard).clone();
+                                else if (isSteel) child.material = (MATS.stsGreyBox || MATS.darkSteel || MATS.gunmetal).clone();
+                                else child.material = (MATS.spreaderYellow || MATS.craneYellow || MATS.yellowHazard).clone();
+                            });
+                            res.root.userData.isNormalizedAsset = true;
+                            res.root.userData.stsCad = true;
+                            customBeamMeshes[target.key] = res.root;
                             if (state.beamType === 'container_spreader' && typeof rebuildSpreaderVisuals === 'function') {
                                 rebuildSpreaderVisuals();
                                 if (typeof mountBeamBodies === 'function') mountBeamBodies();
                             }
-                        }).catch(e => console.warn(`[AssetManager] ${file} load notice:`, e));
-                };
-                loadSts('STS_Spreader_20ft_Retracted.obj', 'sts_spreader_20', 'sts_spreader_20');
-                loadSts('STS_Spreader_40ft_Master.obj', 'sts_spreader_40', 'sts_spreader_40');
-                loadSts('STS_Spreader_45ft_Extended.obj', 'sts_spreader_45', 'sts_spreader_45');
-                loadSts('STS_Spreader_2x20ft_TwinLift.obj', 'sts_spreader_twin', 'sts_spreader_twin');
+                        }).catch(e => console.warn(`[AssetManager] ${target.file} load notice:`, e))
+                );
+            } else if (beamType === 'modulift_spreader_glb' || beamType === 'spreader') {
+                loadPortAssetOnce('beam:modulift_spreader_glb', () =>
+                    loaders.loadFromUrl('/assets/models/modulift_spreader.glb', { specKey: 'modulift_spreader' })
+                        .then(res => { customBeamMeshes['modulift_spreader_glb'] = res.root; })
+                        .catch(() => {})
+                );
+            }
+        }
 
-                loaders.loadFromUrl('/assets/models/modulift_spreader.glb', { specKey: 'modulift_spreader' })
-                    .then(res => {
-                        customBeamMeshes['modulift_spreader_glb'] = res.root;
-                    }).catch(() => {});
+        async function preloadStandardPortAssets() {
+            try {
+                const loaders = new (window.CAE?.AssetLoaders || AssetLoaders)();
+                // Load only the currently selected cargo/beam CAD assets at boot; others load on demand.
+                ensureCargoPortAsset(state.cargoType);
+                ensureBeamPortAsset(state.beamType, state.stsSizeFt, state.stsTwinLift);
 
-                loaders.loadFromUrl('/assets/models/crosby_shackle.glb', { specKey: 'crosby_shackle_17t' })
-                    .then(res => {
-                        customHwMeshes['crosby_shackle_glb'] = res.root;
-                    }).catch(() => {});
+                loadPortAssetOnce('hw:crosby_shackle_glb', () =>
+                    loaders.loadFromUrl('/assets/models/crosby_shackle.glb', { specKey: 'crosby_shackle_17t' })
+                        .then(res => { customHwMeshes['crosby_shackle_glb'] = res.root; })
+                        .catch(() => {})
+                );
 
-                loaders.loadFromUrl('/assets/models/sts_crane.glb', { specKey: 'sts_gantry_crane' })
-                    .then(res => {
-                        customCraneMeshes['sts_crane_glb'] = res.root;
-                    }).catch(() => {});
+                loadPortAssetOnce('crane:sts_crane_glb', () =>
+                    loaders.loadFromUrl('/assets/models/sts_crane.glb', { specKey: 'sts_gantry_crane' })
+                        .then(res => { customCraneMeshes['sts_crane_glb'] = res.root; })
+                        .catch(() => {})
+                );
             } catch (e) {
                 console.warn('[AssetManager] Preload assets notice:', e);
             }

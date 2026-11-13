@@ -154,7 +154,7 @@ Tôi không chạy được toàn bộ E2E/Rules/Build trong lượt kiểm tra 
 | S-04 | ✓ | `npm test`, `architecture:gate`, `npm run build`, Playwright CSP probe (`vite preview` + `dist/_headers`) | Unit 279/279 (36 file); Gate OK; Build OK; ghi nhận 2 vi phạm inline trong CSP Report-Only | 13/11/2026 |
 | S-05 | ✓ | `npm test`, `architecture:gate`, `npm run build`, `npm run test:rules` | Unit 281/281 (36 file); Gate OK; Build OK; Rules 13/13 (gồm 2 ca `email_verified`) | 13/11/2026 |
 | S-06 | ✓ | `npm run test:rules`, `npm test`, `architecture:gate`, `npm run build` | Rules 14/14 (tăng từ 12); Unit 281/281; Gate OK; Build OK | 13/11/2026 |
-| S-07 | □ | | | |
+| S-07 | ✓ | Playwright boot probe, `npm test`, `architecture:gate`, `npm run build`, `npm run check:dist`, `e2e/saas-accessibility.spec.js` | Boot CAD models: 55 req (35,541,005 B, 7,667 ms) -> 5 req (544,761 B, 7,401 ms; -98.5%); Rapier 0 req lúc boot; Unit 282/282; Gate OK; Build OK; `check:dist` OK; E2E SaaS 16/16 | 13/11/2026 |
 | S-08 | □ | | | |
 | S-09 | □ | | | |
 | S-10 | □ | | | |
@@ -216,3 +216,10 @@ Tôi không chạy được toàn bộ E2E/Rules/Build trong lượt kiểm tra 
 ### S-06 — 13/11/2026
 - `firestore.rules`: yêu cầu `lastLogin == request.time` (cả `create` có `createdAt == request.time && lastLogin == request.time`), chặn admin tự đổi `tier`/`status` của chính mình (`request.auth.uid != uid`), bỏ `'admin'` thừa khỏi `allowedSlot`, và ép `list` users phải có `request.query.limit != null && request.query.limit <= 26`.
 - Mở rộng `test/firestore-rules-emulator.mjs`: **14/14 ca đạt** (thêm các ca kiểm tra `lastLogin` sai kiểu/không phải serverTimestamp, tự khoá admin, list không limit hoặc `limit(27)`/`limit(100)` bị từ chối, `limit(25)`/`limit(26)` được phép). Unit **281/281**, Gate OK, Build OK.
+
+### S-07 — Tối ưu tải model CAD theo nhu cầu & Cache headers (F-08)
+- Xác nhận `RapierBackend` đã lazy-load (`0` requests lúc boot).
+- Tái cấu trúc `preloadStandardPortAssets` -> `ensureCargoPortAsset`, `ensureBeamPortAsset`, `loadPortAssetOnce` trong `src/sim/library/parsers.js` và nối vào `src/sim/cargo/shell_rebuild.js`, `src/sim/cargo/specialty_meshes.js` để chỉ tải CAD model của `cargoType`/`beamType` đang dùng lúc boot và nạp phần còn lại theo nhu cầu.
+- Thêm `Cache-Control` cho `/assets/*` và `/assets/models/*` trong `public/_headers` + test trong `test/security_headers.test.js`; ghi nhận số liệu trước/sau trong `docs/architecture/PERFORMANCE.md`.
+- Đo boot simulator (`VITE_AUTH_DEV_BYPASS=true`): **55** model requests (**35,541,005 bytes**, **7,667 ms**) -> **5** model requests (**544,761 bytes**, **7,401 ms**; giảm **98.5%** dung lượng model tải lúc khởi động).
+- Kiểm tra: Unit **36 files, 282/282** đạt; `architecture:gate` OK; `npm run build` OK; `npm run check:dist` OK; `npx playwright test e2e/saas-accessibility.spec.js --reporter=list` **16/16** đạt.

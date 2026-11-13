@@ -27,4 +27,11 @@ describe('public/_headers security policy', () => {
     expect(cspLine).toContain('https://www.google.com/recaptcha/');
     expect(cspLine).toContain("object-src 'none'");
   });
+
+  it('sets immutable caching for hashed assets and bounded caching for 3D models', () => {
+    expect(raw).toContain('/assets/*');
+    expect(raw).toContain('Cache-Control: public, max-age=31536000, immutable');
+    expect(raw).toContain('/assets/models/*');
+    expect(raw).toContain('Cache-Control: public, max-age=86400');
+  });
 });
