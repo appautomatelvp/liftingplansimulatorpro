@@ -1,20 +1,25 @@
 # SafeLift3D — Kế hoạch nâng cấp sản phẩm toàn diện
 
+> **Kế hoạch thực thi chi tiết (S-00 → S-15):** xem tại [UPGRADE_PLAN_V2_FOR_FLASH.md](./UPGRADE_PLAN_V2_FOR_FLASH.md). Tài liệu này giữ vai trò tầm nhìn sản phẩm và kiến trúc tổng thể.
+
 **Mục tiêu:** đưa SafeLift3D từ một trình mô phỏng nâng hạ có đăng nhập thành nền tảng chuyên nghiệp cho người dùng, khách hàng và đội ngũ quản trị. Hai ảnh người dùng gửi là nguồn artwork chuẩn cho logo SafeLift3D và nền bãi container. Tên, email và số điện thoại nhà phát triển được người dùng xác nhận để hiển thị công khai.
 
-**Trạng thái triển khai (13/11/2026):** lỗi vật lý được hoãn theo chỉ đạo người dùng. Trong lần xác minh local gần nhất, Vitest đạt 273/273, Firestore Rules Emulator 12/12, architecture gate và production build đều đạt; build còn cảnh báo hai bundle lớn (khoảng 3.0 MB và 4.3 MB). Ba E2E giao diện (focus/keyboard, reduced motion, nhập rig cũ) đạt. Bài dò English ban đầu đạt nhưng khi mở rộng kiểm tra đủ sáu tab mô phỏng và ba menu, nó phát hiện chữ Việt động ở tab Cargo: “Kiện quy đổi … · CoG bao … · Khe cánh …”; lỗi chưa được sửa, nên G1.03 vẫn ◐. Auth Emulator không khởi chạy được do hub localhost:4400 timeout; chưa có E2E đăng nhập thật. G2.05 có bằng chứng local 12/12; G2.06 vẫn cần nghiệm thu Firestore staging, dữ liệu legacy thật và solver cũ. CI xanh trước đây không xác nhận working tree hiện tại; chưa chạy CI, audit/Gitleaks mới hoặc phát hành Cloudflare trong lượt này. Google login staging vẫn cần xác minh lại; không mở allowlist production. Spark Free là yêu cầu: chỉ lưu text/JSON nhẹ, không ảnh/mô hình, không gắn payment method và không tự nâng Blaze. G4 bị hoãn; backup Firebase trả phí không nằm trong phạm vi. CMS usage/error, feedback ticket server-side và các mục G6 còn thiếu. Thay đổi hiện tại chưa phát hành.
+### Bảng trạng thái kiểm chứng gần nhất
+
+| Hạng mục | Trạng thái | Lệnh chứng minh | Ngày chạy |
+|---|---|---|---|
+| Unit & regression suite | ✓ 34/34 file, 273/273 test đạt | `npm test -- --reporter=dot` | 13/11/2026 |
+| Architecture gate | ✓ Đạt (6 shim, 28 phần manifest) | `npm run architecture:gate` | 13/11/2026 |
+| Production build | ✓ Đạt (cảnh báo chunk lớn & có `.map`) | `npm run build` | 13/11/2026 |
+| Firestore Rules Emulator | ✓ 12/12 ca đạt | `npm run test:rules` | 13/11/2026 |
+| Playwright E2E (4 viewport) | ◐ 42 đạt, 10 lỗi (F-01 Cargo i18n, UI-015, UI-008, UI-003) | `npx playwright test --reporter=list` | 13/11/2026 |
+| CI GitHub / Staging / Production | □ Chưa chạy lại cho HEAD hiện tại (`5f6aff9`); chưa phát hành | — | — |
+
+**Phạm vi cố định:** lỗi vật lý được hoãn theo chỉ đạo người dùng; Spark Free là yêu cầu (chỉ text/JSON nhẹ, không ảnh/mô hình, không gắn thẻ/Blaze); G4 (billing) hoãn hoàn toàn.
 
 ## 0. Checklist thực thi theo thứ tự
 
 Ký hiệu: **✓** hoàn tất và có bằng chứng; **◐** đã có một phần, còn cổng nghiệm thu; **□** chưa làm. Không đánh dấu xong chỉ vì có giao diện hoặc cấu hình mẫu.
-
-### Bản chụp trạng thái thực tế và việc tiếp theo
-
-- **Đã xác minh local:** `npm test -- --reporter=dot` — 34 file, 273 test đạt; `npm run test:rules` — 12/12 đạt; `npm run architecture:gate` đạt; `npm run build` đạt. Ba E2E giao diện tập trung đạt (focus, reduced motion, nhập/mở lại rig cũ). Lần chạy đủ bốn E2E trước khi mở rộng bài quét ngôn ngữ cũng đạt.
-- **Lỗi đã xác nhận, chưa sửa:** bài quét toàn bộ sáu tab mô phỏng và các menu phát hiện chuỗi tiếng Việt được tạo động ở giao diện OOG Cargo: `Kiện quy đổi … · CoG bao … · Khe cánh …`. Đây là việc tiếp theo khi tiếp tục: sửa cập nhật ngôn ngữ của panel mà không làm thay đổi mô hình, sau đó chạy lại bài quét toàn màn hình và regression E2E.
-- **Chưa nghiệm thu bên ngoài máy local:** CI trên working tree hiện tại; Google login và CRUD Firestore trên Firebase staging/Cloudflare Preview; Auth Emulator; App Check metrics/enforcement; phát hành Pages. Auth Emulator hiện timeout ở Firebase Emulator Hub `127.0.0.1:4400`.
-- **Chưa triển khai:** CMS usage/quota toàn nền tảng và bảng lỗi; ticket feedback lưu/gửi phía server; audit/support/catalog CMS; SLO/monitoring và kill switch. Mục G4 vẫn hoãn theo quyết định Spark Free; không được xem là việc đang chờ.
-- **Lần dừng hiện tại:** theo yêu cầu người dùng, không tiếp tục sửa code hoặc chạy thêm bài test trong lần này; chỉ ghi nhận trạng thái và thứ tự công việc để tiếp tục sau.
 
 ### G0 — Nền tảng, bảo mật và chi phí
 

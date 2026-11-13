@@ -148,7 +148,7 @@ Tôi không chạy được toàn bộ E2E/Rules/Build trong lượt kiểm tra 
 | Bước | Trạng thái | Lệnh đã chạy | Kết quả | Ngày |
 |---|---|---|---|---|
 | S-00 | ✓ | `git status`, `npm test`, `architecture:gate`, `npm run build`, `npm run test:rules`, `npx playwright test` | Unit 273/273; Gate OK; Build OK; Rules 12/12; E2E 42/52 (10 fail) | 13/11/2026 |
-| S-01 | □ | | | |
+| S-01 | ✓ | `Select-String -Path docs ... -Pattern vercel`, `npm run architecture:gate` | `docs/architecture/*` không còn Vercel; gate OK | 13/11/2026 |
 | S-02 | □ | | | |
 | S-03 | □ | | | |
 | S-04 | □ | | | |
@@ -183,3 +183,8 @@ Tôi không chạy được toàn bộ E2E/Rules/Build trong lượt kiểm tra 
   - 1 fail `layout.spec.js:62` (`UI-008` trên `fhd-1080p`): `[Safety HUD] Occluded by <div id="app-loading-screen" class="">` (race loading screen).
   - 1 fail `layout.spec.js:95` (`UI-003` trên `hd-720p`): `dockRightEdge <= drawerLeftEdge + 5` (Expected `<= 925`, Received `928.52`).
 - Commit WIP cục bộ: `wip: brand, workspace dashboard, a11y`.
+
+### S-01 — 13/11/2026
+- Đã thêm liên kết tới `UPGRADE_PLAN_V2_FOR_FLASH.md` và bảng trạng thái kiểm chứng gắn lệnh/ngày chạy ở đầu `docs/PRODUCT_UPGRADE_PLAN.md`.
+- Đã cập nhật `docs/architecture/MIGRATION_STATUS.md` và `docs/architecture/ROADMAP.md` dùng Cloudflare Pages (`wrangler.toml`) thay cho Vercel.
+- Kiểm tra `Select-String` cho `vercel` trong `docs`: chỉ còn trong mô tả lịch sử/quy tắc. `npm run architecture:gate` đạt.
