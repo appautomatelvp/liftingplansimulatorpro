@@ -17,6 +17,7 @@ import { initializeFirebaseClient, getFirebaseSetupStatus } from './firebase.js'
 import { installFeatureAccessUI } from './feature_access_ui.js';
 import { needsEmailVerification } from './access.js';
 import { getLang, t } from '../i18n/index.js';
+import { saasT } from './i18n.js';
 import { mountWorkspaceDashboard } from './workspace_dashboard.js';
 import { trapDialogFocus } from './dialog_accessibility.js';
 
@@ -42,8 +43,8 @@ function mountAccountWidget(profile, authUser, onSignOut, onWorkspace) {
   widget.id = 'saas-account-widget';
   widget.className = 'saas-account-widget';
   const render = () => {
-    const en = getLang() === 'en';
-    widget.innerHTML = `<span class="saas-account-dot"></span><span class="saas-account-copy"><strong>${escapeHtml(authUser.displayName || authUser.email || 'SafeLift3D user')}</strong><small>${profile.role === 'admin' ? 'ADMIN' : (profile.tier === 'premium' ? 'PREMIUM' : 'FREE')}</small></span><button type="button" data-action="workspace">${en ? 'My workspace' : 'Kho của tôi'}</button>${profile.role === 'admin' ? `<a href="/admin">${en ? 'Admin CMS' : 'CMS quản trị'}</a>` : ''}<button type="button" data-action="signout">${en ? 'Sign out' : 'Đăng xuất'}</button>`;
+    const lang = getLang();
+    widget.innerHTML = `<span class="saas-account-dot"></span><span class="saas-account-copy"><strong>${escapeHtml(authUser.displayName || authUser.email || 'SafeLift3D user')}</strong><small>${profile.role === 'admin' ? 'ADMIN' : (profile.tier === 'premium' ? 'PREMIUM' : 'FREE')}</small></span><button type="button" data-action="workspace">${saasT('saasMyWorkspace', null, lang)}</button>${profile.role === 'admin' ? `<a href="/admin">${saasT('saasAdminCms', null, lang)}</a>` : ''}<button type="button" data-action="signout">${saasT('adminSignOut', null, lang)}</button>`;
     widget.querySelector('[data-action="workspace"]')?.addEventListener('click', onWorkspace);
     widget.querySelector('[data-action="signout"]')?.addEventListener('click', async (event) => {
       const button = event.currentTarget;
@@ -53,7 +54,7 @@ function mountAccountWidget(profile, authUser, onSignOut, onWorkspace) {
       } catch (error) {
         console.error('[SafeLift3D] Sign-out failed', error);
         button.disabled = false;
-        button.textContent = en ? 'Sign out failed — retry' : 'Đăng xuất lỗi — thử lại';
+        button.textContent = saasT('saasSignOutFailedRetry', null, lang);
       }
     });
   };
@@ -81,22 +82,23 @@ function createGoogleProvider() {
 }
 
 function openDeveloperContact() {
-  const en = getLang() === 'en';
+  const lang = getLang();
+  const tr = (key) => saasT(key, null, lang);
   document.getElementById('saas-contact-dialog')?.remove();
   const dialog = document.createElement('div');
   dialog.id = 'saas-contact-dialog';
   dialog.className = 'saas-contact-backdrop';
   dialog.innerHTML = `<section class="saas-contact-dialog" role="dialog" aria-modal="true" aria-labelledby="saas-contact-title">
-    <button type="button" class="saas-contact-close" aria-label="${en ? 'Close' : 'Đóng'}" data-contact-close>×</button>
+    <button type="button" class="saas-contact-close" aria-label="${tr('saasClose')}" data-contact-close>×</button>
     <div class="saas-contact-kicker">SAFELIFT3D · DEVELOPER</div>
-    <h2 id="saas-contact-title">${en ? 'Contact the developer' : 'Liên hệ nhà phát triển'}</h2>
+    <h2 id="saas-contact-title">${tr('saasContactTitle')}</h2>
     <p class="saas-contact-person">Lê Việt Phương (Mr)</p>
     <div class="saas-contact-details"><a href="mailto:levietphuong.hcmutrans@gmail.com">levietphuong.hcmutrans@gmail.com</a><a href="tel:+84968051697">+84 968 051 697</a></div>
     <form class="saas-contact-form">
-      <label>${en ? 'Subject' : 'Chủ đề'}<input name="subject" maxlength="120" required value="${en ? 'SafeLift3D feedback' : 'Góp ý SafeLift3D'}"></label>
-      <label>${en ? 'Message' : 'Nội dung'}<textarea name="message" maxlength="3000" rows="5" required placeholder="${en ? 'Write your message…' : 'Nhập nội dung cần gửi…'}"></textarea></label>
-      <small>${en ? 'Your email app will open with the message ready to send.' : 'Ứng dụng email sẽ mở với nội dung đã điền sẵn để bạn gửi.'}</small>
-      <button type="submit" class="saas-primary-button">${en ? 'Continue to email' : 'Mở email để gửi'}</button>
+      <label>${tr('saasContactSubjectLabel')}<input name="subject" maxlength="120" required value="${tr('saasContactSubjectDefault')}"></label>
+      <label>${tr('saasContactMessageLabel')}<textarea name="message" maxlength="3000" rows="5" required placeholder="${tr('saasContactMessagePlaceholder')}"></textarea></label>
+      <small>${tr('saasContactMailHint')}</small>
+      <button type="submit" class="saas-primary-button">${tr('saasContactSubmit')}</button>
     </form>
   </section>`;
   let releaseFocusTrap = () => {};
@@ -135,7 +137,7 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
   const contactButton = document.getElementById('btn-contact-developer');
   const renderContactLabel = () => {
     const label = contactButton?.querySelector('[data-contact-label]');
-    if (label) label.textContent = getLang() === 'en' ? 'Contact developer' : 'Liên hệ nhà phát triển';
+    if (label) label.textContent = saasT('saasContactButton');
   };
   const onContactClick = () => openDeveloperContact();
   contactButton?.addEventListener('click', onContactClick);
@@ -291,15 +293,14 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
   clearSplash();
 
   async function completeAuthorizedSession(authUser, run) {
-    if (authScreen) authScreen.showMessage(getLang() === 'en' ? 'Checking account access…' : 'Đang kiểm tra quyền tài khoản…');
+    if (authScreen) authScreen.showMessage(saasT('saasCheckingAccess'));
     try {
       const profile = await ensureUserProfile(firebase.db, authUser);
       if (run !== authRun) return;
       unsubscribeProfile?.();
       unsubscribeProfile = watchUserProfile(firebase.db, authUser.uid, (freshProfile) => {
         if (!freshProfile || freshProfile.status !== 'active') {
-          const msg = getLang() === 'en' ? 'This account has been suspended.' : 'Tài khoản này đã bị khóa.';
-          if (authScreen) authScreen.showMessage(msg, true);
+          if (authScreen) authScreen.showMessage(saasT('saasAccountSuspended'), true);
           signOut(firebase.auth).catch((error) => console.error('[SafeLift3D] Sign-out failed', error));
           return;
         }
@@ -310,7 +311,7 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
       if (run !== authRun) return;
       console.error('[SafeLift3D] Account profile could not be loaded', error);
       if (error?.code === 'safelift/account-suspended') {
-        authScreen?.showMessage(getLang() === 'en' ? error.message : 'Tài khoản đang bị khóa. Vui lòng liên hệ SafeLift3D.', true);
+        authScreen?.showMessage(saasT('saasAccountSuspendedContact'), true);
         await signOut(firebase.auth);
       } else {
         authScreen?.showMessage(t('authVerifyAccountError', getLang()), true);

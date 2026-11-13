@@ -156,7 +156,7 @@ Tôi không chạy được toàn bộ E2E/Rules/Build trong lượt kiểm tra 
 | S-06 | ✓ | `npm run test:rules`, `npm test`, `architecture:gate`, `npm run build` | Rules 14/14 (tăng từ 12); Unit 281/281; Gate OK; Build OK | 13/11/2026 |
 | S-07 | ✓ | Playwright boot probe, `npm test`, `architecture:gate`, `npm run build`, `npm run check:dist`, `e2e/saas-accessibility.spec.js` | Boot CAD models: 55 req (35,541,005 B, 7,667 ms) -> 5 req (544,761 B, 7,401 ms; -98.5%); Rapier 0 req lúc boot; Unit 282/282; Gate OK; Build OK; `check:dist` OK; E2E SaaS 16/16 | 13/11/2026 |
 | S-08 | ✓ | `npm audit --audit-level=high`, `architecture:gate`, `npm test`, `npm run build`, `npm run check:dist`, đọc rà soát YAML `.github/workflows/ci.yml` | `npm audit`: 0 high/critical; Unit 282/282; Gate OK; Build OK; `check:dist` OK; CI giới hạn `push` nhánh `master` + thêm `check:dist`, `audit`, Playwright SaaS & upload report | 13/11/2026 |
-| S-09 | □ | | | |
+| S-09 | ✓ | `architecture:gate`, `npm test`, `npm run build`, `npm run check:dist` | Unit **37 files, 285/285** đạt (thêm `test/i18n_keys.test.js`); `SAAS_KEYS` đồng nhất EN/VI trong `src/i18n/keys.js`; Gate OK; Build OK; `check:dist` OK | 13/11/2026 |
 | S-10 | □ | | | |
 | S-11 | □ | | | |
 | S-12 | □ | | | |
@@ -227,3 +227,8 @@ Tôi không chạy được toàn bộ E2E/Rules/Build trong lượt kiểm tra 
 ### S-08 — Nâng cấp CI Workflow
 - Cập nhật `.github/workflows/ci.yml`: giới hạn trigger `push` chỉ chạy trên `branches: [master]`, thêm `npm audit --audit-level=high`, `npm run check:dist`, `npx playwright install --with-deps chromium`, `npx playwright test e2e/saas-accessibility.spec.js --reporter=list` (chạy suite SaaS sạch 16/16; `e2e/layout.spec.js` đang có 3 lỗi nền từ S-00), và `actions/upload-artifact@v4` tải `playwright-report/` khi `failure()`.
 - Kiểm tra: `npm audit --audit-level=high` (`0 vulnerabilities`), `architecture:gate` OK, Unit **36 files, 282/282** đạt, `npm run build` OK (5.62s), `npm run check:dist` OK, kiểm tra cấu trúc YAML `.github/workflows/ci.yml` sạch (2-space indent, không tab).
+
+### S-09 — Chuẩn hóa i18n cho toàn bộ SaaS UI (F-11)
+- Tập trung toàn bộ chuỗi song ngữ EN/VI của SaaS (`admin_dashboard.js`, `feature_access_ui.js`, `session.js`, `workspace_dashboard.js`, `auth_screen.js`) vào `SAAS_KEYS` (gộp vào `KEYS.vi` / `KEYS.en`) trong `src/i18n/keys.js`, kèm helper `saasT(key, vars, lang)` trong `src/saas/i18n.js`.
+- Thêm `test/i18n_keys.test.js` kiểm tra đối xứng 100% khóa EN/VI, placeholder `{var}` khớp nhau và không còn `getLang()==='en'` / `lang()==='en'` rải rác trong `src/saas/*.js`.
+- Kiểm tra: `architecture:gate` OK; Unit **37 files, 285/285** đạt; `npm run build` OK (5.45s); `npm run check:dist` OK.

@@ -1,3 +1,5 @@
+import { saasT } from './i18n.js';
+
 const RATE_KEY = 'safelift.auth.rate.v1';
 const LIMIT = 5;
 const WINDOW_MS = 60_000;
@@ -113,7 +115,7 @@ export function mountAuthScreen(container, { lang, configured, actions, onLangua
       <div class="saas-auth-card">
         <div class="saas-auth-brand"><img class="saas-auth-mark" src="/safelift3d-icons/branding/main-logo.svg" alt="SafeLift3D — Heavy Rigging & Lift Planner"></div>
         <button class="saas-language-button" type="button" data-action="language">${copy.toggle}</button>
-        <div class="saas-auth-kicker">${lang() === 'en' ? 'EMAIL VERIFICATION' : 'XÁC MINH EMAIL'}</div>
+        <div class="saas-auth-kicker">${saasT('authVerifyKicker', null, lang())}</div>
         <h1 id="saas-auth-title">${copy.verifyPendingTitle}</h1>
         <p class="saas-auth-subtitle">${copy.verifyPendingSubtitle.replace('{email}', String(pendingVerification.email || '').replace(/[<>&"']/g, ''))}</p>
         <div class="saas-auth-status" role="status" aria-live="polite"></div>
@@ -181,7 +183,7 @@ export function mountAuthScreen(container, { lang, configured, actions, onLangua
       <div class="saas-auth-card">
         <div class="saas-auth-brand"><img class="saas-auth-mark" src="/safelift3d-icons/branding/main-logo.svg" alt="SafeLift3D — Heavy Rigging & Lift Planner"></div>
         <button class="saas-language-button" type="button" data-action="language">${copy.toggle}</button>
-        <div class="saas-auth-kicker">${lang() === 'en' ? 'ENGINEERING WORKSPACE' : 'KHÔNG GIAN KỸ THUẬT'}</div>
+        <div class="saas-auth-kicker">${saasT('authWorkspaceKicker', null, lang())}</div>
         <h1 id="saas-auth-title">${copy.title}</h1>
         <p class="saas-auth-subtitle">${copy.subtitle}</p>
         ${configured ? `

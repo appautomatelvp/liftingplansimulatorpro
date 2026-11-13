@@ -1,5 +1,6 @@
 import { canAccessFeature, getFeatureRule } from './access.js';
 import { trapDialogFocus } from './dialog_accessibility.js';
+import { saasT } from './i18n.js';
 
 const LOCKED_SELECTOR_FEATURES = [
   ['#cargo-library [data-cargo="crate"]', 'cargo.oog'],
@@ -41,22 +42,17 @@ export function installFeatureAccessUI() {
     if (!rule) return;
     document.querySelector('.saas-paywall-backdrop')?.remove();
     const lang = window.SafeLift?.i18n?.getLang?.() || document.documentElement.lang || 'vi';
-    const en = lang === 'en';
     const isEntitled = canAccessFeature(profile, featureId);
     const backdrop = document.createElement('div');
     backdrop.className = 'saas-paywall-backdrop';
     backdrop.innerHTML = `
       <section class="saas-paywall" role="dialog" aria-modal="true" aria-labelledby="saas-paywall-title">
-        <button class="saas-paywall-close" type="button" aria-label="${en ? 'Close' : 'Đóng'}">×</button>
+        <button class="saas-paywall-close" type="button" aria-label="${saasT('saasClose', null, lang)}">×</button>
         <div class="saas-paywall-lock">${comingSoon ? '🛠️' : '🔒'}</div>
-        <div class="saas-auth-kicker">${en ? 'SAFELIFT3D ACCESS' : 'QUYỀN TRUY CẬP SAFELIFT3D'}</div>
-        <h2 id="saas-paywall-title">${en ? rule.label : featureVietnamese(featureId)}</h2>
-        <p>${comingSoon
-          ? (en ? 'This module is undergoing advanced physics upgrades. Contact the developer for availability.' : 'Mô-đun đang được nâng cấp mô phỏng vật lý. Liên hệ nhà phát triển để biết thời điểm mở.')
-          : (isEntitled
-            ? (en ? 'This module is undergoing advanced physics upgrades. Contact the developer for availability.' : 'Mô-đun đang được nâng cấp mô phỏng vật lý. Liên hệ nhà phát triển để biết thời điểm mở.')
-            : (en ? 'This module is available with a Premium plan. Contact the developer to unlock access.' : 'Mô-đun này dành cho gói Premium. Liên hệ nhà phát triển để mở quyền truy cập.'))}</p>
-        <a class="saas-contact-link" href="mailto:levietphuong.hcmutrans@gmail.com">${en ? 'Contact SafeLift3D' : 'Liên hệ SafeLift3D'}</a>
+        <div class="saas-auth-kicker">${saasT('paywallKicker', null, lang)}</div>
+        <h2 id="saas-paywall-title">${featureLabel(featureId, lang, rule.label)}</h2>
+        <p>${comingSoon || isEntitled ? saasT('paywallComingSoonBody', null, lang) : saasT('paywallPremiumBody', null, lang)}</p>
+        <a class="saas-contact-link" href="mailto:levietphuong.hcmutrans@gmail.com">${saasT('paywallContactCta', null, lang)}</a>
       </section>`;
     let releaseFocusTrap = () => {};
     const onEscape = (event) => {
@@ -121,10 +117,10 @@ function decorateCard(card, featureId, profile) {
     card.append(badge);
   }
   if (badge) {
-    const en = (window.SafeLift?.i18n?.getLang?.() || document.documentElement.lang) === 'en';
+    const lang = window.SafeLift?.i18n?.getLang?.() || document.documentElement.lang || 'vi';
     badge.textContent = comingSoon && canAccessFeature(profile, featureId)
-      ? (en ? '🛠️ Coming soon' : '🛠️ Sắp ra mắt')
-      : (en ? '🔒 Premium' : '🔒 Gói Premium');
+      ? saasT('badgeComingSoon', null, lang)
+      : saasT('badgePremium', null, lang);
     badge.hidden = !locked;
   }
 }
@@ -151,20 +147,23 @@ function decoratePanel(panel, featureId, profile) {
     panel.prepend(badge);
   }
   if (badge) {
-    const en = (window.SafeLift?.i18n?.getLang?.() || document.documentElement.lang) === 'en';
-    badge.textContent = en ? '🔒 Premium' : '🔒 Gói Premium';
+    const lang = window.SafeLift?.i18n?.getLang?.() || document.documentElement.lang || 'vi';
+    badge.textContent = saasT('badgePremium', null, lang);
     badge.hidden = !locked;
   }
 }
 
-function featureVietnamese(id) {
-  return ({
-    'cargo.oog': 'Hàng quá khổ (OOG)',
-    'cargo.specialized': 'Máy móc và kiện hàng chuyên dụng',
-    'beam.equalizer': 'Dầm cân bằng tải (Equalizer Beam)',
-    'beam.cascaded': 'Hệ dầm ngáng nhiều tầng',
-    'beam.truss': 'Dầm ngáng kết cấu giàn',
-    'beam.container': 'Dầm ngáng container STS',
-    'beam.frame': 'Khung dầm ngáng chữ H'
-  })[id] || id;
+const FEATURE_LABEL_KEYS = {
+  'cargo.oog': 'featureCargoOog',
+  'cargo.specialized': 'featureCargoSpecialized',
+  'beam.equalizer': 'featureBeamEqualizer',
+  'beam.cascaded': 'featureBeamCascaded',
+  'beam.truss': 'featureBeamTruss',
+  'beam.container': 'featureBeamContainer',
+  'beam.frame': 'featureBeamFrame'
+};
+
+function featureLabel(id, lang, fallback) {
+  const key = FEATURE_LABEL_KEYS[id];
+  return key ? saasT(key, null, lang) : fallback || id;
 }

@@ -1,6 +1,7 @@
 import * as workspaceData from './workspace_data.js';
 import { getLang } from '../i18n/index.js';
 import { trapDialogFocus } from './dialog_accessibility.js';
+import { saasT } from './i18n.js';
 
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 
@@ -20,9 +21,8 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
   let onKey = null;
   const legacyRigs = readLegacyRigs();
   const migratedRigIds = readMigratedRigIds();
-  const en = () => getLang() === 'en';
-  const copy = (vi, english) => en() ? english : vi;
-  const timestamp = (value) => value?.toDate ? value.toDate().toLocaleDateString(en() ? 'en-US' : 'vi-VN') : '';
+  const tr = (key, vars = null) => saasT(key, vars, getLang());
+  const timestamp = (value) => value?.toDate ? value.toDate().toLocaleDateString({ en: 'en-US', vi: 'vi-VN' }[getLang()] || 'vi-VN') : '';
   const closeWorkspace = () => {
     if (onKey) document.removeEventListener('keydown', onKey);
     backdrop.remove();
@@ -48,7 +48,7 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
     if (!pending.length) return;
     const layer = document.createElement('div');
     layer.className = 'saas-workspace-form-backdrop';
-    layer.innerHTML = `<section class="saas-workspace-form saas-workspace-link-picker" role="dialog" aria-modal="true" aria-label="${copy('Nhập rig đã lưu', 'Import saved rigs')}"><button type="button" data-picker-close class="saas-workspace-close" aria-label="${copy('Đóng', 'Close')}">×</button><span class="saas-workspace-kicker">${copy('MIGRATION DỮ LIỆU CỤC BỘ', 'LOCAL DATA MIGRATION')}</span><h3>${copy('Nhập rig đã lưu', 'Import saved rigs')}</h3><p>${copy('Chọn từng rig để lưu thành lift plan trên tài khoản. Dữ liệu cục bộ chỉ bị đánh dấu đã nhập sau khi lưu thành công.', 'Import rigs one at a time as account lift plans. A local rig is marked imported only after the cloud save succeeds.')}</p><div class="saas-workspace-form-error" data-import-error hidden></div><div class="saas-workspace-link-list">${pending.map((rig) => `<label><span><strong>${esc(rig.name || copy('Rig chưa đặt tên', 'Unnamed rig'))}</strong><small>${(Array.isArray(rig.extraCables) ? rig.extraCables.length : 0)} ${copy('cáp bổ sung', 'additional cables')}</small></span><button type="button" data-import-rig="${esc(rig.id)}">${copy('Nhập', 'Import')}</button></label>`).join('')}</div><small>${copy('Mỗi phương án giữ giới hạn dữ liệu 48 KB; không nhập tệp mô hình.', 'Each plan keeps the 48 KB data limit; model files are not imported.')}</small></section>`;
+    layer.innerHTML = `<section class="saas-workspace-form saas-workspace-link-picker" role="dialog" aria-modal="true" aria-label="${tr('wsImportTitle')}"><button type="button" data-picker-close class="saas-workspace-close" aria-label="${tr('saasClose')}">×</button><span class="saas-workspace-kicker">${tr('wsImportKicker')}</span><h3>${tr('wsImportTitle')}</h3><p>${tr('wsImportDesc')}</p><div class="saas-workspace-form-error" data-import-error hidden></div><div class="saas-workspace-link-list">${pending.map((rig) => `<label><span><strong>${esc(rig.name || tr('wsUnnamedRig'))}</strong><small>${(Array.isArray(rig.extraCables) ? rig.extraCables.length : 0)} ${tr('wsAdditionalCables')}</small></span><button type="button" data-import-rig="${esc(rig.id)}">${tr('wsImportBtn')}</button></label>`).join('')}</div><small>${tr('wsImportLimitNote')}</small></section>`;
     backdrop.append(layer);
     const releasePickerFocus = trapDialogFocus(layer.querySelector('[role="dialog"]'), { initialFocus: layer.querySelector('[data-import-rig]') || layer.querySelector('[data-picker-close]') });
     const closePicker = () => { layer.remove(); releasePickerFocus(); };
@@ -62,16 +62,16 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
       button.disabled = true;
       try {
         const state = window.__LIFTING_RUNTIME__?.api?.getState?.();
-        if (!state) throw new Error(copy('Mô phỏng chưa sẵn sàng để nhập rig.', 'The simulator is not ready to import this rig.'));
+        if (!state) throw new Error(tr('wsSimNotReadyImport'));
         await dataService.createLiftPlan(db, profile, {
-          title: String(rig.name || copy('Rig đã lưu', 'Saved rig')).slice(0, 100),
-          description: copy('Đã nhập từ thư viện rig cục bộ.', 'Imported from the local rig library.'),
+          title: String(rig.name || tr('wsSavedRigDefault')).slice(0, 100),
+          description: tr('wsImportedDesc'),
           snapshot: dataService.makeLegacyRigSnapshot(state, rig)
         });
         migratedRigIds.push(String(rig.id));
         try { localStorage.setItem(`lp-user-rigs-migrated:${profile.uid}`, JSON.stringify(migratedRigIds.slice(-24))); } catch { /* Keep current-session migration state if storage is unavailable. */ }
         button.closest('label')?.remove();
-        notice(copy(`Đã nhập “${rig.name || 'Rig'}” vào lift plan.`, `Imported “${rig.name || 'Rig'}” into lift plans.`));
+        notice(tr('wsImportedNotice', { name: rig.name || 'Rig' }));
         await loadPage(true);
         if (!legacyRigs.some((item) => !migratedRigIds.includes(String(item.id)))) {
           backdrop.querySelector('[data-action="import-legacy"]')?.setAttribute('hidden', '');
@@ -80,7 +80,7 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
       } catch (error) {
         console.error('[SafeLift3D] Legacy rig migration failed', error);
         const errorBox = layer.querySelector('[data-import-error]');
-        if (errorBox) { errorBox.hidden = false; errorBox.textContent = error.message || copy('Không nhập được rig này.', 'Could not import this rig.'); }
+        if (errorBox) { errorBox.hidden = false; errorBox.textContent = error.message || tr('wsImportFailed'); }
         button.disabled = false;
       }
     });
@@ -88,12 +88,12 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
 
   const template = () => {
     backdrop.innerHTML = `<section class="saas-workspace-dialog" role="dialog" aria-modal="true" aria-labelledby="saas-workspace-title">
-      <header class="saas-workspace-header"><div><span class="saas-workspace-kicker">SAFELIFT3D · PERSONAL LIBRARY</span><h2 id="saas-workspace-title">${copy('Kho làm việc của tôi', 'My workspace')}</h2><p>${copy('Lưu cấu hình kỹ thuật gọn nhẹ để dùng lại. Không tải tệp mô hình 3D lên Firebase.', 'Save lightweight engineering configurations for reuse. 3D model files are never uploaded to Firebase.')}</p></div><button type="button" class="saas-workspace-close" data-action="close" aria-label="${copy('Đóng', 'Close')}">×</button></header>
-      <nav class="saas-workspace-tabs"><button type="button" data-tab="liftPlans">${copy('Phương án nâng', 'Lift plans')}</button><button type="button" data-tab="equipment">${copy('Kho dụng cụ', 'My equipment')}</button></nav>
-      <div class="saas-workspace-toolbar"><label class="saas-workspace-search"><span>⌕</span><input type="search" data-search placeholder="${copy('Tìm trong trang hiện tại…', 'Search this page…')}"></label><button type="button" class="saas-workspace-secondary" data-action="import-legacy" ${legacyRigs.some((rig) => !migratedRigIds.includes(String(rig.id))) ? '' : 'hidden'}>${copy('Nhập rig đã lưu', 'Import saved rigs')}</button><button type="button" class="saas-workspace-primary" data-action="create">＋ ${copy('Lưu phương án hiện tại', 'Save current plan')}</button></div>
+      <header class="saas-workspace-header"><div><span class="saas-workspace-kicker">SAFELIFT3D · PERSONAL LIBRARY</span><h2 id="saas-workspace-title">${tr('wsTitle')}</h2><p>${tr('wsSubtitle')}</p></div><button type="button" class="saas-workspace-close" data-action="close" aria-label="${tr('saasClose')}">×</button></header>
+      <nav class="saas-workspace-tabs"><button type="button" data-tab="liftPlans">${tr('wsTabPlans')}</button><button type="button" data-tab="equipment">${tr('wsTabEquipment')}</button></nav>
+      <div class="saas-workspace-toolbar"><label class="saas-workspace-search"><span>⌕</span><input type="search" data-search placeholder="${tr('wsSearchPlaceholder')}"></label><button type="button" class="saas-workspace-secondary" data-action="import-legacy" ${legacyRigs.some((rig) => !migratedRigIds.includes(String(rig.id))) ? '' : 'hidden'}>${tr('wsImportTitle')}</button><button type="button" class="saas-workspace-primary" data-action="create">＋ ${tr('wsSaveCurrentPlan')}</button></div>
       <div class="saas-workspace-notice" data-notice hidden></div><div class="saas-workspace-list" data-list aria-live="polite"></div>
-      <footer class="saas-workspace-footer"><span data-count></span><button type="button" data-action="more" hidden>${copy('Tải thêm', 'Load more')}</button></footer>
-      <small class="saas-workspace-quota">${copy(`Giới hạn hiện tại: ${profile.tier === 'premium' || profile.tier === 'admin' ? 200 : 20} phương án và dụng cụ mỗi loại.`, `Current limit: ${profile.tier === 'premium' || profile.tier === 'admin' ? 200 : 20} plans and equipment items per type.`)}</small>
+      <footer class="saas-workspace-footer"><span data-count></span><button type="button" data-action="more" hidden>${tr('wsLoadMore')}</button></footer>
+      <small class="saas-workspace-quota">${tr('wsQuotaNote', { limit: profile.tier === 'premium' || profile.tier === 'admin' ? 200 : 20 })}</small>
     </section>`;
     paintTab();
   };
@@ -109,7 +109,7 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
   function paintTab() {
     backdrop.querySelectorAll('[data-tab]').forEach((button) => button.classList.toggle('is-active', button.dataset.tab === tab));
     const create = backdrop.querySelector('[data-action="create"]');
-    if (create) create.textContent = tab === 'liftPlans' ? `＋ ${copy('Lưu phương án hiện tại', 'Save current plan')}` : `＋ ${copy('Thêm dụng cụ', 'Add equipment')}`;
+    if (create) create.textContent = tab === 'liftPlans' ? `＋ ${tr('wsSaveCurrentPlan')}` : `＋ ${tr('wsAddEquipment')}`;
     loadPage(true);
   }
 
@@ -118,11 +118,11 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
     if (!list) return;
     const filtered = items.filter((item) => `${item.title || item.name || ''} ${item.description || ''} ${item.manufacturer || ''} ${item.model || ''}`.toLowerCase().includes(searchText.toLowerCase()));
     if (!filtered.length) {
-      list.innerHTML = `<div class="saas-workspace-empty"><span>▱</span><strong>${copy('Chưa có dữ liệu trong mục này', 'Nothing saved here yet')}</strong><small>${copy('Tạo mục đầu tiên để dùng lại ở các lần làm việc sau.', 'Create your first item to reuse it in future work.')}</small></div>`;
+      list.innerHTML = `<div class="saas-workspace-empty"><span>▱</span><strong>${tr('wsEmptyTitle')}</strong><small>${tr('wsEmptyHint')}</small></div>`;
     } else {
       list.innerHTML = filtered.map((item) => tab === 'liftPlans' ? renderPlan(item) : renderEquipment(item)).join('');
     }
-    backdrop.querySelector('[data-count]').textContent = copy(`${items.length} mục trên trang này`, `${items.length} items on this page`);
+    backdrop.querySelector('[data-count]').textContent = tr('wsPageCount', { count: items.length });
     backdrop.querySelector('[data-action="more"]').hidden = !hasMore;
   }
 
@@ -131,9 +131,9 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
     const input = snapshot?.inputs || {};
     const dims = [input.L, input.W, input.H].every(Number.isFinite) ? `${input.L} × ${input.W} × ${input.H} m` : '';
     const status = snapshot?.analysis?.overallStatus;
-    const statusLabel = status ? `${copy('Đánh giá lúc lưu', 'Saved assessment')}: ${status}` : '';
+    const statusLabel = status ? `${tr('wsSavedAssessment')}: ${status}` : '';
     const equipmentCount = Array.isArray(item.equipmentIds) ? item.equipmentIds.length : 0;
-    return `<article class="saas-workspace-card ${item.archived ? 'is-archived' : ''}"><div class="saas-workspace-card-icon">⌖</div><div class="saas-workspace-card-main"><div class="saas-workspace-card-title"><strong>${esc(item.title)}</strong><span class="saas-workspace-version">r${Number(item.revision) || 1}</span>${status ? `<span class="saas-workspace-status status-${esc(status.toLowerCase())}">${esc(status)}</span>` : ''}${item.archived ? `<span class="saas-workspace-archived">${copy('Đã lưu trữ', 'Archived')}</span>` : ''}</div><small>${esc(item.description || dims || copy('Phương án nâng', 'Lift plan'))} · ${copy('bộ giải', 'solver')} ${esc(item.solverVersion || '?')} · ${esc(timestamp(item.updatedAt))}${statusLabel ? ` · ${esc(statusLabel)}` : ''}${equipmentCount ? ` · ${equipmentCount} ${copy('dụng cụ liên kết', 'linked equipment')}` : ''}</small>${snapshot?.solverVersion !== '5.0' ? `<em>${copy('Cảnh báo: phương án lưu bằng phiên bản bộ giải khác.', 'Warning: this plan was saved with a different solver version.')}</em>` : ''}</div><div class="saas-workspace-card-actions"><button type="button" data-action="apply" data-id="${esc(item.id)}" ${item.archived ? 'disabled' : ''}>${copy('Mở', 'Open')}</button><button type="button" data-action="duplicate" data-id="${esc(item.id)}">${copy('Sao chép', 'Copy')}</button><button type="button" data-action="export" data-id="${esc(item.id)}">${copy('Xuất JSON', 'Export JSON')}</button><button type="button" data-action="archive" data-id="${esc(item.id)}" data-archived="${!item.archived}">${item.archived ? copy('Khôi phục', 'Restore') : copy('Lưu trữ', 'Archive')}</button><button type="button" class="is-danger" data-action="delete" data-id="${esc(item.id)}">${copy('Xóa', 'Delete')}</button></div></article>`;
+    return `<article class="saas-workspace-card ${item.archived ? 'is-archived' : ''}"><div class="saas-workspace-card-icon">⌖</div><div class="saas-workspace-card-main"><div class="saas-workspace-card-title"><strong>${esc(item.title)}</strong><span class="saas-workspace-version">r${Number(item.revision) || 1}</span>${status ? `<span class="saas-workspace-status status-${esc(status.toLowerCase())}">${esc(status)}</span>` : ''}${item.archived ? `<span class="saas-workspace-archived">${tr('wsArchived')}</span>` : ''}</div><small>${esc(item.description || dims || tr('wsPlanDefault'))} · ${tr('wsSolverLabel')} ${esc(item.solverVersion || '?')} · ${esc(timestamp(item.updatedAt))}${statusLabel ? ` · ${esc(statusLabel)}` : ''}${equipmentCount ? ` · ${equipmentCount} ${tr('wsLinkedEquipment')}` : ''}</small>${snapshot?.solverVersion !== '5.0' ? `<em>${tr('wsSolverVersionWarning')}</em>` : ''}</div><div class="saas-workspace-card-actions"><button type="button" data-action="apply" data-id="${esc(item.id)}" ${item.archived ? 'disabled' : ''}>${tr('wsOpen')}</button><button type="button" data-action="duplicate" data-id="${esc(item.id)}">${tr('wsCopy')}</button><button type="button" data-action="export" data-id="${esc(item.id)}">${tr('wsExportJson')}</button><button type="button" data-action="archive" data-id="${esc(item.id)}" data-archived="${!item.archived}">${item.archived ? tr('wsRestore') : tr('wsArchive')}</button><button type="button" class="is-danger" data-action="delete" data-id="${esc(item.id)}">${tr('wsDelete')}</button></div></article>`;
   }
 
   async function chooseEquipmentLinks() {
@@ -148,7 +148,7 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
     return new Promise((resolve) => {
       const layer = document.createElement('div');
       layer.className = 'saas-workspace-form-backdrop';
-      layer.innerHTML = `<form class="saas-workspace-form saas-workspace-link-picker" role="dialog" aria-modal="true" aria-labelledby="saas-equipment-picker-title"><button type="button" data-picker-cancel class="saas-workspace-close" aria-label="${copy('Đóng', 'Close')}">×</button><span class="saas-workspace-kicker">${copy('LIÊN KẾT KHO DỤNG CỤ', 'EQUIPMENT LIBRARY')}</span><h3 id="saas-equipment-picker-title">${copy('Gắn dụng cụ vào phương án?', 'Attach equipment to this plan?')}</h3><p>${copy('Chọn tối đa 20 mục. Đây là liên kết tham chiếu; thông số trong kho dụng cụ không tự xác nhận khả năng chịu tải.', 'Select up to 20 items. These are references; library data does not certify load capacity.')}</p><div class="saas-workspace-link-list">${equipment.map((item) => `<label><input type="checkbox" name="equipmentIds" value="${esc(item.id)}"><span><strong>${esc(item.name)}</strong><small>${esc([item.category, item.model, item.wllT != null ? `${item.wllT} t WLL` : ''].filter(Boolean).join(' · '))}</small></span></label>`).join('')}</div><div class="saas-workspace-form-actions"><button type="button" data-picker-cancel>${copy('Bỏ qua', 'Skip')}</button><button type="submit" class="saas-workspace-primary">${copy('Gắn vào phương án', 'Attach to plan')}</button></div></form>`;
+      layer.innerHTML = `<form class="saas-workspace-form saas-workspace-link-picker" role="dialog" aria-modal="true" aria-labelledby="saas-equipment-picker-title"><button type="button" data-picker-cancel class="saas-workspace-close" aria-label="${tr('saasClose')}">×</button><span class="saas-workspace-kicker">${tr('wsEquipKicker')}</span><h3 id="saas-equipment-picker-title">${tr('wsEquipAttachTitle')}</h3><p>${tr('wsEquipAttachHint')}</p><div class="saas-workspace-link-list">${equipment.map((item) => `<label><input type="checkbox" name="equipmentIds" value="${esc(item.id)}"><span><strong>${esc(item.name)}</strong><small>${esc([item.category, item.model, item.wllT != null ? `${item.wllT} t WLL` : ''].filter(Boolean).join(' · '))}</small></span></label>`).join('')}</div><div class="saas-workspace-form-actions"><button type="button" data-picker-cancel>${tr('wsSkip')}</button><button type="submit" class="saas-workspace-primary">${tr('wsAttachToPlan')}</button></div></form>`;
       backdrop.append(layer);
       const releasePickerFocus = trapDialogFocus(layer.querySelector('[role="dialog"]'), { initialFocus: layer.querySelector('[data-picker-cancel]') });
       const finish = (value) => { layer.remove(); releasePickerFocus(); resolve(value); };
@@ -167,7 +167,7 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
   }
 
   function renderEquipment(item) {
-    return `<article class="saas-workspace-card"><div class="saas-workspace-card-icon">⚙</div><div class="saas-workspace-card-main"><div class="saas-workspace-card-title"><strong>${esc(item.name)}</strong><span class="saas-workspace-version">${esc(item.category)}</span></div><small>${esc([item.manufacturer, item.model, item.wllT != null ? `${item.wllT} t WLL` : '', item.lengthM != null ? `${item.lengthM} m` : ''].filter(Boolean).join(' · ') || copy('Thông số chưa khai báo', 'No specifications added'))}</small>${item.certificateNo || item.inspectionExpiry ? `<small>${copy('Chứng chỉ', 'Certificate')}: ${esc(item.certificateNo || '—')} · ${copy('Kiểm định đến', 'Inspection expiry')}: ${esc(item.inspectionExpiry || '—')}</small>` : ''}</div><div class="saas-workspace-card-actions"><button type="button" data-action="edit" data-id="${esc(item.id)}">${copy('Sửa', 'Edit')}</button><button type="button" class="is-danger" data-action="delete" data-id="${esc(item.id)}">${copy('Xóa', 'Delete')}</button></div></article>`;
+    return `<article class="saas-workspace-card"><div class="saas-workspace-card-icon">⚙</div><div class="saas-workspace-card-main"><div class="saas-workspace-card-title"><strong>${esc(item.name)}</strong><span class="saas-workspace-version">${esc(item.category)}</span></div><small>${esc([item.manufacturer, item.model, item.wllT != null ? `${item.wllT} t WLL` : '', item.lengthM != null ? `${item.lengthM} m` : ''].filter(Boolean).join(' · ') || tr('wsNoSpecs'))}</small>${item.certificateNo || item.inspectionExpiry ? `<small>${tr('wsCertificate')}: ${esc(item.certificateNo || '—')} · ${tr('wsInspectionExpiry')}: ${esc(item.inspectionExpiry || '—')}</small>` : ''}</div><div class="saas-workspace-card-actions"><button type="button" data-action="edit" data-id="${esc(item.id)}">${tr('wsEdit')}</button><button type="button" class="is-danger" data-action="delete" data-id="${esc(item.id)}">${tr('wsDelete')}</button></div></article>`;
   }
 
   async function loadPage(reset = false) {
@@ -177,7 +177,7 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
     if (reset) { cursor = null; hasMore = false; items = []; }
     busy = true;
     const list = backdrop.querySelector('[data-list]');
-    if (!items.length && list) list.innerHTML = `<div class="saas-workspace-loading">${copy('Đang tải thư viện…', 'Loading library…')}</div>`;
+    if (!items.length && list) list.innerHTML = `<div class="saas-workspace-loading">${tr('wsLoadingLibrary')}</div>`;
     try {
       const page = await dataService.listWorkspacePage(db, profile.uid, requestedTab, { cursor });
       if (requestedTab !== tab) return;
@@ -188,7 +188,7 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
       render();
     } catch (error) {
       console.error('[SafeLift3D] Workspace library could not be loaded', error);
-      notice(copy('Không tải được dữ liệu. Kiểm tra Firestore Rules và kết nối Firebase.', 'Could not load data. Check Firestore Rules and Firebase connection.'), true);
+      notice(tr('wsLoadError'), true);
       if (!items.length && list) list.innerHTML = '';
     } finally {
       busy = false;
@@ -199,14 +199,14 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
   async function savePlan() {
     const runtime = window.__LIFTING_RUNTIME__;
     const state = runtime?.api?.getState?.();
-    if (!state) throw new Error(copy('Chưa thể đọc cấu hình mô phỏng hiện tại.', 'The current simulation configuration is not available.'));
-    const title = window.prompt(copy('Tên phương án nâng:', 'Lift plan name:'), `${state.cargoType || 'Lift plan'} · ${new Date().toLocaleDateString()}`);
+    if (!state) throw new Error(tr('wsSimNotReadySave'));
+    const title = window.prompt(tr('wsPromptPlanName'), `${state.cargoType || 'Lift plan'} · ${new Date().toLocaleDateString()}`);
     if (!title?.trim()) return;
-    const description = window.prompt(copy('Ghi chú (không bắt buộc):', 'Notes (optional):'), '') || '';
+    const description = window.prompt(tr('wsPromptNotes'), '') || '';
     const equipmentIds = await chooseEquipmentLinks();
     const analysis = runtime.api.getCurrentLiftPlanSummary?.() || null;
     await dataService.createLiftPlan(db, profile, { title, description, equipmentIds, snapshot: dataService.makePlanSnapshot(state, analysis) });
-    notice(copy('Đã lưu phương án nâng.', 'Lift plan saved.'));
+    notice(tr('wsPlanSaved'));
     await loadPage(true);
   }
 
@@ -215,7 +215,7 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
     const formLayer = document.createElement('div');
     formLayer.className = 'saas-workspace-form-backdrop';
     const field = (name, label, value = '', type = 'text', max = 80) => `<label>${label}<input name="${name}" type="${type}" maxlength="${max}" value="${esc(value)}" ${name === 'name' ? 'required' : ''}></label>`;
-    formLayer.innerHTML = `<form class="saas-workspace-form" role="dialog" aria-modal="true" aria-labelledby="saas-equipment-form-title"><button type="button" data-form-close class="saas-workspace-close" aria-label="${copy('Đóng', 'Close')}">×</button><span class="saas-workspace-kicker">${copy('DỮ LIỆU DO NGƯỜI DÙNG NHẬP', 'USER-ENTERED DATA')}</span><h3 id="saas-equipment-form-title">${item ? copy('Sửa dụng cụ', 'Edit equipment') : copy('Thêm dụng cụ', 'Add equipment')}</h3><p>${copy('Thông tin này là dữ liệu cá nhân, không phải chứng nhận hoặc tiêu chuẩn đã được SafeLift3D xác minh.', 'This is personal data, not a certification or standard verified by SafeLift3D.')}</p><div class="saas-workspace-form-error" data-form-error hidden></div>${field('name', copy('Tên dụng cụ *', 'Equipment name *'), item?.name || '', 'text', 80)}<label>${copy('Loại', 'Type')}<select name="category">${categories.map((category) => `<option value="${category}" ${item?.category === category ? 'selected' : ''}>${category.replace('_', ' ')}</option>`).join('')}</select></label>${field('manufacturer', copy('Nhà sản xuất', 'Manufacturer'), item?.manufacturer)}${field('model', copy('Model', 'Model'), item?.model)}<div class="saas-workspace-form-grid">${field('wllT', 'WLL (t)', item?.wllT ?? '', 'number')}${field('lengthM', copy('Chiều dài (m)', 'Length (m)'), item?.lengthM ?? '', 'number')}${field('massKg', copy('Khối lượng (kg)', 'Mass (kg)'), item?.massKg ?? '', 'number')}${field('safetyFactor', copy('Hệ số an toàn', 'Safety factor'), item?.safetyFactor ?? '', 'number')}</div>${field('certificateNo', copy('Số chứng chỉ', 'Certificate number'), item?.certificateNo || '')}${field('inspectionExpiry', copy('Hạn kiểm định', 'Inspection expiry'), item?.inspectionExpiry || '', 'date', 10)}<label>${copy('Ghi chú', 'Notes')}<textarea name="notes" maxlength="500" rows="3">${esc(item?.notes || '')}</textarea></label><div class="saas-workspace-form-actions"><button type="button" data-form-close>${copy('Hủy', 'Cancel')}</button><button type="submit" class="saas-workspace-primary">${copy('Lưu dụng cụ', 'Save equipment')}</button></div><small>${copy('Tối đa 500 ký tự ghi chú. Không tải tệp hoặc mô hình 3D.', 'Notes are limited to 500 characters. File and 3D model uploads are disabled.')}</small></form>`;
+    formLayer.innerHTML = `<form class="saas-workspace-form" role="dialog" aria-modal="true" aria-labelledby="saas-equipment-form-title"><button type="button" data-form-close class="saas-workspace-close" aria-label="${tr('saasClose')}">×</button><span class="saas-workspace-kicker">${tr('wsUserDataKicker')}</span><h3 id="saas-equipment-form-title">${item ? tr('wsEditEquipment') : tr('wsAddEquipmentTitle')}</h3><p>${tr('wsUserDataDisclaimer')}</p><div class="saas-workspace-form-error" data-form-error hidden></div>${field('name', tr('wsEquipNameLabel'), item?.name || '', 'text', 80)}<label>${tr('wsEquipTypeLabel')}<select name="category">${categories.map((category) => `<option value="${category}" ${item?.category === category ? 'selected' : ''}>${category.replace('_', ' ')}</option>`).join('')}</select></label>${field('manufacturer', tr('wsManufacturerLabel'), item?.manufacturer)}${field('model', tr('wsModelLabel'), item?.model)}<div class="saas-workspace-form-grid">${field('wllT', 'WLL (t)', item?.wllT ?? '', 'number')}${field('lengthM', tr('wsLengthLabel'), item?.lengthM ?? '', 'number')}${field('massKg', tr('wsMassLabel'), item?.massKg ?? '', 'number')}${field('safetyFactor', tr('wsSafetyFactorLabel'), item?.safetyFactor ?? '', 'number')}</div>${field('certificateNo', tr('wsCertNoLabel'), item?.certificateNo || '')}${field('inspectionExpiry', tr('wsExpiryLabel'), item?.inspectionExpiry || '', 'date', 10)}<label>${tr('wsNotesLabel')}<textarea name="notes" maxlength="500" rows="3">${esc(item?.notes || '')}</textarea></label><div class="saas-workspace-form-actions"><button type="button" data-form-close>${tr('wsCancel')}</button><button type="submit" class="saas-workspace-primary">${tr('wsSaveEquipment')}</button></div><small>${tr('wsNotesLimitHint')}</small></form>`;
     backdrop.append(formLayer);
     const releaseFormFocus = trapDialogFocus(formLayer.querySelector('[role="dialog"]'), { initialFocus: formLayer.querySelector('input[name="name"]') });
     const close = () => { formLayer.remove(); releaseFormFocus(); };
@@ -232,12 +232,12 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
         else await dataService.createEquipment(db, profile, values);
         close();
         await loadPage(true);
-        notice(copy('Đã lưu thông tin dụng cụ.', 'Equipment saved.'));
+        notice(tr('wsEquipmentSaved'));
       } catch (error) {
         console.error('[SafeLift3D] Equipment save failed', error);
         const formError = formLayer.querySelector('[data-form-error]');
         formError.hidden = false;
-        formError.textContent = error.message || copy('Không lưu được dụng cụ.', 'Could not save equipment.');
+        formError.textContent = error.message || tr('wsEquipmentSaveError');
         const submit = event.currentTarget.querySelector('[type="submit"]');
         if (submit) submit.disabled = false;
       }
@@ -247,7 +247,7 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
   async function applyPlan(item) {
     const runtime = window.__LIFTING_RUNTIME__;
     const state = runtime?.api?.getState?.();
-    if (!state) throw new Error(copy('Mô phỏng chưa sẵn sàng để mở phương án.', 'The simulator is not ready to open this plan.'));
+    if (!state) throw new Error(tr('wsSimNotReadyOpen'));
     const snapshot = dataService.parsePlanSnapshot(item.snapshot);
     for (const [key, value] of Object.entries(snapshot.inputs)) {
       if (key === 'lugs') continue;
@@ -288,17 +288,17 @@ export function mountWorkspaceDashboard({ db, profile, dataService = workspaceDa
       }
       if (actionName === 'edit') { await openEquipmentForm(item); return; }
       if (actionName === 'delete') {
-        if (!window.confirm(copy(`Xóa “${item.title || item.name}”?`, `Delete “${item.title || item.name}”?`))) return;
+        if (!window.confirm(tr('wsConfirmDelete', { name: item.title || item.name }))) return;
         await dataService.deleteWorkspaceItem(db, profile.uid, tab, id);
       } else if (actionName === 'archive') {
         await dataService.updateLiftPlan(db, profile.uid, id, { archived: button.dataset.archived === 'true' });
       } else if (actionName === 'duplicate') {
-        await dataService.createLiftPlan(db, profile, { title: `${item.title} (${copy('bản sao', 'copy')})`.slice(0, 100), description: item.description, equipmentIds: item.equipmentIds || [], snapshot: item.snapshot });
+        await dataService.createLiftPlan(db, profile, { title: `${item.title} (${tr('wsCopySuffix')})`.slice(0, 100), description: item.description, equipmentIds: item.equipmentIds || [], snapshot: item.snapshot });
       }
       await loadPage(true);
     } catch (error) {
       console.error('[SafeLift3D] Workspace action failed', error);
-      notice(error.message || copy('Thao tác không thành công.', 'The action could not be completed.'), true);
+      notice(error.message || tr('wsActionFailed'), true);
     } finally { if (button.isConnected) button.disabled = false; }
   }
 
