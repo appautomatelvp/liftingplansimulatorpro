@@ -42,9 +42,9 @@
 
 **Threat:** repeated reads/writes, parallel slot creation, oversized metadata, or many accounts amplify Firebase usage and cost.
 
-**Existing controls:** rules limit document schema, text/numeric ranges, equipment/plan IDs to bounded slots, plan snapshots to 48,000 characters, and `equipmentIds` to 20. Client list pages are limited to 20; create uses a transaction to detect an occupied slot.
+**Existing controls:** rules limit document schema, text/numeric ranges, equipment/plan IDs to bounded slots (1–20 Free or dynamic limit ≤200, 1–200 Premium), plan snapshots to 48,000 characters, and `equipmentIds` to 20. Client list pages are limited to 20 (50 for `catalog`, 25–26 for admin tables); create uses a transaction to detect an occupied slot. `users/{uid}/meta/usage` tracks UTC daily writes (capped at `<= 200` on `meta/usage` itself with monotonic `+1` per UTC day), but is **client-side telemetry / soft quota** rather than a rule blocking unbatched writes to `equipment` or `liftPlans` (using `getAfter` on every write would add extra rule reads against Spark quotas).
 
-**Gaps / actions:** per-account slot caps do not cap request rate or total account creation, and a client-side transaction does not provide global throttling. Establish billing budgets/alerts and usage dashboards. Before adding high-volume endpoints, add server-side rate limits and abuse challenges where appropriate; test simultaneous writes and actual Firestore byte/rule limits. Keep 3D binaries out of Firestore.
+**Gaps / actions:** per-account slot caps do not prevent a modified client from skipping `meta/usage` increments when writing directly to `equipment`/`liftPlans` or creating multiple accounts, and client telemetry is not a security barrier against request-rate abuse. Keep slot caps and strict schema/size rules as the authoritative Firestore Rules boundaries, set Spark/Firebase usage alerts, and defer server-side rate limiting until trusted backend endpoints exist. Keep 3D binaries out of Firestore.
 
 ### 5. App Check bypass or wrong-environment Firebase access
 
