@@ -12,8 +12,8 @@
     <meta property="og:locale" content="vi_VN">
     <meta property="og:type" content="website">
     <meta name="theme-color" content="#070b12">
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <link rel="alternate icon" href="/favicon.ico">
+    <link rel="icon" type="image/x-icon" href="/safelift3d-icons/branding/favicon.ico" sizes="16x16 32x32 48x48">
+    <link rel="apple-touch-icon" href="/safelift3d-icons/branding/app-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -63,26 +63,54 @@
             visibility: hidden;
             pointer-events: none;
         }
+        #app-loading-screen { overflow: hidden; isolation: isolate; background: #07111b; }
+        #app-loading-screen::after {
+            content: "";
+            position: absolute;
+            inset: -5%;
+            z-index: -2;
+            background: url('/brand/container-yard-reference.png') center / cover no-repeat;
+            animation: yard-zoom 24s ease-in-out infinite alternate;
+        }
+        @keyframes yard-zoom { from { transform: scale(1); } to { transform: scale(1.09); } }
+        #app-loading-screen::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            opacity: 1;
+            background: linear-gradient(180deg, rgba(4, 9, 18, .54), rgba(4, 9, 18, .8));
+            mask-image: linear-gradient(180deg, transparent, #000 22%, #000 78%, transparent);
+        }
         .loader-box {
             display: flex;
             flex-direction: column;
             align-items: center;
-            max-width: 480px;
-            width: 90%;
+            max-width: 620px;
+            width: min(90%, 620px);
+            padding: 22px clamp(18px, 4vw, 42px) 26px;
+            border: 1px solid rgba(148, 163, 184, .25);
+            border-radius: 18px;
+            background: rgba(5, 11, 20, .8);
+            box-shadow: 0 30px 100px rgba(0, 0, 0, .54);
+            backdrop-filter: blur(12px);
             text-align: center;
         }
         .loader-icon-wrap {
             position: relative;
-            width: 84px;
-            height: 84px;
-            margin-bottom: 22px;
+            width: min(100%, 535px);
+            height: auto;
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
         .loader-spinner {
             position: absolute;
-            inset: 0;
+            top: -8px;
+            right: -8px;
+            width: 42px;
+            height: 42px;
             border-radius: 50%;
             border: 3px solid rgba(245, 158, 11, 0.15);
             border-top-color: #f59e0b;
@@ -164,25 +192,14 @@
             letter-spacing: 0.5px;
         }
         .loader-brand-mark {
-            width: 72px;
-            height: 72px;
-            border-radius: 16px;
-            background: linear-gradient(145deg, #0ea5e9 0%, #0369a1 45%, #f59e0b 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 0 28px rgba(14, 165, 233, 0.35), inset 0 1px 0 rgba(255,255,255,0.25);
-            border: 1px solid rgba(255,255,255,0.18);
+            display: block;
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            background: transparent;
+            object-fit: contain;
             position: relative;
             z-index: 1;
-        }
-        .loader-brand-mark span {
-            font-family: 'JetBrains Mono', monospace;
-            font-weight: 800;
-            font-size: 22px;
-            letter-spacing: -0.5px;
-            color: #0b1220;
-            text-shadow: 0 1px 0 rgba(255,255,255,0.35);
         }
         .loader-stream {
             font-family: 'JetBrains Mono', monospace;
@@ -207,11 +224,14 @@
             margin-bottom: 4px;
         }
         .loader-copyright .copy-contact {
+            display: block;
             font-size: 9px;
             color: #64748b;
             font-family: 'JetBrains Mono', monospace;
             line-height: 1.45;
+            text-decoration: none;
         }
+        .loader-copyright a.copy-contact:hover { color: #7dd3fc; }
         @keyframes spin-ring {
             to { transform: rotate(360deg); }
         }
@@ -231,10 +251,8 @@
         <div class="loader-box">
             <div class="loader-icon-wrap">
                 <div class="loader-spinner"></div>
-                <div class="loader-brand-mark" aria-hidden="true"><span>SL</span></div>
+                <img class="loader-brand-mark" src="/safelift3d-icons/branding/main-logo.svg" alt="SafeLift3D — Heavy Rigging &amp; Lift Planner">
             </div>
-            <div class="loader-title">SAFELIFT3D</div>
-            <div class="loader-sub" id="app-loading-tagline" data-i18n="brandTagline">MÔ PHỎNG NÂNG HẠ &amp; LẬP PHƯƠNG ÁN · DIGITAL TWIN CAE</div>
             <div class="loader-bar-bg">
                 <div id="app-loading-bar" class="loader-bar-fill"></div>
             </div>
@@ -252,10 +270,8 @@
             </div>
             <div class="loader-copyright">
                 <div class="copy-line">© <span id="app-loading-year">2026</span> SafeLift3D · <span id="app-loading-developer" data-i18n="splashDeveloper">Phát triển bởi Lê Việt Phương (Mr)</span></div>
-                <div class="copy-contact">
-                    levietphuong.hcmutrans@gmail.com<br>
-                    Tel +84 968 051 697
-                </div>
+                <a class="copy-contact" href="mailto:levietphuong.hcmutrans@gmail.com">levietphuong.hcmutrans@gmail.com</a>
+                <a class="copy-contact" href="tel:+84968051697">Tel +84 968 051 697</a>
             </div>
         </div>
     </div>
@@ -279,8 +295,8 @@
     <header id="top-bar">
         <!-- Brand & Standard Compliance -->
         <div class="flex items-center gap-1.5 shrink-0">
-            <div class="w-6 h-6 rounded-md bg-gradient-to-br from-sky-400 via-sky-600 to-amber-500 flex items-center justify-center shadow-[0_0_10px_rgba(14,165,233,0.45)] border border-sky-300/40 shrink-0" title="SafeLift3D — Developed by Lê Việt Phương">
-                <span class="text-slate-950 font-black text-[9px] tracking-tighter font-mono">SL</span>
+            <div class="w-6 h-6 shrink-0 brand-identity-mark" title="SafeLift3D — Developed by Lê Việt Phương">
+                <img src="/safelift3d-icons/branding/app-icon.png" alt="SafeLift3D">
             </div>
             <div class="leading-tight">
                 <div class="flex items-center gap-1">
@@ -3180,6 +3196,10 @@
             <span>Toàn màn hình (H):</span>
             <button id="btn-fullscreen-view" type="button" class="pendant-btn yellow !px-2.5 !py-0.5 text-[10.5px]">⛶ Mở</button>
         </div>
+        <div class="h-px bg-slate-800 my-1"></div>
+        <button id="btn-contact-developer" type="button" class="w-full text-left pendant-btn blue !py-1.5 !px-2.5 text-[11px] font-bold shadow flex items-center gap-2">
+            <span aria-hidden="true">✉</span><span data-contact-label>Liên hệ nhà phát triển</span>
+        </button>
     </div>
 
     <script>
@@ -3193,21 +3213,18 @@
         } catch (e) {}
         document.documentElement.lang = lang;
         var status = document.getElementById('app-loading-status');
-        var tag = document.getElementById('app-loading-tagline');
         var developer = document.getElementById('app-loading-developer');
         if (lang === 'en') {
           if (status) status.textContent = 'Loading Physics Engine…';
-          if (tag) tag.textContent = 'HEAVY RIGGING & LIFT PLANNER · CAE DIGITAL TWIN';
           if (developer) developer.textContent = 'Developed by Lê Việt Phương (Mr)';
         } else {
           if (status) status.textContent = 'Đang tải Physics Engine…';
-          if (tag) tag.textContent = 'MÔ PHỎNG NÂNG HẠ & LẬP PHƯƠNG ÁN · DIGITAL TWIN CAE';
           if (developer) developer.textContent = 'Phát triển bởi Lê Việt Phương (Mr)';
         }
       })();
     </script>
     <script type="module" src="/src/main.js"></script>
-    <!-- SafeLift3D · Developed by Lê Việt Phương (Mr) · levietphuong.hcmutrans@gmail.com · Tel +84 968 051 697 -->
+    <!-- SafeLift3D · Developed by Lê Việt Phương (Mr) -->
 </body>
 </html>
 

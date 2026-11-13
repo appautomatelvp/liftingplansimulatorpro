@@ -2,33 +2,41 @@
 
 **Mục tiêu:** đưa SafeLift3D từ một trình mô phỏng nâng hạ có đăng nhập thành nền tảng chuyên nghiệp cho người dùng, khách hàng và đội ngũ quản trị. Hai ảnh người dùng gửi là nguồn artwork chuẩn cho logo SafeLift3D và nền bãi container. Tên, email và số điện thoại nhà phát triển được người dùng xác nhận để hiển thị công khai.
 
-**Trạng thái triển khai (13/11/2026):** lỗi vật lý được hoãn theo chỉ đạo người dùng. G1 đã có artwork gốc cho logo/nền, bộ icon, thông tin nhà phát triển, giao diện đăng nhập song ngữ, loading và menu liên hệ; vừa sửa trạng thái nút bị kẹt “đang chờ” sau lỗi đăng nhập. Accessibility, reduced motion, bản dịch toàn bộ mô phỏng và timeout vẫn cần nghiệm thu. G2 có kho dụng cụ/lift plan theo tài khoản, schema/giới hạn và Firestore Rules owner-scoped; cần migration và E2E trên môi trường triển khai. G0.02 có CI xanh (run `43425550695`, commit `3f90a66`). G0.03 đã tạo Firebase staging, Firestore ở `asia-southeast1`, Rules, Email/Password và Google Auth. Cloudflare Preview settings và `.env.staging` cùng trỏ tới project staging; deployment Preview commit `3f90a66` đã tải được trên branch alias `codex-safelift-g0-ci.safelift3d.pages.dev`. Đăng nhập vẫn trả `auth/unauthorized-domain` dù domain đó đã được xác nhận trong Authorized domains staging; lần đối chiếu cấu hình SDK bằng Firebase CLI bị chặn do phiên CLI hết hạn, nên cần khôi phục quyền CLI hoặc kiểm tra trực tiếp Firebase Console để xác định project thực tế mà Auth đang dùng. Không mở allowlist production. G0.04 đã quét lịch sử Git với Gitleaks; chưa phát hiện private key/payment/webhook secret trong các phạm vi đã rà. Backup định kỳ/restore Firebase cần billing; theo chỉ đạo ngày 13/11/2026, hoãn phần này và không bật billing. Delete protection vẫn bật. Billing dashboard/alerts phụ thuộc gói cũng hoãn; cảnh báo lỗi miễn phí và rà soát admin/MFA vẫn cần làm. G3.01 đã bổ sung phân trang cursor, tìm email theo tiền tố và giới hạn 25 user/trang; bộ test mới đạt. Rules Emulator CI chưa chạy cho lần sửa này. G4 chưa có thanh toán/ledger/webhook; G5 mới có `mailto`, chưa có ticket/backend/chống spam; G6 chưa có SLO/giám sát/incident runbook. Các thay đổi khác trong working tree chưa được phát hành lên Cloudflare Pages.
+**Trạng thái triển khai (13/11/2026):** lỗi vật lý được hoãn theo chỉ đạo người dùng. Trong lần xác minh local gần nhất, Vitest đạt 273/273, Firestore Rules Emulator 12/12, architecture gate và production build đều đạt; build còn cảnh báo hai bundle lớn (khoảng 3.0 MB và 4.3 MB). Ba E2E giao diện (focus/keyboard, reduced motion, nhập rig cũ) đạt. Bài dò English ban đầu đạt nhưng khi mở rộng kiểm tra đủ sáu tab mô phỏng và ba menu, nó phát hiện chữ Việt động ở tab Cargo: “Kiện quy đổi … · CoG bao … · Khe cánh …”; lỗi chưa được sửa, nên G1.03 vẫn ◐. Auth Emulator không khởi chạy được do hub localhost:4400 timeout; chưa có E2E đăng nhập thật. G2.05 có bằng chứng local 12/12; G2.06 vẫn cần nghiệm thu Firestore staging, dữ liệu legacy thật và solver cũ. CI xanh trước đây không xác nhận working tree hiện tại; chưa chạy CI, audit/Gitleaks mới hoặc phát hành Cloudflare trong lượt này. Google login staging vẫn cần xác minh lại; không mở allowlist production. Spark Free là yêu cầu: chỉ lưu text/JSON nhẹ, không ảnh/mô hình, không gắn payment method và không tự nâng Blaze. G4 bị hoãn; backup Firebase trả phí không nằm trong phạm vi. CMS usage/error, feedback ticket server-side và các mục G6 còn thiếu. Thay đổi hiện tại chưa phát hành.
 
 ## 0. Checklist thực thi theo thứ tự
 
 Ký hiệu: **✓** hoàn tất và có bằng chứng; **◐** đã có một phần, còn cổng nghiệm thu; **□** chưa làm. Không đánh dấu xong chỉ vì có giao diện hoặc cấu hình mẫu.
 
+### Bản chụp trạng thái thực tế và việc tiếp theo
+
+- **Đã xác minh local:** `npm test -- --reporter=dot` — 34 file, 273 test đạt; `npm run test:rules` — 12/12 đạt; `npm run architecture:gate` đạt; `npm run build` đạt. Ba E2E giao diện tập trung đạt (focus, reduced motion, nhập/mở lại rig cũ). Lần chạy đủ bốn E2E trước khi mở rộng bài quét ngôn ngữ cũng đạt.
+- **Lỗi đã xác nhận, chưa sửa:** bài quét toàn bộ sáu tab mô phỏng và các menu phát hiện chuỗi tiếng Việt được tạo động ở giao diện OOG Cargo: `Kiện quy đổi … · CoG bao … · Khe cánh …`. Đây là việc tiếp theo khi tiếp tục: sửa cập nhật ngôn ngữ của panel mà không làm thay đổi mô hình, sau đó chạy lại bài quét toàn màn hình và regression E2E.
+- **Chưa nghiệm thu bên ngoài máy local:** CI trên working tree hiện tại; Google login và CRUD Firestore trên Firebase staging/Cloudflare Preview; Auth Emulator; App Check metrics/enforcement; phát hành Pages. Auth Emulator hiện timeout ở Firebase Emulator Hub `127.0.0.1:4400`.
+- **Chưa triển khai:** CMS usage/quota toàn nền tảng và bảng lỗi; ticket feedback lưu/gửi phía server; audit/support/catalog CMS; SLO/monitoring và kill switch. Mục G4 vẫn hoãn theo quyết định Spark Free; không được xem là việc đang chờ.
+- **Lần dừng hiện tại:** theo yêu cầu người dùng, không tiếp tục sửa code hoặc chạy thêm bài test trong lần này; chỉ ghi nhận trạng thái và thứ tự công việc để tiếp tục sau.
+
 ### G0 — Nền tảng, bảo mật và chi phí
 
 - [✓] **G0.01** Cloudflare Pages và tên miền `safelift3d.com` đã được thiết lập trước đó; cấu hình build nằm trong `wrangler.toml`.
-- [✓] **G0.02** `.github/workflows/ci.yml` chạy xanh trên GitHub Actions run `43415934866` cho commit `125599c`: architecture gate, unit/regression, Firestore Rules Emulator (12 ca), production build và Gitleaks. Dùng checkout v6, setup-node v5, setup-java v5, Node 24 và Ubuntu 24.04.
+- [◐] **G0.02** CI trước đó đã xanh cho commit `3f90a66` (run `43425550695`), gồm architecture gate, tests, Rules Emulator, build và Gitleaks. Working tree hiện tại chưa được CI xác nhận; không coi kết quả cũ là nghiệm thu cho thay đổi mới.
 - [◐] **G0.03** Firebase staging `safelift3d-staging` có Web app, Firestore, Rules và Email/Password + Google Auth. Cloudflare Preview build variables hiện đặt `VITE_APP_ENV=staging` cùng config dự án staging. Domain `codex-safelift-g0-ci.safelift3d.pages.dev` có trong Authorized domains staging theo kiểm tra Console và đã được người dùng đồng ý thêm. Preview vẫn báo domain không được phép; nguyên nhân runtime còn chưa được xác định. Không thêm domain vào allowlist production. Release gate Production còn chờ.
-- [◐] **G0.04** Gitleaks đã quét toàn bộ lịch sử Git thành công; rà mã nguồn và Cloudflare Production/Preview variables chỉ thấy Firebase Web API config và App Check site key là client-side identifiers, không tìm thấy private key/payment/webhook secret theo các mẫu đã kiểm tra. GitHub repository secrets không chứa secret ứng dụng. Vite/Vitest đã được nâng lên 6.4.6/4.1.12 để xử lý các cảnh báo audit; `npm audit` hiện 0 lỗ hổng. Tiếp tục rà trước khi bật backend/billing.
-- [◐] **G0.05** Firebase Auth providers và Rules đã phát hành trên staging; production Rules đã phát hành. Delete protection bật trên production và staging. Staging App Check key riêng đã được đăng ký ở Preview, nhưng traffic/metrics chưa nghiệm thu và enforcement chưa bật. Backup định kỳ/restore yêu cầu billing; theo chỉ đạo, hoãn phần này và không bật billing. Quyền admin/MFA vẫn cần rà soát.
+- [◐] **G0.04** Gitleaks đã quét lịch sử Git; các lần rà trước không phát hiện private key/payment/webhook secret theo mẫu đã kiểm tra. `npm audit` gần nhất không có lỗ hổng. Giữ Firebase trên Spark Free, không yêu cầu thẻ/billing và không tự nâng Blaze. Kiểm tra lại CI/audit trước mỗi lần phát hành.
+- [◐] **G0.05** Firebase Auth providers và Rules đã phát hành trên staging; production Rules đã phát hành. Delete protection bật trên production và staging. Staging App Check key riêng đã đăng ký ở Preview, nhưng metrics/enforcement chưa nghiệm thu. Không triển khai backup tự động/PITR/restore Firebase phụ thuộc Blaze; dùng export JSON phía người dùng như tính năng portability, không quảng bá thay thế backup. MFA không nhất thiết cần liên kết billing: Identity Platform hỗ trợ TOTP không cần SMS, nhưng Firebase Auth with Identity Platform trên Spark có giới hạn 3.000 DAU/ngày; chưa bật vì cần xác minh lưu lượng dự kiến và xử lý enrolment/recovery cho admin. Không bật SMS MFA mặc định.
 - [✓] **G0.06** Threat model và danh sách kiểm soát còn thiếu đã được ghi tại `docs/SECURITY_THREAT_MODEL.md`; phân biệt biện pháp hiện có với hạng mục chưa triển khai.
-- [◐] **G0.07** Firestore Rules Emulator có 12 ca đạt trên CI, gồm cross-account get/list/update/delete, tài khoản khóa, tự cấp quyền, schema sai và giới hạn slot. Auth/Functions backend chưa được triển khai; test feedback/billing chờ tới khi có các luồng server tương ứng.
-- [□] **G0.08** Dashboard/cảnh báo chi phí và lỗi Firebase, Cloudflare, email chưa có.
-- [◐] **G0.09** Có role admin cơ bản; chưa có phân quyền support/billing/catalog, MFA bắt buộc hay audit quản trị.
+- [◐] **G0.07** Firestore Rules Emulator đã chạy trên CI. Mọi tính năng mới phải có quota và kiểm thử abuse trước khi phát hành. Cloud Functions yêu cầu Blaze để deploy; không dùng cho sản phẩm hiện tại. Feedback/backend chỉ được chọn sau khi chứng minh chạy được trong Spark Free hoặc Cloudflare free limits.
+- [◐] **G0.08** Không làm dashboard hóa đơn/billing alerts khi dùng Spark. Cần hoàn thiện theo dõi miễn phí các quota Firestore/Auth, số document/payload theo user, lỗi và abuse; khi gần hạn mức sẽ giới hạn hoặc tạm dừng ghi không thiết yếu, thay vì nâng cấp tự động.
+- [◐] **G0.09** Có role admin cơ bản; hiện chỉ cần admin và catalog-editor khi có nhu cầu. Chưa triển khai role billing, vì chưa bán gói/thu tiền. Support/audit sẽ làm theo phạm vi CMS. MFA ưu tiên TOTP nếu chấp nhận giới hạn Identity Platform Spark; không gắn thẻ hoặc tự nâng Blaze.
 
 ### G1 — Nhận diện, đăng nhập và loading
 
 - [✓] **G1.01** Tích hợp artwork logo và nền container do người dùng cung cấp; attribution nhà phát triển được hiển thị.
 - [✓] **G1.02** Đồng bộ logo/favicon/app icon và bộ SVG chức năng trong `public/safelift3d-icons/`.
-- [◐] **G1.03** Login email/Google/reset và VI/EN đã có; lỗi đăng nhập không còn để nút mắc ở trạng thái “đang chờ”. Chưa nghiệm thu toàn bộ bản dịch ở các màn mô phỏng; Google login staging còn bị `auth/unauthorized-domain`.
+- [◐] **G1.03** Login email/Google/reset và VI/EN đã có; lỗi đăng nhập không còn để nút mắc ở trạng thái “đang chờ”. Quét English trên giao diện ban đầu đạt, nhưng quét mở rộng sáu tab đã bắt được chuỗi Việt động ở OOG Cargo (`Kiện quy đổi … · CoG bao … · Khe cánh …`); chưa sửa. Google login staging chưa nghiệm thu lại sau lỗi `auth/unauthorized-domain`.
 - [✓] **G1.04** Mục liên hệ nhà phát triển mở email soạn sẵn; đây chưa phải feedback ticket.
 - [◐] **G1.05** Loading có các bước khởi tạo và cập nhật tiến trình; cần chứng minh phần trăm gắn với công việc thật, timeout và retry.
-- [□] **G1.06** Kiểm thử mobile, bàn phím, screen reader, contrast, reduced motion và fallback lỗi tải.
-- [□] **G1.07** E2E login/logout, popup đóng, mạng lỗi, tài khoản khóa và locale trên domain production/preview.
+- [◐] **G1.06** E2E local đã xác nhận focus trap/restore và reduced motion; còn mobile, screen reader, contrast và fallback lỗi tải.
+- [□] **G1.07** Chưa có E2E Auth thật cho login/logout, popup đóng, mạng lỗi/tài khoản khóa hoặc xác minh locale trên domain production/preview. Auth Emulator local chưa khởi chạy được vì hub cổng 4400 timeout.
 
 ### G2 — Kho dụng cụ và lift plan
 
@@ -36,26 +44,28 @@ Ký hiệu: **✓** hoàn tất và có bằng chứng; **◐** đã có một p
 - [✓] **G2.02** Lift plan: lưu/mở/sao chép/archive/xóa/xuất JSON, liên kết dụng cụ và lưu snapshot có phiên bản solver.
 - [✓] **G2.03** Cursor pagination, giới hạn payload và quota slot Free/Premium đã có.
 - [✓] **G2.04** Firestore Rules production đã phát hành.
-- [◐] **G2.05** Emulator Rules đạt 6/6; cần thêm test chặn cross-account update/delete, locked user, payload/quota đầy đủ và quyền admin.
-- [□] **G2.06** Migration dữ liệu/schema cũ và kiểm tra mở lại qua phiên bản solver chưa có.
+- [✓] **G2.05** Firestore Rules Emulator đạt 12/12; đã kiểm chặn cross-account get/update/delete, locked user, giới hạn slot và payload/schema, profile tự nâng quyền, quyền admin, cùng phân trang danh sách user.
+- [◐] **G2.06** Luồng UI nhập rig cũ đã qua E2E: lỗi lưu thì giữ rig và không đánh dấu đã nhập; lưu thành công thì lift plan nhận đúng thông số, mở lại trong mô phỏng đúng dữ liệu, và rig cũ vẫn còn. Còn nghiệm thu Firestore staging thật, dữ liệu legacy thật và migration từ solver version cũ.
 - [□] **G2.07** E2E trên staging/production: đăng nhập, CRUD, tải lại trang, giới hạn quota và không rò dữ liệu giữa user.
 
 ### G3 — CMS quản trị
 
-- [◐] **G3.01** CMS có danh sách user và đổi tier/status; đã bổ sung phân trang cursor, tìm email theo tiền tố và truy vấn giới hạn 25 hồ sơ/trang. Unit tests đạt 269/269; Rules Emulator cần xác nhận trên CI.
-- [□] **G3.02** Dashboard usage, lỗi, phản hồi, doanh thu đối soát và cảnh báo.
+- [◐] **G3.01** CMS có danh sách user, đổi tier/status, cursor pagination, tìm email theo tiền tố và giới hạn 25 hồ sơ/trang. Unit suite và Rules Emulator local trên working tree hiện tại đều đạt; CI mới và staging vẫn chưa xác minh.
+- [□] **G3.02** Dashboard usage/quota, lỗi và phản hồi; không hiển thị doanh thu khi chưa thu tiền.
 - [□] **G3.03** Lịch sử user, quyền tạm thời có lý do/hạn, bộ lọc và công cụ hỗ trợ.
-- [□] **G3.04** Quản lý version gói/entitlement, catalog và feature flags.
-- [□] **G3.05** Phân hệ billing, refund/reconcile, feedback inbox, audit log và phân quyền admin/support/billing.
+- [□] **G3.04** Quản lý catalog dụng cụ, feature flags và quota sản phẩm; entitlement thương mại để ở lộ trình tùy chọn.
+- [□] **G3.05** Feedback inbox, audit log, quyền admin/support/catalog-editor và lịch sử thao tác. Không gộp billing/refund/đối soát vào CMS hiện tại.
 
 ### G5 — Feedback và hỗ trợ
 
 - [◐] **G5.01** Liên hệ `mailto` có giới hạn nội dung; chưa ghi nhận ticket phía server.
-- [□] **G5.02** Form ticket có validate, Auth/App Check, rate limit/cooldown và chống gửi lặp.
-- [□] **G5.03** Backend gửi email qua secret store; lỗi email có retry giới hạn, ticket không mất.
+- [□] **G5.02** Form ticket có validate, Auth/App Check, rate limit/cooldown và chống gửi lặp; trước tiên chọn cách lưu/gửi không phát sinh Firebase Blaze.
+- [□] **G5.03** Cloud Functions cần Blaze để deploy nên không dùng hiện tại. Chỉ triển khai backend gửi email nếu dịch vụ miễn phí khác khả dụng, có giới hạn chống spam rõ ràng và không yêu cầu Firebase billing; nếu không, giữ `mailto`.
 - [□] **G5.04** CMS xử lý ticket, trạng thái, SLA, retention và xóa dữ liệu.
 
 ### G4 — Billing và tín dụng
+
+**Trạng thái:** hoãn hoàn toàn, không phải điều kiện để hoàn thành sản phẩm hiện tại. Đây là thanh toán người dùng cho SafeLift3D, khác với billing của nhà cung cấp Firebase. Không bật Firebase Blaze, không thêm thẻ và không xây luồng thu tiền cho đến khi chủ sản phẩm chủ động thay đổi quyết định.
 
 - [□] **G4.01** Chốt subscription/credit, đơn vị tính phí, giá và quyền lợi.
 - [□] **G4.02** Chọn nhà cung cấp/merchant phù hợp Việt Nam và xác minh quy trình sandbox.
@@ -65,13 +75,13 @@ Ký hiệu: **✓** hoàn tất và có bằng chứng; **◐** đã có một p
 
 ### G6 — Vận hành và mở rộng
 
-- [□] **G6.01** Đặt SLO/error tracking cho login, workspace, feedback, email và billing; không log token/PII dư thừa.
-- [□] **G6.02** Cost dashboard, quota alerts và kill switch theo tính năng.
+- [□] **G6.01** Đặt SLO/error tracking cho login, workspace và feedback; không log token/PII dư thừa.
+- [◐] **G6.02** Theo dõi quota/availability trong công cụ miễn phí và đặt kill switch theo tính năng; không yêu cầu dashboard hóa đơn. Khi đạt ngưỡng Spark, hạn chế ghi/tác vụ tùy chọn và thông báo người dùng, không tự chuyển sang Blaze.
 - [□] **G6.03** Bật App Check enforcement theo từng dịch vụ sau khi kiểm metrics.
-- [□] **G6.04** Backup mã hóa, diễn tập restore, incident runbook và rollback.
+- [◐] **G6.04** Incident runbook, rollback và export JSON từng lift plan đã có; export toàn bộ hồ sơ/kho dụng cụ chưa có. Backup tự động/PITR/restore do Firebase cung cấp được hoãn; không tuyên bố export là backup vận hành.
 - [□] **G6.05** Chỉ sau các cổng trên mới mở R2 upload, collaboration, SSO hoặc analytics sâu.
 
-**Bước đang thực hiện:** khôi phục đối chiếu Firebase staging Auth vì Google sign-in vẫn bị `auth/unauthorized-domain` dù branch alias đã được cho phép; Firebase CLI hiện hết phiên xác thực, không đổi allowlist production. Đưa CMS pagination/search qua Rules Emulator CI. Tiếp đó làm dashboard/lịch sử người dùng rồi feedback backend. Backup/restore và billing dashboard cần gói trả phí được hoãn theo chỉ đạo; không bật billing. CI run `43425550695` cho commit `3f90a66` xanh. Delete protection vẫn bật ở production. Chưa merge hay phát hành production.
+  **Bước tiếp theo khi tiếp tục:** sửa lỗi dịch động tại OOG Cargo rồi chạy lại quét English trên cả sáu tab/ba menu và regression E2E. Sau đó xử lý cổng Auth/Google login staging và workspace round-trip G2.07; kế tiếp triển khai CMS G3.02–G3.05 cùng feedback chỉ trong phương án Spark Free/Cloudflare miễn phí đã xác minh. Hiện tạm dừng theo yêu cầu, chưa phát hành. Không bật Firebase Blaze hoặc thêm billing account.
 
 ## 1. Hiện trạng đã kiểm tra trong repository
 
@@ -95,23 +105,23 @@ Simulator có phần lõi lớn, đang dùng chung nhiều biến toàn cục v�
 2. **Firebase lưu dữ liệu nhẹ, có cấu trúc:** hồ sơ, tùy chọn, định nghĩa dụng cụ, thông số, phiên bản kế hoạch, sự kiện usage và metadata. Không đưa GLB/OBJ/STL, texture, video, cache mô phỏng hoặc file CAD nặng vào Firestore.
 3. **Tài sản tĩnh và tài sản tải lên là hai luồng riêng:** mô hình dựng sẵn được đóng gói/đưa qua CDN của Cloudflare; nếu sau này mở upload thì lưu blob ở Cloudflare R2 với giới hạn kích thước/loại file, URL ký hạn ngắn và kiểm tra nội dung. Firestore chỉ giữ metadata và quyền truy cập.
 4. **Client không quyết định quyền lợi hoặc tiền:** client chỉ hiển thị gói/quyền; server xác minh thanh toán và phát hành entitlement/ledger. Không bao giờ cho trình duyệt tự ghi role, số dư, trạng thái thanh toán hoặc quyền premium.
-5. **Giới hạn chi phí theo tính năng:** định mức số bản ghi, dung lượng metadata, tốc độ tạo, truy vấn, số lần xuất và tác vụ nặng theo gói; có cảnh báo chi phí và nút tạm khóa các luồng tốn tài nguyên.
+5. **Spark Free là mặc định:** chỉ lưu văn bản/JSON có schema và giới hạn kích thước, số lượng bản ghi, tần suất ghi và truy vấn. Không lưu ảnh, mô hình 3D hoặc tệp nhị phân trong Firebase. Không yêu cầu thẻ, không tự nâng Blaze. Nếu gần quota Spark, giới hạn hoặc tạm dừng tính năng không thiết yếu và giải thích cho người dùng; không coi quota vượt là khoản phí tự động.
 6. **Mọi thao tác quản trị có dấu vết:** ai làm, lúc nào, mục tiêu nào, giá trị trước/sau và lý do; không lưu bí mật thanh toán hoặc thông tin thẻ.
 7. **Thiết kế theo module:** UI → app services → domain/API; tiếp tục giữ simulator hiện tại chạy ổn và chỉ tích hợp qua các điểm kết nối ổn định.
 
 ### Sơ đồ dịch vụ đích
 
 ```text
-Browser / PWA
+Browser / desktop-first web app
   ├─ Cloudflare Pages: giao diện Vite, asset tĩnh, tên miền safelift3d.com
   ├─ Firebase Auth: đăng nhập và danh tính
   ├─ Firestore client: dữ liệu cá nhân nhẹ, theo Security Rules + App Check
-  └─ Cloudflare Pages Functions / Worker: rate-limit, Turnstile khi phù hợp,
-       nhận yêu cầu feedback, tạo phiên checkout và API biên
-              └─ Backend tin cậy (Firebase Functions/Admin SDK hoặc Worker được cấp IAM hẹp)
+  └─ Cloudflare Pages Functions / Worker (chỉ khi free limits đáp ứng):
+       rate-limit hoặc feedback endpoint; tránh Firebase Functions nếu cần Blaze
+              └─ Trusted backend chỉ cho tính năng cần quyền server-side
                    ├─ xác minh token, vai trò và schema
-                   ├─ webhook thanh toán, idempotency, ledger/entitlement
-                   └─ email thông báo và audit
+                   ├─ thanh toán/ledger chỉ khi G4 được chủ sản phẩm bật lại
+                   └─ email/audit với quota và chống spam
 
 3D built-in → Cloudflare static/CDN
 3D user upload (nếu bật sau) → Cloudflare R2; metadata/owner/quota → Firestore
@@ -121,18 +131,18 @@ Chọn backend tin cậy theo năng lực vận hành hiện có trước khi tr
 
 ## 3. Các giai đoạn triển khai
 
-Thời lượng dưới đây là cỡ công việc theo sprint, chưa phải cam kết ngày giao hàng; cần chốt sau khi thống nhất nhà cung cấp thanh toán, chính sách gói và định mức.
+Thời lượng dưới đây là cỡ công việc theo sprint, chưa phải cam kết ngày giao hàng. G0–G3, G5 và G6 triển khai theo ưu tiên; G4 bị hoãn và không chặn sản phẩm hiện tại.
 
 ### Giai đoạn 0 — Chốt nền tảng, bảo mật và đo chi phí
 
 - Cập nhật tài liệu kiến trúc/triển khai: Cloudflare Pages + GitHub Actions; tách môi trường preview, staging và production; bí mật chỉ nằm trong secret store, không trong repository hay bundle.
-- Kiểm kê Firestore/Auth/App Check đã bật ở Firebase Console, quyền admin thật, backup/khôi phục, domain OAuth và cấu hình DNS; không dựa vào giả định chỉ từ mã nguồn.
+- Kiểm kê Firestore/Auth/App Check đã bật ở Firebase Console, quyền admin thật, export/portability, domain OAuth và cấu hình DNS; không giả định có backup/restore tự động trên Spark.
 - Lập threat model cho spam đăng ký, dò mật khẩu, lạm dụng API, leo quyền, sửa giá, giả webhook, spam email, đọc chéo dữ liệu và tạo tài liệu hàng loạt.
-- Thiết lập project thử nghiệm/emulator cho Auth/Firestore/Functions; mọi rule mới có ma trận cho phép/từ chối trước khi lên production.
-- Đặt dashboard cảnh báo lỗi Auth, denied rules, mức dùng reads/writes, lưu lượng Functions/Workers, email và hóa đơn; định nghĩa ngưỡng cảnh báo cùng hành động giảm tải.
-- Quyết định vai trò admin/support/billing và bước xác minh bổ sung (MFA cho quản trị); lưu role tin cậy do backend provisioning cấp, không cho người dùng tự sửa.
+- Thiết lập project thử nghiệm/emulator cho Auth/Firestore; chỉ thêm Functions nếu có quyết định riêng về Blaze. Mọi rule mới có ma trận cho phép/từ chối trước production.
+- Theo dõi miễn phí lỗi Auth/denied rules, reads/writes và giới hạn dữ liệu mỗi user bằng công cụ khả dụng; định nghĩa ngưỡng throttle/disable trước khi gần quota. Không yêu cầu billing alerts.
+- Chốt quyền admin/support/catalog-editor và MFA cho tài khoản đặc quyền; không tạo role billing trong khi chưa bán gói.
 
-**Cổng nghiệm thu:** không có secret trong git/bundle; không có rule mở toàn cục; backup/restore được diễn tập; staging tách dữ liệu production; cảnh báo chi phí và quy trình rollback đã định nghĩa.
+**Cổng nghiệm thu:** không có secret trong git/bundle; không có rule mở toàn cục; staging tách dữ liệu production; quota theo user được kiểm thử; có quy trình throttle/rollback và export dữ liệu. Không yêu cầu backup Firebase trả phí.
 
 ### Giai đoạn 1 — Bộ nhận diện, đăng nhập và loading kỹ thuật
 
@@ -159,13 +169,13 @@ Thời lượng dưới đây là cỡ công việc theo sprint, chưa phải ca
 
 1. **Tổng quan:** số tài khoản theo ngày, active/suspended, gói, sử dụng, doanh thu giao dịch đã đối soát, phản hồi chờ xử lý, lỗi dịch vụ và cảnh báo ngưỡng.
 2. **Người dùng:** tìm kiếm theo email/UID, lọc trạng thái/gói/ngày; phân trang; xem lịch sử gói/usage; khóa/mở khóa, reset/quy trình hỗ trợ; cấp quyền tạm thời có lý do và hạn kết thúc.
-3. **Gói & entitlement:** tạo bản nháp, sửa nội dung/quyền lợi/hạn mức/giá, preview, phát hành phiên bản mới, ngừng bán mà không sửa lịch sử giao dịch cũ.
-4. **Thanh toán:** danh sách giao dịch, trạng thái webhook, đối soát, hoàn tiền theo nhà cung cấp, xử lý ngoại lệ, tra mã tham chiếu. Không sửa số dư trực tiếp; thao tác điều chỉnh phải ghi ledger và audit với lý do.
+3. **Catalog & feature flags:** quản lý mẫu dụng cụ, quota và cờ tính năng. Gói/entitlement thương mại chỉ thêm nếu G4 được mở lại.
+4. **Thanh toán (G4 tùy chọn):** nếu sau này mở bán, quản lý giao dịch, webhook, đối soát/refund và audit; chưa thuộc CMS hiện tại.
 5. **Feedback/support:** hộp thư phản hồi, gán trạng thái/nhân sự, chủ đề, mức độ ưu tiên, ghi chú nội bộ, trả lời qua email, thời điểm phản hồi và thống kê SLA.
 6. **Kho/catalog:** quản lý dụng cụ mẫu chính thức, version, trạng thái công bố và kiểm duyệt metadata; phân biệt rõ catalog do SafeLift3D xác minh với đồ dùng tự tạo của khách hàng.
 7. **Hệ thống:** cấu hình cờ tính năng, quotas, thông báo bảo trì, giới hạn upload, mẫu email, nhật ký quản trị, export báo cáo có quyền và audit.
 
-**Kiểm soát CMS:** role-based access cho `admin`, `support`, `billing`, `catalog-editor`; MFA cho tài khoản đặc quyền; xác nhận lại với khóa user/hoàn tiền/đổi giá; quyền tối thiểu; phân trang; che bớt PII; log trước/sau không cho client sửa/xóa.
+**Kiểm soát CMS:** role-based access cho `admin`, `support`, `catalog-editor`; MFA cho tài khoản đặc quyền; xác nhận lại khi khóa user/đổi quyền hoặc cấu hình; quyền tối thiểu; phân trang; che bớt PII; log trước/sau không cho client sửa/xóa. Chỉ thêm role `billing` nếu G4 được bật lại.
 
 ### Giai đoạn 4 — Gói cước, thanh toán và nạp tín dụng
 
@@ -182,8 +192,8 @@ Thời lượng dưới đây là cỡ công việc theo sprint, chưa phải ca
 ### Giai đoạn 5 — Feedback email và hỗ trợ khách hàng
 
 - Form “Gửi phản hồi” trong ứng dụng: loại (lỗi/góp ý/câu hỏi), tiêu đề, nội dung, trang/phiên bản app, mã lỗi tùy chọn; không gửi mô hình 3D, cookie, token, thông tin đăng nhập hoặc dữ liệu không cần thiết.
-- Gửi tới backend, yêu cầu Auth khi phù hợp; kiểm tra App Check, giới hạn request theo UID/IP, Turnstile cho lưu lượng rủi ro, honeypot, độ dài tối đa, escape nội dung, cooldown và trùng lặp.
-- Firestore chỉ giữ nội dung gọn + metadata + trạng thái xử lý; backend gửi email quản trị qua nhà cung cấp thư có thể cấu hình secret. Không gửi email trực tiếp từ client và không dựa vào `mailto` làm hệ thống theo dõi.
+- Gửi qua endpoint chỉ sau khi xác minh hạ tầng trong giới hạn miễn phí; yêu cầu Auth, kiểm tra App Check, giới hạn theo UID/IP, body cap, cooldown và chống trùng. Turnstile chỉ bật khi tích hợp hiện tại không tạo chi phí ngoài ngân sách.
+- Không dùng Firebase Functions làm điều kiện cho feedback vì có thể yêu cầu Blaze. Chọn Pages Function/Worker chỉ khi quota/gói Cloudflare hiện tại đáp ứng; nếu không, giữ `mailto`, không nhận/lưu ticket phía server cho đến khi có lựa chọn miễn phí phù hợp.
 - Trả mã ticket cho người dùng; email chỉ xác nhận đã nhận. Quản trị viên phản hồi từ CMS hoặc hộp thư được tích hợp; có chính sách retention/xóa.
 
 **Cổng nghiệm thu:** không thể spam hàng loạt không giới hạn; quota/cooldown hoạt động; email không chứa secret/PII không cần thiết; thất bại email không làm mất ticket; có trạng thái gửi lỗi để retry có giới hạn.
@@ -191,9 +201,9 @@ Thời lượng dưới đây là cỡ công việc theo sprint, chưa phải ca
 ### Giai đoạn 6 — Vận hành, đo lường và mở rộng
 
 - Theo dõi SLO cho đăng nhập thành công, tải workspace, lưu/mở kế hoạch, phản hồi, webhook và email; ghi error code có cấu trúc, không log token/mật khẩu.
-- Theo dõi Firestore reads/writes/storage, số document/user, email, App Check assessment, Workers/Functions, R2 nếu bật; cảnh báo trước ngưỡng dự toán tháng và có kill switch theo từng tính năng.
+- Theo dõi Firestore reads/writes/storage, số document/user, App Check assessment và giới hạn Cloudflare miễn phí; dùng dashboard miễn phí nếu có, đặt kill switch theo tính năng. Không liên kết billing để tạo cảnh báo hóa đơn.
 - Bật App Check enforcement theo từng Firebase service sau khi xem metrics và xác minh client hợp lệ. App Check giúp xác nhận nguồn app; nó không thay Security Rules, xác thực/ủy quyền hay rate limits.
-- Thêm backup/export có mã hóa, kiểm tra khôi phục, quy trình incident/rollback và lịch rà soát quyền admin.
+- Hoàn thiện export dữ liệu phía người dùng, quy trình incident/rollback và rà soát quyền admin. Backup/PITR/restore do nhà cung cấp có thể yêu cầu gói trả phí; tiếp tục hoãn khi Spark Free là yêu cầu.
 - Sau khi SaaS ổn định mới cân nhắc upload mô hình private R2, cộng tác nhóm/organization, chia sẻ kế hoạch, SSO doanh nghiệp và analytics sâu.
 
 ## 4. Mô hình dữ liệu khởi điểm
@@ -203,12 +213,13 @@ Thời lượng dưới đây là cỡ công việc theo sprint, chưa phải ca
 | Hồ sơ user, locale, trạng thái hiển thị | Firestore `users/{uid}` | User sửa một allowlist nhỏ; quyền/role/status do server quản lý |
 | Dụng cụ tùy chỉnh | Firestore `users/{uid}/equipment/{equipmentId}` | Chỉ owner; schema, giới hạn số trường/kích thước/định mức |
 | Lift plan và input/output đã chọn | Firestore `users/{uid}/liftPlans/{planId}` | Chỉ owner; JSON nhẹ, versioned, không binary |
-| Gói, giá, entitlement, thanh toán, wallet ledger | Firestore collection server-owned | Ghi từ trusted backend; client chỉ đọc projection được phép |
-| Phản hồi và audit | Firestore collection riêng | Ticket do backend tiếp nhận; audit append-only, đọc theo vai trò |
+| Usage/quota | Firestore metadata giới hạn hoặc số liệu tổng hợp | Ghi có kiểm soát; không giữ log sự kiện vô hạn; thiết kế cho Spark Free |
+| Gói/entitlement thương mại, thanh toán, wallet ledger (chỉ G4) | Server-owned store | Chưa dùng hiện tại; nếu bật về sau, ghi từ trusted backend |
+| Phản hồi và audit | `mailto` hiện tại; ticket backend ở giai đoạn riêng | Không giả định Firebase Functions miễn phí; phải có quota/retention nếu triển khai |
 | Built-in 3D/models | Public asset pipeline/CDN của Cloudflare | Versioned static assets, không tải lên Firestore |
 | User model files (nếu chấp thuận mở sau) | Cloudflare R2 | Private object, signed upload/download, MIME/size/quota kiểm soát; Firestore giữ metadata |
 
-Đặt giới hạn rõ: chiều dài chuỗi, số trường, payload/document, số phần tử mảng, tốc độ ghi, số bản lưu và tuổi dữ liệu. Ưu tiên cursor pagination và query có index; tránh query không lọc hoặc tính phí theo từng lần mở trang.
+Đặt giới hạn rõ: chiều dài chuỗi, số trường, payload/document, số phần tử mảng, tốc độ ghi, số bản lưu và tuổi dữ liệu. Ưu tiên cursor pagination và query có index; giảm reads lặp. Người dùng chấp nhận lượt tải đầu PC lớn hơn để có mô phỏng đầy đủ, nhưng dữ liệu Firebase vẫn phải gọn và có hạn mức. Khi Spark quota cạn, Firebase có thể từ chối/tạm ngưng thao tác dịch vụ đến kỳ quota tiếp theo; không tự tính tiền nếu dự án không liên kết billing.
 
 ## 5. Phòng spam và bảo vệ chi phí theo lớp
 
@@ -227,29 +238,36 @@ Không có một nút chống spam tuyệt đối. Cloudflare rate limiting, App
 - **Security Rules:** Firebase Emulator tests cho user A/B, guest, locked, admin, support, billing; kiểm tra cả đọc/list/query/create/update/delete và payload sai.
 - **Auth:** email/password, Google popup, popup đóng/cancel, phiên hết hạn, đăng xuất, chặn tài khoản, mất mạng, domain production/preview, mobile và VI/EN.
 - **Dữ liệu:** schema validation, migration version cũ, duplicate submission, pagination, quota, xóa tài khoản/retention và phục hồi.
-- **Billing:** sandbox, amount/currency tamper, webhook chữ ký sai, replay/trùng, đến trễ, refund, chargeback, timeout và đối soát.
-- **Abuse/cost:** tải lặp vào route nhạy cảm; rate-limit, cooldown, email cap và kill switch; kiểm tra metrics/cost alerts trước/sau thử nghiệm.
+- **Billing (chỉ khi G4 mở lại):** sandbox, amount/currency tamper, webhook chữ ký sai, replay/trùng, đến trễ, refund, chargeback, timeout và đối soát.
+- **Abuse/quota:** tải lặp vào route nhạy cảm; rate-limit, cooldown và kill switch; kiểm tra Firebase/Cloudflare quota và hành vi throttle trước/sau thử nghiệm. Không cần cost alerts khi không liên kết billing.
 - **UI/accessibility:** desktop/mobile, bàn phím, focus, contrast, screen reader, reduced motion, VI/EN, lỗi tải model và fallback ảnh nền.
 - **Regression simulator:** các luồng nâng/hạ, trạng thái cargo, rigging, tính tải, xuất hồ sơ và kiến trúc CI hiện có vẫn chạy qua gate release.
 - **Release:** feature flag; internal → beta → nhóm người dùng nhỏ → mở rộng; rollback mã nguồn, rules, Functions/Worker và catalog version; không trộn triển khai app với sửa giá/balance không kiểm soát.
 
-## 7. Quyết định cần chốt trước khi bật billing
+## 7. Quyết định cho phạm vi hiện tại và G4 tùy chọn
+
+**Đã chốt:** Firebase Spark Free; không bật Blaze, không thêm thẻ/billing account. Dữ liệu chính là text/JSON nhẹ, không phải ảnh hay mô hình 3D. Sản phẩm desktop-first; chấp nhận tải khởi động đầu tiên lớn hơn để nạp giao diện/mô phỏng, tối ưu hiệu năng khi có số đo thực tế. Quota cạn xử lý bằng giới hạn tính năng/ghi và thông báo, không tự phát sinh phí.
+
+G4 chỉ bắt đầu sau quyết định mới của chủ sản phẩm. Khi đó cần phân biệt rõ chi phí dịch vụ cloud với khoản thanh toán mà khách hàng trả cho SafeLift3D; không giả định phải nâng Firebase nếu có kiến trúc khác phù hợp.
 
 1. Bán subscription, credit nạp trước hay cả hai; đơn vị sử dụng nào được tính phí.
 2. Cổng thanh toán/merchant và tài khoản nhận tiền tại Việt Nam; quy trình hoàn tiền/đối soát.
 3. Tên gói, giá, chu kỳ, hạn mức và lợi ích cụ thể.
 4. Email hỗ trợ công khai; chính sách lưu/xóa phản hồi và dữ liệu người dùng.
 5. Có cho upload file 3D tùy chỉnh không; nếu có, định dạng, dung lượng, retention và quyền chia sẻ.
-6. Ngân sách vận hành tối đa theo tháng và các ngưỡng tự tắt/giảm tải.
+6. Nếu sau này mở rộng hạ tầng khỏi Spark Free, ngân sách tối đa và các ngưỡng tự tắt/giảm tải.
 
 ## 8. Thứ tự khuyến nghị
 
-**G0 nền tảng/bảo mật → G1 nhận diện/login/loading → G2 kho dụng cụ/lift plan → G3 CMS → G5 feedback → G4 billing → G6 vận hành/mở rộng.** Feedback đưa lên trước billing vì cung cấp kênh hỗ trợ ngay khi có beta; billing chỉ mở sau khi ledger, webhook, đối soát và điều khoản được nghiệm thu. Các giai đoạn có thể triển khai dần, nhưng mọi dữ liệu khách hàng mới phải có rules/quota và kiểm thử emulator trước khi phát hành.
+**G0 nền tảng/bảo mật → G1 nhận diện/login/loading → G2 kho dụng cụ/lift plan → G3 CMS thiết yếu → G5 feedback trong giới hạn miễn phí → G6 vận hành Spark → G4 tùy chọn.** G4 bị hoãn và không chặn các giai đoạn khác. Mọi dữ liệu khách hàng mới phải có Rules, quota, giới hạn retention và kiểm thử Emulator trước khi phát hành. Không tự chuyển Firebase sang Blaze.
 
 ## Tài liệu tham chiếu chính thức
 
 - [Firestore Security Rules](https://firebase.google.com/docs/firestore/security/get-started) — rules kiểm soát request từ client; server SDK bỏ qua rules và cần IAM riêng.
 - [Firebase App Check for web](https://firebase.google.com/docs/app-check/web/recaptcha-enterprise-provider) — theo dõi metrics trước khi bật enforcement; enforcement riêng theo dịch vụ.
+- [Firebase Authentication with Identity Platform](https://firebase.google.com/docs/auth?authuser=0#firebase_authentication_with_identity_platform) — MFA có sẵn sau khi nâng cấp; Spark áp dụng hạn mức DAU.
+- [Identity Platform quotas and limits](https://cloud.google.com/identity-platform/quotas) — giới hạn sử dụng khi không liên kết billing instrument.
+- [TOTP MFA for web](https://firebase.google.com/docs/auth/web/totp-mfa) — yếu tố TOTP cho ứng dụng web, yêu cầu Auth with Identity Platform.
 - [Cloudflare Pages Functions](https://developers.cloudflare.com/pages/functions/get-started/) — API edge có thể chạy cùng Pages.
 - [Pages Functions bindings and secrets](https://developers.cloudflare.com/pages/functions/bindings/) — tích hợp bindings; bí mật cần dùng secret store.
 - [Cloudflare rate limiting rules](https://developers.cloudflare.com/waf/rate-limiting-rules/) — giới hạn request ở edge; khả năng phụ thuộc gói/tính năng.

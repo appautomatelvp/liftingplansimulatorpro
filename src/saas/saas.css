@@ -156,6 +156,7 @@
   background: none;
   object-fit: contain;
 }
+#saas-root :focus-visible, .saas-paywall-backdrop :focus-visible, .saas-contact-backdrop :focus-visible, .saas-workspace-backdrop :focus-visible { outline: 2px solid #fbbf24; outline-offset: 3px; }
 .brand-identity-mark { display: flex; align-items: center; justify-content: center; }
 .brand-identity-mark img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .saas-auth-footer { display: grid; gap: 6px; }
@@ -167,7 +168,7 @@
 .saas-google-button { border-radius: 6px; }
 
 .saas-contact-backdrop { position: fixed; inset: 0; z-index: 1300000; display: grid; place-items: center; padding: 18px; background: rgba(2, 6, 23, .76); backdrop-filter: blur(8px); }
-.saas-contact-dialog { position: relative; width: min(100%, 470px); box-sizing: border-box; padding: 28px; border: 1px solid rgba(84, 198, 232, .42); border-radius: 16px; color: #e2e8f0; background: linear-gradient(155deg, #101c2a, #050b14); box-shadow: 0 28px 90px rgba(0, 0, 0, .58); }
+.saas-contact-dialog { position: relative; width: min(100%, 470px); max-height: calc(100dvh - 36px); box-sizing: border-box; overflow: auto; padding: 28px; border: 1px solid rgba(84, 198, 232, .42); border-radius: 16px; color: #e2e8f0; background: linear-gradient(155deg, #101c2a, #050b14); box-shadow: 0 28px 90px rgba(0, 0, 0, .58); }
 .saas-contact-close { position: absolute; top: 10px; right: 13px; border: 0; color: #94a3b8; background: none; font-size: 26px; cursor: pointer; }
 .saas-contact-kicker { color: #54c6e8; font: 800 9px ui-monospace, monospace; letter-spacing: .16em; }
 .saas-contact-dialog h2 { margin: 9px 28px 4px 0; color: #f8fafc; font-size: 22px; font-weight: 850; }
@@ -185,9 +186,13 @@
 @media (prefers-reduced-motion: reduce) {
   #app-loading-screen,
   #app-loading-screen *,
+  #saas-root *,
+  .saas-paywall-backdrop *,
+  .saas-contact-backdrop *,
+  .saas-workspace-backdrop *,
   .saas-auth-screen,
   .saas-auth-screen::after,
-  .saas-auth-screen * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+  .saas-auth-screen * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
 
 body.saas-locked #top-bar,
@@ -218,6 +223,9 @@ body.saas-locked #labels-container { pointer-events: none !important; }
 .saas-workspace-search { display: flex; align-items: center; flex: 1; gap: 8px; min-width: 0; padding: 0 11px; border: 1px solid #2b3a50; border-radius: 9px; color: #61c9ed; background: #070e19; }
 .saas-workspace-search input { width: 100%; min-width: 0; height: 38px; border: 0; outline: 0; color: #e2e8f0; background: transparent; font: 11px Inter, ui-sans-serif, system-ui, sans-serif; }
 .saas-workspace-primary { padding: 0 14px; border: 1px solid #148aba; border-radius: 9px; color: #04111b; background: linear-gradient(110deg, #39b7e5, #87def4); font-size: 10px; font-weight: 850; cursor: pointer; }
+.saas-workspace-secondary { padding: 0 12px; border: 1px solid #35455c; border-radius: 9px; color: #bfdbfe; background: #101c2b; font-size: 10px; font-weight: 800; cursor: pointer; }
+.saas-workspace-secondary:hover { border-color: #58c5e8; }
+.saas-workspace-secondary[hidden] { display: none; }
 .saas-workspace-primary:disabled { opacity: .55; cursor: wait; }
 .saas-workspace-list { display: grid; align-content: start; gap: 8px; min-height: 180px; overflow: auto; padding: 8px 28px 14px; }
 .saas-workspace-card { display: flex; align-items: center; gap: 13px; padding: 12px; border: 1px solid #25354a; border-radius: 11px; background: linear-gradient(110deg, rgba(17, 28, 43, .95), rgba(10, 18, 31, .98)); }

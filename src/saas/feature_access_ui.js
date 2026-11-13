@@ -1,4 +1,5 @@
 import { canAccessFeature, getFeatureRule } from './access.js';
+import { trapDialogFocus } from './dialog_accessibility.js';
 
 const LOCKED_SELECTOR_FEATURES = [
   ['#cargo-library [data-cargo="crate"]', 'cargo.oog'],
@@ -57,18 +58,20 @@ export function installFeatureAccessUI() {
             : (en ? 'This module is available with a Premium plan. Contact the developer to unlock access.' : 'Mô-đun này dành cho gói Premium. Liên hệ nhà phát triển để mở quyền truy cập.'))}</p>
         <a class="saas-contact-link" href="mailto:levietphuong.hcmutrans@gmail.com">${en ? 'Contact SafeLift3D' : 'Liên hệ SafeLift3D'}</a>
       </section>`;
+    let releaseFocusTrap = () => {};
     const onEscape = (event) => {
       if (event.key === 'Escape') close();
     };
     const close = () => {
       backdrop.remove();
       document.removeEventListener('keydown', onEscape);
+      releaseFocusTrap();
     };
     backdrop.addEventListener('click', (event) => { if (event.target === backdrop) close(); });
     backdrop.querySelector('button')?.addEventListener('click', close);
     document.addEventListener('keydown', onEscape);
     document.body.append(backdrop);
-    backdrop.querySelector('button')?.focus();
+    releaseFocusTrap = trapDialogFocus(backdrop.querySelector('[role="dialog"]'), { initialFocus: backdrop.querySelector('button') });
   };
 
   const onClick = (event) => {

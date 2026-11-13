@@ -6,6 +6,7 @@ import * as CANNON from 'cannon-es';
 import * as CAE from '../src/core/index.js';
 import * as GFX from '../src/graphics/index.js';
 import * as RIG from '../src/rigging/index.js';
+import { CableDynamicsXPBD } from '../src/rigging/CableDynamicsXPBD.js';
 import { SIM_PARTS_HEADLESS } from '../src/sim/manifest.js';
 
 let simApi = null;
@@ -86,6 +87,7 @@ beforeAll(async () => {
     globalThis.CAE = CAE;
     globalThis.GFX = GFX;
     globalThis.RIG = RIG;
+    globalThis.XPBDCableDynamics = CableDynamicsXPBD;
 
     const simDir = path.resolve('src/sim');
     const simParts = SIM_PARTS_HEADLESS;
@@ -96,6 +98,7 @@ beforeAll(async () => {
         'const CAE = globalThis.CAE;',
         'const GFX = globalThis.GFX;',
         'const RIG = globalThis.RIG;',
+        'const XPBDCableDynamics = globalThis.XPBDCableDynamics;',
         ...simParts.map((f) => fs.readFileSync(path.join(simDir, f), 'utf8')),
         `return {
             getState: () => state,
@@ -861,7 +864,7 @@ describe('3D Rigging Testbed, Hardware Geometry & Mass Deductions', () => {
         expect(phy.cargoQuat.angleTo(before)).toBeGreaterThan(0.003);
     });
 
-    it('12bc. A severed free end falls onto/around the cargo shell instead of being launched or ghosting through it', () => {
+    it('12bc. A severed free end recoils within cable length, then falls onto/around the cargo shell', () => {
         simApi.setCargoType('container', 12.2, 2.44, 2.59);
         simApi.setRigging('frame', 'wire', 'bow_shackle', [0, 0, 0, 0]);
         simApi.testLift(1.2, 1400, false);
@@ -870,9 +873,11 @@ describe('3D Rigging Testbed, Hardware Geometry & Mass Deductions', () => {
         simApi.snapCable('upper', 0);
         const cable = (phy.cables || []).find(c => c.role === 'upper' && c.index === 0);
         expect(cable.break).toBeTruthy();
-        // Severing an inextensible cable must not manufacture a high recoil.
-        expect(cable.break.velU.length()).toBeLessThan(0.35);
-        expect(cable.break.velL.length()).toBeLessThan(0.35);
+        // Elastic energy produces a measurable initial whip, bounded for stable simulation.
+        expect(cable.break.recoilSpeedMps).toBeGreaterThan(0.35);
+        expect(cable.break.recoilSpeedMps).toBeLessThanOrEqual(28);
+        expect(cable.break.velU.length()).toBeGreaterThan(0.35);
+        expect(cable.break.velL.length()).toBeGreaterThan(0.35);
 
         // Each visual remnant must use its own post-break length.  Rendering
         // the original whole-cable length here would make a severed line grow.

@@ -399,6 +399,41 @@ function buildCurrentLiftPlanModel() {
     });
 }
 
+function getCurrentLiftPlanSummary() {
+    const model = buildCurrentLiftPlanModel();
+    const compliance = model.evaluateCompliance();
+    const finite = (value) => Number.isFinite(Number(value)) ? Number(value) : null;
+    return {
+        generatedAt: new Date().toISOString(),
+        overallStatus: String(compliance.overallStatus || 'UNKNOWN').slice(0, 20),
+        isCompliant: Boolean(compliance.isCompliant),
+        cargo: {
+            grossWeightKg: finite(model.cargo.grossWeightKg),
+            dimensionsM: {
+                length: finite(model.cargo.dimensionsM.length),
+                width: finite(model.cargo.dimensionsM.width),
+                height: finite(model.cargo.dimensionsM.height)
+            },
+            cogOffsetM: {
+                x: finite(model.cargo.cogOffsetM.x),
+                y: finite(model.cargo.cogOffsetM.y),
+                z: finite(model.cargo.cogOffsetM.z)
+            }
+        },
+        crane: {
+            model: String(model.crane.model || '').slice(0, 120),
+            workingRadiusM: finite(model.crane.workingRadiusM),
+            maxRatedCapacityT: finite(model.crane.maxRatedCapacityT)
+        },
+        checks: (Array.isArray(compliance.checks) ? compliance.checks : []).slice(0, 30).map((check) => ({
+            code: String(check.code || '').slice(0, 40),
+            name: String(check.name || '').slice(0, 100),
+            status: String(check.status || '').slice(0, 20),
+            message: String(check.message || '').slice(0, 240)
+        }))
+    };
+}
+
 /**
  * Updates the floating Compliance HUD Panel with live criteria evaluated from the engine.
  */

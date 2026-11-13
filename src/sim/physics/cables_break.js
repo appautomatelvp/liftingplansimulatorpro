@@ -521,6 +521,27 @@
             return baseKg * parts;
         }
 
+        function estimateCableSnapRecoil(cable, tensionT, massKg) {
+            const rec = gearCableRecord(cable);
+            const type = effectiveSlingType(rec);
+            const diameterM = Math.max(0.008, ((rec && rec.diaMm) || (type === 'web' || type === 'round_sling' ? 60 : 20)) / 1000);
+            const circularArea = Math.PI * diameterM * diameterM / 4;
+            const youngsModulusPa = type === 'web' || type === 'round_sling' ? 5e9 : type === 'chain' ? 200e9 : 100e9;
+            // Effective load-bearing area accounts for the voids between wire-rope strands,
+            // chain links, and the thin textile section of a web sling.
+            const effectiveArea = type === 'web' || type === 'round_sling'
+                ? Math.max(1e-6, diameterM * diameterM * 0.04)
+                : circularArea * (type === 'chain' ? 0.72 : 0.22);
+            const forceN = Math.max(0, tensionT) * 1000 * G_EARTH;
+            const extensionM = forceN * Math.max(0.35, cable.L0 || 2) / (youngsModulusPa * effectiveArea);
+            const elasticEnergyJ = 0.5 * forceN * extensionM;
+            const recoilSpeedMps = Math.sqrt((2 * elasticEnergyJ) / Math.max(0.4, massKg));
+            return {
+                elasticEnergyJ,
+                recoilSpeedMps: THREE.MathUtils.clamp(recoilSpeedMps, 0, 28)
+            };
+        }
+
         // Split a snapped cable into two free-hanging stubs. Upper stub hangs from end A
         // under its own mass only; lower stub hangs from end B. No A↔B tension remains.
         function initCableBreak(cable, frac) {
@@ -545,6 +566,7 @@
                 cable.role === 'upper' ? (phy.upperTensions[cable.index] || 0) : 0
             );
             const wasTaut = !cable.slack && (seenT > 0.12 || span >= L0 - 0.03);
+            const snapEnergy = estimateCableSnapRecoil(cable, seenT, massKg);
 
             const down = new THREE.Vector3(0, -1, 0);
             const lat = new THREE.Vector3(along.x, 0, along.z);
@@ -591,7 +613,6 @@
             if (wasTaut) {
                 // TAUT SNAP: tips start near the cut, then whip apart along the cable axis.
                 // Stored tension → impulsive recoil; gravity takes over after the whip.
-                const sep = 0.06 + Math.min(0.20, seenT * 0.04);
                 tipU = mid.clone().addScaledVector(along, -0.04).addScaledVector(down, 0.02);
                 tipL = mid.clone().addScaledVector(along, 0.04).addScaledVector(down, 0.02);
                 if (typeof pushPointClear === 'function') {
@@ -607,14 +628,14 @@
                 };
                 tipU = clampToPin(tipU, pA, upperLen);
                 tipL = clampToPin(tipL, pB, lowerLen);
-                const whip = 1.2 + Math.min(3.5, seenT * 0.55);
+                const whip = snapEnergy.recoilSpeedMps;
                 velU = vMid.clone()
                     .addScaledVector(along, -whip)
                     .add(new THREE.Vector3(jitter(), -0.8 - simRandom() * 0.6, jitter()));
                 velL = vMid.clone()
                     .addScaledVector(along, whip)
                     .add(new THREE.Vector3(jitter(), -1.0 - simRandom() * 0.7, jitter()));
-                const velCap = 0.32;
+                const velCap = 30;
                 if (velU.length() > velCap) velU.setLength(velCap);
                 if (velL.length() > velCap) velL.setLength(velCap);
             } else {
@@ -639,6 +660,8 @@
                 massL: massKg * (1 - f),
                 wasTaut: !!wasTaut,
                 snapTensionT: seenT,
+                snapElasticEnergyJ: wasTaut ? snapEnergy.elasticEnergyJ : 0,
+                recoilSpeedMps: wasTaut ? snapEnergy.recoilSpeedMps : 0,
                 age: 0,
                 settleU: 0,
                 settleL: 0

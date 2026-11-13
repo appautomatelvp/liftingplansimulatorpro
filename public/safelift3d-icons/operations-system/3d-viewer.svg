@@ -1,0 +1,2 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">3D viewer</title><g stroke="#1A232A" stroke-width="3" stroke-linejoin="round"><path fill="#C7D5DE" d="M9 19q0-5 5-5h36q5 0 5 5v27q0 5-5 5H14q-5 0-5-5z"/><path fill="#26333B" d="M16 22h32v22H16z"/><path fill="#0E77B3" d="m32 24 12 7v9l-12 7-12-7v-9z"/><path fill="#D7E6EE" d="m32 24 12 7-12 7-12-7z"/><path fill="#FFB800" d="m32 38 12-7v9l-12 7z"/><path fill="#1D5C8A" d="m20 31 12 7v9l-12-7z"/><circle fill="#28A745" cx="48" cy="18" r="2"/></g></svg>
