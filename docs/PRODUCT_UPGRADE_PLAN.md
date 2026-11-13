@@ -15,7 +15,7 @@
 | Firestore Rules Emulator | ✓ 16/16 ca đạt | `npm run test:rules` | 13/11/2026 |
 | Auth + Firestore Emulator E2E | ✓ 2/2 kịch bản đạt | `npm run test:e2e:auth` | 13/11/2026 |
 | Playwright SaaS & Accessibility E2E | ✓ 16/16 ca đạt (4 viewport) | `npx playwright test e2e/saas-accessibility.spec.js --reporter=list` | 13/11/2026 |
-| Playwright Layout E2E (ngoài phạm vi SaaS) | ◐ 27 đạt, 9 lỗi có sẵn (`UI-008`, `UI-015`, `UI-003` tại `hd-720p`) | `npx playwright test e2e/saas-accessibility.spec.js e2e/layout.spec.js --reporter=list` | 13/11/2026 |
+| Playwright Layout E2E (ngoài phạm vi SaaS) | ◐ UI-015 đã đạt 4/4 sau khi sửa test (Gear Editor bắt buộc 4 slider); còn 5 lỗi hoãn (`UI-008` ×4 viewport, `UI-003` tại `hd-720p`) đến khi cấu hình Firebase xong | `npx playwright test e2e/layout.spec.js -g "UI-015" --reporter=list` | 13/11/2026 |
 | S-00 → S-15 implementation | ✓ Hoàn tất toàn bộ 16 bước trên nhánh local `codex/safelift-g0-ci` | Xem `docs/UPGRADE_PLAN_V2_FOR_FLASH.md` | 13/11/2026 |
 | Giai đoạn 5 (Deploy Staging / Production / CI remote) | □ Chờ người dùng push remote, cấu hình Authorized domains & deploy | — | — |
 
