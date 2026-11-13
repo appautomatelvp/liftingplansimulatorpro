@@ -107,7 +107,9 @@ export default defineConfig(({ mode }) => {
     test: {
       exclude: ['**/node_modules/**', '**/dist/**', '**/e2e/**'],
       // Headless physics regression cases run several thousand simulation steps.
-      testTimeout: 30000
+      testTimeout: 30000,
+      // Avoid over-subscribing the two-core GitHub runner with parallel physics worlds.
+      maxWorkers: 2
     }
   };
 });
