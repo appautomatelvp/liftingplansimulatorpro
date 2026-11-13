@@ -98,7 +98,7 @@ Chưa kiểm chứng trong lượt này: nguyên nhân gốc của 9 lỗi layou
 
 | Bước | Trạng thái | Lệnh đã chạy | Kết quả | Ngày |
 |---|---|---|---|---|
-| T-00 | □ | | | |
+| T-00 | ✓ | `git status`, `architecture:gate`, `npm test`, `npm run build`, `check:dist`, `test:rules`, `layout.spec.js` | Gate OK; Unit 40/40 (295/295); Build 10.79s + `check:dist` OK; Rules 16/16; Layout E2E 31/36 đạt (chỉ còn 5 ca hoãn UI-008 ×4, UI-003 ×1) | 13/11/2026 |
 | T-01 | □ | | | |
 | T-02 | □ | | | |
 | T-03 | □ | | | |
@@ -113,3 +113,11 @@ Chưa kiểm chứng trong lượt này: nguyên nhân gốc của 9 lỗi layou
 ## 5. Nhật ký
 
 (T-05a, 13/11/2026) `e2e/layout.spec.js` UI-015: kỳ vọng slider đổi từ 0 sang **4** theo quyết định chủ sản phẩm (không sửa UI). `npx playwright test e2e/layout.spec.js -g "UI-015" --reporter=list` → **4/4 đạt** (fhd-1080p, hd-720p, laptop-768p, qhd-1440p). UI-008 ×4 và UI-003 ×1 chưa sửa (hoãn).
+
+### T-00 Baseline — 13/11/2026
+- `git status`: working tree sạch trên nhánh `codex/safelift-g0-ci` (`0401a24`).
+- `npm run architecture:gate`: đạt (6 shim 7 lines, 28 manifest parts).
+- `npm test -- --reporter=dot`: **40/40 file, 295/295 test đạt** (44.35s).
+- `npm run build` + `npm run check:dist`: build xong in `10.79s`; `OK: no .map files in dist/`.
+- `npm run test:rules`: **16/16 passed** (3.88s).
+- `npx playwright test e2e/layout.spec.js --reporter=list`: **31 passed, 5 failed** (5.9m) — gồm đúng 5 ca hoãn (`UI-008` ×4 viewport và `UI-003` trên `hd-720p`); `UI-015` đạt 4/4.
