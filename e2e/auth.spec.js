@@ -53,6 +53,17 @@ async function openWorkspaceDialog(page) {
   await expect(page.locator('#saas-workspace-backdrop')).toBeVisible({ timeout: 10_000 });
 }
 
+async function promoteUserRole(request, uid, role) {
+  const res = await request.patch(
+    `${FIRESTORE_EMULATOR_URL}/v1/projects/${PROJECT_ID}/databases/(default)/documents/users/${uid}?updateMask.fieldPaths=role`,
+    {
+      headers: { Authorization: 'Bearer owner' },
+      data: { fields: { role: { stringValue: role } } }
+    }
+  );
+  expect(res.ok()).toBeTruthy();
+}
+
 test.describe('Firebase Auth & Firestore Emulator SaaS flows', () => {
   test.skip(!EMULATOR_ACTIVE, 'Requires Firebase Auth + Firestore Emulators (npm run test:e2e:auth)');
 
@@ -185,15 +196,7 @@ test.describe('Firebase Auth & Firestore Emulator SaaS flows', () => {
     });
     const adminUid = await page.evaluate(() => window.SafeLift?.saas?.authUser?.uid);
     expect(adminUid).toBeTruthy();
-
-    const promoteRes = await request.patch(
-      `${FIRESTORE_EMULATOR_URL}/v1/projects/${PROJECT_ID}/databases/(default)/documents/users/${adminUid}?updateMask.fieldPaths=role`,
-      {
-        headers: { Authorization: 'Bearer owner' },
-        data: { fields: { role: { stringValue: 'admin' } } }
-      }
-    );
-    expect(promoteRes.ok()).toBeTruthy();
+    await promoteUserRole(request, adminUid, 'admin');
 
     await page.goto('/admin');
     const flagsForm = page.locator('[data-action="flags-form"]');
@@ -227,6 +230,53 @@ test.describe('Firebase Auth & Firestore Emulator SaaS flows', () => {
       await expect(viewerPage.locator('#saas-workspace-backdrop')).toBeVisible();
     } finally {
       await viewerPage.context().close();
+    }
+  });
+
+  test('catalog-editor publishes enabled catalog item and user adds a copy into personal equipment across reload', async ({ page, request, context }) => {
+    await createAndVerifyAccount(page, request, {
+      displayName: 'Catalog Editor',
+      email: 'catalog-editor@safelift3d.test',
+      password: 'Password123!'
+    });
+    const editorUid = await page.evaluate(() => window.SafeLift?.saas?.authUser?.uid);
+    expect(editorUid).toBeTruthy();
+    await promoteUserRole(request, editorUid, 'catalog-editor');
+
+    await page.goto('/admin');
+    const catalogForm = page.locator('[data-action="catalog-form"]');
+    await expect(catalogForm).toBeVisible({ timeout: 15_000 });
+    await catalogForm.locator('input[name="id"]').fill('heavy-sling-12t');
+    await catalogForm.locator('select[name="kind"]').selectOption('sling');
+    await catalogForm.locator('input[name="title"]').fill('Catalog Heavy Sling 12t');
+    await catalogForm.locator('input[name="wllT"]').fill('12');
+    await catalogForm.locator('input[name="massKg"]').fill('45');
+    await catalogForm.locator('select[name="tier"]').selectOption('free');
+    await catalogForm.locator('input[name="enabled"]').check();
+    await catalogForm.locator('button[type="submit"]').click();
+    await expect(page.locator('.saas-admin-notice')).toBeVisible({ timeout: 10_000 });
+
+    const buyerPage = await (await context.browser().newContext()).newPage();
+    try {
+      await createAndVerifyAccount(buyerPage, request, {
+        displayName: 'Catalog Consumer',
+        email: 'catalog-buyer@safelift3d.test',
+        password: 'Password123!'
+      });
+      await openWorkspaceDialog(buyerPage);
+      await buyerPage.locator('#saas-workspace-backdrop [data-tab="equipment"]').click();
+      await buyerPage.locator('#saas-workspace-backdrop [data-action="from-catalog"]').click();
+      await expect(buyerPage.locator('[data-catalog-list]')).toContainText('Catalog Heavy Sling 12t', { timeout: 10_000 });
+      await buyerPage.locator('[data-add-catalog="heavy-sling-12t"]').click();
+      await expect(buyerPage.locator('#saas-workspace-backdrop [data-list]')).toContainText('Catalog Heavy Sling 12t', { timeout: 10_000 });
+
+      await buyerPage.reload();
+      await expect(buyerPage.locator('#saas-account-widget')).toBeAttached({ timeout: 15_000 });
+      await openWorkspaceDialog(buyerPage);
+      await buyerPage.locator('#saas-workspace-backdrop [data-tab="equipment"]').click();
+      await expect(buyerPage.locator('#saas-workspace-backdrop [data-list]')).toContainText('Catalog Heavy Sling 12t', { timeout: 10_000 });
+    } finally {
+      await buyerPage.context().close();
     }
   });
 });

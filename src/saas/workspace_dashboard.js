@@ -1,4 +1,5 @@
 import * as workspaceData from './workspace_data.js';
+import * as catalogClient from './catalog_client.js';
 import { getTierSlotLimit } from './runtime_flags.js';
 import { getLang } from '../i18n/index.js';
 import { trapDialogFocus } from './dialog_accessibility.js';
@@ -6,7 +7,7 @@ import { saasT } from './i18n.js';
 
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 
-export function mountWorkspaceDashboard({ db, profile, flags = null, dataService = workspaceData }) {
+export function mountWorkspaceDashboard({ db, profile, flags = null, dataService = workspaceData, catalogService = catalogClient }) {
   const activeFlags = flags || (typeof window !== 'undefined' ? window.SafeLift?.saas?.flags : null) || null;
   const slotLimit = getTierSlotLimit(profile, activeFlags);
   document.getElementById('saas-workspace-backdrop')?.remove();
@@ -96,7 +97,7 @@ export function mountWorkspaceDashboard({ db, profile, flags = null, dataService
     backdrop.innerHTML = `<section class="saas-workspace-dialog" role="dialog" aria-modal="true" aria-labelledby="saas-workspace-title">
       <header class="saas-workspace-header"><div><span class="saas-workspace-kicker">SAFELIFT3D · PERSONAL LIBRARY</span><h2 id="saas-workspace-title">${tr('wsTitle')}</h2><p>${tr('wsSubtitle')}</p></div><button type="button" class="saas-workspace-close" data-action="close" aria-label="${tr('saasClose')}">×</button></header>
       <nav class="saas-workspace-tabs"><button type="button" data-tab="liftPlans">${tr('wsTabPlans')}</button><button type="button" data-tab="equipment">${tr('wsTabEquipment')}</button></nav>
-      <div class="saas-workspace-toolbar"><label class="saas-workspace-search"><span>⌕</span><input type="search" data-search placeholder="${tr('wsSearchPlaceholder')}"></label><button type="button" class="saas-workspace-secondary" data-action="export-all">${tr('wsExportAllJson')}</button><button type="button" class="saas-workspace-secondary" data-action="import-legacy" ${legacyRigs.some((rig) => !migratedRigIds.includes(String(rig.id))) ? '' : 'hidden'}>${tr('wsImportTitle')}</button><button type="button" class="saas-workspace-primary" data-action="create">＋ ${tr('wsSaveCurrentPlan')}</button></div>
+      <div class="saas-workspace-toolbar"><label class="saas-workspace-search"><span>⌕</span><input type="search" data-search placeholder="${tr('wsSearchPlaceholder')}"></label><button type="button" class="saas-workspace-secondary" data-action="export-all">${tr('wsExportAllJson')}</button><button type="button" class="saas-workspace-secondary" data-action="import-legacy" ${legacyRigs.some((rig) => !migratedRigIds.includes(String(rig.id))) ? '' : 'hidden'}>${tr('wsImportTitle')}</button><button type="button" class="saas-workspace-secondary" data-action="from-catalog" hidden>＋ ${tr('wsAddFromCatalog')}</button><button type="button" class="saas-workspace-primary" data-action="create">＋ ${tr('wsSaveCurrentPlan')}</button></div>
       <div class="saas-workspace-notice" data-notice hidden></div><div class="saas-workspace-list" data-list aria-live="polite"></div>
       <footer class="saas-workspace-footer"><span data-count></span><button type="button" data-action="more" hidden>${tr('wsLoadMore')}</button></footer>
       <small class="saas-workspace-quota">${tr('wsQuotaNote', { limit: slotLimit })}</small>
@@ -116,6 +117,8 @@ export function mountWorkspaceDashboard({ db, profile, flags = null, dataService
     backdrop.querySelectorAll('[data-tab]').forEach((button) => button.classList.toggle('is-active', button.dataset.tab === tab));
     const create = backdrop.querySelector('[data-action="create"]');
     if (create) create.textContent = tab === 'liftPlans' ? `＋ ${tr('wsSaveCurrentPlan')}` : `＋ ${tr('wsAddEquipment')}`;
+    const fromCatalog = backdrop.querySelector('[data-action="from-catalog"]');
+    if (fromCatalog) fromCatalog.hidden = tab !== 'equipment';
     loadPage(true);
   }
 
@@ -267,6 +270,50 @@ export function mountWorkspaceDashboard({ db, profile, flags = null, dataService
     });
   }
 
+  async function openCatalogPicker() {
+    const layer = document.createElement('div');
+    layer.className = 'saas-workspace-form-backdrop';
+    layer.innerHTML = `<div class="saas-workspace-form" role="dialog" aria-modal="true" aria-labelledby="saas-catalog-picker-title"><button type="button" data-form-close class="saas-workspace-close" aria-label="${tr('wsCatalogClose')}">×</button><span class="saas-workspace-kicker">${tr('wsUserDataKicker')}</span><h3 id="saas-catalog-picker-title">${tr('wsCatalogModalTitle')}</h3><p>${tr('wsCatalogModalSubtitle')}</p><div class="saas-workspace-form-error" data-form-error hidden></div><div class="saas-workspace-list" data-catalog-list>${tr('saasLoading')}</div><div class="saas-workspace-form-actions"><button type="button" data-form-close>${tr('wsCatalogClose')}</button></div></div>`;
+    backdrop.append(layer);
+    const releasePickerFocus = trapDialogFocus(layer.querySelector('[role="dialog"]'), { initialFocus: layer.querySelector('[data-form-close]') });
+    const close = () => { layer.remove(); releasePickerFocus(); };
+    layer.addEventListener('click', (event) => { if (event.target === layer || event.target.closest('[data-form-close]')) close(); });
+    layer.addEventListener('keydown', (event) => { if (event.key === 'Escape') { event.stopPropagation(); close(); } });
+
+    const listEl = layer.querySelector('[data-catalog-list]');
+    const catalogItems = await catalogService.loadCatalogForUser(db, profile);
+    if (!layer.isConnected || !listEl) return;
+    if (!catalogItems.length) {
+      listEl.innerHTML = `<div class="saas-workspace-empty"><span>▱</span><strong>${tr('wsCatalogEmpty')}</strong></div>`;
+      return;
+    }
+    listEl.innerHTML = catalogItems.map((catItem) => {
+      const specs = [catItem.kind, catItem.category, catItem.wllT != null ? `${catItem.wllT} t WLL` : '', catItem.massKg != null ? `${catItem.massKg} kg` : '', catItem.tier].filter(Boolean).join(' · ');
+      return `<article class="saas-workspace-card"><div class="saas-workspace-card-icon">⚙</div><div class="saas-workspace-card-main"><div class="saas-workspace-card-title"><strong>${esc(catItem.title || catItem.id)}</strong><span class="saas-workspace-version">${esc(catItem.tier || 'free')}</span></div><small>${esc(specs)}</small>${catItem.notes ? `<small>${esc(catItem.notes)}</small>` : ''}</div><div class="saas-workspace-card-actions"><button type="button" class="saas-workspace-primary" data-add-catalog="${esc(catItem.id)}">${tr('wsCatalogAddItem')}</button></div></article>`;
+    }).join('');
+
+    listEl.addEventListener('click', async (event) => {
+      const btn = event.target.closest('[data-add-catalog]');
+      if (!btn || btn.disabled) return;
+      const catItem = catalogItems.find((entry) => entry.id === btn.dataset.addCatalog);
+      if (!catItem) return;
+      btn.disabled = true;
+      try {
+        await dataService.createEquipment(db, profile, catalogService.mapCatalogItemToEquipmentInput(catItem), { flags: activeFlags });
+        close();
+        await loadPage(true);
+        notice(tr('wsCatalogAdded', { title: catItem.title || catItem.id }));
+      } catch (error) {
+        const formError = layer.querySelector('[data-form-error]');
+        if (formError) {
+          formError.hidden = false;
+          formError.textContent = error.message || tr('wsEquipmentSaveError');
+        }
+        if (btn.isConnected) btn.disabled = false;
+      }
+    });
+  }
+
   async function applyPlan(item) {
     const runtime = window.__LIFTING_RUNTIME__;
     const state = runtime?.api?.getState?.();
@@ -302,6 +349,7 @@ export function mountWorkspaceDashboard({ db, profile, flags = null, dataService
     try {
       if (actionName === 'close') { closeWorkspace(); return; }
       if (actionName === 'create') { if (tab === 'equipment') await openEquipmentForm(); else await savePlan(); return; }
+      if (actionName === 'from-catalog') { await openCatalogPicker(); return; }
       if (actionName === 'import-legacy') { openLegacyRigPicker(); return; }
       if (actionName === 'export-all') {
         button.disabled = true;
