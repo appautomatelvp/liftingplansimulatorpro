@@ -16,6 +16,63 @@ service cloud.firestore {
         && get(userPath(request.auth.uid)).data.status == 'active';
     }
 
+    function activeOwner(uid) {
+      return signedIn()
+        && request.auth.uid == uid
+        && exists(userPath(uid))
+        && get(userPath(uid)).data.status == 'active';
+    }
+
+    function allowedSlot(uid, itemId) {
+      return itemId.matches('^([1-9]|1[0-9]|20)$')
+        || (get(userPath(uid)).data.tier in ['premium', 'admin']
+          && itemId.matches('^([1-9]|[1-9][0-9]|1[0-9][0-9]|200)$'));
+    }
+
+    function validEquipment(uid) {
+      return request.resource.data.keys().hasOnly([
+          'ownerUid', 'schemaVersion', 'name', 'category', 'manufacturer', 'model', 'wllT', 'lengthM', 'massKg',
+          'safetyFactor', 'certificateNo', 'inspectionExpiry', 'notes', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'ownerUid', 'schemaVersion', 'name', 'category', 'manufacturer', 'model', 'wllT', 'lengthM', 'massKg',
+          'safetyFactor', 'certificateNo', 'inspectionExpiry', 'notes', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.ownerUid == uid
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 80
+        && request.resource.data.category in ['hook', 'sling', 'chain', 'shackle', 'spreader', 'lifting_beam', 'crane', 'other']
+        && request.resource.data.manufacturer is string && request.resource.data.manufacturer.size() <= 80
+        && request.resource.data.model is string && request.resource.data.model.size() <= 80
+        && (request.resource.data.wllT == null || (request.resource.data.wllT is number && request.resource.data.wllT >= 0 && request.resource.data.wllT <= 100000))
+        && (request.resource.data.lengthM == null || (request.resource.data.lengthM is number && request.resource.data.lengthM >= 0 && request.resource.data.lengthM <= 10000))
+        && (request.resource.data.massKg == null || (request.resource.data.massKg is number && request.resource.data.massKg >= 0 && request.resource.data.massKg <= 10000000))
+        && (request.resource.data.safetyFactor == null || (request.resource.data.safetyFactor is number && request.resource.data.safetyFactor >= 0 && request.resource.data.safetyFactor <= 1000))
+        && request.resource.data.certificateNo is string && request.resource.data.certificateNo.size() <= 100
+        && request.resource.data.inspectionExpiry is string && request.resource.data.inspectionExpiry.size() <= 10
+        && request.resource.data.notes is string && request.resource.data.notes.size() <= 500
+        && request.resource.data.createdAt is timestamp && request.resource.data.updatedAt is timestamp;
+    }
+
+    function validLiftPlan(uid) {
+      return request.resource.data.keys().hasOnly([
+          'ownerUid', 'schemaVersion', 'title', 'description', 'revision', 'solverVersion', 'archived', 'snapshot', 'equipmentIds', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'ownerUid', 'schemaVersion', 'title', 'description', 'revision', 'solverVersion', 'archived', 'snapshot', 'equipmentIds', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.ownerUid == uid
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 100
+        && request.resource.data.description is string && request.resource.data.description.size() <= 500
+        && request.resource.data.revision is int && request.resource.data.revision >= 1
+        && request.resource.data.solverVersion is string && request.resource.data.solverVersion.size() <= 32
+        && request.resource.data.archived is bool
+        && request.resource.data.snapshot is string && request.resource.data.snapshot.size() <= 48000
+        && request.resource.data.equipmentIds is list && request.resource.data.equipmentIds.size() <= 20
+        && request.resource.data.createdAt is timestamp && request.resource.data.updatedAt is timestamp;
+    }
+
     match /users/{uid} {
       allow get: if signedIn() && (request.auth.uid == uid || activeAdmin());
       allow list: if activeAdmin();
@@ -46,6 +103,28 @@ service cloud.firestore {
         && request.resource.data.status in ['active', 'locked', 'banned'];
 
       allow delete: if false;
+
+      match /equipment/{itemId} {
+        allow get, list: if activeOwner(uid);
+        allow create: if activeOwner(uid) && allowedSlot(uid, itemId) && validEquipment(uid)
+          && request.resource.data.createdAt == request.time && request.resource.data.updatedAt == request.time;
+        allow update: if activeOwner(uid) && allowedSlot(uid, itemId) && resource.data.ownerUid == uid
+          && validEquipment(uid) && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if activeOwner(uid) && resource.data.ownerUid == uid;
+      }
+
+      match /liftPlans/{itemId} {
+        allow get, list: if activeOwner(uid);
+        allow create: if activeOwner(uid) && allowedSlot(uid, itemId) && validLiftPlan(uid)
+          && request.resource.data.revision == 1
+          && request.resource.data.createdAt == request.time && request.resource.data.updatedAt == request.time;
+        allow update: if activeOwner(uid) && allowedSlot(uid, itemId) && resource.data.ownerUid == uid
+          && validLiftPlan(uid) && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.revision == resource.data.revision + 1
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if activeOwner(uid) && resource.data.ownerUid == uid;
+      }
     }
 
     match /{document=**} {
