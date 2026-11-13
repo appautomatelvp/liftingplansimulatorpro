@@ -11,7 +11,7 @@ const COPY = {
     invalidCredential: 'Email or password is incorrect.', invalidEmail: 'Enter a valid email address.', weakPassword: 'Use a password with at least 6 characters.', emailInUse: 'An account already exists for this email.', popupClosed: 'The Google sign-in window was closed.', tooMany: 'Too many attempts. Try again later.', network: 'Network error. Check your connection and try again.', emailRequired: 'Enter your email address first.',
     unauthorizedDomain: 'This website is not authorized for sign-in. Add its domain in Firebase Authentication settings.', providerDisabled: 'This sign-in method is disabled in Firebase Authentication.', accountDisabled: 'This account has been disabled. Contact SafeLift3D support.',
     accountExistsWithOtherProvider: 'This email already uses another sign-in method. Sign in that way first, then link Google.',
-    verifyEmail: 'Check your email for the password reset link.', accountCreated: 'Your account was created.', toggle: 'Tiếng Việt'
+    verifyEmail: 'Check your email for the password reset link.', accountCreated: 'Your account was created.', developer: 'Developed by Lê Việt Phương (Mr)', toggle: 'Tiếng Việt'
   },
   vi: {
     title: 'Đăng nhập SafeLift3D', subtitle: 'Truy cập an toàn vào không gian lập phương án nâng', email: 'Địa chỉ email', password: 'Mật khẩu', name: 'Họ và tên',
@@ -21,7 +21,7 @@ const COPY = {
     invalidCredential: 'Email hoặc mật khẩu không chính xác.', invalidEmail: 'Vui lòng nhập địa chỉ email hợp lệ.', weakPassword: 'Mật khẩu cần có ít nhất 6 ký tự.', emailInUse: 'Email này đã được đăng ký.', popupClosed: 'Cửa sổ đăng nhập Google đã bị đóng.', tooMany: 'Bạn đã thử quá nhiều lần. Hãy thử lại sau.', network: 'Lỗi kết nối mạng. Kiểm tra kết nối rồi thử lại.', emailRequired: 'Hãy nhập địa chỉ email trước.',
     unauthorizedDomain: 'Tên miền này chưa được cho phép đăng nhập. Hãy thêm tên miền trong Firebase Authentication.', providerDisabled: 'Phương thức đăng nhập này đang bị tắt trong Firebase Authentication.', accountDisabled: 'Tài khoản đã bị vô hiệu hóa. Vui lòng liên hệ SafeLift3D.',
     accountExistsWithOtherProvider: 'Email này đã dùng phương thức đăng nhập khác. Hãy đăng nhập bằng phương thức đó trước rồi liên kết Google.',
-    verifyEmail: 'Hãy kiểm tra email để nhận liên kết đặt lại mật khẩu.', accountCreated: 'Tài khoản đã được tạo.', toggle: 'English'
+    verifyEmail: 'Hãy kiểm tra email để nhận liên kết đặt lại mật khẩu.', accountCreated: 'Tài khoản đã được tạo.', developer: 'Phát triển bởi Lê Việt Phương (Mr)', toggle: 'English'
   }
 };
 
@@ -64,6 +64,16 @@ function messageFor(error, copy) {
   return known[error?.code] || copy.unknown;
 }
 
+export function restoreAuthActions(root, mode, copy) {
+  const submit = root.querySelector('.saas-primary-button');
+  if (submit) {
+    submit.disabled = false;
+    submit.textContent = mode === 'create' ? copy.create : copy.signIn;
+  }
+  const google = root.querySelector('[data-action="google"]');
+  if (google) google.disabled = false;
+}
+
 export function mountAuthScreen(container, { lang, configured, actions, onLanguageChange }) {
   let mode = 'sign-in';
   let busy = false;
@@ -78,7 +88,7 @@ export function mountAuthScreen(container, { lang, configured, actions, onLangua
     const copy = COPY[lang()] || COPY.en;
     root.innerHTML = `
       <div class="saas-auth-card">
-        <div class="saas-auth-brand"><span class="saas-auth-mark">SL</span><span>SafeLift3D</span></div>
+        <div class="saas-auth-brand"><img class="saas-auth-mark" src="/safelift3d-icons/branding/main-logo.svg" alt="SafeLift3D — Heavy Rigging & Lift Planner"></div>
         <button class="saas-language-button" type="button" data-action="language">${copy.toggle}</button>
         <div class="saas-auth-kicker">${lang() === 'en' ? 'ENGINEERING WORKSPACE' : 'KHÔNG GIAN KỸ THUẬT'}</div>
         <h1 id="saas-auth-title">${copy.title}</h1>
@@ -97,7 +107,7 @@ export function mountAuthScreen(container, { lang, configured, actions, onLangua
             <button type="button" data-action="mode">${mode === 'create' ? copy.switchSignIn : copy.switchCreate}</button>
           </div>
         ` : `<div class="saas-config-notice" role="alert">${copy.config}<code>VITE_FIREBASE_API_KEY · VITE_FIREBASE_AUTH_DOMAIN · VITE_FIREBASE_PROJECT_ID · VITE_FIREBASE_APP_ID · VITE_FIREBASE_APPCHECK_SITE_KEY</code></div>`}
-        <div class="saas-auth-footer">ASME P30.1 · B30.9 / B30.20 · DNV-ST-N001</div>
+        <div class="saas-auth-footer"><span>ASME P30.1 · B30.9 / B30.20 · DNV-ST-N001</span><small>${copy.developer}</small><a href="mailto:levietphuong.hcmutrans@gmail.com">levietphuong.hcmutrans@gmail.com</a><a href="tel:+84968051697">+84 968 051 697</a></div>
       </div>`;
 
     root.querySelector('[data-action="language"]')?.addEventListener('click', () => onLanguageChange());
@@ -144,10 +154,7 @@ export function mountAuthScreen(container, { lang, configured, actions, onLangua
       showStatus(messageFor(error, copy), true);
     } finally {
       busy = false;
-      const submit = root.querySelector('.saas-primary-button');
-      if (submit) submit.disabled = false;
-      const google = root.querySelector('[data-action="google"]');
-      if (google) google.disabled = false;
+      restoreAuthActions(root, mode, COPY[lang()] || COPY.en);
     }
   }
 
