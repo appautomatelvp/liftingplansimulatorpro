@@ -10,6 +10,12 @@ import { SIM_PARTS_HEADLESS } from '../src/sim/manifest.js';
 
 let simApi = null;
 
+function getRenderedSlingNodes(sling) {
+    // Deep slack and chain slings use the stable analytic catenary renderer;
+    // ropeSim is intentionally null on that path. Inspect the visible polyline.
+    return sling?.pathPoints || sling?.ropeSim?.p || null;
+}
+
 beforeAll(async () => {
     const elements = new Map();
     const makeEl = (id = '') => ({
@@ -330,9 +336,10 @@ describe('Per-Cable Custom Sling Types, Multi-Part Parallel Falls & Physics Fail
         expect(upperSlings.length).toBeGreaterThan(0);
 
         upperSlings.forEach(sling => {
-            const sim = sling.ropeSim;
-            expect(sim).not.toBeNull();
-            sim.p.forEach(node => {
+            const nodes = getRenderedSlingNodes(sling);
+            expect(nodes).toBeTruthy();
+            expect(nodes.length).toBeGreaterThan(2);
+            nodes.forEach(node => {
                 const overFootprint = Math.abs(node.x - phy.cargoPos.x) <= (state.L * 0.5 + 0.05)
                     && Math.abs(node.z - phy.cargoPos.z) <= (state.W * 0.5 + 0.05);
                 if (overFootprint) {
@@ -378,11 +385,12 @@ describe('Per-Cable Custom Sling Types, Multi-Part Parallel Falls & Physics Fail
         const pool = simApi.getSlingPool();
         const upperWithCargo = pool.find(s => s.drawMeta && s.drawMeta.role === 'upper' && s.group.visible);
         expect(upperWithCargo).toBeDefined();
-        expect(upperWithCargo.ropeSim).not.toBeNull();
+        const cargoNodes = getRenderedSlingNodes(upperWithCargo);
+        expect(cargoNodes).toBeTruthy();
 
         // Over the cargo footprint, nodes must stay at or above the cargo top
         const cL = state.L * 0.84, cW = state.W * 0.88;
-        upperWithCargo.ropeSim.p.forEach(node => {
+        cargoNodes.forEach(node => {
             const overCargo = Math.abs(node.x - phy.cargoPos.x) <= cL * 0.5
                 && Math.abs(node.z - phy.cargoPos.z) <= cW * 0.5;
             if (overCargo) {
@@ -397,10 +405,11 @@ describe('Per-Cable Custom Sling Types, Multi-Part Parallel Falls & Physics Fail
 
         const upperEmpty = pool.find(s => s.drawMeta && s.drawMeta.role === 'upper' && s.group.visible);
         expect(upperEmpty).toBeDefined();
-        expect(upperEmpty.ropeSim).not.toBeNull();
+        const emptyNodes = getRenderedSlingNodes(upperEmpty);
+        expect(emptyNodes).toBeTruthy();
 
         // When empty, nodes should hang down deeper into the open tub (below cargoPeakWorldY)
-        const minEmptyNodeY = Math.min(...upperEmpty.ropeSim.p.map(n => n.y));
+        const minEmptyNodeY = Math.min(...emptyNodes.map(n => n.y));
         expect(minEmptyNodeY).toBeLessThan(cargoPeakWorldY - 0.2);
     });
 
@@ -442,10 +451,11 @@ describe('Per-Cable Custom Sling Types, Multi-Part Parallel Falls & Physics Fail
         const pool = simApi.getSlingPool();
         const upperCrate = pool.find(s => s.drawMeta && s.drawMeta.role === 'upper' && s.group.visible);
         expect(upperCrate).toBeDefined();
-        expect(upperCrate.ropeSim).not.toBeNull();
+        const crateNodes = getRenderedSlingNodes(upperCrate);
+        expect(crateNodes).toBeTruthy();
 
         // Nodes over the crate footprint must stay ON or ABOVE the crate top
-        upperCrate.ropeSim.p.forEach((node, idx) => {
+        crateNodes.forEach(node => {
             const overCrate = Math.abs(node.x - phy.cargoPos.x) <= 3.0
                 && Math.abs(node.z - phy.cargoPos.z) <= 1.0;
             if (overCrate) {
@@ -460,10 +470,11 @@ describe('Per-Cable Custom Sling Types, Multi-Part Parallel Falls & Physics Fail
 
         const upperDeck = pool.find(s => s.drawMeta && s.drawMeta.role === 'upper' && s.group.visible);
         expect(upperDeck).toBeDefined();
-        expect(upperDeck.ropeSim).not.toBeNull();
+        const deckNodes = getRenderedSlingNodes(upperDeck);
+        expect(deckNodes).toBeTruthy();
 
         // When empty, nodes should drop down toward the flatrack deck, well below crateTopWorldY
-        const minDeckNodeY = Math.min(...upperDeck.ropeSim.p.map(n => n.y));
+        const minDeckNodeY = Math.min(...deckNodes.map(n => n.y));
         expect(minDeckNodeY).toBeLessThan(crateTopWorldY - 0.4);
     });
 
@@ -489,8 +500,9 @@ describe('Per-Cable Custom Sling Types, Multi-Part Parallel Falls & Physics Fail
         // The automatic fabricated length must include real extra material, not equal the chord.
         const a = sling.pinA, b = sling.pinB;
         expect(cable.L0).toBeGreaterThan(a.distanceTo(b) + 0.03);
-        expect(sling.ropeSim).not.toBeNull();
-        const mid = sling.ropeSim.p[Math.floor(sling.ropeSim.p.length / 2)];
+        const nodes = getRenderedSlingNodes(sling);
+        expect(nodes).toBeTruthy();
+        const mid = nodes[Math.floor(nodes.length / 2)];
         const chordMidY = (a.y + b.y) * 0.5;
         expect(mid.y).toBeLessThan(chordMidY - 0.01);
 

@@ -539,6 +539,20 @@
                 const solid = typeof cargoWrapSolid === 'function' ? cargoWrapSolid(simPad) : null;
                 pts = fitPathToFixedLength(pts, pointA, end, workLen, solid, simPad);
             }
+            // Length fitting and resampling can move a previously routed catenary
+            // back through the cargo shell. Resolve contacts on the final rendered
+            // nodes so the visible rope never clips through a roof or crate.
+            if (!isBrokenStub && pts && pts.length >= 3 && typeof pushPointClear === 'function') {
+                const endSkipA = ropeSkip(pointA, [pointA, end], allowA, allowB);
+                const endSkipB = ropeSkip(end, [pointA, end], allowA, allowB);
+                for (let i = 1; i < pts.length - 1; i++) {
+                    const t = i / (pts.length - 1);
+                    const skip = t < 0.5 ? endSkipA : endSkipB;
+                    pts[i].copy(pushPointClear(pts[i], simPad, skip));
+                    const supportY = cargoRoofAtXZ(pts[i].x, pts[i].z, simPad);
+                    if (supportY != null && pts[i].y < supportY) pts[i].y = supportY;
+                }
+            }
             pts[0].copy(pointA);
             if (isBrokenStub) {
                 end.copy(pts[pts.length - 1]);
