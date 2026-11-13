@@ -155,7 +155,7 @@ Tôi không chạy được toàn bộ E2E/Rules/Build trong lượt kiểm tra 
 | S-05 | ✓ | `npm test`, `architecture:gate`, `npm run build`, `npm run test:rules` | Unit 281/281 (36 file); Gate OK; Build OK; Rules 13/13 (gồm 2 ca `email_verified`) | 13/11/2026 |
 | S-06 | ✓ | `npm run test:rules`, `npm test`, `architecture:gate`, `npm run build` | Rules 14/14 (tăng từ 12); Unit 281/281; Gate OK; Build OK | 13/11/2026 |
 | S-07 | ✓ | Playwright boot probe, `npm test`, `architecture:gate`, `npm run build`, `npm run check:dist`, `e2e/saas-accessibility.spec.js` | Boot CAD models: 55 req (35,541,005 B, 7,667 ms) -> 5 req (544,761 B, 7,401 ms; -98.5%); Rapier 0 req lúc boot; Unit 282/282; Gate OK; Build OK; `check:dist` OK; E2E SaaS 16/16 | 13/11/2026 |
-| S-08 | □ | | | |
+| S-08 | ✓ | `npm audit --audit-level=high`, `architecture:gate`, `npm test`, `npm run build`, `npm run check:dist`, đọc rà soát YAML `.github/workflows/ci.yml` | `npm audit`: 0 high/critical; Unit 282/282; Gate OK; Build OK; `check:dist` OK; CI giới hạn `push` nhánh `master` + thêm `check:dist`, `audit`, Playwright SaaS & upload report | 13/11/2026 |
 | S-09 | □ | | | |
 | S-10 | □ | | | |
 | S-11 | □ | | | |
@@ -223,3 +223,7 @@ Tôi không chạy được toàn bộ E2E/Rules/Build trong lượt kiểm tra 
 - Thêm `Cache-Control` cho `/assets/*` và `/assets/models/*` trong `public/_headers` + test trong `test/security_headers.test.js`; ghi nhận số liệu trước/sau trong `docs/architecture/PERFORMANCE.md`.
 - Đo boot simulator (`VITE_AUTH_DEV_BYPASS=true`): **55** model requests (**35,541,005 bytes**, **7,667 ms**) -> **5** model requests (**544,761 bytes**, **7,401 ms**; giảm **98.5%** dung lượng model tải lúc khởi động).
 - Kiểm tra: Unit **36 files, 282/282** đạt; `architecture:gate` OK; `npm run build` OK; `npm run check:dist` OK; `npx playwright test e2e/saas-accessibility.spec.js --reporter=list` **16/16** đạt.
+
+### S-08 — Nâng cấp CI Workflow
+- Cập nhật `.github/workflows/ci.yml`: giới hạn trigger `push` chỉ chạy trên `branches: [master]`, thêm `npm audit --audit-level=high`, `npm run check:dist`, `npx playwright install --with-deps chromium`, `npx playwright test e2e/saas-accessibility.spec.js --reporter=list` (chạy suite SaaS sạch 16/16; `e2e/layout.spec.js` đang có 3 lỗi nền từ S-00), và `actions/upload-artifact@v4` tải `playwright-report/` khi `failure()`.
+- Kiểm tra: `npm audit --audit-level=high` (`0 vulnerabilities`), `architecture:gate` OK, Unit **36 files, 282/282** đạt, `npm run build` OK (5.62s), `npm run check:dist` OK, kiểm tra cấu trúc YAML `.github/workflows/ci.yml` sạch (2-space indent, không tab).

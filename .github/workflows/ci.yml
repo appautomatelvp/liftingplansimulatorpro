@@ -2,6 +2,7 @@ name: SafeLift3D CI
 
 on:
   push:
+    branches: [master]
   pull_request:
     branches: [master]
   workflow_dispatch:
@@ -50,6 +51,9 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
+      - name: Audit high and critical dependencies
+        run: npm audit --audit-level=high
+
       - name: Set up Java for Firestore Emulator
         uses: actions/setup-java@v5
         with:
@@ -67,3 +71,20 @@ jobs:
 
       - name: Build Cloudflare Pages output
         run: npm run build
+
+      - name: Verify build output contains no sourcemaps
+        run: npm run check:dist
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run SaaS accessibility E2E tests
+        run: npx playwright test e2e/saas-accessibility.spec.js --reporter=list
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
