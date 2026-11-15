@@ -28,7 +28,7 @@ Cập nhật hình nền khởi động / đăng nhập bằng ảnh công nghi�
   - CẤM đụng: Code JS/CSS trong `src/`, `index.html`, `firestore.rules`
   - Kiểm tra xong: Dùng `read_file` mở xem trực tiếp ảnh `public/brand/industrial-lifting-bg.png`, xác nhận đúng tông công nghiệp, sạch chữ/watermark và đủ khác biệt với ảnh gốc để an toàn bản quyền.
 
-- [ ] Bước 2: Cập nhật hiệu ứng Background Zoom-Out & đồng bộ Logo + Icon ở Màn hình Khởi động (`index.html`)
+- [x] Bước 2: Cập nhật hiệu ứng Background Zoom-Out & đồng bộ Logo + Icon ở Màn hình Khởi động (`index.html`)
   - Sửa: `index.html` (chỉ sửa vùng CSS/HTML của `#app-loading-screen` từ dòng 66–256, giữ nguyên các phần khác):
     1) Trỏ `#app-loading-screen::after` sang `url('/brand/industrial-lifting-bg.png')` và đổi `@keyframes yard-zoom` thành hiệu ứng **Zoom Out khi khởi động** (`from { transform: scale(1.14); } to { transform: scale(1); }`).
     2) Thay thẻ `<img class="loader-brand-mark" src="/safelift3d-icons/branding/main-logo.svg">` bằng cụm Brand Lockup đồng bộ gồm `<img src="/safelift3d-icons/branding/app-icon.png" alt="SafeLift3D">` (cùng loại với `#top-bar` và `favicon`) + chữ `SAFELIFT` (trắng bạc) `3D` (vàng `#fbbf24`) + dòng phụ đề `HEAVY RIGGING & LIFT PLANNER · CAE DIGITAL TWIN`.

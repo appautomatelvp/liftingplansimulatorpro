@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-15 15:55 [feat] Buoc 2/4: Tach brand_splash.css (<40 dong), cap nhat nen industrial-lifting-bg.png co hieu ung Zoom Out va dong bo Logo-Icon app-icon.png cho man hinh khoi dong index.html
+- Nhánh: codex/safelift-g0-ci | Commit trước đó: b788b33
+- File: index.html,src/styles/brand_splash.css,auto_memory/PLAN.md,STATE.md
+
 ## 2026-11-15 15:52 [feat] Buoc 1/4: Tao hinh nen nha xuong cau truc cong nghiep ban quyen sach chuan mau SafeLift3D tai public/brand/industrial-lifting-bg.png
 - Nhánh: codex/safelift-g0-ci | Commit trước đó: e62123e
 - File: public/brand/industrial-lifting-bg.png,auto_memory/PLAN.md,STATE.md

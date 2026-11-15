@@ -18,6 +18,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/src/styles/app.css">
+    <link rel="stylesheet" href="/src/styles/brand_splash.css">
     <style>
         html, body {
             margin: 0;
@@ -62,82 +63,6 @@
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
-        }
-        #app-loading-screen { overflow: hidden; isolation: isolate; background: #07111b; }
-        #app-loading-screen::after {
-            content: "";
-            position: absolute;
-            inset: -5%;
-            z-index: -2;
-            background: url('/brand/container-yard-reference.png') center / cover no-repeat;
-            animation: yard-zoom 24s ease-in-out infinite alternate;
-        }
-        @keyframes yard-zoom { from { transform: scale(1); } to { transform: scale(1.09); } }
-        #app-loading-screen::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            z-index: -1;
-            opacity: 1;
-            background: linear-gradient(180deg, rgba(4, 9, 18, .54), rgba(4, 9, 18, .8));
-            mask-image: linear-gradient(180deg, transparent, #000 22%, #000 78%, transparent);
-        }
-        .loader-box {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            max-width: 620px;
-            width: min(90%, 620px);
-            padding: 22px clamp(18px, 4vw, 42px) 26px;
-            border: 1px solid rgba(148, 163, 184, .25);
-            border-radius: 18px;
-            background: rgba(5, 11, 20, .8);
-            box-shadow: 0 30px 100px rgba(0, 0, 0, .54);
-            backdrop-filter: blur(12px);
-            text-align: center;
-        }
-        .loader-icon-wrap {
-            position: relative;
-            width: min(100%, 535px);
-            height: auto;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .loader-spinner {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            border: 3px solid rgba(245, 158, 11, 0.15);
-            border-top-color: #f59e0b;
-            border-right-color: #38bdf8;
-            animation: spin-ring 1.3s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-        }
-        .loader-icon {
-            font-size: 38px;
-            filter: drop-shadow(0 0 16px rgba(245, 158, 11, 0.55));
-            animation: pulse-crane 2.2s ease-in-out infinite;
-        }
-        .loader-title {
-            font-size: 21px;
-            font-weight: 900;
-            letter-spacing: 1.5px;
-            background: linear-gradient(135deg, #ffffff 0%, #fbbf24 60%, #f59e0b 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 6px;
-        }
-        .loader-sub {
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 1.2px;
-            color: #94a3b8;
-            margin-bottom: 24px;
-            text-transform: uppercase;
         }
         .loader-bar-bg {
             width: 100%;
@@ -191,16 +116,6 @@
             color: #64748b;
             letter-spacing: 0.5px;
         }
-        .loader-brand-mark {
-            display: block;
-            width: 100%;
-            height: auto;
-            border-radius: 10px;
-            background: transparent;
-            object-fit: contain;
-            position: relative;
-            z-index: 1;
-        }
         .loader-stream {
             font-family: 'JetBrains Mono', monospace;
             font-size: 10px;
@@ -250,8 +165,16 @@
     <div id="app-loading-screen" role="status" aria-live="polite" aria-label="SafeLift3D loading" data-i18n-aria-label="splashLoadingLabel">
         <div class="loader-box">
             <div class="loader-icon-wrap">
-                <div class="loader-spinner"></div>
-                <img class="loader-brand-mark" src="/safelift3d-icons/branding/main-logo.svg" alt="SafeLift3D — Heavy Rigging &amp; Lift Planner">
+                <div class="loader-brand-lockup">
+                    <div class="loader-emblem-shell">
+                        <div class="loader-spinner"></div>
+                        <img class="loader-brand-icon" src="/safelift3d-icons/branding/app-icon.png" alt="SafeLift3D">
+                    </div>
+                    <div class="loader-brand-wordmark">
+                        <div class="loader-brand-name">SAFELIFT<span>3D</span></div>
+                        <div class="loader-brand-tagline">HEAVY RIGGING &amp; LIFT PLANNER · CAE DIGITAL TWIN</div>
+                    </div>
+                </div>
             </div>
             <div class="loader-bar-bg">
                 <div id="app-loading-bar" class="loader-bar-fill"></div>

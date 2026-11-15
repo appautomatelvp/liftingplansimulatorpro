@@ -46,7 +46,7 @@
 
 ## 4. CÔNG VIỆC ĐANG LÀM DỞ (ONGOING WORK)
 - **Mục tiêu hiện tại:** Thực hiện kế hoạch 4 bước đồng bộ Logo + Icon (`app-icon.png` + wordmark `SAFELIFT3D`) và cập nhật Background công nghiệp chỉnh màu (an toàn bản quyền) kèm hiệu ứng Zoom-Out khi khởi động (`auto_memory/PLAN.md` `Trạng thái: ACTIVE`).
-- **Bước tiếp theo:** Bước 2 — Cập nhật hiệu ứng Background Zoom-Out & đồng bộ Logo + Icon ở Màn hình Khởi động (`index.html`).
+- **Bước tiếp theo:** Bước 3 — Đồng bộ Logo + Icon & hiệu ứng Background Zoom-Out ở Màn hình Đăng nhập (`src/saas/auth_screen.js` & `src/saas/saas.css`).
 
 ---
 

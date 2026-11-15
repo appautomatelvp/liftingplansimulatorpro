@@ -1,10 +1,10 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-15 15:52 | Nhánh: codex/safelift-g0-ci | Commit cuối: e62123e Snapshot 154515112026 (test): truoc khi lam brand-sync-and-zoomout-bg (6 minutes ago)
-Tổng: 238 file, 71150 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-15 15:55 | Nhánh: codex/safelift-g0-ci | Commit cuối: b788b33 feat(brand): step 1 generate industrial lifting background artwork (3 minutes ago)
+Tổng: 239 file, 71109 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
-- index.html (3210 dòng)
+- index.html (3133 dòng)
 - scripts/generate_port_assets.js (477 dòng)
 - src/core/AssemblyEngine.js (433 dòng)
 - src/core/AssetManager.js (325 dòng)
@@ -83,7 +83,7 @@ Tổng: 238 file, 71150 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `eslint.config.js` | 23 | Flat ESLint config — architecture gates for app/domain layers (optional eslint install). |
 | `firebase.json` | 29 |  |
 | `firestore.rules` | 239 |  |
-| `index.html` | 3210 |  ⚠️>300 |
+| `index.html` | 3133 |  ⚠️>300 |
 | `jsconfig.json` | 19 |  |
 | `package.json` | 42 |  |
 | `playwright.auth.config.js` | 28 |  |
@@ -246,6 +246,7 @@ Tổng: 238 file, 71150 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/weather_fx.js` | 572 |  ⚠️>300 |
 | `src/simulation/destruction-manager/DestructionSolver.js` | 147 |  |
 | `src/styles/app.css` | 1018 |  |
+| `src/styles/brand_splash.css` | 36 | Hiệu ứng nền công nghiệp Zoom-Out & khóa nhận diện đồng bộ cho màn hình khởi động |
 | `src/telemetry/sensor-engine/SensorEngine.js` | 185 |  |
 | `src/ui/controllers/index.js` | 35 |  |
 | `src/ui/services/index.js` | 48 |  |
