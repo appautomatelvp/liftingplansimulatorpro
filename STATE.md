@@ -45,8 +45,8 @@
 ---
 
 ## 4. CÔNG VIỆC ĐANG LÀM DỞ (ONGOING WORK)
-- **Mục tiêu hiện tại:** Đã hoàn tất toàn bộ **10/10 bước** của kế hoạch nâng cấp `@upgrade` trong `auto_memory/PLAN.md` (`Trạng thái: DONE`).
-- **Bước tiếp theo:** Founder kiểm tra F12 & giao diện trên trình duyệt, sau đó chạy `./scripts/manual_chot_ban.ps1` để gộp về nhánh chính và gắn tag bản ổn định.
+- **Mục tiêu hiện tại:** Thực hiện kế hoạch 6 bước nâng cấp hệ thống **CMS Quản trị (`/admin`)** lên chuẩn **Enterprise Command Center quốc tế** trong `auto_memory/PLAN.md` (`Trạng thái: ACTIVE`).
+- **Bước tiếp theo:** Bước 1 — Tạo bộ từ điển song ngữ VI/EN chuyên biệt cho CMS Enterprise (`src/i18n/cms_keys.js` & `src/i18n/keys.js`).
 
 ---
 

@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-15 15:00 | Nhánh: codex/safelift-g0-ci | Commit cuối: cc9fdc2 refactor(upgrade): step 9 split ProceduralTextures.js from PBRMaterialFactory.js (2 minutes ago)
+Cập nhật: 2026-11-15 15:13 | Nhánh: codex/safelift-g0-ci | Commit cuối: a1ebe7c docs(upgrade): step 10 lock data armor, audit security/tests and mark plan DONE (13 minutes ago)
 Tổng: 234 file, 70542 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)

@@ -28,6 +28,7 @@
 - **LocalStorage Keys:** `safelift_lang`, `safelift_auth_attempts_v1`, `lp-user-rigs`, `lp-user-rigs-migrated:{uid}`, `lifting_sim_audio_muted`, `lifting_sim_audio_vol`.
 
 ## 5. Quyết định quan trọng (mới nhất ở trên) — ghi KÈM LÝ DO
+- [2026-11-15] Lập kế hoạch 6 bước nâng cấp CMS Quản trị (`/admin`) lên chuẩn Enterprise Command Center (`auto_memory/PLAN.md` `ACTIVE`): sửa lỗi hộp đen che màn hình & dropdown trắng xóa, thêm thanh điều hướng phân hệ, 6 thẻ KPI, bộ lọc đa chiều, chip lý do kiểm toán nhanh, công tắc 7 module kỹ thuật, mẫu Catalog nhanh, bảng lỗi phiên & xuất CSV.
 - [2026-11-15] Hoàn tất nâng cấp `@upgrade` 10 bước (`PLAN.md` -> `DONE`): lắp giáp `firestoreSanitize` + `localDataStore` (`LOCK-06`), tách 7 cụm SaaS & Đồ họa (`auth_rate_limit`, `plan_snapshot`, `admin_panels`, `workspace_views`, `session_ui_bindings`, `HorizonSkyDome`, `ProceduralTextures`) dưới 300 dòng mà giữ nguyên 308 test & `architecture:gate`.
 - [2026-11-15] Lập bệnh án & kế hoạch nâng cấp `@upgrade` (`auto_memory/PLAN.md` 10 bước) — tái cấu trúc từng lát mỏng các file >300 dòng và lắp bộ giáp dữ liệu V7 mà giữ nguyên 100% hành vi & 308 test.
 - [2026-11-15] Nâng cấp chân trời 3D tự nhiên (đĩa tròn 460m + làm mờ lưới đo tròn + vòm bầu trời khớp sương mù 1:1) — xóa góc vuông mặt sàn ở đường chân trời.
