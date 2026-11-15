@@ -23,7 +23,7 @@ Cập nhật hình nền khởi động / đăng nhập bằng ảnh công nghi�
 
 ## Các bước (làm ĐÚNG 1 bước mỗi lần khi founder gõ `làm tiếp`)
 
-- [ ] Bước 1: Tạo hình nền công nghiệp bản quyền sạch (`public/brand/industrial-lifting-bg.png`) bằng `image-generator`
+- [x] Bước 1: Tạo hình nền công nghiệp bản quyền sạch (`public/brand/industrial-lifting-bg.png`) bằng `image-generator`
   - Sửa / Tạo: `public/brand/industrial-lifting-bg.png` (dùng subagent `image-generator` tham khảo bố cục từ `C:/Users/Admin/.gemini/antigravity/brain/13e1743e-02a7-4593-b5fe-3c4126a5fdd4/.user_uploaded/media_1794732046841_4da36e9c.jpg`, vẽ lại thành ảnh mới gốc — thay đổi góc nhìn rộng hơn, tư thế/vị trí 2 kỹ sư bảo hộ, kết cấu nhà xưởng thép & máy phát điện công nghiệp đang được cẩu bằng cẩu trục móc vàng đen và cáp 4 nhánh; chỉnh tông màu chuẩn công nghiệp SafeLift3D: xanh thép navy `#07111b`, ánh sáng điểm cyan `#38bdf8`, móc cẩu & vạch an toàn vàng `#f59e0b`; khoảng tối gọn bên trái để đặt card Đăng nhập; tuyệt đối KHÔNG có chữ, số, logo hay watermark trong ảnh)
   - CẤM đụng: Code JS/CSS trong `src/`, `index.html`, `firestore.rules`
   - Kiểm tra xong: Dùng `read_file` mở xem trực tiếp ảnh `public/brand/industrial-lifting-bg.png`, xác nhận đúng tông công nghiệp, sạch chữ/watermark và đủ khác biệt với ảnh gốc để an toàn bản quyền.
