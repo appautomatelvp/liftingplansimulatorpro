@@ -16,5 +16,5 @@
 - Headless harness + Vitest suite green
 - `npm run build` succeeds
 - Live solver remains XPBD under `src/sim/physics`
-- Firebase / prototype HTML / root `3Dmodels` removed — deploy = Vercel + Cloudflare Pages only
+- Prototype HTML / root `3Dmodels` removed — primary deploy target = Cloudflare Pages (`wrangler.toml`)
 

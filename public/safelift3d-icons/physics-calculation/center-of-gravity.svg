@@ -1,0 +1,2 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Center of gravity</title><g stroke="#1A232A" stroke-width="2.5" stroke-linejoin="round"><circle cx="32" cy="32" r="17" fill="#26333B"/><path fill="#FFB800" d="m32 4 6 12H26zM60 32l-12 6V26zM32 60l-6-12h12zM4 32l12-6v12z"/><circle cx="32" cy="32" r="6" fill="#F26522"/><path fill="none" stroke="#C7D5DE" stroke-dasharray="3 3" d="M32 15v11m17 6H38M32 49V38M15 32h11"/><circle fill="#28A745" cx="32" cy="32" r="2"/></g></svg>

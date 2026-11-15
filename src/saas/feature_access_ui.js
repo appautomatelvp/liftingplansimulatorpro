@@ -1,4 +1,7 @@
-import { canAccessFeature, getFeatureRule } from './access.js';
+import { getFeatureRule } from './access.js';
+import { applyFlagsToAccess } from './runtime_flags.js';
+import { trapDialogFocus } from './dialog_accessibility.js';
+import { saasT } from './i18n.js';
 
 const LOCKED_SELECTOR_FEATURES = [
   ['#cargo-library [data-cargo="crate"]', 'cargo.oog'],
@@ -16,59 +19,63 @@ const LOCKED_SELECTOR_FEATURES = [
 
 export function installFeatureAccessUI() {
   let activeProfile = null;
+  let activeFlags = null;
   const applyLocks = (profile) => {
     LOCKED_SELECTOR_FEATURES.forEach(([selector, featureId]) => {
-      document.querySelectorAll(selector).forEach((card) => decorateCard(card, featureId, profile));
+      document.querySelectorAll(selector).forEach((card) => decorateCard(card, featureId, profile, activeFlags));
     });
     const oog = document.getElementById('oog-cargo-panel');
     if (oog) {
       oog.dataset.featureGate = 'cargo.oog';
-      oog.classList.toggle('saas-feature-locked', !canAccessFeature(profile, 'cargo.oog'));
-      decoratePanel(oog, 'cargo.oog', profile);
+      oog.classList.toggle('saas-feature-locked', !applyFlagsToAccess(activeFlags, profile, 'cargo.oog').allowed);
+      decoratePanel(oog, 'cargo.oog', profile, activeFlags);
     }
     document.querySelectorAll('[data-feature-gate]').forEach((element) => {
       if (LOCKED_SELECTOR_FEATURES.some(([selector]) => element.matches(selector))) return;
       const featureId = element.dataset.featureGate;
       if (featureId === 'cargo.oog' && element === oog) return;
-      decorateCard(element, featureId, profile);
+      decorateCard(element, featureId, profile, activeFlags);
     });
   };
   const refreshLocalizedBadges = () => applyLocks(activeProfile);
 
-  const showPaywall = (featureId, profile, comingSoon = false) => {
+  const showPaywall = (featureId, profile, comingSoon = false, accessReason = 'tier_locked') => {
     const rule = getFeatureRule(featureId);
     if (!rule) return;
     document.querySelector('.saas-paywall-backdrop')?.remove();
     const lang = window.SafeLift?.i18n?.getLang?.() || document.documentElement.lang || 'vi';
-    const en = lang === 'en';
-    const isEntitled = canAccessFeature(profile, featureId);
+    const bodyText = accessReason === 'disabled_module'
+      ? saasT('paywallDisabledModuleBody', null, lang)
+      : (accessReason === 'maintenance'
+        ? (activeFlags?.maintenanceMessage || saasT('maintenanceDefaultMsg', null, lang))
+        : (comingSoon || accessReason === 'ok'
+          ? saasT('paywallComingSoonBody', null, lang)
+          : saasT('paywallPremiumBody', null, lang)));
     const backdrop = document.createElement('div');
     backdrop.className = 'saas-paywall-backdrop';
     backdrop.innerHTML = `
       <section class="saas-paywall" role="dialog" aria-modal="true" aria-labelledby="saas-paywall-title">
-        <button class="saas-paywall-close" type="button" aria-label="${en ? 'Close' : 'Đóng'}">×</button>
-        <div class="saas-paywall-lock">${comingSoon ? '🛠️' : '🔒'}</div>
-        <div class="saas-auth-kicker">${en ? 'SAFELIFT3D ACCESS' : 'QUYỀN TRUY CẬP SAFELIFT3D'}</div>
-        <h2 id="saas-paywall-title">${en ? rule.label : featureVietnamese(featureId)}</h2>
-        <p>${comingSoon
-          ? (en ? 'This module is undergoing advanced physics upgrades. Contact the developer for availability.' : 'Mô-đun đang được nâng cấp mô phỏng vật lý. Liên hệ nhà phát triển để biết thời điểm mở.')
-          : (isEntitled
-            ? (en ? 'This module is undergoing advanced physics upgrades. Contact the developer for availability.' : 'Mô-đun đang được nâng cấp mô phỏng vật lý. Liên hệ nhà phát triển để biết thời điểm mở.')
-            : (en ? 'This module is available with a Premium plan. Contact the developer to unlock access.' : 'Mô-đun này dành cho gói Premium. Liên hệ nhà phát triển để mở quyền truy cập.'))}</p>
-        <a class="saas-contact-link" href="mailto:levietphuong.hcmutrans@gmail.com">${en ? 'Contact SafeLift3D' : 'Liên hệ SafeLift3D'}</a>
+        <button class="saas-paywall-close" type="button" aria-label="${saasT('saasClose', null, lang)}">×</button>
+        <div class="saas-paywall-lock">${accessReason === 'disabled_module' ? '⛔' : (comingSoon || accessReason === 'maintenance' ? '🛠️' : '🔒')}</div>
+        <div class="saas-auth-kicker">${saasT('paywallKicker', null, lang)}</div>
+        <h2 id="saas-paywall-title">${featureLabel(featureId, lang, rule.label)}</h2>
+        <p>${bodyText}</p>
+        <a class="saas-contact-link" href="mailto:levietphuong.hcmutrans@gmail.com">${saasT('paywallContactCta', null, lang)}</a>
       </section>`;
+    let releaseFocusTrap = () => {};
     const onEscape = (event) => {
       if (event.key === 'Escape') close();
     };
     const close = () => {
       backdrop.remove();
       document.removeEventListener('keydown', onEscape);
+      releaseFocusTrap();
     };
     backdrop.addEventListener('click', (event) => { if (event.target === backdrop) close(); });
     backdrop.querySelector('button')?.addEventListener('click', close);
     document.addEventListener('keydown', onEscape);
     document.body.append(backdrop);
-    backdrop.querySelector('button')?.focus();
+    releaseFocusTrap = trapDialogFocus(backdrop.querySelector('[role="dialog"]'), { initialFocus: backdrop.querySelector('button') });
   };
 
   const onClick = (event) => {
@@ -77,10 +84,11 @@ export function installFeatureAccessUI() {
     const featureId = target.dataset.featureGate;
     const profile = window.SafeLift?.saas?.profile || null;
     const comingSoon = target.dataset.featureComingSoon === 'true';
-    if (comingSoon || !canAccessFeature(profile, featureId)) {
+    const access = applyFlagsToAccess(activeFlags, profile, featureId);
+    if (comingSoon || !access.allowed) {
       event.preventDefault();
       event.stopImmediatePropagation();
-      showPaywall(featureId, profile, comingSoon);
+      showPaywall(featureId, profile, comingSoon, access.reason);
     }
   };
   document.addEventListener('click', onClick, true);
@@ -90,8 +98,14 @@ export function installFeatureAccessUI() {
     setProfile(profile) {
       activeProfile = profile;
       window.SafeLift.saas.profile = profile;
-      window.SafeLift.saas.canAccessFeature = (featureId) => canAccessFeature(profile, featureId);
+      window.SafeLift.saas.canAccessFeature = (featureId) => applyFlagsToAccess(activeFlags, profile, featureId).allowed;
       applyLocks(profile);
+    },
+    setFlags(flags) {
+      activeFlags = flags || null;
+      window.SafeLift.saas.flags = activeFlags;
+      window.SafeLift.saas.canAccessFeature = (featureId) => applyFlagsToAccess(activeFlags, activeProfile, featureId).allowed;
+      applyLocks(activeProfile);
     },
     dispose() {
       document.removeEventListener('click', onClick, true);
@@ -101,12 +115,20 @@ export function installFeatureAccessUI() {
   };
 }
 
-function decorateCard(card, featureId, profile) {
+function resolveBadgeText(access, comingSoon, lang) {
+  if (access.reason === 'disabled_module') return saasT('badgeDisabledModule', null, lang);
+  if (access.reason === 'maintenance') return saasT('badgeMaintenance', null, lang);
+  if (comingSoon && access.allowed) return saasT('badgeComingSoon', null, lang);
+  return saasT('badgePremium', null, lang);
+}
+
+function decorateCard(card, featureId, profile, flags) {
   const rule = getFeatureRule(featureId);
   if (!rule) return;
   card.dataset.featureGate = featureId;
   const comingSoon = card.dataset.featureComingSoon === 'true';
-  const locked = comingSoon || !canAccessFeature(profile, featureId);
+  const access = applyFlagsToAccess(flags, profile, featureId);
+  const locked = comingSoon || !access.allowed;
   card.classList.toggle('saas-feature-locked', locked);
   card.setAttribute('aria-disabled', String(locked));
   if (!card.hasAttribute('tabindex')) card.tabIndex = 0;
@@ -118,19 +140,18 @@ function decorateCard(card, featureId, profile) {
     card.append(badge);
   }
   if (badge) {
-    const en = (window.SafeLift?.i18n?.getLang?.() || document.documentElement.lang) === 'en';
-    badge.textContent = comingSoon && canAccessFeature(profile, featureId)
-      ? (en ? '🛠️ Coming soon' : '🛠️ Sắp ra mắt')
-      : (en ? '🔒 Premium' : '🔒 Gói Premium');
+    const lang = window.SafeLift?.i18n?.getLang?.() || document.documentElement.lang || 'vi';
+    badge.textContent = resolveBadgeText(access, comingSoon, lang);
     badge.hidden = !locked;
   }
 }
 
-function decoratePanel(panel, featureId, profile) {
+function decoratePanel(panel, featureId, profile, flags) {
   const rule = getFeatureRule(featureId);
   if (!rule) return;
   let badge = panel.querySelector(':scope > .saas-lock-badge');
-  const locked = !canAccessFeature(profile, featureId);
+  const access = applyFlagsToAccess(flags, profile, featureId);
+  const locked = !access.allowed;
   panel.querySelectorAll('button, input, select, textarea').forEach((control) => {
     if (locked) {
       if (!control.hasAttribute('data-saas-disabled-origin')) {
@@ -148,20 +169,23 @@ function decoratePanel(panel, featureId, profile) {
     panel.prepend(badge);
   }
   if (badge) {
-    const en = (window.SafeLift?.i18n?.getLang?.() || document.documentElement.lang) === 'en';
-    badge.textContent = en ? '🔒 Premium' : '🔒 Gói Premium';
+    const lang = window.SafeLift?.i18n?.getLang?.() || document.documentElement.lang || 'vi';
+    badge.textContent = resolveBadgeText(access, false, lang);
     badge.hidden = !locked;
   }
 }
 
-function featureVietnamese(id) {
-  return ({
-    'cargo.oog': 'Hàng quá khổ (OOG)',
-    'cargo.specialized': 'Máy móc và kiện hàng chuyên dụng',
-    'beam.equalizer': 'Dầm cân bằng tải (Equalizer Beam)',
-    'beam.cascaded': 'Hệ dầm ngáng nhiều tầng',
-    'beam.truss': 'Dầm ngáng kết cấu giàn',
-    'beam.container': 'Dầm ngáng container STS',
-    'beam.frame': 'Khung dầm ngáng chữ H'
-  })[id] || id;
+const FEATURE_LABEL_KEYS = {
+  'cargo.oog': 'featureCargoOog',
+  'cargo.specialized': 'featureCargoSpecialized',
+  'beam.equalizer': 'featureBeamEqualizer',
+  'beam.cascaded': 'featureBeamCascaded',
+  'beam.truss': 'featureBeamTruss',
+  'beam.container': 'featureBeamContainer',
+  'beam.frame': 'featureBeamFrame'
+};
+
+function featureLabel(id, lang, fallback) {
+  const key = FEATURE_LABEL_KEYS[id];
+  return key ? saasT(key, null, lang) : fallback || id;
 }

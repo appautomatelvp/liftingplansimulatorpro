@@ -1,0 +1,196 @@
+// @purpose: Vẽ texture canvas thủ công (bê tông cảng, cáp thép, xích, sling, mặt nước, vạch cảnh báo)
+export function makeCanvas(width, height) {
+  if (typeof document !== 'undefined') {
+    const cvs = document.createElement('canvas');
+    cvs.width = width;
+    cvs.height = height;
+    return cvs;
+  }
+  return {
+    width,
+    height,
+    getContext: () => ({
+      fillStyle: '',
+      fillRect: () => {},
+      beginPath: () => {},
+      moveTo: () => {},
+      lineTo: () => {},
+      fill: () => {},
+      createLinearGradient: () => ({ addColorStop: () => {} }),
+      getImageData: () => ({ data: new Uint8ClampedArray(width * height * 4) }),
+      putImageData: () => {}
+    })
+  };
+}
+
+function addStops(grad, stops) {
+  stops.forEach(([offset, color]) => grad.addColorStop(offset, color));
+  return grad;
+}
+
+export function drawQuayConcreteMaps(size = 1024, includeJoints = false) {
+  const cvsBase = makeCanvas(size, size), ctxBase = cvsBase.getContext('2d');
+  const cvsNorm = makeCanvas(size, size), ctxNorm = cvsNorm.getContext('2d');
+  const cvsRough = makeCanvas(size, size), ctxRough = cvsRough.getContext('2d');
+  const cvsAO = makeCanvas(size, size), ctxAO = cvsAO.getContext('2d');
+
+  ctxBase.fillStyle = '#424a56';
+  ctxBase.fillRect(0, 0, size, size);
+  const imgData = ctxBase.getImageData(0, 0, size, size);
+  const d = imgData.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const noise = (Math.random() - 0.5) * 28;
+    d[i] = Math.min(255, Math.max(0, d[i] + noise));
+    d[i + 1] = Math.min(255, Math.max(0, d[i + 1] + noise));
+    d[i + 2] = Math.min(255, Math.max(0, d[i + 2] + noise * 0.9));
+  }
+  ctxBase.putImageData(imgData, 0, 0);
+
+  ctxNorm.fillStyle = 'rgb(128, 128, 255)';
+  ctxNorm.fillRect(0, 0, size, size);
+  const normData = ctxNorm.getImageData(0, 0, size, size);
+  const nd = normData.data;
+  for (let i = 0; i < nd.length; i += 4) {
+    nd[i] = Math.min(255, Math.max(0, 128 + (Math.random() - 0.5) * 12));
+    nd[i + 1] = Math.min(255, Math.max(0, 128 + (Math.random() - 0.5) * 12));
+    nd[i + 2] = 255;
+  }
+  ctxNorm.putImageData(normData, 0, 0);
+
+  ctxRough.fillStyle = 'rgb(215, 215, 215)';
+  ctxRough.fillRect(0, 0, size, size);
+  ctxAO.fillStyle = 'rgb(255, 255, 255)';
+  ctxAO.fillRect(0, 0, size, size);
+
+  if (includeJoints) {
+    const joints = [0, size / 2, size - 1];
+    joints.forEach((p) => {
+      ctxBase.fillStyle = '#1e242c';
+      ctxBase.fillRect(p - 2, 0, 4, size);
+      ctxBase.fillRect(0, p - 2, size, 4);
+      ctxNorm.fillStyle = 'rgb(90, 128, 255)'; ctxNorm.fillRect(p - 3, 0, 3, size);
+      ctxNorm.fillStyle = 'rgb(165, 128, 255)'; ctxNorm.fillRect(p, 0, 3, size);
+      ctxNorm.fillStyle = 'rgb(128, 90, 255)'; ctxNorm.fillRect(0, p - 3, size, 3);
+      ctxNorm.fillStyle = 'rgb(128, 165, 255)'; ctxNorm.fillRect(0, p, size, 3);
+      ctxRough.fillStyle = 'rgb(90, 90, 90)';
+      ctxRough.fillRect(p - 3, 0, 6, size);
+      ctxRough.fillRect(0, p - 3, size, 6);
+      ctxAO.fillStyle = 'rgb(110, 110, 110)';
+      ctxAO.fillRect(p - 4, 0, 8, size);
+      ctxAO.fillRect(0, p - 4, size, 8);
+    });
+  }
+  return { cvsBase, cvsNorm, cvsRough, cvsAO };
+}
+
+export function drawWireRopeMaps(size = 512) {
+  const cvsBase = makeCanvas(size, size), ctxBase = cvsBase.getContext('2d');
+  const cvsNorm = makeCanvas(size, size), ctxNorm = cvsNorm.getContext('2d');
+  const cvsRough = makeCanvas(size, size), ctxRough = cvsRough.getContext('2d');
+
+  ctxBase.fillStyle = '#6e7885'; ctxBase.fillRect(0, 0, size, size);
+  ctxNorm.fillStyle = 'rgb(128, 128, 255)'; ctxNorm.fillRect(0, 0, size, size);
+  ctxRough.fillStyle = 'rgb(65, 65, 65)'; ctxRough.fillRect(0, 0, size, size);
+
+  const strandCount = 6;
+  const strandW = size / strandCount;
+  const fillBand = (ctx, style, y0, y1) => {
+    ctx.fillStyle = style;
+    ctx.beginPath();
+    ctx.moveTo(0, y0);
+    ctx.lineTo(size, y1);
+    ctx.lineTo(size, y1 + strandW);
+    ctx.lineTo(0, y0 + strandW);
+    ctx.fill();
+  };
+
+  for (let i = 0; i < strandCount * 2; i++) {
+    const y0 = i * strandW, y1 = (i - 1) * strandW;
+    fillBand(ctxBase, addStops(ctxBase.createLinearGradient(0, y0, size, y1), [[0.0, '#221f1d'], [0.25, '#7f8b9b'], [0.5, '#6b7583'], [0.75, '#8a96a6'], [1.0, '#221f1d']]), y0, y1);
+    fillBand(ctxNorm, addStops(ctxNorm.createLinearGradient(0, y0, size, y1), [[0.0, 'rgb(60, 128, 230)'], [0.5, 'rgb(128, 128, 255)'], [1.0, 'rgb(195, 128, 230)']]), y0, y1);
+    fillBand(ctxRough, addStops(ctxRough.createLinearGradient(0, y0, size, y1), [[0.0, 'rgb(160, 160, 160)'], [0.5, 'rgb(60, 60, 60)'], [1.0, 'rgb(160, 160, 160)']]), y0, y1);
+  }
+  return { cvsBase, cvsNorm, cvsRough };
+}
+
+export function drawChainAlloyCanvas(size = 256) {
+  const cvsBase = makeCanvas(size, size), ctxBase = cvsBase.getContext('2d');
+  ctxBase.fillStyle = '#2b303a';
+  ctxBase.fillRect(0, 0, size, size);
+  ctxBase.fillStyle = addStops(ctxBase.createLinearGradient(0, 0, size, size), [[0.0, '#788496'], [0.3, '#2a2e37'], [0.7, '#24272f'], [1.0, '#788496']]);
+  ctxBase.fillRect(0, 0, size, size);
+  return cvsBase;
+}
+
+export function drawWebSlingMaps(size = 512, colorHex = '#16a34a', stripeCount = 2) {
+  const cvsBase = makeCanvas(size, size), ctxBase = cvsBase.getContext('2d');
+  const cvsNorm = makeCanvas(size, size), ctxNorm = cvsNorm.getContext('2d');
+  ctxBase.fillStyle = colorHex; ctxBase.fillRect(0, 0, size, size);
+  ctxBase.fillStyle = 'rgba(0, 0, 0, 0.16)';
+  ctxBase.fillRect(0, 0, 48, size);
+  ctxBase.fillRect(size - 48, 0, 48, size);
+  ctxBase.fillStyle = 'rgba(255, 255, 255, 0.08)';
+  for (let y = 0; y < size; y += 8) {
+    for (let x = 0; x < size; x += 16) ctxBase.fillRect((y / 8) % 2 === 0 ? x : x + 4, y, 8, 4);
+  }
+  const sCount = Math.max(0, Math.min(8, stripeCount || 0));
+  if (sCount > 0) {
+    ctxBase.fillStyle = '#111827';
+    const step = (size - 140) / (sCount + 1);
+    for (let s = 1; s <= sCount; s++) ctxBase.fillRect(70 + s * step - 3, 0, 6, size);
+  }
+  ctxNorm.fillStyle = 'rgb(128, 128, 255)'; ctxNorm.fillRect(0, 0, size, size);
+  for (let y = 0; y < size; y += 8) {
+    ctxNorm.fillStyle = 'rgb(115, 128, 255)'; ctxNorm.fillRect(0, y, size, 2);
+    ctxNorm.fillStyle = 'rgb(142, 128, 255)'; ctxNorm.fillRect(0, y + 4, size, 2);
+  }
+  return { cvsBase, cvsNorm };
+}
+
+export function drawRoundSlingMaps(size = 512, colorHex = '#2563eb') {
+  const cvsBase = makeCanvas(size, size), ctxBase = cvsBase.getContext('2d');
+  const cvsNorm = makeCanvas(size, size), ctxNorm = cvsNorm.getContext('2d');
+  ctxBase.fillStyle = colorHex; ctxBase.fillRect(0, 0, size, size);
+  for (let y = 0; y < size; y += 24) {
+    ctxBase.fillStyle = addStops(ctxBase.createLinearGradient(0, y, 0, y + 24), [[0.0, 'rgba(0, 0, 0, 0.18)'], [0.45, 'rgba(255, 255, 255, 0.12)'], [1.0, 'rgba(0, 0, 0, 0.18)']]);
+    ctxBase.fillRect(0, y, size, 24);
+  }
+  ctxNorm.fillStyle = 'rgb(128, 128, 255)'; ctxNorm.fillRect(0, 0, size, size);
+  for (let y = 0; y < size; y += 24) {
+    ctxNorm.fillStyle = 'rgb(128, 105, 255)'; ctxNorm.fillRect(0, y, size, 6);
+    ctxNorm.fillStyle = 'rgb(128, 150, 255)'; ctxNorm.fillRect(0, y + 12, size, 6);
+  }
+  return { cvsBase, cvsNorm };
+}
+
+export function drawMaritimeWaterNormalCanvas(size = 512) {
+  const cvs = makeCanvas(size, size), ctx = cvs.getContext('2d');
+  const img = ctx.getImageData(0, 0, size, size), d = img.data;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const idx = (y * size + x) * 4;
+      const nx = Math.sin(x * 0.12) * Math.cos(y * 0.08) * 0.5 + Math.sin((x + y) * 0.22) * 0.3;
+      const ny = Math.cos(x * 0.09) * Math.sin(y * 0.14) * 0.5 + Math.cos((x - y) * 0.25) * 0.3;
+      d[idx] = Math.floor((nx * 0.5 + 0.5) * 255);
+      d[idx + 1] = Math.floor((ny * 0.5 + 0.5) * 255);
+      d[idx + 2] = 245;
+      d[idx + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  return cvs;
+}
+
+export function drawHazardChevronCanvas(size = 512, repeats = 4) {
+  const cvs = makeCanvas(size, size), ctx = cvs.getContext('2d');
+  ctx.fillStyle = '#eab308'; ctx.fillRect(0, 0, size, size);
+  ctx.fillStyle = '#0f172a';
+  const stripeWidth = size / (repeats * 2);
+  for (let x = -size; x < size * 2; x += stripeWidth * 2) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0); ctx.lineTo(x + stripeWidth, 0);
+    ctx.lineTo(x + stripeWidth - size, size); ctx.lineTo(x - size, size);
+    ctx.fill();
+  }
+  return cvs;
+}

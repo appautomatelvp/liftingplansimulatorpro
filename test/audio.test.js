@@ -93,11 +93,17 @@ describe('Procedural Audio Engine (LiftingAudioEngine)', () => {
                     getChannelData: vi.fn(() => data)
                 };
             }),
-            resume: vi.fn().mockResolvedValue()
+            resume: vi.fn().mockResolvedValue(undefined)
         };
 
         globalThis.window = globalThis;
-        globalThis.window.AudioContext = vi.fn(() => mockContext);
+        // A native constructor stub is more portable across Vitest major versions
+        // than constructing a vi.fn() whose implementation returns an object.
+        globalThis.window.AudioContext = class MockAudioContext {
+            constructor() {
+                return mockContext;
+            }
+        };
         globalThis.localStorage = {
             store: {},
             getItem(key) { return this.store[key] || null; },

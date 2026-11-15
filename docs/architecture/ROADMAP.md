@@ -40,4 +40,4 @@ Extension rule: **content + command + optional physics plugin** — never append
 
 ## Deploy (ongoing)
 
-See README — GitHub Actions → `dist` → Vercel + Cloudflare Pages. Assets stay in `public/` only.
+See README — GitHub Actions → `dist` → Cloudflare Pages (`wrangler.toml`). Assets stay in `public/` only.

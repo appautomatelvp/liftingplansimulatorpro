@@ -1,0 +1,6 @@
+{
+  "projects": {
+    "default": "safelift3d",
+    "staging": "safelift3d-staging"
+  }
+}

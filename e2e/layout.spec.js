@@ -272,7 +272,7 @@ test.describe('SafeLift3D - Layout & Collision Avoidance E2E', () => {
     expect(zIndexValues.modal).toBeLessThan(zIndexValues.toast);
   });
 
-  test('UI-015: Gear editor opens with zero sliders, auto calculated SWL and Mass, and fits viewport without truncation', async ({ page }) => {
+  test('UI-015: Gear editor opens with exactly 4 sliders, auto calculated SWL and Mass, and fits viewport without truncation', async ({ page }) => {
     // Open gear editor for LP1
     await page.evaluate(() => {
       if (typeof state !== 'undefined' && typeof openGearEditor === 'function') {
@@ -284,9 +284,9 @@ test.describe('SafeLift3D - Layout & Collision Avoidance E2E', () => {
     const editor = page.locator('#gear-editor');
     await expect(editor).toBeVisible();
 
-    // Verify ZERO range sliders exist inside gear editor
+    // Product decision (13/11/2026): the gear editor MUST expose exactly 4 range sliders.
     const sliderCount = await page.locator('#gear-editor input[type="range"]').count();
-    expect(sliderCount).toBe(0);
+    expect(sliderCount).toBe(4);
 
     // Verify Auto badges for SWL and Mass
     const autoBadges = page.locator('#gear-editor span:text("Auto")');

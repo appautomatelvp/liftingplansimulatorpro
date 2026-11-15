@@ -19,57 +19,24 @@ import { PBRMaterialFactory } from './PBRMaterialFactory.js';
 
 export const QUALITY_TIERS = {
     ultra: {
-        id: 'ultra',
-        name: 'Ultra (AAA Photoreal)',
-        shadowMapSize: 4096,
-        shadowType: 'soft',
-        aoEnabled: true,
-        aoType: 'gtao',
-        bloomEnabled: true,
-        smaaEnabled: true,
-        msaaSamples: 4,
-        maxDPR: 2.0
+        id: 'ultra', name: 'Ultra (AAA Photoreal)', shadowMapSize: 4096, shadowType: 'soft',
+        aoEnabled: true, aoType: 'gtao', bloomEnabled: true, smaaEnabled: true, msaaSamples: 4, maxDPR: 2.0
     },
-    // Default interactive tier — 1080p ~60 FPS + native MSAA (no răng cưa)
+    // Default interactive tier — 1080p ~60 FPS + native MSAA
     high: {
-        id: 'high',
-        name: 'High (1080p / Cân bằng)',
-        shadowMapSize: 4096,
-        shadowType: 'pcf',
-        aoEnabled: false,
-        aoType: 'gtao',
-        bloomEnabled: false,
-        smaaEnabled: false,
-        antialias: true,
-        msaaSamples: 0,
-        maxDPR: 1.0,
-        bypassComposer: true
+        id: 'high', name: 'High (1080p / Cân bằng)', shadowMapSize: 4096, shadowType: 'pcf',
+        aoEnabled: false, aoType: 'gtao', bloomEnabled: false, smaaEnabled: false,
+        antialias: true, msaaSamples: 0, maxDPR: 1.0, bypassComposer: true
     },
     studio: {
-        id: 'studio',
-        name: 'CAD / Liebherr Studio (Sắc Nét)',
-        shadowMapSize: 2048,
-        shadowType: 'pcf',
-        aoEnabled: false,
-        bloomEnabled: false,
-        smaaEnabled: false,
-        antialias: true,
-        msaaSamples: 4,
-        maxDPR: 2.0,
-        bypassComposer: true
+        id: 'studio', name: 'CAD / Liebherr Studio (Sắc Nét)', shadowMapSize: 2048, shadowType: 'pcf',
+        aoEnabled: false, bloomEnabled: false, smaaEnabled: false,
+        antialias: true, msaaSamples: 4, maxDPR: 2.0, bypassComposer: true
     },
     performance: {
-        id: 'performance',
-        name: 'Performance (Tiết Kiệm Pin / 60 FPS)',
-        shadowMapSize: 1024,
-        shadowType: 'basic',
-        aoEnabled: false,
-        bloomEnabled: false,
-        smaaEnabled: false,
-        antialias: true,
-        msaaSamples: 0,
-        maxDPR: 1.0,
-        bypassComposer: true
+        id: 'performance', name: 'Performance (Tiết Kiệm Pin / 60 FPS)', shadowMapSize: 1024, shadowType: 'basic',
+        aoEnabled: false, bloomEnabled: false, smaaEnabled: false,
+        antialias: true, msaaSamples: 0, maxDPR: 1.0, bypassComposer: true
     }
 };
 
@@ -226,7 +193,10 @@ export class SceneRenderer {
      * Executes the rendering loop for each frame.
      * Automatically handles gizmo layer isolation to avoid ambient occlusion artifacts.
      */
-    render(dt = 0.016) {
+    render(dt = 0.016, { force = false } = {}) {
+        if (!force && typeof document !== 'undefined' && (document.body?.classList?.contains('saas-locked') || document.getElementById('saas-workspace-backdrop'))) {
+            return;
+        }
         const quality = QUALITY_TIERS[this.currentQuality] || QUALITY_TIERS.high;
         const useComposer = Boolean(this.composer && !quality.bypassComposer);
         const needGizmoMask = Boolean(useComposer && quality.aoEnabled);
@@ -311,7 +281,7 @@ export class SceneRenderer {
         const curH = this.renderer.domElement.height;
 
         this.setSize(width, height);
-        this.render(0.016);
+        this.render(0.016, { force: true });
         const dataUrl = this.renderer.domElement.toDataURL('image/jpeg', 0.95);
 
         // Restore original dimensions

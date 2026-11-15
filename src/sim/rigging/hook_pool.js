@@ -1344,15 +1344,12 @@
                 group.add(picker);
                 return picker;
             });
-            const links = [];
-            for (let i = 0; i < nLink; i++) {
-                const link = new THREE.Mesh(CHAIN_LINK_GEO, MATS.chainDark);
-                link.visible = false;
-                link.castShadow = false;
-                link.receiveShadow = false;
-                group.add(link);
-                links.push(link);
-            }
+            const linkInstances = new THREE.InstancedMesh(CHAIN_LINK_GEO, MATS.chainDark, nLink);
+            linkInstances.count = 0;
+            linkInstances.castShadow = false;
+            linkInstances.receiveShadow = false;
+            linkInstances.frustumCulled = false;
+            group.add(linkInstances);
             return {
                 group,
                 segments,
@@ -1366,7 +1363,8 @@
                 grommetEyeA,
                 grommetEyeB,
                 turnbuckle,
-                links,
+                links: [],
+                linkInstances,
                 numSegments: nSeg,
                 numLinks: nLink,
                 pickers,

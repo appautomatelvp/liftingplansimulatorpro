@@ -8,6 +8,7 @@ import * as GFX from '../src/graphics/index.js';
 import * as RIG from '../src/rigging/index.js';
 import { PhysicalCableSolver, DeformableSteelStructure } from '../src/core/index.js';
 import { SIM_PARTS_HEADLESS } from '../src/sim/manifest.js';
+import { CableDynamicsXPBD } from '../src/rigging/CableDynamicsXPBD.js';
 
 let simApi = null;
 
@@ -87,6 +88,7 @@ beforeAll(async () => {
     globalThis.CAE = CAE;
     globalThis.GFX = GFX;
     globalThis.RIG = RIG;
+    globalThis.XPBDCableDynamics = CableDynamicsXPBD;
 
     const simDir = path.resolve('src/sim');
     const simParts = SIM_PARTS_HEADLESS;
@@ -97,6 +99,7 @@ beforeAll(async () => {
         'const CAE = globalThis.CAE;',
         'const GFX = globalThis.GFX;',
         'const RIG = globalThis.RIG;',
+        'const XPBDCableDynamics = globalThis.XPBDCableDynamics;',
         ...simParts.map((f) => fs.readFileSync(path.join(simDir, f), 'utf8')),
         `return {
             getState: () => state,

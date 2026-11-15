@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
-  timeout: 90000,
+  timeout: process.env.CI ? 180000 : 90000,
   workers: 1,
   expect: {
     timeout: 8000
@@ -10,7 +10,7 @@ export default defineConfig({
   fullyParallel: false,
   reporter: 'html',
   use: {
-    baseURL: process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://localhost:5174',
+    baseURL: process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://127.0.0.1:5178',
     trace: 'on-first-retry',
     viewport: { width: 1920, height: 1080 }
   },
@@ -33,10 +33,13 @@ export default defineConfig({
     }
   ],
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5174',
-    env: { VITE_AUTH_DEV_BYPASS: 'true' },
-    reuseExistingServer: true,
+    command: 'npm run dev -- --host 127.0.0.1 --port 5178 --strictPort',
+    url: 'http://127.0.0.1:5178',
+    env: {
+      VITE_APP_ENV: 'development',
+      VITE_AUTH_DEV_BYPASS: 'true'
+    },
+    reuseExistingServer: process.env.PLAYWRIGHT_REUSE_SERVER === 'true',
     timeout: 120000
   }
 });

@@ -6,6 +6,7 @@ import * as CANNON from 'cannon-es';
 import * as CAE from '../core/index.js';
 import * as GFX from '../graphics/index.js';
 import * as RIG from '../rigging/index.js';
+import { CableDynamicsXPBD } from '../rigging/CableDynamicsXPBD.js';
 import { createRuntime } from './createRuntime.js';
 import { attachSimBundle } from 'virtual:lifting-sim';
 import { createPhysicsPort } from '../sim/physics/port.js';
@@ -44,6 +45,7 @@ export function bootApp(options = {}) {
     CAE,
     GFX,
     RIG,
+    XPBDCableDynamics: CableDynamicsXPBD,
     runtime,
     autoBoot: options.autoBoot !== false
   });

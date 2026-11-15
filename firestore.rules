@@ -9,16 +9,139 @@ service cloud.firestore {
       return /databases/$(database)/documents/users/$(uid);
     }
 
-    function activeAdmin() {
+    function activeRole(roles) {
       return signedIn()
         && exists(userPath(request.auth.uid))
-        && get(userPath(request.auth.uid)).data.role == 'admin'
-        && get(userPath(request.auth.uid)).data.status == 'active';
+        && get(userPath(request.auth.uid)).data.status == 'active'
+        && get(userPath(request.auth.uid)).data.role in roles;
+    }
+
+    function activeAdmin() {
+      return activeRole(['admin']);
+    }
+
+    function activeOwner(uid) {
+      return signedIn()
+        && request.auth.uid == uid
+        && exists(userPath(uid))
+        && get(userPath(uid)).data.status == 'active';
+    }
+
+    function allowedSlot(uid, itemId) {
+      return itemId.matches('^([1-9]|1[0-9]|20)$')
+        || (get(userPath(uid)).data.tier == 'premium'
+          && itemId.matches('^([1-9]|[1-9][0-9]|1[0-9][0-9]|200)$'));
+    }
+
+    function validUsageDoc() {
+      return request.resource.data.keys().hasOnly(['dayKey', 'writesToday', 'plansCount', 'equipmentCount', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['dayKey', 'writesToday', 'plansCount', 'equipmentCount', 'updatedAt'])
+        && request.resource.data.dayKey is string && request.resource.data.dayKey.size() == 10
+        && request.resource.data.writesToday is int && request.resource.data.writesToday >= 0 && request.resource.data.writesToday <= 200
+        && request.resource.data.plansCount is int && request.resource.data.plansCount >= 0 && request.resource.data.plansCount <= 200
+        && request.resource.data.equipmentCount is int && request.resource.data.equipmentCount >= 0 && request.resource.data.equipmentCount <= 200
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function validFeatureFlags() {
+      return request.resource.data.keys().hasOnly(['maintenanceMode', 'maintenanceMessage', 'freePlanLimit', 'disabledModules', 'updatedBy', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['maintenanceMode', 'maintenanceMessage', 'freePlanLimit', 'disabledModules', 'updatedBy', 'updatedAt'])
+        && request.resource.data.maintenanceMode is bool
+        && request.resource.data.maintenanceMessage is string && request.resource.data.maintenanceMessage.size() <= 300
+        && request.resource.data.freePlanLimit is int && request.resource.data.freePlanLimit >= 1 && request.resource.data.freePlanLimit <= 200
+        && request.resource.data.disabledModules is list && request.resource.data.disabledModules.size() <= 20
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function validAuditLog() {
+      return request.resource.data.keys().hasOnly([
+          'actorUid', 'action', 'targetType', 'targetId', 'summary', 'reason', 'before', 'after', 'createdAt'
+        ])
+        && request.resource.data.keys().hasAll(['actorUid', 'action', 'targetType', 'targetId', 'summary', 'createdAt'])
+        && request.resource.data.actorUid == request.auth.uid
+        && request.resource.data.action in ['USER_ACCESS_UPDATE', 'FLAGS_UPDATE', 'CATALOG_UPSERT', 'CATALOG_DELETE']
+        && request.resource.data.targetType in ['user', 'config', 'catalog']
+        && request.resource.data.targetId is string && request.resource.data.targetId.size() > 0 && request.resource.data.targetId.size() <= 128
+        && request.resource.data.summary is string && request.resource.data.summary.size() <= 240
+        && (!('reason' in request.resource.data)
+          || (request.resource.data.reason is string && request.resource.data.reason.size() <= 200))
+        && (request.resource.data.action != 'USER_ACCESS_UPDATE'
+          || ('reason' in request.resource.data
+            && request.resource.data.reason is string
+            && request.resource.data.reason.size() > 0
+            && request.resource.data.reason.size() <= 200))
+        && (!('before' in request.resource.data)
+          || (request.resource.data.before is string && request.resource.data.before.size() <= 400))
+        && (!('after' in request.resource.data)
+          || (request.resource.data.after is string && request.resource.data.after.size() <= 400))
+        && request.resource.data.createdAt == request.time;
+    }
+
+    function validCatalogItem(itemId) {
+      return itemId.matches('^[a-z0-9_-]{2,64}$')
+        && request.resource.data.keys().hasOnly(['id', 'kind', 'title', 'category', 'wllT', 'massKg', 'tier', 'enabled', 'notes', 'updatedBy', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['id', 'kind', 'title', 'category', 'wllT', 'massKg', 'tier', 'enabled', 'notes', 'updatedBy', 'updatedAt'])
+        && request.resource.data.id == itemId
+        && request.resource.data.kind in ['cargo', 'beam', 'sling', 'hardware']
+        && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 100
+        && request.resource.data.category is string && request.resource.data.category.size() <= 60
+        && (request.resource.data.wllT == null || (request.resource.data.wllT is number && request.resource.data.wllT >= 0 && request.resource.data.wllT <= 100000))
+        && (request.resource.data.massKg == null || (request.resource.data.massKg is number && request.resource.data.massKg >= 0 && request.resource.data.massKg <= 10000000))
+        && request.resource.data.tier in ['free', 'premium']
+        && request.resource.data.enabled is bool
+        && request.resource.data.notes is string && request.resource.data.notes.size() <= 300
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function validEquipment(uid) {
+      return request.resource.data.keys().hasOnly([
+          'ownerUid', 'schemaVersion', 'name', 'category', 'manufacturer', 'model', 'wllT', 'lengthM', 'massKg',
+          'safetyFactor', 'certificateNo', 'inspectionExpiry', 'notes', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'ownerUid', 'schemaVersion', 'name', 'category', 'manufacturer', 'model', 'wllT', 'lengthM', 'massKg',
+          'safetyFactor', 'certificateNo', 'inspectionExpiry', 'notes', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.ownerUid == uid
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 80
+        && request.resource.data.category in ['hook', 'sling', 'chain', 'shackle', 'spreader', 'lifting_beam', 'crane', 'other']
+        && request.resource.data.manufacturer is string && request.resource.data.manufacturer.size() <= 80
+        && request.resource.data.model is string && request.resource.data.model.size() <= 80
+        && (request.resource.data.wllT == null || (request.resource.data.wllT is number && request.resource.data.wllT >= 0 && request.resource.data.wllT <= 100000))
+        && (request.resource.data.lengthM == null || (request.resource.data.lengthM is number && request.resource.data.lengthM >= 0 && request.resource.data.lengthM <= 10000))
+        && (request.resource.data.massKg == null || (request.resource.data.massKg is number && request.resource.data.massKg >= 0 && request.resource.data.massKg <= 10000000))
+        && (request.resource.data.safetyFactor == null || (request.resource.data.safetyFactor is number && request.resource.data.safetyFactor >= 0 && request.resource.data.safetyFactor <= 1000))
+        && request.resource.data.certificateNo is string && request.resource.data.certificateNo.size() <= 100
+        && request.resource.data.inspectionExpiry is string && request.resource.data.inspectionExpiry.size() <= 10
+        && request.resource.data.notes is string && request.resource.data.notes.size() <= 500
+        && request.resource.data.createdAt is timestamp && request.resource.data.updatedAt is timestamp;
+    }
+
+    function validLiftPlan(uid) {
+      return request.resource.data.keys().hasOnly([
+          'ownerUid', 'schemaVersion', 'title', 'description', 'revision', 'solverVersion', 'archived', 'snapshot', 'equipmentIds', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'ownerUid', 'schemaVersion', 'title', 'description', 'revision', 'solverVersion', 'archived', 'snapshot', 'equipmentIds', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.ownerUid == uid
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 100
+        && request.resource.data.description is string && request.resource.data.description.size() <= 500
+        && request.resource.data.revision is int && request.resource.data.revision >= 1
+        && request.resource.data.solverVersion is string && request.resource.data.solverVersion.size() <= 32
+        && request.resource.data.archived is bool
+        && request.resource.data.snapshot is string && request.resource.data.snapshot.size() <= 48000
+        && request.resource.data.equipmentIds is list && request.resource.data.equipmentIds.size() <= 20
+        && request.resource.data.createdAt is timestamp && request.resource.data.updatedAt is timestamp;
     }
 
     match /users/{uid} {
-      allow get: if signedIn() && (request.auth.uid == uid || activeAdmin());
-      allow list: if activeAdmin();
+      allow get: if signedIn() && (request.auth.uid == uid || activeRole(['admin', 'support']));
+      allow list: if activeRole(['admin', 'support']) && request.query.limit != null && request.query.limit <= 26;
 
       allow create: if signedIn()
         && request.auth.uid == uid
@@ -29,23 +152,84 @@ service cloud.firestore {
           'uid', 'email', 'displayName', 'role', 'tier', 'createdAt', 'lastLogin', 'status'
         ])
         && request.resource.data.uid == uid
+        && request.auth.token.email_verified == true
         && request.resource.data.email == request.auth.token.email
         && request.resource.data.role == 'user'
         && request.resource.data.tier == 'free'
-        && request.resource.data.status == 'active';
+        && request.resource.data.status == 'active'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.lastLogin == request.time;
 
       // Account holders can only change their sign-in metadata. They cannot grant themselves access.
       allow update: if signedIn()
         && request.auth.uid == uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastLogin']);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastLogin'])
+        && request.resource.data.lastLogin == request.time;
 
-      // Admins may manage tier/status only; role assignment is reserved for trusted provisioning.
+      // Admins may manage tier/status of other users only; prevents self-lockout and role escalation.
       allow update: if activeAdmin()
+        && request.auth.uid != uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['tier', 'status'])
         && request.resource.data.tier in ['free', 'premium']
         && request.resource.data.status in ['active', 'locked', 'banned'];
 
       allow delete: if false;
+
+      match /equipment/{itemId} {
+        allow get, list: if activeOwner(uid);
+        allow create: if activeOwner(uid) && allowedSlot(uid, itemId) && validEquipment(uid)
+          && request.resource.data.createdAt == request.time && request.resource.data.updatedAt == request.time;
+        allow update: if activeOwner(uid) && allowedSlot(uid, itemId) && resource.data.ownerUid == uid
+          && validEquipment(uid) && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if activeOwner(uid) && resource.data.ownerUid == uid;
+      }
+
+      match /liftPlans/{itemId} {
+        allow get, list: if activeOwner(uid);
+        allow create: if activeOwner(uid) && allowedSlot(uid, itemId) && validLiftPlan(uid)
+          && request.resource.data.revision == 1
+          && request.resource.data.createdAt == request.time && request.resource.data.updatedAt == request.time;
+        allow update: if activeOwner(uid) && allowedSlot(uid, itemId) && resource.data.ownerUid == uid
+          && validLiftPlan(uid) && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.revision == resource.data.revision + 1
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if activeOwner(uid) && resource.data.ownerUid == uid;
+      }
+
+      match /meta/{docId} {
+        allow get: if activeOwner(uid) && docId == 'usage';
+        allow list: if false;
+        allow create: if activeOwner(uid) && docId == 'usage' && validUsageDoc()
+          && request.resource.data.writesToday <= 1;
+        allow update: if activeOwner(uid) && docId == 'usage' && validUsageDoc()
+          && ((request.resource.data.dayKey != resource.data.dayKey && request.resource.data.writesToday <= 1)
+            || (request.resource.data.dayKey == resource.data.dayKey
+              && request.resource.data.writesToday == resource.data.writesToday + 1));
+        allow delete: if false;
+      }
+    }
+
+    match /config/{docId} {
+      allow get: if signedIn() && docId == 'featureFlags';
+      allow list: if false;
+      allow create, update: if activeAdmin() && docId == 'featureFlags' && validFeatureFlags();
+      allow delete: if false;
+    }
+
+    match /adminAuditLogs/{logId} {
+      allow get: if activeRole(['admin', 'support']);
+      allow list: if activeRole(['admin', 'support']) && request.query.limit != null && request.query.limit <= 25;
+      allow create: if activeRole(['admin', 'catalog-editor']) && validAuditLog()
+        && (activeAdmin() || request.resource.data.action in ['CATALOG_UPSERT', 'CATALOG_DELETE']);
+      allow update, delete: if false;
+    }
+
+    match /catalog/{itemId} {
+      allow get: if signedIn();
+      allow list: if signedIn() && request.query.limit != null && request.query.limit <= 50;
+      allow create, update: if activeRole(['admin', 'catalog-editor']) && validCatalogItem(itemId);
+      allow delete: if activeRole(['admin', 'catalog-editor']);
     }
 
     match /{document=**} {

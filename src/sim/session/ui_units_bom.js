@@ -222,13 +222,32 @@
                 if (derived && geom) {
                     const gapF = isFlatRack ? Math.max(0, -geom.olF) : null;
                     const gapR = isFlatRack ? Math.max(0, -geom.olR) : null;
-                    const gapNote = (isFlatRack && gapF != null)
-                        ? L(` · End gaps ${gapF.toFixed(2)} / ${gapR.toFixed(2)} m`, ` · Khe cánh ${gapF.toFixed(2)} / ${gapR.toFixed(2)} m`)
-                        : '';
-                    derived.textContent = L(
-                        `Derived crate ${geom.cL.toFixed(2)}×${geom.cW.toFixed(2)}×${geom.cH.toFixed(2)} m · Envelope CoG (${state.cogX.toFixed(2)}, ${state.cogY.toFixed(2)}, ${state.cogZ.toFixed(2)})`,
-                        `Kiện quy đổi ${geom.cL.toFixed(2)}×${geom.cW.toFixed(2)}×${geom.cH.toFixed(2)} m · CoG bao (${state.cogX.toFixed(2)}, ${state.cogY.toFixed(2)}, ${state.cogZ.toFixed(2)})`
-                    ) + gapNote;
+                    derived.dataset.i18nDynamic = 'cargo-derived';
+                    const payload = {
+                        lang: state.lang,
+                        geom: { cL: geom.cL, cW: geom.cW, cH: geom.cH },
+                        state: { cogX: state.cogX, cogY: state.cogY, cogZ: state.cogZ },
+                        isFlatRack,
+                        gapF,
+                        gapR
+                    };
+                    if (typeof window !== 'undefined' && window.SafeLift) {
+                        window.SafeLift.cargoDerivedLast = payload;
+                    }
+                    const formatter = (typeof window !== 'undefined' && window.SafeLift && window.SafeLift.i18n)
+                        ? window.SafeLift.i18n.formatCargoDerivedLabel
+                        : null;
+                    if (typeof formatter === 'function') {
+                        derived.textContent = formatter(payload);
+                    } else {
+                        const gapNote = (isFlatRack && gapF != null)
+                            ? L(` · End gaps ${gapF.toFixed(2)} / ${gapR.toFixed(2)} m`, ` · Khe cánh ${gapF.toFixed(2)} / ${gapR.toFixed(2)} m`)
+                            : '';
+                        derived.textContent = L(
+                            `Derived crate ${geom.cL.toFixed(2)}×${geom.cW.toFixed(2)}×${geom.cH.toFixed(2)} m · Envelope CoG (${state.cogX.toFixed(2)}, ${state.cogY.toFixed(2)}, ${state.cogZ.toFixed(2)})`,
+                            `Kiện quy đổi ${geom.cL.toFixed(2)}×${geom.cW.toFixed(2)}×${geom.cH.toFixed(2)} m · CoG bao (${state.cogX.toFixed(2)}, ${state.cogY.toFixed(2)}, ${state.cogZ.toFixed(2)})`
+                        ) + gapNote;
+                    }
                 }
 
                 const hint = document.getElementById('lbl-oog-delta-hint');

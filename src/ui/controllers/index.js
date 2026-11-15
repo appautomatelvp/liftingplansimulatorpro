@@ -15,6 +15,12 @@ export function installUiControllers(runtime, services) {
   };
   window.addEventListener('keydown', onKey);
 
+  const exportHudBtn = document.getElementById('btn-comp-hud-export');
+  const onHudExportClick = () => {
+    document.getElementById('btn-open-liftplan')?.click();
+  };
+  exportHudBtn?.addEventListener('click', onHudExportClick);
+
   const offBoot = runtime.on('app:booted', () => {
     services.emit('ui:ready', { at: Date.now() });
   });
@@ -22,6 +28,7 @@ export function installUiControllers(runtime, services) {
   return {
     dispose() {
       window.removeEventListener('keydown', onKey);
+      exportHudBtn?.removeEventListener('click', onHudExportClick);
       offBoot?.();
     }
   };

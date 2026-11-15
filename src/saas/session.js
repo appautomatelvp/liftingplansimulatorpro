@@ -1,72 +1,20 @@
 import {
-  createUserWithEmailAndPassword,
-  GoogleAuthProvider,
-  onAuthStateChanged,
-  sendPasswordResetEmail,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  signOut,
-  updateProfile
+  createUserWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged,
+  reload, sendEmailVerification, sendPasswordResetEmail,
+  signInWithEmailAndPassword, signInWithPopup, signOut, updateProfile
 } from 'firebase/auth';
 import { mountAuthScreen } from './auth_screen.js';
 import { mountAdminDashboard } from './admin_dashboard.js';
 import { ensureUserProfile, watchUserProfile } from './firebase_data.js';
 import { initializeFirebaseClient, getFirebaseSetupStatus } from './firebase.js';
 import { installFeatureAccessUI } from './feature_access_ui.js';
-import { getLang } from '../i18n/index.js';
-
-function ensureRoot() {
-  let root = document.getElementById('saas-root');
-  if (!root) {
-    root = document.createElement('div');
-    root.id = 'saas-root';
-    document.body.append(root);
-  }
-  root.hidden = false;
-  return root;
-}
-
-function clearSplash() {
-  const splash = document.getElementById('app-loading-screen');
-  if (splash) splash.remove();
-}
-
-function mountAccountWidget(profile, authUser, onSignOut) {
-  document.getElementById('saas-account-widget')?.remove();
-  const widget = document.createElement('aside');
-  widget.id = 'saas-account-widget';
-  widget.className = 'saas-account-widget';
-  const render = () => {
-    const en = getLang() === 'en';
-    widget.innerHTML = `<span class="saas-account-dot"></span><span class="saas-account-copy"><strong>${escapeHtml(authUser.displayName || authUser.email || 'SafeLift3D user')}</strong><small>${profile.role === 'admin' ? 'ADMIN' : (profile.tier === 'premium' ? 'PREMIUM' : 'FREE')}</small></span>${profile.role === 'admin' ? `<a href="/admin">${en ? 'Admin CMS' : 'CMS quản trị'}</a>` : ''}<button type="button" data-action="signout">${en ? 'Sign out' : 'Đăng xuất'}</button>`;
-    widget.querySelector('[data-action="signout"]')?.addEventListener('click', async (event) => {
-      const button = event.currentTarget;
-      button.disabled = true;
-      try {
-        await onSignOut();
-      } catch (error) {
-        console.error('[SafeLift3D] Sign-out failed', error);
-        button.disabled = false;
-        button.textContent = en ? 'Sign out failed — retry' : 'Đăng xuất lỗi — thử lại';
-      }
-    });
-  };
-  const onLanguageChanged = () => render();
-  render();
-  window.addEventListener('safelift:language-changed', onLanguageChanged);
-  const accountMenu = document.getElementById('dropdown-panel-system');
-  (accountMenu || document.body).append(widget);
-  return {
-    dispose() {
-      window.removeEventListener('safelift:language-changed', onLanguageChanged);
-      widget.remove();
-    }
-  };
-}
-
-function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
-}
+import { needsEmailVerification } from './access.js';
+import { getLang, t } from '../i18n/index.js';
+import { saasT } from './i18n.js';
+import { installBoundedErrorCounter, normalizeFeatureFlags, readFeatureFlags } from './telemetry_usage.js';
+import { isMaintenance, loadFlagsOnce } from './runtime_flags.js';
+import { mountWorkspaceDashboard } from './workspace_dashboard.js';
+import { clearAppSplash, ensureSaasRoot, installSessionShellUI, mountAccountWidget } from './session_ui_bindings.js';
 
 function createGoogleProvider() {
   const provider = new GoogleAuthProvider();
@@ -76,63 +24,77 @@ function createGoogleProvider() {
 
 export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onSignedOut }) {
   document.body.classList.add('saas-locked');
-  const root = ensureRoot();
+  installBoundedErrorCounter();
+  const root = ensureSaasRoot();
   const featureAccess = installFeatureAccessUI();
   let authScreen = null;
   let adminScreen = null;
   let accountWidget = null;
+  let workspaceDashboard = null;
   let unsubscribeAuth = null;
   let unsubscribeProfile = null;
   let currentUser = null;
   let workspaceStarted = false;
   let authRun = 0;
   let lastProfileKey = '';
+  let pendingAuthNotice = null;
+  let sessionFlags = null;
+  let loadSessionFlags = null;
   let firebase = null;
   const onAdminRoute = window.location.pathname.replace(/\/$/, '') === '/admin';
+  const { syncMaintenanceBanner, dispose: disposeShellUI } = installSessionShellUI({ getProfile: () => window.SafeLift?.saas?.profile, getFlags: () => sessionFlags });
 
-  window.SafeLift.saas = { profile: null, authUser: null, db: null, canAccessFeature: () => false };
+  window.SafeLift.saas = { profile: null, authUser: null, db: null, flags: null, canAccessFeature: () => false };
 
-  function showInitial(message, isError = false) {
+  function buildAuthActions() {
+    return {
+      signIn(email, password) { return signInWithEmailAndPassword(firebase.auth, email, password); },
+      async create(email, password, displayName) {
+        const credential = await createUserWithEmailAndPassword(firebase.auth, email, password);
+        if (displayName) await updateProfile(credential.user, { displayName });
+        await sendEmailVerification(credential.user);
+        return credential;
+      },
+      google() { return signInWithPopup(firebase.auth, createGoogleProvider()); },
+      reset(email) { return sendPasswordResetEmail(firebase.auth, email); }
+    };
+  }
+
+  function renderAuthView({ configured = Boolean(firebase?.configured), message = '', isError = false } = {}) {
     root.hidden = false;
     if (authScreen) authScreen.dispose();
     authScreen = mountAuthScreen(root, {
       lang: getLang,
-      configured: Boolean(firebase?.configured),
-      actions: {
-        signIn(email, password) { return signInWithEmailAndPassword(firebase.auth, email, password); },
-        create(email, password, displayName) {
-          return createUserWithEmailAndPassword(firebase.auth, email, password).then(async (credential) => {
-            if (displayName) await updateProfile(credential.user, { displayName });
-            return credential;
-          });
-        },
-        google() { return signInWithPopup(firebase.auth, createGoogleProvider()); },
-        reset(email) { return sendPasswordResetEmail(firebase.auth, email); }
-      },
+      configured: Boolean(configured),
+      actions: configured ? buildAuthActions() : {},
       onLanguageChange() {
         const lang = window.SafeLift.i18n.toggleLang();
         window.__SAFELIFT_BOOT_LANG__ = lang;
         authScreen?.setLanguage();
       }
     });
-    clearSplash();
+    clearAppSplash();
     if (message) authScreen.showMessage(message, isError);
   }
 
-  function showConfigError(error) {
-    console.error('[SafeLift3D] Firebase initialization failed', error);
-    if (authScreen) authScreen.dispose();
-    authScreen = mountAuthScreen(root, {
-      lang: getLang,
-      configured: false,
-      actions: {},
-      onLanguageChange() {
-        const lang = window.SafeLift.i18n.toggleLang();
-        window.__SAFELIFT_BOOT_LANG__ = lang;
-        authScreen?.setLanguage();
-      }
-    });
-    clearSplash();
+  const showInitial = (message, isError = false) => renderAuthView({ configured: Boolean(firebase?.configured), message, isError });
+  const showConfigError = (error) => { console.error('[SafeLift3D] Firebase initialization failed', error); renderAuthView({ configured: false }); };
+
+  function syncFlagsToUI(profile, flags) {
+    featureAccess.setFlags(flags);
+    syncMaintenanceBanner(profile, flags);
+    accountWidget?.setMaintenance(isMaintenance(flags, profile));
+  }
+
+  function applyRuntimeFlags(profile) {
+    if (!loadSessionFlags) {
+      loadSessionFlags = loadFlagsOnce(() => (firebase?.db ? readFeatureFlags(firebase.db) : normalizeFeatureFlags({})));
+    }
+    loadSessionFlags().then((loaded) => {
+      sessionFlags = loaded;
+      const latestProfile = window.SafeLift?.saas?.profile || profile;
+      if (latestProfile) syncFlagsToUI(latestProfile, loaded);
+    }).catch(() => {});
   }
 
   function handleProfile(profile, authUser) {
@@ -147,19 +109,23 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
       adminScreen?.dispose();
       root.hidden = false;
       if (authScreen) { authScreen.dispose(); authScreen = null; }
-      adminScreen = mountAdminDashboard(root, {
-        db: firebase.db,
-        profile,
-        authUser,
-        signOut: () => signOut(firebase.auth)
-      });
-      clearSplash();
+      adminScreen = mountAdminDashboard(root, { db: firebase.db, profile, authUser, signOut: () => signOut(firebase.auth) });
+      clearAppSplash();
       return;
     }
     if (authScreen) { authScreen.dispose(); authScreen = null; }
     root.hidden = true;
     accountWidget?.dispose();
-    accountWidget = mountAccountWidget(profile, authUser, () => signOut(firebase.auth));
+    accountWidget = mountAccountWidget(profile, authUser, () => signOut(firebase.auth), () => {
+      if (isMaintenance(sessionFlags, window.SafeLift?.saas?.profile || profile)) {
+        syncMaintenanceBanner(window.SafeLift?.saas?.profile || profile, sessionFlags);
+        return;
+      }
+      workspaceDashboard?.dispose();
+      workspaceDashboard = mountWorkspaceDashboard({ db: firebase.db, profile, flags: sessionFlags });
+    });
+    if (sessionFlags) syncFlagsToUI(profile, sessionFlags);
+    else applyRuntimeFlags(profile);
     if (!workspaceStarted) {
       workspaceStarted = true;
       onWorkspaceAuthorized?.({ profile, authUser, db: firebase.db, auth: firebase.auth, featureAccess });
@@ -172,17 +138,36 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
     unsubscribeProfile = null;
     currentUser = null;
     lastProfileKey = '';
+    sessionFlags = null;
+    loadSessionFlags = null;
+    syncMaintenanceBanner(null, null);
+    featureAccess.setFlags(null);
     accountWidget?.dispose();
     accountWidget = null;
+    workspaceDashboard?.dispose();
+    workspaceDashboard = null;
     window.SafeLift.saas.profile = null;
     window.SafeLift.saas.authUser = null;
+    window.SafeLift.saas.flags = null;
     window.SafeLift.saas.canAccessFeature = () => false;
     featureAccess.setProfile(null);
     adminScreen?.dispose();
     adminScreen = null;
-    if (firebase?.configured) showInitial();
+    const notice = pendingAuthNotice;
+    pendingAuthNotice = null;
+    if (firebase?.configured) showInitial(notice?.message, Boolean(notice?.isError));
     else if (import.meta.env.DEV && import.meta.env.VITE_AUTH_DEV_BYPASS === 'true') return;
     onSignedOut?.();
+  }
+
+  if (import.meta.env.DEV && import.meta.env.VITE_AUTH_DEV_BYPASS === 'true') {
+    console.warn('[SafeLift3D] Development-only authentication bypass is active.');
+    firebase = { configured: false, auth: null, db: null };
+    window.SafeLift.saas.db = null;
+    const profile = { uid: 'local-developer', email: 'local@localhost', displayName: 'Local Developer', role: 'user', tier: 'free', status: 'active' };
+    const authUser = { uid: profile.uid, email: profile.email, displayName: profile.displayName, emailVerified: true };
+    handleProfile(profile, authUser);
+    return { dispose() { featureAccess.dispose(); } };
   }
 
   try {
@@ -196,55 +181,22 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
   }
 
   if (!firebase.configured) {
-    if (import.meta.env.DEV && import.meta.env.VITE_AUTH_DEV_BYPASS === 'true') {
-      console.warn('[SafeLift3D] Development-only authentication bypass is active.');
-      const profile = { uid: 'local-developer', email: 'local@localhost', displayName: 'Local Developer', role: 'user', tier: 'free', status: 'active' };
-      const authUser = { uid: profile.uid, email: profile.email, displayName: profile.displayName };
-      handleProfile(profile, authUser);
-      return { dispose() { featureAccess.dispose(); } };
-    }
     showInitial();
     return { dispose() { featureAccess.dispose(); } };
   }
 
-  authScreen = mountAuthScreen(root, {
-    lang: getLang,
-    configured: true,
-    actions: {
-      signIn(email, password) { return signInWithEmailAndPassword(firebase.auth, email, password); },
-      async create(email, password, displayName) {
-        const credential = await createUserWithEmailAndPassword(firebase.auth, email, password);
-        if (displayName) await updateProfile(credential.user, { displayName });
-        return credential;
-      },
-      google() { return signInWithPopup(firebase.auth, createGoogleProvider()); },
-      reset(email) { return sendPasswordResetEmail(firebase.auth, email); }
-    },
-    onLanguageChange() {
-      const lang = window.SafeLift.i18n.toggleLang();
-      window.__SAFELIFT_BOOT_LANG__ = lang;
-      authScreen?.setLanguage();
-    }
-  });
-  clearSplash();
+  renderAuthView({ configured: true });
 
-  unsubscribeAuth = onAuthStateChanged(firebase.auth, async (authUser) => {
-    if (!authUser) {
-      if (currentUser) showSignedOut();
-      else if (!workspaceStarted && onAdminRoute) showInitial();
-      return;
-    }
-    currentUser = authUser;
-    const run = ++authRun;
-    if (authScreen) authScreen.showMessage(getLang() === 'en' ? 'Checking account access…' : 'Đang kiểm tra quyền tài khoản…');
+  async function completeAuthorizedSession(authUser, run) {
+    if (authScreen) authScreen.showMessage(saasT('saasCheckingAccess'));
     try {
       const profile = await ensureUserProfile(firebase.db, authUser);
       if (run !== authRun) return;
       unsubscribeProfile?.();
       unsubscribeProfile = watchUserProfile(firebase.db, authUser.uid, (freshProfile) => {
         if (!freshProfile || freshProfile.status !== 'active') {
-          const msg = getLang() === 'en' ? 'This account has been suspended.' : 'Tài khoản này đã bị khóa.';
-          if (authScreen) authScreen.showMessage(msg, true);
+          pendingAuthNotice = { message: saasT('saasAccountSuspended'), isError: true };
+          showSignedOut();
           signOut(firebase.auth).catch((error) => console.error('[SafeLift3D] Sign-out failed', error));
           return;
         }
@@ -255,23 +207,53 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
       if (run !== authRun) return;
       console.error('[SafeLift3D] Account profile could not be loaded', error);
       if (error?.code === 'safelift/account-suspended') {
-        authScreen?.showMessage(getLang() === 'en' ? error.message : 'Tài khoản đang bị khóa. Vui lòng liên hệ SafeLift3D.', true);
-        await signOut(firebase.auth);
+        const suspendedMsg = saasT('saasAccountSuspendedContact');
+        pendingAuthNotice = { message: suspendedMsg, isError: true };
+        authScreen?.showMessage(suspendedMsg, true);
+        await signOut(firebase.auth).catch(() => {});
       } else {
-        authScreen?.showMessage(getLang() === 'en'
-          ? 'Could not verify your account. Check your connection and Firestore rules.'
-          : 'Không thể xác minh tài khoản. Kiểm tra kết nối và Firestore rules.', true);
+        authScreen?.showMessage(t('authVerifyAccountError', getLang()), true);
       }
     }
+  }
+
+  unsubscribeAuth = onAuthStateChanged(firebase.auth, async (authUser) => {
+    if (!authUser) {
+      if (currentUser) showSignedOut();
+      else if (!workspaceStarted && onAdminRoute) showInitial();
+      return;
+    }
+    currentUser = authUser;
+    const run = ++authRun;
+    if (needsEmailVerification(authUser)) {
+      authScreen?.showVerificationPending({
+        email: authUser.email,
+        onResend: () => sendEmailVerification(firebase.auth.currentUser || authUser),
+        onCheckVerified: async () => {
+          const target = firebase.auth.currentUser || authUser;
+          await reload(target);
+          if (needsEmailVerification(target)) return false;
+          if (typeof target.getIdToken === 'function') await target.getIdToken(true);
+          authScreen?.clearVerificationPending();
+          await completeAuthorizedSession(target, run);
+          return true;
+        },
+        onSignOut: () => signOut(firebase.auth)
+      });
+      return;
+    }
+    await completeAuthorizedSession(authUser, run);
   });
 
   return {
     dispose() {
       unsubscribeAuth?.();
       unsubscribeProfile?.();
+      disposeShellUI();
       authScreen?.dispose();
       adminScreen?.dispose();
       accountWidget?.dispose();
+      workspaceDashboard?.dispose();
       featureAccess.dispose();
     }
   };

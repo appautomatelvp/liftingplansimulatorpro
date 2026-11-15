@@ -6,13 +6,13 @@ import * as CANNON from 'cannon-es';
 import * as CAE from '../src/core/index.js';
 import * as GFX from '../src/graphics/index.js';
 import * as RIG from '../src/rigging/index.js';
+import { CableDynamicsXPBD } from '../src/rigging/CableDynamicsXPBD.js';
 import { SIM_PARTS_HEADLESS } from '../src/sim/manifest.js';
 
 let simApi = null;
 
 function getRenderedSlingNodes(sling) {
-    // Deep slack and chain slings use the stable analytic catenary renderer;
-    // ropeSim is intentionally null on that path. Inspect the visible polyline.
+    // Dynamic cable paths expose their current XPBD nodes or rendered polyline.
     return sling?.pathPoints || sling?.ropeSim?.p || null;
 }
 
@@ -92,6 +92,7 @@ beforeAll(async () => {
     globalThis.CAE = CAE;
     globalThis.GFX = GFX;
     globalThis.RIG = RIG;
+    globalThis.XPBDCableDynamics = CableDynamicsXPBD;
 
     const simDir = path.resolve('src/sim');
     const simParts = SIM_PARTS_HEADLESS;
@@ -102,6 +103,7 @@ beforeAll(async () => {
         'const CAE = globalThis.CAE;',
         'const GFX = globalThis.GFX;',
         'const RIG = globalThis.RIG;',
+        'const XPBDCableDynamics = globalThis.XPBDCableDynamics;',
         ...simParts.map((f) => fs.readFileSync(path.join(simDir, f), 'utf8')),
         `return {
             getState: () => state,
@@ -174,7 +176,7 @@ describe('Per-Cable Custom Sling Types, Multi-Part Parallel Falls & Physics Fail
         expect(upper0).toBeTruthy();
         expect(upper0.group.name).toBe('Wire_Rope_Sling');
         expect(upper0.segments[2].visible).toBe(true);
-        expect(upper0.links[0].visible).toBe(false);
+        expect(upper0.linkInstances.count).toBe(0);
 
         // Customize ONLY Upper Cable 1 to chain:
         state.gear.uppers[1].slingType = 'chain';
@@ -185,7 +187,7 @@ describe('Per-Cable Custom Sling Types, Multi-Part Parallel Falls & Physics Fail
         expect(upper1).toBeTruthy();
         expect(upper1.group.name).toBe('Chain_Sling');
         expect(upper1.segments[2].visible).toBe(false);
-        expect(upper1.links[0].visible).toBe(true);
+        expect(upper1.linkInstances.count).toBeGreaterThan(0);
         // Upper 0 remains Wire Rope
         const u0After = pool.find(s => s.group.visible && s.drawMeta && s.drawMeta.role === 'upper' && s.drawMeta.index === 0);
         expect(u0After.group.name).toBe('Wire_Rope_Sling');
