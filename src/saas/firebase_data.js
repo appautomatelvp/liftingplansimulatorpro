@@ -14,6 +14,7 @@ import {
   setDoc,
   updateDoc
 } from 'firebase/firestore';
+import { prepareFirestorePayload } from '../utils/firestoreSanitize.js';
 
 export async function ensureUserProfile(db, authUser) {
   const profileRef = doc(db, 'users', authUser.uid);
@@ -29,7 +30,7 @@ export async function ensureUserProfile(db, authUser) {
       lastLogin: serverTimestamp(),
       status: 'active'
     };
-    await setDoc(profileRef, profile);
+    await setDoc(profileRef, prepareFirestorePayload(profile));
     return { ...profile, createdAt: new Date(), lastLogin: new Date() };
   }
 
@@ -39,7 +40,7 @@ export async function ensureUserProfile(db, authUser) {
     error.code = 'safelift/account-suspended';
     throw error;
   }
-  await updateDoc(profileRef, { lastLogin: serverTimestamp() });
+  await updateDoc(profileRef, prepareFirestorePayload({ lastLogin: serverTimestamp() }));
   return { ...profile, lastLogin: new Date() };
 }
 
@@ -77,5 +78,5 @@ export async function setUserAccess(db, uid, update) {
   if (update.tier === 'free' || update.tier === 'premium') allowed.tier = update.tier;
   if (update.status === 'active' || update.status === 'locked' || update.status === 'banned') allowed.status = update.status;
   if (!Object.keys(allowed).length) throw new Error('No valid access change was provided.');
-  await updateDoc(doc(db, 'users', uid), allowed);
+  await updateDoc(doc(db, 'users', uid), prepareFirestorePayload(allowed));
 }

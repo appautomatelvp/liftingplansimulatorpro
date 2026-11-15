@@ -1,4 +1,5 @@
 import { saasT } from './i18n.js';
+import { safeReadLocalStore, safeWriteLocalStore } from '../utils/localDataStore.js';
 
 const RATE_KEY = 'safelift.auth.rate.v1';
 const LIMIT = 5;
@@ -44,7 +45,8 @@ const COPY = {
 };
 
 function readAttempts() {
-  try { return JSON.parse(localStorage.getItem(RATE_KEY) || '{}'); } catch (_) { return {}; }
+  if (typeof localStorage === 'undefined') return {};
+  return safeReadLocalStore(RATE_KEY, {});
 }
 
 function consumeRateLimit(action) {
@@ -59,7 +61,7 @@ function consumeRateLimit(action) {
   }
   active.push(now);
   attempts[action] = active;
-  try { localStorage.setItem(RATE_KEY, JSON.stringify(attempts)); } catch (_) { /* browser storage may be disabled */ }
+  if (typeof localStorage !== 'undefined') safeWriteLocalStore(RATE_KEY, attempts);
 }
 
 function messageFor(error, copy) {

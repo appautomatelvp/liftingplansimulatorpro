@@ -22,7 +22,7 @@ Nâng cấp & tái cấu trúc dự án `LIFTING PLAN SIMULATOR PRO (SafeLift3D)
   - CẤM đụng: Mọi file `[LOCKED]` trong `STATE.md`, `src/core/*`, `firestore.rules`
   - Kiểm tra xong: Chạy `npm run architecture:gate && npm test && npm run build` đạt 100%; `./scripts/auto_check.ps1` không còn báo lỗi giả ở `FixedStepLoop.js` và `src/saas/firebase.js`
 
-- [ ] Bước 2: Tích hợp bộ giáp `prepareFirestorePayload` và `safeReadLocalStore` / `safeWriteLocalStore` vào tầng SaaS
+- [x] Bước 2: Tích hợp bộ giáp `prepareFirestorePayload` và `safeReadLocalStore` / `safeWriteLocalStore` vào tầng SaaS
   - Sửa: `src/saas/firebase_data.js`, `src/saas/auth_screen.js`, `src/i18n/index.js`
   - CẤM đụng: `firestore.rules`, `src/core/*`, tên khóa `localStorage` cũ (`safelift_lang`, `safelift_auth_attempts_v1`)
   - Kiểm tra xong: Chạy `npm test` (đặc biệt `test/auth_screen.test.js`, `test/admin_users.test.js`, `test/i18n_keys.test.js`) và `npm run build` xanh 100%

@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-15 14:35 [refactor] Upgrade Buoc 2: Tich hop prepareFirestorePayload vao firebase_data.js va safeReadLocalStore/safeWriteLocalStore vao auth_screen.js, i18n/index.js.
+- Nhánh: codex/safelift-g0-ci | Commit trước đó: 63b186c
+- File: src/saas/firebase_data.js,src/saas/auth_screen.js,src/i18n/index.js,auto_memory/PLAN.md
+
 ## 2026-11-15 14:33 [feat] Upgrade Buoc 1: Lap bo giap du lieu V7 (firestoreSanitize.js, localDataStore.js) va sua canh bao gia trong auto_check.ps1.
 - Nhánh: codex/safelift-g0-ci | Commit trước đó: 68928c3
 - File: src/utils/firestoreSanitize.js,src/utils/localDataStore.js,scripts/auto_check.ps1,auto_memory/PLAN.md

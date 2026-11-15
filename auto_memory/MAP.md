@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-15 14:33 | Nhánh: codex/safelift-g0-ci | Commit cuối: 68928c3 Snapshot 142915112026 (test): truoc khi lam upgrade-v7 (3 minutes ago)
-Tổng: 227 file, 71135 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-15 14:35 | Nhánh: codex/safelift-g0-ci | Commit cuối: 63b186c chore(upgrade): step 1 add V7 data guard utils and refine auto_check rules (3 minutes ago)
+Tổng: 227 file, 71142 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -23,7 +23,7 @@ Tổng: 227 file, 71135 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/rigging/CableDynamicsXPBD.js (310 dòng)
 - src/rigging/RiggingPhysicsSolver.js (682 dòng)
 - src/saas/admin_dashboard.js (388 dòng)
-- src/saas/auth_screen.js (313 dòng)
+- src/saas/auth_screen.js (315 dòng)
 - src/saas/session.js (454 dòng)
 - src/saas/workspace_dashboard.js (430 dòng)
 - src/saas/workspace_data.js (374 dòng)
@@ -171,7 +171,7 @@ Tổng: 227 file, 71135 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/graphics/PBRMaterialFactory.js` | 659 |  ⚠️>300 |
 | `src/graphics/SceneRenderer.js` | 321 |  ⚠️>300 |
 | `src/i18n/cargo_labels.js` | 48 |  |
-| `src/i18n/index.js` | 93 |  |
+| `src/i18n/index.js` | 97 |  |
 | `src/i18n/keys.js` | 595 |  ⚠️>300 |
 | `src/main.js` | 65 |  |
 | `src/rigging/CableDynamicsXPBD.js` | 310 |  ⚠️>300 |
@@ -185,7 +185,7 @@ Tổng: 227 file, 71135 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/saas/access.js` | 48 |  |
 | `src/saas/admin_dashboard.js` | 388 |  ⚠️>300 |
 | `src/saas/app_check_config.js` | 15 |  |
-| `src/saas/auth_screen.js` | 313 |  ⚠️>300 |
+| `src/saas/auth_screen.js` | 315 |  ⚠️>300 |
 | `src/saas/branding.js` | 54 |  |
 | `src/saas/catalog_client.js` | 87 |  |
 | `src/saas/cms_data.js` | 247 |  |
@@ -194,7 +194,7 @@ Tổng: 227 file, 71135 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/saas/feature_access_ui.js` | 191 |  |
 | `src/saas/feedback.js` | 31 |  |
 | `src/saas/firebase.js` | 95 |  |
-| `src/saas/firebase_data.js` | 81 |  |
+| `src/saas/firebase_data.js` | 82 |  |
 | `src/saas/i18n.js` | 12 | Format a localized template key from `src/i18n/keys.js` with optional `{var}` substitutions. |
 | `src/saas/runtime_flags.js` | 63 |  |
 | `src/saas/saas.css` | 293 | saas-root[hidden] { display: none !important; } |

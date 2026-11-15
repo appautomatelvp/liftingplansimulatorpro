@@ -1,15 +1,19 @@
 import { KEYS, SPLASH_STAGES } from './keys.js';
 import { formatCargoDerivedLabel, formatCargoCrateLabel } from './cargo_labels.js';
 import { BRAND, COPYRIGHT, applyDocumentBrand } from '../saas/branding.js';
+import { safeReadLocalStore, safeWriteLocalStore } from '../utils/localDataStore.js';
 
 const SUPPORTED = new Set(['vi', 'en']);
 const STORAGE_KEY = 'safelift3d.lang';
 
 function detectInitialLang() {
+  if (typeof localStorage === 'undefined') return 'vi';
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (SUPPORTED.has(saved)) return saved;
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (SUPPORTED.has(raw)) return raw;
   } catch (_) { /* ignore */ }
+  const saved = safeReadLocalStore(STORAGE_KEY, null);
+  if (SUPPORTED.has(saved)) return saved;
   return 'vi';
 }
 
@@ -22,9 +26,9 @@ export function getLang() {
 export function setLang(lang) {
   if (!SUPPORTED.has(lang)) return currentLang;
   currentLang = lang;
-  try {
-    localStorage.setItem(STORAGE_KEY, lang);
-  } catch (_) { /* ignore */ }
+  if (typeof localStorage !== 'undefined') {
+    safeWriteLocalStore(STORAGE_KEY, lang);
+  }
   applyDocumentBrand(currentLang);
   if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
     window.dispatchEvent(new CustomEvent('safelift:language-changed', { detail: { lang: currentLang } }));
