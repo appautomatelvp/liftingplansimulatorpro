@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-15 14:39 [refactor] Upgrade Buoc 4: Tach plan_snapshot.js (170 dong) khoi workspace_data.js (giam con 228 dong), re-export giu tuong thich 100%.
+- Nhánh: codex/safelift-g0-ci | Commit trước đó: 559b5c8
+- File: src/saas/plan_snapshot.js,src/saas/workspace_data.js,auto_memory/PLAN.md
+
 ## 2026-11-15 14:38 [refactor] Upgrade Buoc 3: Tach auth_rate_limit.js (85 dong) khoi auth_screen.js (giam con 234 dong, duoi nguong 300).
 - Nhánh: codex/safelift-g0-ci | Commit trước đó: 32d2497
 - File: src/saas/auth_rate_limit.js,src/saas/auth_screen.js,auto_memory/PLAN.md

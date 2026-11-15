@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-15 14:38 | Nhánh: codex/safelift-g0-ci | Commit cuối: 32d2497 refactor(upgrade): step 2 integrate V7 Firestore and LocalStorage guards into SaaS & i18n (3 minutes ago)
-Tổng: 228 file, 71146 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-15 14:39 | Nhánh: codex/safelift-g0-ci | Commit cuối: 559b5c8 refactor(upgrade): step 3 split auth_rate_limit.js from auth_screen.js (85 seconds ago)
+Tổng: 229 file, 71170 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -25,7 +25,6 @@ Tổng: 228 file, 71146 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/saas/admin_dashboard.js (388 dòng)
 - src/saas/session.js (454 dòng)
 - src/saas/workspace_dashboard.js (430 dòng)
-- src/saas/workspace_data.js (374 dòng)
 - src/sim/audio.js (725 dòng)
 - src/sim/cargo/containers_iso.js (1490 dòng)
 - src/sim/cargo/shell_rebuild.js (563 dòng)
@@ -196,12 +195,13 @@ Tổng: 228 file, 71146 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/saas/firebase.js` | 95 |  |
 | `src/saas/firebase_data.js` | 82 |  |
 | `src/saas/i18n.js` | 12 | Format a localized template key from `src/i18n/keys.js` with optional `{var}` substitutions. |
+| `src/saas/plan_snapshot.js` | 170 | Chuẩn hóa dữ liệu thiết bị và đóng gói/giải mã/di trú snapshot phương án nâng hạ |
 | `src/saas/runtime_flags.js` | 63 |  |
 | `src/saas/saas.css` | 293 | saas-root[hidden] { display: none !important; } |
 | `src/saas/session.js` | 454 |  ⚠️>300 |
 | `src/saas/telemetry_usage.js` | 143 |  |
 | `src/saas/workspace_dashboard.js` | 430 |  ⚠️>300 |
-| `src/saas/workspace_data.js` | 374 |  ⚠️>300 |
+| `src/saas/workspace_data.js` | 228 |  |
 | `src/shared/events.js` | 31 |  |
 | `src/shared/index.js` | 1 |  |
 | `src/sim/audio.js` | 725 |  ⚠️>300 |

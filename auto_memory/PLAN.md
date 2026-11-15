@@ -32,7 +32,7 @@ Nâng cấp & tái cấu trúc dự án `LIFTING PLAN SIMULATOR PRO (SafeLift3D)
   - CẤM đụng: `src/saas/firebase.js`, `firestore.rules`, `src/core/*`
   - Kiểm tra xong: `src/saas/auth_screen.js` và `src/saas/auth_rate_limit.js` đều ≤ 300 dòng; chạy `npm test` và `npm run build` xanh 100%
 
-- [ ] Bước 4: Tách `src/saas/workspace_data.js` (374 dòng -> dưới 300 dòng)
+- [x] Bước 4: Tách `src/saas/workspace_data.js` (374 dòng -> dưới 300 dòng)
   - Sửa: `src/saas/plan_snapshot.js` (tạo mới `<180 dòng`, chứa `SNAPSHOT_FIELDS`, `makePlanSnapshot`, `makeLegacyRigSnapshot`, `parsePlanSnapshot`, `buildEquipmentRecord`), `src/saas/workspace_data.js` (import & re-export từ `plan_snapshot.js` để giữ tương thích 100%, giảm còn `<240 dòng`)
   - CẤM đụng: `firestore.rules`, `src/core/*`, `test/workspace_data.test.js`
   - Kiểm tra xong: `src/saas/workspace_data.js` và `src/saas/plan_snapshot.js` đều ≤ 300 dòng; chạy `npx vitest run test/workspace_data.test.js` và `npm run build` xanh 100%
