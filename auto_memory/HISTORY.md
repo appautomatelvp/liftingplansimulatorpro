@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-15 15:56 [feat] Buoc 3/4: Hien thi lai Logo-Icon dong bo app-icon.png va cap nhat nen industrial-lifting-bg.png Zoom Out cho man hinh Dang nhap/Xac thuc trong auth_screen.js va saas.css
+- Nhánh: codex/safelift-g0-ci | Commit trước đó: 8ffb75a
+- File: src/saas/auth_screen.js,src/saas/saas.css,auto_memory/PLAN.md,STATE.md
+
 ## 2026-11-15 15:55 [feat] Buoc 2/4: Tach brand_splash.css (<40 dong), cap nhat nen industrial-lifting-bg.png co hieu ung Zoom Out va dong bo Logo-Icon app-icon.png cho man hinh khoi dong index.html
 - Nhánh: codex/safelift-g0-ci | Commit trước đó: b788b33
 - File: index.html,src/styles/brand_splash.css,auto_memory/PLAN.md,STATE.md

@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-15 15:55 | Nhánh: codex/safelift-g0-ci | Commit cuối: b788b33 feat(brand): step 1 generate industrial lifting background artwork (3 minutes ago)
-Tổng: 239 file, 71109 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-15 15:56 | Nhánh: codex/safelift-g0-ci | Commit cuối: 8ffb75a feat(brand): step 2 apply zoom-out industrial splash and synced logo (2 minutes ago)
+Tổng: 239 file, 71111 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -185,7 +185,7 @@ Tổng: 239 file, 71109 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/saas/admin_panels.js` | 159 | Các hàm dựng HTML giao diện Enterprise Command Center và đọc dữ liệu form cho bảng quản trị CMS |
 | `src/saas/app_check_config.js` | 15 |  |
 | `src/saas/auth_rate_limit.js` | 85 | Kiểm soát giới hạn tốc độ thử đăng nhập và chuẩn hóa thông báo lỗi xác thực (VI/EN) |
-| `src/saas/auth_screen.js` | 234 |  |
+| `src/saas/auth_screen.js` | 238 |  |
 | `src/saas/branding.js` | 54 |  |
 | `src/saas/catalog_client.js` | 87 |  |
 | `src/saas/cms_data.js` | 247 |  |
@@ -198,7 +198,7 @@ Tổng: 239 file, 71109 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/saas/i18n.js` | 12 | Format a localized template key from `src/i18n/keys.js` with optional `{var}` substitutions. |
 | `src/saas/plan_snapshot.js` | 170 | Chuẩn hóa dữ liệu thiết bị và đóng gói/giải mã/di trú snapshot phương án nâng hạ |
 | `src/saas/runtime_flags.js` | 63 |  |
-| `src/saas/saas.css` | 246 | saas-root[hidden] { display: none !important; } |
+| `src/saas/saas.css` | 244 | saas-root[hidden] { display: none !important; } |
 | `src/saas/session.js` | 260 |  ⚠️>250 |
 | `src/saas/session_ui_bindings.js` | 165 | Gắn kết giao diện header, widget tài khoản, banner bảo trì và hộp thoại liên hệ SaaS |
 | `src/saas/telemetry_usage.js` | 143 |  |

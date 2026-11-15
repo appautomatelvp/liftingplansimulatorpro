@@ -35,7 +35,7 @@ Cập nhật hình nền khởi động / đăng nhập bằng ảnh công nghi�
   - CẤM đụng: `src/core/*`, `firestore.rules`, phần logic mô phỏng 3D trong `index.html`
   - Kiểm tra xong: Chạy `npm run build` và `./scripts/auto_check.ps1` xanh 100%, 0 lỗi đỏ.
 
-- [ ] Bước 3: Đồng bộ Logo + Icon & hiệu ứng Background Zoom-Out ở Màn hình Đăng nhập (`src/saas/auth_screen.js` & `src/saas/saas.css`)
+- [x] Bước 3: Đồng bộ Logo + Icon & hiệu ứng Background Zoom-Out ở Màn hình Đăng nhập (`src/saas/auth_screen.js` & `src/saas/saas.css`)
   - Sửa: `src/saas/auth_screen.js` (`<250 dòng`), `src/saas/saas.css` (`<260 dòng`):
     1) Trong `src/saas/saas.css`: trỏ `.saas-auth-screen::after` sang `url('/brand/industrial-lifting-bg.png')` với hiệu ứng **Zoom Out** (`from { transform: scale(1.14); } to { transform: scale(1); }`) đồng bộ màn hình khởi động; định nghĩa style dùng chung `.saas-brand-lockup` (icon `app-icon.png` + text `SAFELIFT3D` + phụ đề) gọn đẹp trên dark card và CMS.
     2) Trong `src/saas/auth_screen.js`: tách 1 helper `renderBrandLockup()` dùng chung cho cả màn hình Đăng nhập/Đăng ký và màn hình Xác thực email (DRY), thay cho ảnh `<img src="/safelift3d-icons/branding/main-logo.svg">` đang bị ẩn rỗng.

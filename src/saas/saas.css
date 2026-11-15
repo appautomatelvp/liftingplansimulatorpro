@@ -30,10 +30,15 @@
   box-shadow: 0 26px 90px rgba(0, 0, 0, .56), inset 0 1px rgba(255, 255, 255, .05);
 }
 
-.saas-auth-brand { display: flex; align-items: center; gap: 10px; color: #f8fafc; font-weight: 900; letter-spacing: .02em; }
-.saas-auth-mark { display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; color: #07111c; background: linear-gradient(140deg, #38bdf8, #fbbf24); font: 900 13px ui-monospace, monospace; }
+.saas-auth-brand { display: flex; align-items: center; padding-right: 78px; min-height: 44px; }
+.saas-brand-lockup { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.saas-brand-icon { display: block; width: 42px; height: 42px; flex: 0 0 42px; border-radius: 11px; object-fit: contain; box-shadow: 0 6px 18px rgba(0, 0, 0, .42), 0 0 14px rgba(56, 189, 248, .18); }
+.saas-brand-wordmark { display: grid; gap: 2px; min-width: 0; }
+.saas-brand-wordmark strong { color: #f8fafc; font-size: 16px; font-weight: 900; letter-spacing: .07em; line-height: 1.05; }
+.saas-brand-wordmark strong span { color: #fbbf24; }
+.saas-brand-wordmark small { color: #94a3b8; font: 700 9px ui-monospace, monospace; letter-spacing: .1em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .saas-language-button { position: absolute; top: 29px; right: 28px; padding: 7px 10px; color: #bae6fd; border: 1px solid #334155; border-radius: 8px; background: #0b1220; font-size: 12px; font-weight: 800; cursor: pointer; }
-.saas-auth-kicker { margin-top: 32px; color: #38bdf8; font-size: 10px; font-weight: 900; letter-spacing: .16em; }
+.saas-auth-kicker { margin-top: 22px; color: #38bdf8; font-size: 10px; font-weight: 900; letter-spacing: .16em; }
 .saas-auth-card h1 { margin: 8px 0 0; color: #f8fafc; font-size: 25px; line-height: 1.2; font-weight: 850; letter-spacing: -.03em; }
 .saas-auth-subtitle { margin: 8px 0 22px; color: #94a3b8; font-size: 13px; line-height: 1.55; }
 .saas-auth-form { display: grid; gap: 14px; }
@@ -84,35 +89,28 @@
 .saas-auth-screen::after {
   content: "";
   position: fixed;
-  inset: -5%;
+  inset: -4%;
   z-index: -2;
   pointer-events: none;
-  background: url('/brand/container-yard-reference.png') center / cover no-repeat;
-  animation: saas-yard-zoom 26s ease-in-out infinite alternate;
+  background: url('/brand/industrial-lifting-bg.png') center / cover no-repeat;
+  transform-origin: 65% 45%;
+  animation: saas-industrial-zoom-out 20s cubic-bezier(.16, 1, .3, 1) forwards;
 }
-@keyframes saas-yard-zoom { from { transform: scale(1); } to { transform: scale(1.09); } }
+@keyframes saas-industrial-zoom-out { from { transform: scale(1.14); filter: brightness(.92); } to { transform: scale(1); filter: brightness(1); } }
 .saas-auth-screen::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(4, 9, 18, .52), rgba(4, 9, 18, .8));
+  background: radial-gradient(circle at 70% 45%, rgba(7, 17, 27, .3) 0%, rgba(4, 9, 18, .78) 70%, rgba(4, 9, 18, .92) 100%);
 }
 .saas-auth-card {
   border-color: rgba(84, 198, 232, .34);
   border-radius: 14px;
-  background: rgba(10, 20, 32, .97);
-  box-shadow: 0 24px 72px rgba(0, 0, 0, .42);
-}
-.saas-auth-mark {
-  display: block;
-  width: min(100%, 210px);
-  height: auto;
-  max-height: 160px;
-  border-radius: 8px;
-  background: none;
-  object-fit: contain;
+  background: rgba(10, 20, 32, .94);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 24px 72px rgba(0, 0, 0, .48);
 }
 #saas-root :focus-visible, .saas-paywall-backdrop :focus-visible, .saas-contact-backdrop :focus-visible, .saas-workspace-backdrop :focus-visible { outline: 2px solid #fbbf24; outline-offset: 3px; }
 .brand-identity-mark { display: flex; align-items: center; justify-content: center; }
@@ -159,7 +157,7 @@ body.saas-locked #labels-container { pointer-events: none !important; }
 
 @media (max-width: 680px) {
   .saas-auth-card { padding: 24px 19px; }
-  .saas-auth-mark { width: min(100%, 180px); max-height: 136px; }
+  .saas-brand-icon { width: 38px; height: 38px; flex-basis: 38px; }
 }
 
 .saas-workspace-backdrop { position: fixed; inset: 0; z-index: 1400000; display: grid; place-items: center; padding: 18px; background: rgba(2, 6, 23, .78); backdrop-filter: blur(9px); }

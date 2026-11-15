@@ -3,6 +3,10 @@ import { AUTH_COPY as COPY, consumeRateLimit, messageFor } from './auth_rate_lim
 
 export { consumeRateLimit, messageFor };
 
+function renderBrandLockup() {
+  return `<div class="saas-auth-brand"><div class="saas-brand-lockup"><img class="saas-brand-icon" src="/safelift3d-icons/branding/app-icon.png" alt="SafeLift3D"><div class="saas-brand-wordmark"><strong>SAFELIFT<span>3D</span></strong><small>HEAVY RIGGING &amp; LIFT PLANNER</small></div></div></div>`;
+}
+
 export function restoreAuthActions(root, mode, copy) {
   const submit = root.querySelector('.saas-primary-button');
   if (submit) {
@@ -34,7 +38,7 @@ export function mountAuthScreen(container, { lang, configured, actions, onLangua
         : copy.verifyResend;
       root.innerHTML = `
       <div class="saas-auth-card">
-        <div class="saas-auth-brand"><img class="saas-auth-mark" src="/safelift3d-icons/branding/main-logo.svg" alt="SafeLift3D — Heavy Rigging & Lift Planner"></div>
+        ${renderBrandLockup()}
         <button class="saas-language-button" type="button" data-action="language">${copy.toggle}</button>
         <div class="saas-auth-kicker">${saasT('authVerifyKicker', null, lang())}</div>
         <h1 id="saas-auth-title">${copy.verifyPendingTitle}</h1>
@@ -102,7 +106,7 @@ export function mountAuthScreen(container, { lang, configured, actions, onLangua
     }
     root.innerHTML = `
       <div class="saas-auth-card">
-        <div class="saas-auth-brand"><img class="saas-auth-mark" src="/safelift3d-icons/branding/main-logo.svg" alt="SafeLift3D — Heavy Rigging & Lift Planner"></div>
+        ${renderBrandLockup()}
         <button class="saas-language-button" type="button" data-action="language">${copy.toggle}</button>
         <div class="saas-auth-kicker">${saasT('authWorkspaceKicker', null, lang())}</div>
         <h1 id="saas-auth-title">${copy.title}</h1>
