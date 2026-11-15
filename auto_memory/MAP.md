@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-15 14:39 | Nhánh: codex/safelift-g0-ci | Commit cuối: 559b5c8 refactor(upgrade): step 3 split auth_rate_limit.js from auth_screen.js (85 seconds ago)
-Tổng: 229 file, 71170 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-15 14:45 | Nhánh: codex/safelift-g0-ci | Commit cuối: 12b6625 refactor(upgrade): step 4 split plan_snapshot.js from workspace_data.js (5 minutes ago)
+Tổng: 230 file, 71183 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -22,7 +22,6 @@ Tổng: 229 file, 71170 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/i18n/keys.js (595 dòng)
 - src/rigging/CableDynamicsXPBD.js (310 dòng)
 - src/rigging/RiggingPhysicsSolver.js (682 dòng)
-- src/saas/admin_dashboard.js (388 dòng)
 - src/saas/session.js (454 dòng)
 - src/saas/workspace_dashboard.js (430 dòng)
 - src/sim/audio.js (725 dòng)
@@ -181,7 +180,8 @@ Tổng: 229 file, 71170 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/RiggingPhysicsSolver.js` | 682 | src/rigging/RiggingPhysicsSolver.js ⚠️>300 |
 | `src/rigging/riggingUIStore.js` | 100 | src/rigging/riggingUIStore.js |
 | `src/saas/access.js` | 48 |  |
-| `src/saas/admin_dashboard.js` | 388 |  ⚠️>300 |
+| `src/saas/admin_dashboard.js` | 253 |  ⚠️>250 |
+| `src/saas/admin_panels.js` | 148 | Các hàm dựng HTML và đọc dữ liệu form cho bảng quản trị CMS |
 | `src/saas/app_check_config.js` | 15 |  |
 | `src/saas/auth_rate_limit.js` | 85 | Kiểm soát giới hạn tốc độ thử đăng nhập và chuẩn hóa thông báo lỗi xác thực (VI/EN) |
 | `src/saas/auth_screen.js` | 234 |  |

@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-15 14:44 [refactor] Buoc 5: Tach phan dung HTML bang nguoi dung, feature flags, audit log va catalog sang admin_panels.js (148 dong) giup admin_dashboard.js giam tu 388 xuong 253 dong va giu nguyen 100% hanh vi CMS.
+- Nhánh: codex/safelift-g0-ci | Commit trước đó: 12b6625
+- File: src/saas/admin_panels.js,src/saas/admin_dashboard.js,auto_memory/PLAN.md
+
 ## 2026-11-15 14:39 [refactor] Upgrade Buoc 4: Tach plan_snapshot.js (170 dong) khoi workspace_data.js (giam con 228 dong), re-export giu tuong thich 100%.
 - Nhánh: codex/safelift-g0-ci | Commit trước đó: 559b5c8
 - File: src/saas/plan_snapshot.js,src/saas/workspace_data.js,auto_memory/PLAN.md
