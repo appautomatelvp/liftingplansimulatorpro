@@ -41,7 +41,7 @@ Nâng cấp toàn diện hệ thống **CMS Quản trị (`http://localhost:5173
   - CẤM đụng: `src/saas/cms_data.js`, `firestore.rules`, `src/core/*`
   - Kiểm tra xong: Chạy `npx vitest run test/cms_data.test.js` và `npm test` xanh 100%; `src/saas/admin_helpers.js` và `test/cms_data.test.js` đều ≤ 250 dòng
 
-- [ ] Bước 4: Nâng cấp `src/saas/admin_panels.js` (Header Command Bar, Dải 6 KPI, Phân hệ Người dùng & Phân hệ Cấu hình Hệ thống / Lỗi Phiên)
+- [x] Bước 4: Nâng cấp `src/saas/admin_panels.js` (Header Command Bar, Dải 6 KPI, Phân hệ Người dùng & Phân hệ Cấu hình Hệ thống / Lỗi Phiên)
   - Sửa: `src/saas/admin_panels.js` (nâng cấp dưới `<250 dòng`, giữ nguyên các hàm đọc form `EMPTY_CATALOG_DRAFT`, `catalogDraftFromItem`, `readFlagsFormPayload`, `readCatalogFormPayload`, `escapeHtml`, `formatAuditTime`, `renderUnauthorizedAdminCard`, và nâng cấp `renderAdminShell`, `renderKpiRibbon`, `renderUsersSection`, `renderFlagsSection` với bộ lọc Role/Tier/Status, Quick Reason Chips, cột Ngày tạo/Đăng nhập cuối, khóa bảo vệ tài khoản tự thân, công tắc 7 module kỹ thuật và bảng chi tiết lỗi phiên)
   - CẤM đụng: `src/saas/cms_data.js`, `firestore.rules`, `src/core/*`
   - Kiểm tra xong: `src/saas/admin_panels.js` ≤ 250 dòng; giữ nguyên toàn bộ selector bắt buộc của `e2e/cms-roles.spec.js`

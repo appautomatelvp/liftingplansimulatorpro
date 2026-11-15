@@ -46,7 +46,7 @@
 
 ## 4. CÔNG VIỆC ĐANG LÀM DỞ (ONGOING WORK)
 - **Mục tiêu hiện tại:** Thực hiện kế hoạch 6 bước nâng cấp hệ thống **CMS Quản trị (`/admin`)** lên chuẩn **Enterprise Command Center quốc tế** trong `auto_memory/PLAN.md` (`Trạng thái: ACTIVE`).
-- **Bước tiếp theo:** Bước 4 — Nâng cấp `src/saas/admin_panels.js` (Header Command Bar, Dải 6 KPI, Phân hệ Người dùng & Phân hệ Cấu hình Hệ thống / Lỗi Phiên).
+- **Bước tiếp theo:** Bước 5 — Tạo `src/saas/admin_catalog_audit_panels.js` (Phân hệ Catalog Thiết bị 3 cột, Nhật ký Kiểm toán Diff & Modal Chi tiết Người dùng).
 
 ---
 
