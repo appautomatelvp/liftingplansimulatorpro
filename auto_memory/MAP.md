@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-15 14:50 | Nhánh: codex/safelift-g0-ci | Commit cuối: 50cdf91 refactor(upgrade): step 5 split admin_panels.js from admin_dashboard.js (5 minutes ago)
-Tổng: 231 file, 71194 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-15 14:53 | Nhánh: codex/safelift-g0-ci | Commit cuối: 29e7c17 refactor(upgrade): step 6 split workspace_views.js from workspace_dashboard.js (3 minutes ago)
+Tổng: 232 file, 71165 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -22,7 +22,6 @@ Tổng: 231 file, 71194 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/i18n/keys.js (595 dòng)
 - src/rigging/CableDynamicsXPBD.js (310 dòng)
 - src/rigging/RiggingPhysicsSolver.js (682 dòng)
-- src/saas/session.js (454 dòng)
 - src/sim/audio.js (725 dòng)
 - src/sim/cargo/containers_iso.js (1490 dòng)
 - src/sim/cargo/shell_rebuild.js (563 dòng)
@@ -197,7 +196,8 @@ Tổng: 231 file, 71194 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/saas/plan_snapshot.js` | 170 | Chuẩn hóa dữ liệu thiết bị và đóng gói/giải mã/di trú snapshot phương án nâng hạ |
 | `src/saas/runtime_flags.js` | 63 |  |
 | `src/saas/saas.css` | 293 | saas-root[hidden] { display: none !important; } |
-| `src/saas/session.js` | 454 |  ⚠️>300 |
+| `src/saas/session.js` | 260 |  ⚠️>250 |
+| `src/saas/session_ui_bindings.js` | 165 | Gắn kết giao diện header, widget tài khoản, banner bảo trì và hộp thoại liên hệ SaaS |
 | `src/saas/telemetry_usage.js` | 143 |  |
 | `src/saas/workspace_dashboard.js` | 257 |  ⚠️>250 |
 | `src/saas/workspace_data.js` | 228 |  |

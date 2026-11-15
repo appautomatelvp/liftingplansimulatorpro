@@ -1,14 +1,7 @@
 import {
-  createUserWithEmailAndPassword,
-  GoogleAuthProvider,
-  onAuthStateChanged,
-  reload,
-  sendEmailVerification,
-  sendPasswordResetEmail,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  signOut,
-  updateProfile
+  createUserWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged,
+  reload, sendEmailVerification, sendPasswordResetEmail,
+  signInWithEmailAndPassword, signInWithPopup, signOut, updateProfile
 } from 'firebase/auth';
 import { mountAuthScreen } from './auth_screen.js';
 import { mountAdminDashboard } from './admin_dashboard.js';
@@ -16,82 +9,12 @@ import { ensureUserProfile, watchUserProfile } from './firebase_data.js';
 import { initializeFirebaseClient, getFirebaseSetupStatus } from './firebase.js';
 import { installFeatureAccessUI } from './feature_access_ui.js';
 import { needsEmailVerification } from './access.js';
-import { canAccessCms } from './cms_data.js';
 import { getLang, t } from '../i18n/index.js';
 import { saasT } from './i18n.js';
 import { installBoundedErrorCounter, normalizeFeatureFlags, readFeatureFlags } from './telemetry_usage.js';
 import { isMaintenance, loadFlagsOnce } from './runtime_flags.js';
-import { buildDeveloperContactMailto } from './feedback.js';
 import { mountWorkspaceDashboard } from './workspace_dashboard.js';
-import { trapDialogFocus } from './dialog_accessibility.js';
-
-function ensureRoot() {
-  let root = document.getElementById('saas-root');
-  if (!root) {
-    root = document.createElement('div');
-    root.id = 'saas-root';
-    document.body.append(root);
-  }
-  root.hidden = false;
-  return root;
-}
-
-function clearSplash() {
-  const splash = document.getElementById('app-loading-screen');
-  if (splash) splash.remove();
-}
-
-function mountAccountWidget(profile, authUser, onSignOut, onWorkspace) {
-  document.getElementById('saas-account-widget')?.remove();
-  const widget = document.createElement('aside');
-  widget.id = 'saas-account-widget';
-  widget.className = 'saas-account-widget';
-  let maintenanceBlocked = false;
-  const render = () => {
-    const lang = getLang();
-    const roleBadge = profile.role === 'admin'
-      ? 'ADMIN'
-      : (canAccessCms(profile)
-        ? String(profile.role).toUpperCase()
-        : (profile.tier === 'premium' ? 'PREMIUM' : 'FREE'));
-    const blockedTitle = maintenanceBlocked ? ` disabled aria-disabled="true" title="${escapeHtml(saasT('maintenanceWorkspaceBlocked', null, lang))}"` : '';
-    widget.innerHTML = `<span class="saas-account-dot"></span><span class="saas-account-copy"><strong>${escapeHtml(authUser.displayName || authUser.email || 'SafeLift3D user')}</strong><small>${escapeHtml(roleBadge)}</small></span><button type="button" data-action="workspace"${blockedTitle}>${saasT('saasMyWorkspace', null, lang)}</button>${canAccessCms(profile) ? `<a href="/admin">${saasT('saasAdminCms', null, lang)}</a>` : ''}<button type="button" data-action="signout">${saasT('adminSignOut', null, lang)}</button>`;
-    widget.querySelector('[data-action="workspace"]')?.addEventListener('click', () => {
-      if (!maintenanceBlocked) onWorkspace();
-    });
-    widget.querySelector('[data-action="signout"]')?.addEventListener('click', async (event) => {
-      const button = event.currentTarget;
-      button.disabled = true;
-      try {
-        await onSignOut();
-      } catch (error) {
-        console.error('[SafeLift3D] Sign-out failed', error);
-        button.disabled = false;
-        button.textContent = saasT('saasSignOutFailedRetry', null, lang);
-      }
-    });
-  };
-  const onLanguageChanged = () => render();
-  render();
-  window.addEventListener('safelift:language-changed', onLanguageChanged);
-  const accountMenu = document.getElementById('dropdown-panel-system');
-  (accountMenu || document.body).append(widget);
-  return {
-    setMaintenance(blocked) {
-      if (maintenanceBlocked === Boolean(blocked)) return;
-      maintenanceBlocked = Boolean(blocked);
-      render();
-    },
-    dispose() {
-      window.removeEventListener('safelift:language-changed', onLanguageChanged);
-      widget.remove();
-    }
-  };
-}
-
-function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
-}
+import { clearAppSplash, ensureSaasRoot, installSessionShellUI, mountAccountWidget } from './session_ui_bindings.js';
 
 function createGoogleProvider() {
   const provider = new GoogleAuthProvider();
@@ -99,57 +22,10 @@ function createGoogleProvider() {
   return provider;
 }
 
-function openDeveloperContact() {
-  let lastFeedbackAt = 0;
-  const lang = getLang();
-  const tr = (key) => saasT(key, null, lang);
-  document.getElementById('saas-contact-dialog')?.remove();
-  const dialog = document.createElement('div');
-  dialog.id = 'saas-contact-dialog';
-  dialog.className = 'saas-contact-backdrop';
-  dialog.innerHTML = `<section class="saas-contact-dialog" role="dialog" aria-modal="true" aria-labelledby="saas-contact-title">
-    <button type="button" class="saas-contact-close" aria-label="${tr('saasClose')}" data-contact-close>×</button>
-    <div class="saas-contact-kicker">SAFELIFT3D · DEVELOPER</div>
-    <h2 id="saas-contact-title">${tr('saasContactTitle')}</h2>
-    <p class="saas-contact-person">Lê Việt Phương (Mr)</p>
-    <div class="saas-contact-details"><a href="mailto:levietphuong.hcmutrans@gmail.com">levietphuong.hcmutrans@gmail.com</a><a href="tel:+84968051697">+84 968 051 697</a></div>
-    <form class="saas-contact-form">
-      <label>${tr('saasContactSubjectLabel')}<input name="subject" maxlength="120" required value="${tr('saasContactSubjectDefault')}"></label>
-      <label>${tr('saasContactMessageLabel')}<textarea name="message" maxlength="3000" rows="5" required placeholder="${tr('saasContactMessagePlaceholder')}"></textarea></label>
-      <small>${tr('saasContactMailHint')}</small>
-      <button type="submit" class="saas-primary-button">${tr('saasContactSubmit')}</button>
-    </form>
-  </section>`;
-  let releaseFocusTrap = () => {};
-  const close = () => { dialog.remove(); releaseFocusTrap(); };
-  dialog.addEventListener('click', (event) => { if (event.target === dialog || event.target.closest('[data-contact-close]')) close(); });
-  dialog.addEventListener('keydown', (event) => { if (event.key === 'Escape') close(); });
-  dialog.querySelector('form')?.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const now = Date.now();
-    try {
-      const href = buildDeveloperContactMailto({
-        subject: form.get('subject'),
-        message: form.get('message'),
-        lastSentAt: lastFeedbackAt,
-        now
-      });
-      lastFeedbackAt = now;
-      window.location.href = href;
-      close();
-    } catch {
-      /* Keep dialog open when input is blank or cooldown is active. */
-    }
-  });
-  document.body.append(dialog);
-  releaseFocusTrap = trapDialogFocus(dialog.querySelector('[role="dialog"]'), { initialFocus: dialog.querySelector('[name="message"]') });
-}
-
 export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onSignedOut }) {
   document.body.classList.add('saas-locked');
   installBoundedErrorCounter();
-  const root = ensureRoot();
+  const root = ensureSaasRoot();
   const featureAccess = installFeatureAccessUI();
   let authScreen = null;
   let adminScreen = null;
@@ -164,84 +40,50 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
   let pendingAuthNotice = null;
   let sessionFlags = null;
   let loadSessionFlags = null;
-  let maintenanceBanner = null;
   let firebase = null;
   const onAdminRoute = window.location.pathname.replace(/\/$/, '') === '/admin';
-  const contactButton = document.getElementById('btn-contact-developer');
-  const renderContactLabel = () => {
-    const label = contactButton?.querySelector('[data-contact-label]');
-    if (label) label.textContent = saasT('saasContactButton');
-  };
-  const syncMaintenanceBanner = (profile, flags) => {
-    if (!flags || !isMaintenance(flags, profile)) {
-      maintenanceBanner?.remove();
-      maintenanceBanner = null;
-      return;
-    }
-    if (!maintenanceBanner) {
-      maintenanceBanner = document.createElement('div');
-      maintenanceBanner.id = 'saas-maintenance-banner';
-      maintenanceBanner.className = 'saas-maintenance-banner';
-      maintenanceBanner.setAttribute('role', 'status');
-      maintenanceBanner.setAttribute('aria-live', 'polite');
-    }
-    const lang = getLang();
-    maintenanceBanner.innerHTML = `<strong>${escapeHtml(saasT('maintenanceBannerTitle', null, lang))}:</strong> <span>${escapeHtml(flags.maintenanceMessage || saasT('maintenanceDefaultMsg', null, lang))}</span>`;
-    if (!maintenanceBanner.isConnected) document.body.append(maintenanceBanner);
-  };
-  const onLanguageRefresh = () => {
-    renderContactLabel();
-    syncMaintenanceBanner(window.SafeLift?.saas?.profile, sessionFlags);
-  };
-  const onContactClick = () => openDeveloperContact();
-  contactButton?.addEventListener('click', onContactClick);
-  window.addEventListener('safelift:language-changed', onLanguageRefresh);
-  renderContactLabel();
+  const { syncMaintenanceBanner, dispose: disposeShellUI } = installSessionShellUI({ getProfile: () => window.SafeLift?.saas?.profile, getFlags: () => sessionFlags });
 
   window.SafeLift.saas = { profile: null, authUser: null, db: null, flags: null, canAccessFeature: () => false };
 
-  function showInitial(message, isError = false) {
+  function buildAuthActions() {
+    return {
+      signIn(email, password) { return signInWithEmailAndPassword(firebase.auth, email, password); },
+      async create(email, password, displayName) {
+        const credential = await createUserWithEmailAndPassword(firebase.auth, email, password);
+        if (displayName) await updateProfile(credential.user, { displayName });
+        await sendEmailVerification(credential.user);
+        return credential;
+      },
+      google() { return signInWithPopup(firebase.auth, createGoogleProvider()); },
+      reset(email) { return sendPasswordResetEmail(firebase.auth, email); }
+    };
+  }
+
+  function renderAuthView({ configured = Boolean(firebase?.configured), message = '', isError = false } = {}) {
     root.hidden = false;
     if (authScreen) authScreen.dispose();
     authScreen = mountAuthScreen(root, {
       lang: getLang,
-      configured: Boolean(firebase?.configured),
-      actions: {
-        signIn(email, password) { return signInWithEmailAndPassword(firebase.auth, email, password); },
-        create(email, password, displayName) {
-          return createUserWithEmailAndPassword(firebase.auth, email, password).then(async (credential) => {
-            if (displayName) await updateProfile(credential.user, { displayName });
-            await sendEmailVerification(credential.user);
-            return credential;
-          });
-        },
-        google() { return signInWithPopup(firebase.auth, createGoogleProvider()); },
-        reset(email) { return sendPasswordResetEmail(firebase.auth, email); }
-      },
+      configured: Boolean(configured),
+      actions: configured ? buildAuthActions() : {},
       onLanguageChange() {
         const lang = window.SafeLift.i18n.toggleLang();
         window.__SAFELIFT_BOOT_LANG__ = lang;
         authScreen?.setLanguage();
       }
     });
-    clearSplash();
+    clearAppSplash();
     if (message) authScreen.showMessage(message, isError);
   }
 
-  function showConfigError(error) {
-    console.error('[SafeLift3D] Firebase initialization failed', error);
-    if (authScreen) authScreen.dispose();
-    authScreen = mountAuthScreen(root, {
-      lang: getLang,
-      configured: false,
-      actions: {},
-      onLanguageChange() {
-        const lang = window.SafeLift.i18n.toggleLang();
-        window.__SAFELIFT_BOOT_LANG__ = lang;
-        authScreen?.setLanguage();
-      }
-    });
-    clearSplash();
+  const showInitial = (message, isError = false) => renderAuthView({ configured: Boolean(firebase?.configured), message, isError });
+  const showConfigError = (error) => { console.error('[SafeLift3D] Firebase initialization failed', error); renderAuthView({ configured: false }); };
+
+  function syncFlagsToUI(profile, flags) {
+    featureAccess.setFlags(flags);
+    syncMaintenanceBanner(profile, flags);
+    accountWidget?.setMaintenance(isMaintenance(flags, profile));
   }
 
   function applyRuntimeFlags(profile) {
@@ -251,10 +93,7 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
     loadSessionFlags().then((loaded) => {
       sessionFlags = loaded;
       const latestProfile = window.SafeLift?.saas?.profile || profile;
-      if (!latestProfile) return;
-      featureAccess.setFlags(loaded);
-      syncMaintenanceBanner(latestProfile, loaded);
-      accountWidget?.setMaintenance(isMaintenance(loaded, latestProfile));
+      if (latestProfile) syncFlagsToUI(latestProfile, loaded);
     }).catch(() => {});
   }
 
@@ -270,13 +109,8 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
       adminScreen?.dispose();
       root.hidden = false;
       if (authScreen) { authScreen.dispose(); authScreen = null; }
-      adminScreen = mountAdminDashboard(root, {
-        db: firebase.db,
-        profile,
-        authUser,
-        signOut: () => signOut(firebase.auth)
-      });
-      clearSplash();
+      adminScreen = mountAdminDashboard(root, { db: firebase.db, profile, authUser, signOut: () => signOut(firebase.auth) });
+      clearAppSplash();
       return;
     }
     if (authScreen) { authScreen.dispose(); authScreen = null; }
@@ -290,13 +124,8 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
       workspaceDashboard?.dispose();
       workspaceDashboard = mountWorkspaceDashboard({ db: firebase.db, profile, flags: sessionFlags });
     });
-    if (sessionFlags) {
-      featureAccess.setFlags(sessionFlags);
-      syncMaintenanceBanner(profile, sessionFlags);
-      accountWidget?.setMaintenance(isMaintenance(sessionFlags, profile));
-    } else {
-      applyRuntimeFlags(profile);
-    }
+    if (sessionFlags) syncFlagsToUI(profile, sessionFlags);
+    else applyRuntimeFlags(profile);
     if (!workspaceStarted) {
       workspaceStarted = true;
       onWorkspaceAuthorized?.({ profile, authUser, db: firebase.db, auth: firebase.auth, featureAccess });
@@ -356,27 +185,7 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
     return { dispose() { featureAccess.dispose(); } };
   }
 
-  authScreen = mountAuthScreen(root, {
-    lang: getLang,
-    configured: true,
-    actions: {
-      signIn(email, password) { return signInWithEmailAndPassword(firebase.auth, email, password); },
-      async create(email, password, displayName) {
-        const credential = await createUserWithEmailAndPassword(firebase.auth, email, password);
-        if (displayName) await updateProfile(credential.user, { displayName });
-        await sendEmailVerification(credential.user);
-        return credential;
-      },
-      google() { return signInWithPopup(firebase.auth, createGoogleProvider()); },
-      reset(email) { return sendPasswordResetEmail(firebase.auth, email); }
-    },
-    onLanguageChange() {
-      const lang = window.SafeLift.i18n.toggleLang();
-      window.__SAFELIFT_BOOT_LANG__ = lang;
-      authScreen?.setLanguage();
-    }
-  });
-  clearSplash();
+  renderAuthView({ configured: true });
 
   async function completeAuthorizedSession(authUser, run) {
     if (authScreen) authScreen.showMessage(saasT('saasCheckingAccess'));
@@ -440,10 +249,7 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
     dispose() {
       unsubscribeAuth?.();
       unsubscribeProfile?.();
-      contactButton?.removeEventListener('click', onContactClick);
-      window.removeEventListener('safelift:language-changed', onLanguageRefresh);
-      syncMaintenanceBanner(null, null);
-      document.getElementById('saas-contact-dialog')?.remove();
+      disposeShellUI();
       authScreen?.dispose();
       adminScreen?.dispose();
       accountWidget?.dispose();

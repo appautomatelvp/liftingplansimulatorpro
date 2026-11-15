@@ -47,7 +47,7 @@ Nâng cấp & tái cấu trúc dự án `LIFTING PLAN SIMULATOR PRO (SafeLift3D)
   - CẤM đụng: `src/saas/workspace_data.js`, `firestore.rules`, `src/core/*`
   - Kiểm tra xong: `src/saas/workspace_dashboard.js` và `src/saas/workspace_views.js` đều ≤ 300 dòng; chạy `npm test` và `npm run build` xanh 100%
 
-- [ ] Bước 7: Tách `src/saas/session.js` (454 dòng -> dưới 300 dòng)
+- [x] Bước 7: Tách `src/saas/session.js` (454 dòng -> dưới 300 dòng)
   - Sửa: `src/saas/session_ui_bindings.js` (tạo mới `<220 dòng`, chứa các hàm gắn kết nút bấm header/banner/hộp thoại tài khoản), `src/saas/session.js` (import từ `session_ui_bindings.js`, giảm xuống `<270 dòng`)
   - CẤM đụng: `src/saas/firebase.js`, `firestore.rules`, `src/core/*`
   - Kiểm tra xong: `src/saas/session.js` và `src/saas/session_ui_bindings.js` đều ≤ 300 dòng; chạy `npm test` và `npm run build` xanh 100%

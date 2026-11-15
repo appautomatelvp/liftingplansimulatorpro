@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-15 14:53 [refactor] Buoc 7: Tach widget tai khoan, banner bao tri, hop thoai lien he nha phat trien va ham gan UI shell sang session_ui_bindings.js (165 dong) va gom chung mountAuthScreen giup session.js giam tu 454 xuong 260 dong.
+- Nhánh: codex/safelift-g0-ci | Commit trước đó: 29e7c17
+- File: src/saas/session_ui_bindings.js,src/saas/session.js,auto_memory/PLAN.md
+
 ## 2026-11-15 14:50 [refactor] Buoc 6: Tach cac ham dung giao dien the phuong an, danh sach thiet bi, hop thoai chon va di tru lp-user-rigs qua localDataStore.js sang workspace_views.js (184 dong) giup workspace_dashboard.js giam tu 430 xuong 257 dong.
 - Nhánh: codex/safelift-g0-ci | Commit trước đó: 50cdf91
 - File: src/saas/workspace_views.js,src/saas/workspace_dashboard.js,auto_memory/PLAN.md
