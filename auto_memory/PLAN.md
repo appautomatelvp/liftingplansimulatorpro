@@ -42,7 +42,7 @@ Nâng cấp & tái cấu trúc dự án `LIFTING PLAN SIMULATOR PRO (SafeLift3D)
   - CẤM đụng: `src/saas/cms_data.js`, `firestore.rules`, `src/core/*`
   - Kiểm tra xong: `src/saas/admin_dashboard.js` và `src/saas/admin_panels.js` đều ≤ 300 dòng; chạy `npm test` và `npm run build` xanh 100%
 
-- [ ] Bước 6: Tách `src/saas/workspace_dashboard.js` (430 dòng -> dưới 300 dòng)
+- [x] Bước 6: Tách `src/saas/workspace_dashboard.js` (430 dòng -> dưới 300 dòng)
   - Sửa: `src/saas/workspace_views.js` (tạo mới `<200 dòng`, chứa các hàm render thẻ phương án, danh sách thiết bị và di trú dữ liệu `lp-user-rigs` qua `localDataStore.js`), `src/saas/workspace_dashboard.js` (import từ `workspace_views.js`, giảm xuống `<260 dòng`)
   - CẤM đụng: `src/saas/workspace_data.js`, `firestore.rules`, `src/core/*`
   - Kiểm tra xong: `src/saas/workspace_dashboard.js` và `src/saas/workspace_views.js` đều ≤ 300 dòng; chạy `npm test` và `npm run build` xanh 100%

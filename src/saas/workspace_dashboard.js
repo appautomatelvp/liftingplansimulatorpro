@@ -4,8 +4,12 @@ import { getTierSlotLimit } from './runtime_flags.js';
 import { getLang } from '../i18n/index.js';
 import { trapDialogFocus } from './dialog_accessibility.js';
 import { saasT } from './i18n.js';
-
-const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+import {
+  chooseEquipmentLinksPicker, createWorkspaceSubModal, downloadJsonFile,
+  hasPendingLegacyRigs, openCatalogItemPicker, openLegacyRigMigrationPicker,
+  readLegacyRigs, readMigratedRigIds, renderEquipmentCard,
+  renderEquipmentFormHtml, renderPlanCard, renderWorkspaceDialogHtml
+} from './workspace_views.js';
 
 export function mountWorkspaceDashboard({ db, profile, flags = null, dataService = workspaceData, catalogService = catalogClient }) {
   const activeFlags = flags || (typeof window !== 'undefined' ? window.SafeLift?.saas?.flags : null) || null;
@@ -26,7 +30,7 @@ export function mountWorkspaceDashboard({ db, profile, flags = null, dataService
   let releaseWorkspaceFocus = () => {};
   let onKey = null;
   const legacyRigs = readLegacyRigs();
-  const migratedRigIds = readMigratedRigIds();
+  const migratedRigIds = readMigratedRigIds(profile.uid);
   const tr = (key, vars = null) => saasT(key, vars, getLang());
   const timestamp = (value) => value?.toDate ? value.toDate().toLocaleDateString({ en: 'en-US', vi: 'vi-VN' }[getLang()] || 'vi-VN') : '';
   const closeWorkspace = () => {
@@ -35,73 +39,10 @@ export function mountWorkspaceDashboard({ db, profile, flags = null, dataService
     releaseWorkspaceFocus();
   };
 
-  function readLegacyRigs() {
-    try {
-      const value = JSON.parse(localStorage.getItem('lp-user-rigs') || '[]');
-      return Array.isArray(value) ? value.filter((rig) => rig && typeof rig === 'object' && rig.id != null).slice(0, 24) : [];
-    } catch { return []; }
-  }
-
-  function readMigratedRigIds() {
-    try {
-      const value = JSON.parse(localStorage.getItem(`lp-user-rigs-migrated:${profile.uid}`) || '[]');
-      return Array.isArray(value) ? value.map(String).slice(0, 24) : [];
-    } catch { return []; }
-  }
-
-  function openLegacyRigPicker() {
-    const pending = legacyRigs.filter((rig) => !migratedRigIds.includes(String(rig.id)));
-    if (!pending.length) return;
-    const layer = document.createElement('div');
-    layer.className = 'saas-workspace-form-backdrop';
-    layer.innerHTML = `<section class="saas-workspace-form saas-workspace-link-picker" role="dialog" aria-modal="true" aria-label="${tr('wsImportTitle')}"><button type="button" data-picker-close class="saas-workspace-close" aria-label="${tr('saasClose')}">×</button><span class="saas-workspace-kicker">${tr('wsImportKicker')}</span><h3>${tr('wsImportTitle')}</h3><p>${tr('wsImportDesc')}</p><div class="saas-workspace-form-error" data-import-error hidden></div><div class="saas-workspace-link-list">${pending.map((rig) => `<label><span><strong>${esc(rig.name || tr('wsUnnamedRig'))}</strong><small>${(Array.isArray(rig.extraCables) ? rig.extraCables.length : 0)} ${tr('wsAdditionalCables')}</small></span><button type="button" data-import-rig="${esc(rig.id)}">${tr('wsImportBtn')}</button></label>`).join('')}</div><small>${tr('wsImportLimitNote')}</small></section>`;
-    backdrop.append(layer);
-    const releasePickerFocus = trapDialogFocus(layer.querySelector('[role="dialog"]'), { initialFocus: layer.querySelector('[data-import-rig]') || layer.querySelector('[data-picker-close]') });
-    const closePicker = () => { layer.remove(); releasePickerFocus(); };
-    layer.addEventListener('keydown', (event) => { if (event.key === 'Escape') { event.stopPropagation(); closePicker(); } });
-    layer.addEventListener('click', async (event) => {
-      if (event.target === layer || event.target.closest('[data-picker-close]')) { closePicker(); return; }
-      const button = event.target.closest('[data-import-rig]');
-      if (!button || button.disabled) return;
-      const rig = pending.find((item) => String(item.id) === button.dataset.importRig);
-      if (!rig) return;
-      button.disabled = true;
-      try {
-        const state = window.__LIFTING_RUNTIME__?.api?.getState?.();
-        if (!state) throw new Error(tr('wsSimNotReadyImport'));
-        await dataService.createLiftPlan(db, profile, {
-          title: String(rig.name || tr('wsSavedRigDefault')).slice(0, 100),
-          description: tr('wsImportedDesc'),
-          snapshot: dataService.makeLegacyRigSnapshot(state, rig),
-          flags: activeFlags
-        });
-        migratedRigIds.push(String(rig.id));
-        try { localStorage.setItem(`lp-user-rigs-migrated:${profile.uid}`, JSON.stringify(migratedRigIds.slice(-24))); } catch { /* Keep current-session migration state if storage is unavailable. */ }
-        button.closest('label')?.remove();
-        notice(tr('wsImportedNotice', { name: rig.name || 'Rig' }));
-        await loadPage(true);
-        if (!legacyRigs.some((item) => !migratedRigIds.includes(String(item.id)))) {
-          backdrop.querySelector('[data-action="import-legacy"]')?.setAttribute('hidden', '');
-          closePicker();
-        }
-      } catch (error) {
-        console.error('[SafeLift3D] Legacy rig migration failed', error);
-        const errorBox = layer.querySelector('[data-import-error]');
-        if (errorBox) { errorBox.hidden = false; errorBox.textContent = error.message || tr('wsImportFailed'); }
-        button.disabled = false;
-      }
-    });
-  }
+  const openLegacyRigPicker = () => openLegacyRigMigrationPicker({ backdrop, legacyRigs, migratedRigIds, profile, db, activeFlags, dataService, tr, loadPage, notice });
 
   const template = () => {
-    backdrop.innerHTML = `<section class="saas-workspace-dialog" role="dialog" aria-modal="true" aria-labelledby="saas-workspace-title">
-      <header class="saas-workspace-header"><div><span class="saas-workspace-kicker">SAFELIFT3D · PERSONAL LIBRARY</span><h2 id="saas-workspace-title">${tr('wsTitle')}</h2><p>${tr('wsSubtitle')}</p></div><button type="button" class="saas-workspace-close" data-action="close" aria-label="${tr('saasClose')}">×</button></header>
-      <nav class="saas-workspace-tabs"><button type="button" data-tab="liftPlans">${tr('wsTabPlans')}</button><button type="button" data-tab="equipment">${tr('wsTabEquipment')}</button></nav>
-      <div class="saas-workspace-toolbar"><label class="saas-workspace-search"><span>⌕</span><input type="search" data-search placeholder="${tr('wsSearchPlaceholder')}"></label><button type="button" class="saas-workspace-secondary" data-action="export-all">${tr('wsExportAllJson')}</button><button type="button" class="saas-workspace-secondary" data-action="import-legacy" ${legacyRigs.some((rig) => !migratedRigIds.includes(String(rig.id))) ? '' : 'hidden'}>${tr('wsImportTitle')}</button><button type="button" class="saas-workspace-secondary" data-action="from-catalog" hidden>＋ ${tr('wsAddFromCatalog')}</button><button type="button" class="saas-workspace-primary" data-action="create">＋ ${tr('wsSaveCurrentPlan')}</button></div>
-      <div class="saas-workspace-notice" data-notice hidden></div><div class="saas-workspace-list" data-list aria-live="polite"></div>
-      <footer class="saas-workspace-footer"><span data-count></span><button type="button" data-action="more" hidden>${tr('wsLoadMore')}</button></footer>
-      <small class="saas-workspace-quota">${tr('wsQuotaNote', { limit: slotLimit })}</small>
-    </section>`;
+    backdrop.innerHTML = renderWorkspaceDialogHtml({ tr, slotLimit, showLegacyImport: hasPendingLegacyRigs(legacyRigs, migratedRigIds) });
     paintTab();
   };
 
@@ -129,7 +70,7 @@ export function mountWorkspaceDashboard({ db, profile, flags = null, dataService
     if (!filtered.length) {
       list.innerHTML = `<div class="saas-workspace-empty"><span>▱</span><strong>${tr('wsEmptyTitle')}</strong><small>${tr('wsEmptyHint')}</small></div>`;
     } else {
-      list.innerHTML = filtered.map((item) => tab === 'liftPlans' ? renderPlan(item) : renderEquipment(item)).join('');
+      list.innerHTML = filtered.map((item) => tab === 'liftPlans' ? renderPlanCard(item, { dataService, tr, timestamp }) : renderEquipmentCard(item, { tr })).join('');
     }
     backdrop.querySelector('[data-count]').textContent = tr('wsPageCount', { count: items.length });
     backdrop.querySelector('[data-action="more"]').hidden = !hasMore;
@@ -142,55 +83,7 @@ export function mountWorkspaceDashboard({ db, profile, flags = null, dataService
     }
   }
 
-  function renderPlan(item) {
-    const snapshot = (() => { try { return dataService.parsePlanSnapshot(item.snapshot); } catch { return null; } })();
-    const migration = snapshot && typeof dataService.migrateSnapshot === 'function'
-      ? dataService.migrateSnapshot(snapshot, snapshot.solverVersion || item.solverVersion)
-      : null;
-    const input = snapshot?.inputs || {};
-    const dims = [input.L, input.W, input.H].every(Number.isFinite) ? `${input.L} × ${input.W} × ${input.H} m` : '';
-    const status = snapshot?.analysis?.overallStatus;
-    const statusLabel = status ? `${tr('wsSavedAssessment')}: ${status}` : '';
-    const equipmentCount = Array.isArray(item.equipmentIds) ? item.equipmentIds.length : 0;
-    const versionWarning = migration && !migration.compatible
-      ? `<em>${tr('wsSolverUnknownWarning')}</em>`
-      : (snapshot?.solverVersion !== '5.0' ? `<em>${tr('wsSolverVersionWarning')}</em>` : '');
-    return `<article class="saas-workspace-card ${item.archived ? 'is-archived' : ''}"><div class="saas-workspace-card-icon">⌖</div><div class="saas-workspace-card-main"><div class="saas-workspace-card-title"><strong>${esc(item.title)}</strong><span class="saas-workspace-version">r${Number(item.revision) || 1}</span>${status ? `<span class="saas-workspace-status status-${esc(status.toLowerCase())}">${esc(status)}</span>` : ''}${item.archived ? `<span class="saas-workspace-archived">${tr('wsArchived')}</span>` : ''}</div><small>${esc(item.description || dims || tr('wsPlanDefault'))} · ${tr('wsSolverLabel')} ${esc(item.solverVersion || '?')} · ${esc(timestamp(item.updatedAt))}${statusLabel ? ` · ${esc(statusLabel)}` : ''}${equipmentCount ? ` · ${equipmentCount} ${tr('wsLinkedEquipment')}` : ''}</small>${versionWarning}</div><div class="saas-workspace-card-actions"><button type="button" data-action="apply" data-id="${esc(item.id)}" ${item.archived ? 'disabled' : ''}>${tr('wsOpen')}</button><button type="button" data-action="duplicate" data-id="${esc(item.id)}">${tr('wsCopy')}</button><button type="button" data-action="export" data-id="${esc(item.id)}">${tr('wsExportJson')}</button><button type="button" data-action="archive" data-id="${esc(item.id)}" data-archived="${!item.archived}">${item.archived ? tr('wsRestore') : tr('wsArchive')}</button><button type="button" class="is-danger" data-action="delete" data-id="${esc(item.id)}">${tr('wsDelete')}</button></div></article>`;
-  }
-
-  async function chooseEquipmentLinks() {
-    let page = await dataService.listWorkspacePage(db, profile.uid, 'equipment');
-    const equipment = [...page.items];
-    while (page.hasMore) {
-      page = await dataService.listWorkspacePage(db, profile.uid, 'equipment', { cursor: page.cursor });
-      equipment.push(...page.items);
-      if (equipment.length >= 200) break;
-    }
-    if (!equipment.length) return [];
-    return new Promise((resolve) => {
-      const layer = document.createElement('div');
-      layer.className = 'saas-workspace-form-backdrop';
-      layer.innerHTML = `<form class="saas-workspace-form saas-workspace-link-picker" role="dialog" aria-modal="true" aria-labelledby="saas-equipment-picker-title"><button type="button" data-picker-cancel class="saas-workspace-close" aria-label="${tr('saasClose')}">×</button><span class="saas-workspace-kicker">${tr('wsEquipKicker')}</span><h3 id="saas-equipment-picker-title">${tr('wsEquipAttachTitle')}</h3><p>${tr('wsEquipAttachHint')}</p><div class="saas-workspace-link-list">${equipment.map((item) => `<label><input type="checkbox" name="equipmentIds" value="${esc(item.id)}"><span><strong>${esc(item.name)}</strong><small>${esc([item.category, item.model, item.wllT != null ? `${item.wllT} t WLL` : ''].filter(Boolean).join(' · '))}</small></span></label>`).join('')}</div><div class="saas-workspace-form-actions"><button type="button" data-picker-cancel>${tr('wsSkip')}</button><button type="submit" class="saas-workspace-primary">${tr('wsAttachToPlan')}</button></div></form>`;
-      backdrop.append(layer);
-      const releasePickerFocus = trapDialogFocus(layer.querySelector('[role="dialog"]'), { initialFocus: layer.querySelector('[data-picker-cancel]') });
-      const finish = (value) => { layer.remove(); releasePickerFocus(); resolve(value); };
-      layer.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') { event.stopPropagation(); finish([]); }
-      });
-      layer.addEventListener('click', (event) => { if (event.target === layer || event.target.closest('[data-picker-cancel]')) finish([]); });
-      layer.querySelectorAll('[name="equipmentIds"]').forEach((checkbox) => checkbox.addEventListener('change', () => {
-        if (layer.querySelectorAll('[name="equipmentIds"]:checked').length > 20) checkbox.checked = false;
-      }));
-      layer.querySelector('form').addEventListener('submit', (event) => {
-        event.preventDefault();
-        finish(Array.from(layer.querySelectorAll('[name="equipmentIds"]:checked')).map((input) => input.value));
-      });
-    });
-  }
-
-  function renderEquipment(item) {
-    return `<article class="saas-workspace-card"><div class="saas-workspace-card-icon">⚙</div><div class="saas-workspace-card-main"><div class="saas-workspace-card-title"><strong>${esc(item.name)}</strong><span class="saas-workspace-version">${esc(item.category)}</span></div><small>${esc([item.manufacturer, item.model, item.wllT != null ? `${item.wllT} t WLL` : '', item.lengthM != null ? `${item.lengthM} m` : ''].filter(Boolean).join(' · ') || tr('wsNoSpecs'))}</small>${item.certificateNo || item.inspectionExpiry ? `<small>${tr('wsCertificate')}: ${esc(item.certificateNo || '—')} · ${tr('wsInspectionExpiry')}: ${esc(item.inspectionExpiry || '—')}</small>` : ''}</div><div class="saas-workspace-card-actions"><button type="button" data-action="edit" data-id="${esc(item.id)}">${tr('wsEdit')}</button><button type="button" class="is-danger" data-action="delete" data-id="${esc(item.id)}">${tr('wsDelete')}</button></div></article>`;
-  }
+  const chooseEquipmentLinks = () => chooseEquipmentLinksPicker({ backdrop, db, profile, dataService, tr });
 
   async function loadPage(reset = false) {
     if (busy) { pendingTabReload = true; return; }
@@ -237,22 +130,16 @@ export function mountWorkspaceDashboard({ db, profile, flags = null, dataService
   }
 
   async function openEquipmentForm(item = null) {
-    const categories = ['hook', 'sling', 'chain', 'shackle', 'spreader', 'lifting_beam', 'crane', 'other'];
-    const formLayer = document.createElement('div');
-    formLayer.className = 'saas-workspace-form-backdrop';
-    const field = (name, label, value = '', type = 'text', max = 80) => `<label>${label}<input name="${name}" type="${type}" maxlength="${max}" value="${esc(value)}" ${name === 'name' ? 'required' : ''}></label>`;
-    formLayer.innerHTML = `<form class="saas-workspace-form" role="dialog" aria-modal="true" aria-labelledby="saas-equipment-form-title"><button type="button" data-form-close class="saas-workspace-close" aria-label="${tr('saasClose')}">×</button><span class="saas-workspace-kicker">${tr('wsUserDataKicker')}</span><h3 id="saas-equipment-form-title">${item ? tr('wsEditEquipment') : tr('wsAddEquipmentTitle')}</h3><p>${tr('wsUserDataDisclaimer')}</p><div class="saas-workspace-form-error" data-form-error hidden></div>${field('name', tr('wsEquipNameLabel'), item?.name || '', 'text', 80)}<label>${tr('wsEquipTypeLabel')}<select name="category">${categories.map((category) => `<option value="${category}" ${item?.category === category ? 'selected' : ''}>${category.replace('_', ' ')}</option>`).join('')}</select></label>${field('manufacturer', tr('wsManufacturerLabel'), item?.manufacturer)}${field('model', tr('wsModelLabel'), item?.model)}<div class="saas-workspace-form-grid">${field('wllT', 'WLL (t)', item?.wllT ?? '', 'number')}${field('lengthM', tr('wsLengthLabel'), item?.lengthM ?? '', 'number')}${field('massKg', tr('wsMassLabel'), item?.massKg ?? '', 'number')}${field('safetyFactor', tr('wsSafetyFactorLabel'), item?.safetyFactor ?? '', 'number')}</div>${field('certificateNo', tr('wsCertNoLabel'), item?.certificateNo || '')}${field('inspectionExpiry', tr('wsExpiryLabel'), item?.inspectionExpiry || '', 'date', 10)}<label>${tr('wsNotesLabel')}<textarea name="notes" maxlength="500" rows="3">${esc(item?.notes || '')}</textarea></label><div class="saas-workspace-form-actions"><button type="button" data-form-close>${tr('wsCancel')}</button><button type="submit" class="saas-workspace-primary">${tr('wsSaveEquipment')}</button></div><small>${tr('wsNotesLimitHint')}</small></form>`;
-    backdrop.append(formLayer);
-    const releaseFormFocus = trapDialogFocus(formLayer.querySelector('[role="dialog"]'), { initialFocus: formLayer.querySelector('input[name="name"]') });
-    const close = () => { formLayer.remove(); releaseFormFocus(); };
-    formLayer.addEventListener('click', (event) => { if (event.target === formLayer || event.target.closest('[data-form-close]')) close(); });
-    formLayer.addEventListener('keydown', (event) => { if (event.key === 'Escape') { event.stopPropagation(); close(); } });
+    const { layer: formLayer, close } = createWorkspaceSubModal(backdrop, {
+      html: renderEquipmentFormHtml(item, { tr }),
+      closeSelector: '[data-form-close]',
+      initialFocusSelector: 'input[name="name"]'
+    });
     formLayer.querySelector('form').addEventListener('submit', async (event) => {
       event.preventDefault();
-      const form = new FormData(event.currentTarget);
-      const values = Object.fromEntries(form.entries());
+      const values = Object.fromEntries(new FormData(event.currentTarget).entries());
+      const submit = event.currentTarget.querySelector('[type="submit"]');
       try {
-        const submit = event.currentTarget.querySelector('[type="submit"]');
         submit.disabled = true;
         if (item) await dataService.updateEquipment(db, profile.uid, item.id, values);
         else await dataService.createEquipment(db, profile, values, { flags: activeFlags });
@@ -264,55 +151,12 @@ export function mountWorkspaceDashboard({ db, profile, flags = null, dataService
         const formError = formLayer.querySelector('[data-form-error]');
         formError.hidden = false;
         formError.textContent = error.message || tr('wsEquipmentSaveError');
-        const submit = event.currentTarget.querySelector('[type="submit"]');
         if (submit) submit.disabled = false;
       }
     });
   }
 
-  async function openCatalogPicker() {
-    const layer = document.createElement('div');
-    layer.className = 'saas-workspace-form-backdrop';
-    layer.innerHTML = `<div class="saas-workspace-form" role="dialog" aria-modal="true" aria-labelledby="saas-catalog-picker-title"><button type="button" data-form-close class="saas-workspace-close" aria-label="${tr('wsCatalogClose')}">×</button><span class="saas-workspace-kicker">${tr('wsUserDataKicker')}</span><h3 id="saas-catalog-picker-title">${tr('wsCatalogModalTitle')}</h3><p>${tr('wsCatalogModalSubtitle')}</p><div class="saas-workspace-form-error" data-form-error hidden></div><div class="saas-workspace-list" data-catalog-list>${tr('saasLoading')}</div><div class="saas-workspace-form-actions"><button type="button" data-form-close>${tr('wsCatalogClose')}</button></div></div>`;
-    backdrop.append(layer);
-    const releasePickerFocus = trapDialogFocus(layer.querySelector('[role="dialog"]'), { initialFocus: layer.querySelector('[data-form-close]') });
-    const close = () => { layer.remove(); releasePickerFocus(); };
-    layer.addEventListener('click', (event) => { if (event.target === layer || event.target.closest('[data-form-close]')) close(); });
-    layer.addEventListener('keydown', (event) => { if (event.key === 'Escape') { event.stopPropagation(); close(); } });
-
-    const listEl = layer.querySelector('[data-catalog-list]');
-    const catalogItems = await catalogService.loadCatalogForUser(db, profile);
-    if (!layer.isConnected || !listEl) return;
-    if (!catalogItems.length) {
-      listEl.innerHTML = `<div class="saas-workspace-empty"><span>▱</span><strong>${tr('wsCatalogEmpty')}</strong></div>`;
-      return;
-    }
-    listEl.innerHTML = catalogItems.map((catItem) => {
-      const specs = [catItem.kind, catItem.category, catItem.wllT != null ? `${catItem.wllT} t WLL` : '', catItem.massKg != null ? `${catItem.massKg} kg` : '', catItem.tier].filter(Boolean).join(' · ');
-      return `<article class="saas-workspace-card"><div class="saas-workspace-card-icon">⚙</div><div class="saas-workspace-card-main"><div class="saas-workspace-card-title"><strong>${esc(catItem.title || catItem.id)}</strong><span class="saas-workspace-version">${esc(catItem.tier || 'free')}</span></div><small>${esc(specs)}</small>${catItem.notes ? `<small>${esc(catItem.notes)}</small>` : ''}</div><div class="saas-workspace-card-actions"><button type="button" class="saas-workspace-primary" data-add-catalog="${esc(catItem.id)}">${tr('wsCatalogAddItem')}</button></div></article>`;
-    }).join('');
-
-    listEl.addEventListener('click', async (event) => {
-      const btn = event.target.closest('[data-add-catalog]');
-      if (!btn || btn.disabled) return;
-      const catItem = catalogItems.find((entry) => entry.id === btn.dataset.addCatalog);
-      if (!catItem) return;
-      btn.disabled = true;
-      try {
-        await dataService.createEquipment(db, profile, catalogService.mapCatalogItemToEquipmentInput(catItem), { flags: activeFlags });
-        close();
-        await loadPage(true);
-        notice(tr('wsCatalogAdded', { title: catItem.title || catItem.id }));
-      } catch (error) {
-        const formError = layer.querySelector('[data-form-error]');
-        if (formError) {
-          formError.hidden = false;
-          formError.textContent = error.message || tr('wsEquipmentSaveError');
-        }
-        if (btn.isConnected) btn.disabled = false;
-      }
-    });
-  }
+  const openCatalogPicker = () => openCatalogItemPicker({ backdrop, db, profile, activeFlags, dataService, catalogService, tr, loadPage, notice });
 
   async function applyPlan(item) {
     const runtime = window.__LIFTING_RUNTIME__;
@@ -353,27 +197,11 @@ export function mountWorkspaceDashboard({ db, profile, flags = null, dataService
       if (actionName === 'import-legacy') { openLegacyRigPicker(); return; }
       if (actionName === 'export-all') {
         button.disabled = true;
-        try {
-          const now = Date.now();
-          const bundle = await dataService.exportAllWorkspaceData({ db, profile, lastExportAt, now });
-          lastExportAt = now;
-          const payload = JSON.stringify(bundle, null, 2);
-          const url = URL.createObjectURL(new Blob([payload], { type: 'application/json' }));
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `safelift3d-workspace-${new Date(now).toISOString().slice(0, 10)}.json`;
-          link.click();
-          window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-          notice(tr('wsExportAllSuccess', { plans: bundle.liftPlans.length, equipment: bundle.equipment.length }));
-        } catch (exportErr) {
-          if (exportErr?.code === 'safelift/export-cooldown') {
-            notice(tr('wsExportCooldown', { seconds: exportErr.retryAfterSec }), true);
-          } else {
-            throw exportErr;
-          }
-        } finally {
-          if (button.isConnected) button.disabled = false;
-        }
+        const now = Date.now();
+        const bundle = await dataService.exportAllWorkspaceData({ db, profile, lastExportAt, now });
+        lastExportAt = now;
+        downloadJsonFile(`safelift3d-workspace-${new Date(now).toISOString().slice(0, 10)}.json`, JSON.stringify(bundle, null, 2));
+        notice(tr('wsExportAllSuccess', { plans: bundle.liftPlans.length, equipment: bundle.equipment.length }));
         return;
       }
       if (actionName === 'more') { await loadPage(false); return; }
@@ -382,12 +210,7 @@ export function mountWorkspaceDashboard({ db, profile, flags = null, dataService
       if (actionName === 'apply') { await applyPlan(item); return; }
       if (actionName === 'export') {
         const data = JSON.stringify({ schemaVersion: item.schemaVersion, title: item.title, description: item.description, revision: item.revision, solverVersion: item.solverVersion, equipmentIds: item.equipmentIds || [], snapshot: dataService.parsePlanSnapshot(item.snapshot) }, null, 2);
-        const url = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${String(item.title || 'safelift3d-lift-plan').replace(/[^a-z0-9-_]+/gi, '-').slice(0, 60)}.json`;
-        link.click();
-        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+        downloadJsonFile(`${String(item.title || 'safelift3d-lift-plan').replace(/[^a-z0-9-_]+/gi, '-').slice(0, 60)}.json`, data);
         return;
       }
       if (actionName === 'edit') { await openEquipmentForm(item); return; }
@@ -401,6 +224,10 @@ export function mountWorkspaceDashboard({ db, profile, flags = null, dataService
       }
       await loadPage(true);
     } catch (error) {
+      if (error?.code === 'safelift/export-cooldown') {
+        notice(tr('wsExportCooldown', { seconds: error.retryAfterSec }), true);
+        return;
+      }
       console.error('[SafeLift3D] Workspace action failed', error);
       notice(error.message || tr('wsActionFailed'), true);
     } finally { if (button.isConnected) button.disabled = false; }
@@ -408,19 +235,19 @@ export function mountWorkspaceDashboard({ db, profile, flags = null, dataService
 
   template();
   backdrop.addEventListener('click', (event) => {
-    if (event.target === backdrop) closeWorkspace();
-    else action(event);
+    if (event.target === backdrop) { closeWorkspace(); return; }
+    const button = event.target.closest('[data-tab]');
+    if (button && button.dataset.tab !== tab) {
+      tab = button.dataset.tab;
+      searchText = '';
+      backdrop.querySelector('[data-search]').value = '';
+      paintTab();
+      return;
+    }
+    action(event);
   });
   backdrop.addEventListener('input', (event) => {
     if (event.target.matches('[data-search]')) { searchText = event.target.value.trim().toLowerCase(); render(); }
-  });
-  backdrop.addEventListener('click', (event) => {
-    const button = event.target.closest('[data-tab]');
-    if (!button || button.dataset.tab === tab) return;
-    tab = button.dataset.tab;
-    searchText = '';
-    backdrop.querySelector('[data-search]').value = '';
-    paintTab();
   });
   onKey = (event) => { if (event.key === 'Escape') closeWorkspace(); };
   document.addEventListener('keydown', onKey);
