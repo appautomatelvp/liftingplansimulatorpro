@@ -1,5 +1,5 @@
 # KẾ HOẠCH (bàn giao: model mạnh viết → model thực thi làm từng bước)
-Trạng thái: ACTIVE      <!-- NONE | ACTIVE | DONE -->
+Trạng thái: DONE        <!-- NONE | ACTIVE | DONE -->
 
 ## Mục tiêu
 Nâng cấp toàn diện hệ thống **CMS Quản trị (`http://localhost:5173/admin`)** của `LIFTING PLAN SIMULATOR PRO (SafeLift3D)` lên chuẩn **Enterprise Command Center quốc tế** (phong cách Cloudflare / Vercel / Linear kết hợp chữ ký Industrial Dark Cockpit `@ui`):
@@ -51,7 +51,7 @@ Nâng cấp toàn diện hệ thống **CMS Quản trị (`http://localhost:5173
   - CẤM đụng: `src/saas/cms_data.js`, `firestore.rules`, `src/core/*`
   - Kiểm tra xong: `src/saas/admin_catalog_audit_panels.js` và `src/saas/admin_panels.js` đều ≤ 250 dòng; chạy `npm test` và `npm run build` xanh 100%
 
-- [ ] Bước 6: Kết nối toàn bộ tương tác trong `src/saas/admin_dashboard.js` & Kiểm tra Nghiệm thu Toàn diện trên Trình duyệt
+- [x] Bước 6: Kết nối toàn bộ tương tác trong `src/saas/admin_dashboard.js` & Kiểm tra Nghiệm thu Toàn diện trên Trình duyệt
   - Sửa: `src/saas/admin_dashboard.js` (`<270 dòng`, gắn sự kiện chuyển đổi phân hệ `activeSection`, lọc người dùng theo Role/Tier/Status, bấm chip điền nhanh lý do kiểm toán, mở/đóng modal chi tiết người dùng, bật/tắt trực quan 7 module kỹ thuật, nạp nhanh mẫu thiết bị Catalog, lọc Catalog/Audit và xuất CSV cho Người dùng & Nhật ký Audit), `STATE.md`, `auto_memory/CONTEXT.md`
   - CẤM đụng: `src/saas/cms_data.js`, `firestore.rules`, `src/core/*`
   - Kiểm tra xong: Chạy `npm run architecture:gate && npm test && npm run build` xanh 100%, chạy `./scripts/auto_check.ps1` đạt 0 lỗi đỏ, mở `http://localhost:5173/admin` xác nhận giao diện Command Center mới đẹp chuẩn quốc tế, không còn hộp đen che màn hình hay dropdown trắng xóa

@@ -45,8 +45,8 @@
 ---
 
 ## 4. CÔNG VIỆC ĐANG LÀM DỞ (ONGOING WORK)
-- **Mục tiêu hiện tại:** Thực hiện kế hoạch 6 bước nâng cấp hệ thống **CMS Quản trị (`/admin`)** lên chuẩn **Enterprise Command Center quốc tế** trong `auto_memory/PLAN.md` (`Trạng thái: ACTIVE`).
-- **Bước tiếp theo:** Bước 6 — Kết nối toàn bộ tương tác trong `src/saas/admin_dashboard.js` & Kiểm tra Nghiệm thu Toàn diện trên Trình duyệt.
+- **Mục tiêu hiện tại:** Hoàn tất 6/6 bước nâng cấp hệ thống **CMS Quản trị (`/admin`)** lên chuẩn **Enterprise Command Center quốc tế** trong `auto_memory/PLAN.md` (`Trạng thái: DONE`).
+- **Bước tiếp theo:** Founder kiểm tra giao diện thực tế tại `http://localhost:5173/admin` (F5 khi đã đăng nhập admin) và chạy `./scripts/manual_chot_ban.ps1` để chốt bản ổn định.
 
 ---
 
