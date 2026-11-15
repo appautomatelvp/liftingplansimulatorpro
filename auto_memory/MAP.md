@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-15 16:06 | Nhánh: codex/safelift-g0-ci | Commit cuối: 0264c2a feat(brand): step 3 show synced logo-icon and zoom-out background on auth screen (9 minutes ago)
+Cập nhật: 2026-11-15 16:31 | Nhánh: codex/safelift-g0-ci | Commit cuối: e002cdf feat(brand): step 4 sync CMS logo-icon, self-contain main-logo.svg, and complete visual QA (25 minutes ago)
 Tổng: 239 file, 71111 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)

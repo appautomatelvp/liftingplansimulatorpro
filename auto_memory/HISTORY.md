@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-15 16:31 [fix] Tang timeout Playwright tren GitHub CI (180s) de khong bi cat ngang khi SwiftShader render khung hinh 1080p/1440p
+- Nhánh: codex/safelift-g0-ci | Commit trước đó: e002cdf
+- File: playwright.config.js
+
 ## 2026-11-15 16:06 [feat] Buoc 4/4: Dong bo Logo-Icon app-icon.png tai CMS admin, sua main-logo.svg tu chua va nghiem thu DONE qua 309 test, build, anh trinh duyet
 - Nhánh: codex/safelift-g0-ci | Commit trước đó: 0264c2a
 - File: src/saas/admin_panels.js,src/saas/admin_cms.css,public/safelift3d-icons/branding/main-logo.svg,auto_memory/PLAN.md,STATE.md,auto_memory/CONTEXT.md
