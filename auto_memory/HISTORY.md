@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-15 15:23 [feat] Buoc 2/6 CMS Enterprise: Tao stylesheet admin_cms.css (170 dong) va tach CSS admin khoi saas.css (246 dong), sua triet de loi hop den che man hinh, dropdown trang xoa va nut keo gian 100%
+- Nhánh: codex/safelift-g0-ci | Commit trước đó: 94d46ed
+- File: src/saas/admin_cms.css,src/saas/saas.css,auto_memory/PLAN.md,STATE.md
+
 ## 2026-11-15 15:16 [feat] Buoc 1/6 CMS Enterprise: Tao tu dien song ngu src/i18n/cms_keys.js (137 dong) cho Command Center, 6 KPI, bo loc da chieu, cong tac module, mau Catalog va xuat CSV
 - Nhánh: codex/safelift-g0-ci | Commit trước đó: a16dfc1
 - File: src/i18n/cms_keys.js,src/i18n/keys.js,auto_memory/PLAN.md,STATE.md

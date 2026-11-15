@@ -31,7 +31,7 @@ Nâng cấp toàn diện hệ thống **CMS Quản trị (`http://localhost:5173
   - CẤM đụng: Mọi file `[LOCKED]` trong `STATE.md`, `src/core/*`, `firestore.rules`
   - Kiểm tra xong: Chạy `npx vitest run test/i18n_keys.test.js` và `npm run build` xanh 100%; `src/i18n/cms_keys.js` ≤ 250 dòng
 
-- [ ] Bước 2: Thiết kế stylesheet `src/saas/admin_cms.css` chuẩn Enterprise Command Center & sửa lỗi vỡ Header / Dropdown trên `/admin`
+- [x] Bước 2: Thiết kế stylesheet `src/saas/admin_cms.css` chuẩn Enterprise Command Center & sửa lỗi vỡ Header / Dropdown trên `/admin`
   - Sửa: `src/saas/admin_cms.css` (tạo mới `<240 dòng`, có `@purpose`, định nghĩa bố cục `.saas-admin-screen` full-width `place-items: unset`, Header Command Bar cao gọn với logo `/brand/safelift3d-lockup.png`, thanh điều hướng phân hệ `.saas-cms-nav`, lưới 6 thẻ KPI `.saas-cms-kpi-grid`, thanh công cụ lọc ngang `.saas-cms-toolbar`, lưới form 2–3 cột `.saas-cms-form-grid` với `<select>` / `<input>` nền tối `#070e19` chữ sáng `#f8fafc`, chip gợi ý `.saas-cms-chip`, bảng ghim tiêu đề và modal chi tiết), `src/saas/saas.css` (thêm `@import './admin_cms.css';` ở đầu file và rút gọn các dòng `.saas-admin-*` cũ để `saas.css` giảm xuống `<250 dòng`)
   - CẤM đụng: Mọi file `[LOCKED]` trong `STATE.md`, `src/core/*`, `src/styles/app.css`
   - Kiểm tra xong: `src/saas/admin_cms.css` và `src/saas/saas.css` đều ≤ 260 dòng; chạy `npm test` và `npm run build` xanh 100%

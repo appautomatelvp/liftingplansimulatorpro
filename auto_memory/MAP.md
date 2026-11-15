@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-15 15:17 | Nhánh: codex/safelift-g0-ci | Commit cuối: a16dfc1 Snapshot 151315112026 (test): truoc khi lam enterprise-admin-cms (3 minutes ago)
-Tổng: 235 file, 70682 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-15 15:23 | Nhánh: codex/safelift-g0-ci | Commit cuối: 94d46ed feat(cms): step 1 add bilingual CMS_KEYS dictionary (7 minutes ago)
+Tổng: 236 file, 70805 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -178,6 +178,7 @@ Tổng: 235 file, 70682 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/RiggingPhysicsSolver.js` | 682 | src/rigging/RiggingPhysicsSolver.js ⚠️>300 |
 | `src/rigging/riggingUIStore.js` | 100 | src/rigging/riggingUIStore.js |
 | `src/saas/access.js` | 48 |  |
+| `src/saas/admin_cms.css` | 170 | Giao diện CSS chuẩn Enterprise Command Center cho CMS Quản trị (/admin) |
 | `src/saas/admin_dashboard.js` | 253 |  ⚠️>250 |
 | `src/saas/admin_panels.js` | 148 | Các hàm dựng HTML và đọc dữ liệu form cho bảng quản trị CMS |
 | `src/saas/app_check_config.js` | 15 |  |
@@ -195,7 +196,7 @@ Tổng: 235 file, 70682 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/saas/i18n.js` | 12 | Format a localized template key from `src/i18n/keys.js` with optional `{var}` substitutions. |
 | `src/saas/plan_snapshot.js` | 170 | Chuẩn hóa dữ liệu thiết bị và đóng gói/giải mã/di trú snapshot phương án nâng hạ |
 | `src/saas/runtime_flags.js` | 63 |  |
-| `src/saas/saas.css` | 293 | saas-root[hidden] { display: none !important; } |
+| `src/saas/saas.css` | 246 | saas-root[hidden] { display: none !important; } |
 | `src/saas/session.js` | 260 |  ⚠️>250 |
 | `src/saas/session_ui_bindings.js` | 165 | Gắn kết giao diện header, widget tài khoản, banner bảo trì và hộp thoại liên hệ SaaS |
 | `src/saas/telemetry_usage.js` | 143 |  |
