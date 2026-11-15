@@ -1,0 +1,6 @@
+﻿---
+description: Bảo mật, đăng nhập, phân quyền, rules Firestore, lộ key
+alwaysApply: false
+---
+Founder gọi lệnh @secure. Đọc file auto_kit/secure.md rồi làm theo, kết hợp luật Lõi và bộ nhớ auto_memory/. Sau khi xong vẫn làm bước CUỐI (auto_check + auto_log).
+

@@ -8,7 +8,13 @@ dist
 .env
 .env.*
 !.env.example
+!.env.preview.example
+!.env.staging.example
 playwright-report
 test-results
 docs/ui-after/
 3Dmodels/
+
+_BACKUPS_LOCAL/
+.env.local
+firebase.config.local.json

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canAccessFeature, FEATURE_RULES, normalizeTier } from '../src/saas/access.js';
+import { canAccessFeature, FEATURE_RULES, needsEmailVerification, normalizeTier } from '../src/saas/access.js';
 
 describe('SafeLift3D SaaS tier access', () => {
   it('keeps core tools open to free accounts', () => {
@@ -28,5 +28,28 @@ describe('SafeLift3D SaaS tier access', () => {
   it('does not grant administrator tier to regular premium users', () => {
     expect(normalizeTier({ role: 'user', tier: 'premium' })).toBe('premium');
     expect(normalizeTier({ role: 'user', tier: 'premium' })).not.toBe('admin');
+  });
+
+  it('requires email verification only for unverified password accounts', () => {
+    expect(needsEmailVerification(null)).toBe(false);
+    expect(needsEmailVerification({
+      email: 'u@example.test',
+      emailVerified: false,
+      providerData: [{ providerId: 'password' }]
+    })).toBe(true);
+    expect(needsEmailVerification({
+      email: 'u@example.test',
+      emailVerified: true,
+      providerData: [{ providerId: 'password' }]
+    })).toBe(false);
+    expect(needsEmailVerification({
+      email: 'g@example.test',
+      emailVerified: false,
+      providerData: [{ providerId: 'google.com' }]
+    })).toBe(false);
+    expect(needsEmailVerification({
+      email: 'legacy@example.test',
+      emailVerified: false
+    })).toBe(true);
   });
 });

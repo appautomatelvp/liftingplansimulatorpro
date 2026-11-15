@@ -3,20 +3,12 @@
  * Split from legacy god-file (strangler Phase 2). Shared scope via assemble.
  */
         // ---------------------------------------------------------------------------------
-        // Slack rope / chain physics: position-based dynamics (Verlet + inextensible links).
-        // The rope has a fixed length L, is pinned at both shackle ends, hangs under gravity,
-        // can only rest ON the outer shell of the cargo (never pass through it) and on the ground.
-        // Wire / web ropes resist sharp folds (bending stiffness); chain folds freely.
-        // State is kept per sling so it settles and swings naturally frame to frame.
+        // Slack cable morphology is solved by a persistent material-aware XPBD chain.
         // ---------------------------------------------------------------------------------
-        function simulateSlackRope(slingObj, A, B, L, pad, stiffR, allowA, allowB) {
+        function simulateSlackRope(slingObj, A, B, L, pad, allowA, allowB, material, diameterMm) {
             const N = slingObj.numSegments;
-            const segLen = L / N;
-            let rs = slingObj.ropeSim;
-            const cargoKey = state.cargoType + '|' + (state.oogHasCargo !== false ? 1 : 0) + '|' + (state.oogTarp !== false ? 1 : 0) + '|' + state.L.toFixed(2) + '|' + state.W.toFixed(2) + '|' + state.H.toFixed(2) + '|' + ((state.oogOh || 0)).toFixed(2) + '|' + ((state.oogCargoH || 0)).toFixed(2);
-            const reseed = !rs || rs.N !== N || rs.cargoKey !== cargoKey
-                || rs.p[0].distanceTo(A) > 1.2 || rs.p[N].distanceTo(B) > 1.2
-                || Math.abs(rs.L - L) > 0.25 * L + 0.1;
+            const normalizedMaterial = material === 'round_sling' || material === 'synthetic' ? 'web' : material;
+            const cargoKey = `${state.cargoType}|${state.oogHasCargo !== false ? 1 : 0}|${state.oogTarp !== false ? 1 : 0}|${state.L.toFixed(2)}|${state.W.toFixed(2)}|${state.H.toFixed(2)}|${(state.oogOh || 0).toFixed(2)}|${(state.oogCargoH || 0).toFixed(2)}`;
             const invQ = phy.cargoQuat.clone().invert();
             const tmp = new THREE.Vector3();
             const loc = new THREE.Vector3();
@@ -122,172 +114,25 @@
                 }
             };
 
-            const resolveSegmentContacts = (p) => {
-                for (let i = 0; i < N; i++) {
-                    const mid = p[i].clone().lerp(p[i + 1], 0.5);
-                    const cleared = pushPointClear(mid, pad, ropeSkip(mid, [A, B], allowA, allowB));
-                    const correction = cleared.sub(mid);
-                    if (correction.lengthSq() < 1e-10) continue;
-                    if (i > 0) p[i].addScaledVector(correction, 0.50);
-                    if (i + 1 < N) p[i + 1].addScaledVector(correction, 0.50);
-                }
-            };
-
-            // Respect material bending stiffness: 0 for chain/web slings, >0 for steel wire rope
-            const minR = (stiffR != null && stiffR >= 0) ? stiffR : 0.16;
-            const kBend = minR > 0.05 ? 0.08 : 0.015;
-
-            const projectDistanceConstraints = (p) => {
-                p[0].copy(A);
-                p[N].copy(B);
-                // Symmetric forward + backward Gauss-Seidel sweep so both pins pull equally
-                for (let dir = 0; dir < 2; dir++) {
-                    for (let s = 0; s < N; s++) {
-                        const i = dir === 0 ? s : (N - 1 - s);
-                        const a = p[i], b = p[i + 1];
-                        const dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z;
-                        const d = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-9;
-                        const k = (d - segLen) / d;
-                        const wa = i === 0 ? 0 : 0.5;
-                        const wb = (i + 1) === N ? 0 : 0.5;
-                        const ws = wa + wb || 1;
-                        a.x += dx * k * (wa / ws); a.y += dy * k * (wa / ws); a.z += dz * k * (wa / ws);
-                        b.x -= dx * k * (wb / ws); b.y -= dy * k * (wb / ws); b.z -= dz * k * (wb / ws);
-                    }
-                }
-                p[0].copy(A);
-                p[N].copy(B);
-            };
-
-            const relax = (p, iters, withCollide, ref, gStep) => {
-                const grav = gStep != null ? gStep : 0.0045;
-                for (let it = 0; it < iters; it++) {
-                    // 1) Gravity pull (-Y) inside every relaxation substep so free spans always hang straight down
-                    if (grav > 0) {
-                        for (let i = 1; i < N; i++) {
-                            p[i].y -= grav;
-                        }
-                    }
-                    // 2) Light curvature smoothing + material bend radius BEFORE distance projection
-                    if (kBend > 0) {
-                        for (let i = 1; i < N; i++) {
-                            const mid = p[i - 1].clone().add(p[i + 1]).multiplyScalar(0.5);
-                            p[i].lerp(mid, kBend);
-                        }
-                    }
-                    if (minR > 0.05) {
-                        enforceMinBendRadius(p, minR);
-                    }
-                    // 3) Exact inextensible segment length projection (segLen = L / N)
-                    projectDistanceConstraints(p);
-
-                    // 4) 3D solid & ground contact resolution
-                    if (withCollide && (it % 2 === 0 || it === iters - 1)) {
-                        for (let i = 1; i < N; i++) {
-                            collide(p[i], ref ? ref[i] : null);
-                            if (ref) ref[i].copy(p[i]);
-                        }
-                        resolveSegmentContacts(p);
-                        projectDistanceConstraints(p);
-                    }
-                }
-                for (let i = 1; i < N; i++) {
-                    collide(p[i], ref ? ref[i] : null);
-                    if (ref) ref[i].copy(p[i]);
-                }
-                resolveSegmentContacts(p);
-                projectDistanceConstraints(p);
-            };
-
-            if (reseed) {
-                let seed = catenaryPoints(A, B, L, N);
-                if (!seed || seed.length !== N + 1) {
-                    seed = [];
-                    for (let i = 0; i <= N; i++) {
-                        const q = new THREE.Vector3().lerpVectors(A, B, i / N);
-                        q.y -= 0.35 * Math.max(0.05, L - A.distanceTo(B)) * Math.sin(Math.PI * i / N);
-                        seed.push(q);
-                    }
-                }
-                const ref = seed.map((_, i) => new THREE.Vector3().lerpVectors(A, B, i / N));
-                for (let i = 1; i < N; i++) { collide(seed[i], ref[i]); ref[i].copy(seed[i]); }
-                relax(seed, 24, true, ref, 0.008);
-                rs = slingObj.ropeSim = {
-                    N,
-                    L,
-                    cargoKey,
-                    p: seed,
-                    prev: seed.map(v => v.clone()),
-                    rendered: seed.map(v => v.clone()),
-                    ref,
-                    prevA: A.clone(),
-                    prevB: B.clone()
-                };
-            } else {
-                rs.L = L;
-                rs.cargoKey = cargoKey;
-                const p = rs.p, prev = rs.prev, ref = rs.ref;
-                const dA = rs.prevA ? A.clone().sub(rs.prevA) : new THREE.Vector3();
-                const dB = rs.prevB ? B.clone().sub(rs.prevB) : new THREE.Vector3();
-                rs.prevA = A.clone();
-                rs.prevB = B.clone();
-
-                // Overdamped Verlet — tighter velocity clamp so chains stop "flying"
-                const dt2 = (1 / 60) * (1 / 60);
-                const damp = minR > 0.05 ? 0.38 : 0.22; // chain/web: heavier damping
-                const vCap = minR > 0.05 ? 0.018 : 0.012;
-                for (let i = 1; i < N; i++) {
-                    const t = i / N;
-                    const q = p[i], o = prev[i];
-                    q.addScaledVector(dA, 1 - t).addScaledVector(dB, t);
-                    o.addScaledVector(dA, 1 - t).addScaledVector(dB, t);
-                    let vx = (q.x - o.x) * damp;
-                    let vy = (q.y - o.y) * (damp + 0.06);
-                    let vz = (q.z - o.z) * damp;
-                    const vMag = Math.hypot(vx, vy, vz);
-                    if (vMag > vCap) {
-                        const sc = vCap / vMag;
-                        vx *= sc; vy *= sc; vz *= sc;
-                    }
-                    o.copy(q);
-                    q.x += vx;
-                    q.y += vy - G_EARTH * dt2 * 3.2;
-                    q.z += vz;
-                }
-                relax(p, minR > 0.05 ? 10 : 14, true, ref, 0.0045);
-                prev[0].copy(p[0]); prev[N].copy(p[N]);
+            const solver = slingObj.ropeSim;
+            if (!(solver instanceof XPBDCableDynamics)
+                || solver.segments !== N
+                || solver.material !== normalizedMaterial
+                || slingObj._ropeSimCargoKey !== cargoKey
+                || Math.abs(solver.lengthM - L) > 0.25 * L + 0.1
+                || solver.positions[0]?.distanceTo(A) > 1.2
+                || solver.positions[N]?.distanceTo(B) > 1.2) {
+                slingObj.ropeSim = new XPBDCableDynamics({ lengthM: L, diameterMm: diameterMm || 16, material: normalizedMaterial, segments: N });
+                slingObj.ropeSim.reset(A, B);
+                slingObj._ropeSimCargoKey = cargoKey;
             }
-
-            let pOut = rs.p.map(v => v.clone());
-            if (minR > 0.05) {
-                enforceMinBendRadius(pOut, minR);
-                projectDistanceConstraints(pOut);
-            }
-            for (let i = 1; i < N; i++) {
-                collide(pOut[i], rs.ref ? rs.ref[i] : null);
-            }
-            projectDistanceConstraints(pOut);
-
-            if (!rs.rendered || rs.rendered.length !== N + 1) {
-                rs.rendered = pOut.map(v => v.clone());
-            }
-            rs.rendered[0].copy(A);
-            rs.rendered[N].copy(B);
-            for (let i = 1; i < N; i++) {
-                const roofY = cargoRoofAtXZ(pOut[i].x, pOut[i].z, pad);
-                if (roofY != null && shouldClampToRoof(pOut[i])) {
-                    if (pOut[i].y < roofY) pOut[i].y = roofY;
-                }
-                rs.rendered[i].lerp(pOut[i], 0.48);
-                collide(rs.rendered[i], rs.ref ? rs.ref[i] : null);
-                if (roofY != null && shouldClampToRoof(rs.rendered[i])) {
-                    if (rs.rendered[i].y < roofY) rs.rendered[i].y = roofY;
-                }
-                rs.p[i].copy(rs.rendered[i]);
-                rs.prev[i].lerp(rs.p[i], 0.65);
-                pOut[i].copy(rs.rendered[i]);
-            }
-            return pOut;
+            const result = slingObj.ropeSim.step(1 / 60, A, B, {
+                iterations: 6,
+                collide: (point, index, radius) => collide(point, slingObj.ropeSim.previous[index], radius)
+            });
+            result[0].copy(A);
+            result[result.length - 1].copy(B);
+            return result;
         }
 
         function update3DSlingGeometry(slingObj, pointA, pointB, fixedLen, slingStyle, isOverloaded) {
@@ -412,6 +257,7 @@
                 pathMeta.tautness = beamResting ? 0 : Math.min(pathMeta.tautness || 0, 0.35);
             }
             let rawPts;
+            let usedDynamicXPBD = false;
             const SLING_DRAW_CACHE_VER = 10;
             const flashBusy = !!(cable && (cable._isFlashing || cable._angleDanger));
             if (!meta.broken && !meta.selected && !meta.ctrlHover && !isOverloaded && !flashBusy
@@ -489,35 +335,14 @@
                 }
                 if (!rawPts || rawPts.length < 2) rawPts = [pointA.clone(), end.clone()];
             } else if (!meta.broken && renderLen > chord + 0.005) {
-                const excess = renderLen - chord;
-                // Deep slack / prelift / chain: analytic catenary is stable.
-                // Verlet ropeSim was "flying" and zigzagging when L0 ≫ pin span
-                // (design 2 m lowers while the beam still sits on the cargo roof).
-                // Prefer analytic catenary whenever slack is meaningful — Verlet
-                // ropeSim zig-zags / "flies" when L0 ≫ chord (prelift hangers, chains).
-                const preferStableCat = isChainNow
-                    || excess > 0.18
-                    || !!state.poseLock
-                    || (phy.groundClearance || 0) < 0.08
-                    || actualTension < 0.12;
-                if (preferStableCat) {
-                    slingObj.ropeSim = null;
-                    rawPts = (typeof catenaryPoints === 'function')
-                        ? catenaryPoints(pointA, end, renderLen, Math.max(10, Math.min(28, slingObj.numSegments || 16)))
-                        : null;
-                    if (!rawPts || rawPts.length < 3) {
-                        rawPts = solveDrapedRopePath(pointA, end, renderLen, ropeR, allowA, allowB, pathMeta);
-                    }
-                    rawPts = drapeOntoSolids(rawPts);
-                } else {
-                    // Mild slack while moving: XPBD multi-node rope + contacts
-                    rawPts = simulateSlackRope(
-                        slingObj, pointA, end, renderLen,
-                        Math.max(simPad, simPad),
-                        simStiffR, allowA, allowB
-                    );
-                    rawPts = drapeOntoSolids(rawPts);
-                }
+                // Every slack live cable uses the same persistent physical solver,
+                // including pose-locked startup scenes; there is no static spline fallback.
+                usedDynamicXPBD = true;
+                rawPts = simulateSlackRope(
+                    slingObj, pointA, end, renderLen,
+                    simPad, allowA, allowB, look,
+                    Math.max(6, meta.diaMm || (look === 'web' ? 50 : (look === 'chain' ? 16 : 20)))
+                );
                 if (cable) {
                     let arc = 0;
                     for (let i = 1; i < rawPts.length; i++) arc += rawPts[i].distanceTo(rawPts[i - 1]);
@@ -529,20 +354,20 @@
                 rawPts = drapeOntoSolids(rawPts);
             }
             // Soften jagged polylines, then FORCE arc length back to exact workLen (inextensible)
-            if (!physicallyTaut && rawPts && rawPts.length > 3) {
+            if (!usedDynamicXPBD && !physicallyTaut && rawPts && rawPts.length > 3) {
                 rawPts = smoothSlingPolyline(rawPts, isChainNow ? 2 : 1);
                 rawPts = drapeOntoSolids(rawPts);
             }
             const segCount = slingObj.numSegments;
             let pts = resampleSlingPath(rawPts, segCount);
-            if (!isBrokenStub && !physicallyTaut && pts && pts.length >= 3 && typeof fitPathToFixedLength === 'function') {
+            if (!usedDynamicXPBD && !isBrokenStub && !physicallyTaut && pts && pts.length >= 3 && typeof fitPathToFixedLength === 'function') {
                 const solid = typeof cargoWrapSolid === 'function' ? cargoWrapSolid(simPad) : null;
                 pts = fitPathToFixedLength(pts, pointA, end, workLen, solid, simPad);
             }
             // Length fitting and resampling can move a previously routed catenary
             // back through the cargo shell. Resolve contacts on the final rendered
             // nodes so the visible rope never clips through a roof or crate.
-            if (!isBrokenStub && pts && pts.length >= 3 && typeof pushPointClear === 'function') {
+            if (!usedDynamicXPBD && !isBrokenStub && pts && pts.length >= 3 && typeof pushPointClear === 'function') {
                 const endSkipA = ropeSkip(pointA, [pointA, end], allowA, allowB);
                 const endSkipB = ropeSkip(end, [pointA, end], allowA, allowB);
                 for (let i = 1; i < pts.length - 1; i++) {
@@ -708,7 +533,7 @@
             // Center-to-center pitch under tension equals the inner link pitch p = 3d (48mm @ 16mm stock).
             // When taut, adjacent links rest metal-on-metal with ZERO air gap and zero penetration:
             // link i's top inner crown kisses link i+1's bottom inner crown snugly (tì vào nhau).
-            if (chain && slingObj.links && (!meta.broken || meta.brokenHalf)) {
+            if (chain && slingObj.linkInstances && (!meta.broken || meta.brokenHalf)) {
                 const acc = [0];
                 for (let k = 1; k < pts.length; k++) acc.push(acc[k - 1] + pts[k].distanceTo(pts[k - 1]));
                 const total = acc[acc.length - 1] || 1;
@@ -717,16 +542,20 @@
                 const nominalPitch = CHAIN_NOMINAL_PITCH * stockScale;
                 const linkCount = Math.max(3, Math.round(total / nominalPitch));
 
-                // Dynamically ensure enough link meshes exist in the pool for any crane height / sling length
-                while (slingObj.links.length < linkCount) {
-                    const extraLink = new THREE.Mesh(CHAIN_LINK_GEO, mat);
-                    extraLink.visible = false;
-                    extraLink.castShadow = false;
-                    extraLink.receiveShadow = false;
-                    if (typeof tagSling === 'function') tagSling(extraLink);
-                    slingObj.group.add(extraLink);
-                    slingObj.links.push(extraLink);
+                // Chain links share one GPU draw call; grow the buffer only if a longer chain needs it.
+                if (slingObj.linkInstances.instanceMatrix.count < linkCount) {
+                    const oldInstances = slingObj.linkInstances;
+                    const capacity = Math.max(linkCount, oldInstances.instanceMatrix.count * 2);
+                    const instances = new THREE.InstancedMesh(CHAIN_LINK_GEO, mat, capacity);
+                    instances.castShadow = false;
+                    instances.receiveShadow = false;
+                    instances.frustumCulled = false;
+                    slingObj.group.remove(oldInstances);
+                    slingObj.group.add(instances);
+                    slingObj.linkInstances = instances;
                 }
+                const instances = slingObj.linkInstances;
+                instances.material = mat;
 
                 // Exact physical pitch step along the path:
                 // Spacing = total / linkCount ensures exact integer closure with zero accumulated drift.
@@ -756,13 +585,10 @@
                 zLink0.normalize();
 
                 let kCursor = 1;
-                for (let i = 0; i < slingObj.links.length; i++) {
-                    const link = slingObj.links[i];
-                    if (!link) continue;
-                    if (i >= linkCount) {
-                        link.visible = false;
-                        continue;
-                    }
+                const instanceMatrix = new THREE.Matrix4();
+                const instanceScale = new THREE.Vector3();
+                const instanceQuaternion = new THREE.Quaternion();
+                for (let i = 0; i < linkCount; i++) {
                     // Distance along path to link center:
                     // Link 0 center is at 0.5 * step (so its bottom inner crown sits at d = 0, kissing red end-link A).
                     // Link i and link i+1 meet at d = (i + 1) * step (zero gap, metal-on-metal).
@@ -777,9 +603,6 @@
                     const dir = new THREE.Vector3().subVectors(p1, p0);
                     if (dir.lengthSq() < 1e-8) dir.copy(upY);
                     else dir.normalize();
-                    link.visible = true;
-                    link.material = mat;
-                    link.position.copy(mid);
                     // Build basis: Y = chain dir, Z = link plane normal (alternating weave)
                     const yAxis = dir.clone();
                     let zAxis = (i % 2 === 0) ? zLink0.clone() : zEnd.clone();
@@ -794,11 +617,15 @@
                     }
                     xAxis.normalize();
                     zAxis.crossVectors(xAxis, yAxis).normalize();
-                    link.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis));
-                    link.scale.set(sx, sy, sx);
+                    instanceQuaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis));
+                    instanceScale.set(sx, sy, sx);
+                    instanceMatrix.compose(mid, instanceQuaternion, instanceScale);
+                    instances.setMatrixAt(i, instanceMatrix);
                 }
-            } else if (slingObj.links) {
-                slingObj.links.forEach(link => { if (link) link.visible = false; });
+                instances.count = linkCount;
+                instances.instanceMatrix.needsUpdate = true;
+            } else if (slingObj.linkInstances) {
+                slingObj.linkInstances.count = 0;
             }
 
             // Orient forged eye-thimbles + swaged ferrules inward from pts[0] and pts[N]

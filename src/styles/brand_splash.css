@@ -1,0 +1,36 @@
+/* @purpose: Hiệu ứng nền công nghiệp Zoom-Out & khóa nhận diện đồng bộ cho màn hình khởi động */
+#app-loading-screen { overflow: hidden; isolation: isolate; background: #07111b; }
+#app-loading-screen::after {
+  content: ""; position: absolute; inset: -4%; z-index: -2;
+  background: url('/brand/industrial-lifting-bg.png') center / cover no-repeat;
+  transform-origin: 65% 45%;
+  animation: industrial-zoom-out 18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes industrial-zoom-out {
+  0% { transform: scale(1.14); filter: brightness(0.92); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+#app-loading-screen::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; opacity: 1;
+  background: radial-gradient(circle at 66% 45%, rgba(7, 17, 27, .28) 0%, rgba(4, 9, 18, .78) 72%, rgba(4, 9, 18, .92) 100%);
+}
+.loader-box {
+  display: flex; flex-direction: column; align-items: center; max-width: 560px; width: min(90%, 560px);
+  padding: 28px clamp(20px, 4vw, 40px) 26px; border: 1px solid rgba(56, 189, 248, .28); border-radius: 18px;
+  background: rgba(6, 13, 24, .84); box-shadow: 0 30px 100px rgba(0, 0, 0, .62); backdrop-filter: blur(14px); text-align: center;
+}
+.loader-icon-wrap { position: relative; width: 100%; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; }
+.loader-brand-lockup { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.loader-emblem-shell { position: relative; width: 74px; height: 74px; display: grid; place-items: center; }
+.loader-spinner {
+  position: absolute; inset: -6px; border-radius: 20px; border: 2.5px solid rgba(56, 189, 248, .14);
+  border-top-color: #38bdf8; border-right-color: #f59e0b; animation: spin-ring 1.6s linear infinite;
+}
+.loader-brand-icon {
+  display: block; width: 74px; height: 74px; border-radius: 16px; object-fit: contain;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .5), 0 0 22px rgba(56, 189, 248, .18);
+}
+.loader-brand-wordmark { display: grid; gap: 4px; }
+.loader-brand-name { font-size: clamp(24px, 4vw, 31px); font-weight: 900; letter-spacing: .08em; line-height: 1; color: #f8fafc; text-shadow: 0 2px 14px rgba(0, 0, 0, .45); }
+.loader-brand-name span { color: #fbbf24; }
+.loader-brand-tagline { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: .14em; color: #94a3b8; }

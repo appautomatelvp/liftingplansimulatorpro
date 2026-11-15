@@ -1,7 +1,8 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { validateDeploymentEnvironment } from './src/saas/deployment_environment.js';
 
 async function loadManifestParts() {
   const manifestPath = path.resolve('src/sim/manifest.js');
@@ -47,6 +48,7 @@ function liftingSim() {
         '  const CAE = deps.CAE;',
         '  const GFX = deps.GFX;',
         '  const RIG = deps.RIG;',
+        '  const XPBDCableDynamics = deps.XPBDCableDynamics;',
         '  const runtime = deps.runtime || null;',
         '  const autoBoot = deps.autoBoot !== false;',
         body,
@@ -54,6 +56,7 @@ function liftingSim() {
         '    getState: () => (typeof state !== "undefined" ? state : null),',
         '    getPhy: () => (typeof phy !== "undefined" ? phy : null),',
         '    getRigSpec: typeof getRigSpec === "function" ? () => getRigSpec() : null,',
+        '    getCurrentLiftPlanSummary: typeof getCurrentLiftPlanSummary === "function" ? getCurrentLiftPlanSummary : null,',
         '    bootSimulator: typeof bootSimulator === "function" ? bootSimulator : null,',
         '    pretensionRig: typeof pretensionRig === "function" ? pretensionRig : null,',
         '    stepPhysicsEngine: typeof stepPhysicsEngine === "function" ? stepPhysicsEngine : null,',
@@ -80,17 +83,33 @@ function liftingSim() {
   };
 }
 
-export default defineConfig({
-  plugins: [liftingSim()],
-  build: {
-    outDir: 'dist',
-    sourcemap: true,
-    chunkSizeWarningLimit: 1200
-  },
-  server: {
-    port: 5173
-  },
-  test: {
-    exclude: ['**/node_modules/**', '**/dist/**', '**/e2e/**']
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+  const deployment = validateDeploymentEnvironment({
+    environment: env.VITE_APP_ENV || 'development',
+    projectId: env.VITE_FIREBASE_PROJECT_ID || ''
+  });
+
+  if (!deployment.valid) {
+    throw new Error(`[deployment-env] ${deployment.errors.join(' ')}`);
   }
+
+  return {
+    plugins: [liftingSim()],
+    build: {
+      outDir: 'dist',
+      sourcemap: mode === 'staging',
+      chunkSizeWarningLimit: 1200
+    },
+    server: {
+      port: 5173
+    },
+    test: {
+      exclude: ['**/node_modules/**', '**/dist/**', '**/e2e/**'],
+      // Headless physics regression cases run several thousand simulation steps.
+      testTimeout: 30000,
+      // Avoid over-subscribing the two-core GitHub runner with parallel physics worlds.
+      maxWorkers: 2
+    }
+  };
 });

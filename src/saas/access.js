@@ -31,3 +31,18 @@ export function canAccessFeature(profile, featureId) {
 export function getFeatureRule(featureId) {
   return FEATURE_RULES[featureId] || null;
 }
+
+/**
+ * Password accounts must verify their email before accessing the workspace.
+ * Federated providers such as Google are treated as pre-verified.
+ */
+export function needsEmailVerification(user) {
+  if (!user || user.emailVerified === true) return false;
+  const providers = Array.isArray(user.providerData)
+    ? user.providerData.map((entry) => entry?.providerId).filter(Boolean)
+    : [];
+  if (providers.length > 0) {
+    return providers.includes('password');
+  }
+  return Boolean(user.email);
+}

@@ -1341,10 +1341,15 @@
                             if (geom) {
                                 const derived = document.createElement('div');
                                 derived.className = 'text-[9px] font-mono text-slate-400 bg-slate-950/50 px-1.5 py-1 rounded border border-slate-800';
-                                derived.textContent = L(
-                                    `Cargo crate ${geom.cL.toFixed(2)}×${geom.cW.toFixed(2)}×${geom.cH.toFixed(2)} m`,
-                                    `Kiện quy đổi ${geom.cL.toFixed(2)}×${geom.cW.toFixed(2)}×${geom.cH.toFixed(2)} m`
-                                );
+                                const crateFormatter = (typeof window !== 'undefined' && window.SafeLift && window.SafeLift.i18n)
+                                    ? window.SafeLift.i18n.formatCargoCrateLabel
+                                    : null;
+                                derived.textContent = typeof crateFormatter === 'function'
+                                    ? crateFormatter({ lang: state.lang, geom })
+                                    : L(
+                                        `Cargo crate ${geom.cL.toFixed(2)}×${geom.cW.toFixed(2)}×${geom.cH.toFixed(2)} m`,
+                                        `Kiện quy đổi ${geom.cL.toFixed(2)}×${geom.cW.toFixed(2)}×${geom.cH.toFixed(2)} m`
+                                    );
                                 oogSec.appendChild(derived);
                             }
                         }

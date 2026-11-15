@@ -2082,6 +2082,9 @@
             while (spreaderRootGroup.children.length > 0) spreaderRootGroup.remove(spreaderRootGroup.children[0]);
 
             const { beamType } = state;
+            if (typeof ensureBeamPortAsset === 'function') {
+                ensureBeamPortAsset(beamType, state.stsSizeFt, state.stsTwinLift);
+            }
             const { spanX, spanZ } = getLPBoundingSpan();
             if (beamType !== 'container_spreader' && phy._stsHbVis && phy._stsHbVis.root) {
                 phy._stsHbVis.root.visible = false;

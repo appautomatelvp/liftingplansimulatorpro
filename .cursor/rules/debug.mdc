@@ -1,0 +1,6 @@
+﻿---
+description: Sửa lỗi: app treo, trắng màn hình, báo đỏ F12, tính sai
+alwaysApply: false
+---
+Founder gọi lệnh @debug. Đọc file auto_kit/debug.md rồi làm theo, kết hợp luật Lõi và bộ nhớ auto_memory/. Sau khi xong vẫn làm bước CUỐI (auto_check + auto_log).
+

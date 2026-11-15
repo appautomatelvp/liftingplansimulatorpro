@@ -406,6 +406,7 @@
 
         function rebuildCargoAndRig(resetSymmetricLugs = false) {
             const { cargoType, L, W, H, hwType, cogX, cogY, cogZ } = state;
+            if (typeof ensureCargoPortAsset === 'function') ensureCargoPortAsset(cargoType);
             const twinLift = !!(state.stsTwinLift && state.beamType === 'container_spreader');
             // New cargo / size = new home pad reference once seated again
             if (typeof invalidateContainerHomePad === 'function') invalidateContainerHomePad();

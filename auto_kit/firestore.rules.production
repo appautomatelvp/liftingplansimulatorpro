@@ -1,0 +1,58 @@
+// =============================================================================
+// FIRESTORE SECURITY RULES — MẪU AN TOÀN V5
+// Hiểu đơn giản: đây là "ổ khóa" của kho dữ liệu. Ẩn nút trên giao diện KHÔNG chặn được hacker,
+// chỉ file này mới chặn được.
+//
+// CÁCH DÙNG: Firebase Console -> Firestore -> Rules -> dán -> Publish.
+// TẠO ADMIN ĐẦU TIÊN: Firestore -> tạo tay doc  admins/{UID của bạn}  (nội dung gì cũng được, vd ok=true).
+//   UID xem ở Authentication -> Users. App KHÔNG ghi được collection "admins" (bị chặn bên dưới).
+// YÊU CẦU: app phải đăng nhập thật (Email/Google). Đăng nhập ẩn danh bị chặn.
+//
+// APP DEMO KHÔNG CÓ DỮ LIỆU THẬT: có thể tạm đổi isUser() thành isSignedIn() — nhưng phải ghi vào
+// STATE.md "RULES ĐANG MỞ" và siết lại trước khi có khách thật.
+// =============================================================================
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() { return request.auth != null; }
+    function isUser() { return isSignedIn() && request.auth.token.firebase.sign_in_provider != 'anonymous'; }
+    function isAdmin() { return isUser() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
+
+    match /admins/{uid} {
+      allow read: if isUser() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // Hồ sơ người dùng: chỉ đọc/sửa hồ sơ của mình, KHÔNG được tự đổi role/gói cước
+    match /artifacts/{appId}/users/{uid} {
+      allow read: if isUser() && (request.auth.uid == uid || isAdmin());
+      allow create: if isUser() && request.auth.uid == uid
+                    && !('role' in request.resource.data) && !('subscription' in request.resource.data);
+      allow update: if (isUser() && request.auth.uid == uid
+                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'subscription', 'ownerUid']))
+                    || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Dữ liệu nghiệp vụ dùng chung: người đăng nhập thật đọc/ghi; chỉ admin được xóa
+    match /artifacts/{appId}/public/data/{col}/{docId=**} {
+      allow read: if isUser();
+      allow create, update: if isUser();
+      allow delete: if isAdmin();
+    }
+
+    // Dữ liệu theo công ty/tenant: chỉ thành viên (có doc members/{uid})
+    match /projects/{tenantId}/members/{uid} {
+      allow read: if isUser() && request.auth.uid == uid;
+      allow write: if isAdmin();
+    }
+    match /projects/{tenantId}/{col}/{docId=**} {
+      allow read, write: if isUser()
+        && exists(/databases/$(database)/documents/projects/$(tenantId)/members/$(request.auth.uid));
+    }
+
+    // Mọi đường dẫn khác: cấm hết
+    match /{document=**} { allow read, write: if false; }
+  }
+}

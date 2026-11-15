@@ -1,83 +1,250 @@
 import { getLang, setLang } from '../i18n/index.js';
-import { listAllUsers, setUserAccess } from './firebase_data.js';
+import { saasT } from './i18n.js';
+import { listUsersPage } from './firebase_data.js';
+import { getSessionErrorSummary, normalizeFeatureFlags, readFeatureFlags } from './telemetry_usage.js';
+import {
+  canAccessCms, canEditUsersAndFlags, canManageCatalog, canReadUsersAndAudit,
+  deleteCatalogItem, listAuditLogs, listCatalogItems, saveCatalogItem,
+  saveFeatureFlagsWithAudit, setUserAccessWithAudit
+} from './cms_data.js';
+import {
+  CATALOG_QUICK_TEMPLATES, buildAuditCsv, buildUsersCsv, computeAdminKpiSummary,
+  filterAuditLogs, filterCatalogList, filterUsersList, toggleModuleInList, triggerCsvDownload
+} from './admin_helpers.js';
+import {
+  EMPTY_CATALOG_DRAFT, catalogDraftFromItem, readCatalogFormPayload, readFlagsFormPayload,
+  renderAdminShell, renderAuditSection, renderCatalogSection, renderFlagsSection,
+  renderKpiRibbon, renderUnauthorizedAdminCard, renderUserDetailModal, renderUsersSection
+} from './admin_panels.js';
 
 export function mountAdminDashboard(container, { db, profile, authUser, signOut }) {
   const root = document.createElement('main');
   root.className = 'saas-admin-screen';
   container.replaceChildren(root);
-  let users = [];
-  let loading = false;
-  let status = '';
-  let error = false;
-  const isAdmin = profile.role === 'admin';
+  let users = []; let nextCursor = null; let pageCursors = [null]; let pageIndex = 0; let hasMore = false;
+  let emailPrefix = ''; let loading = false; let status = ''; let error = false;
+  let accessReason = ''; let flagsReason = ''; let flags = normalizeFeatureFlags({}); let flagsBusy = false;
+  let auditLogs = []; let auditLoading = false; let catalogItems = []; let catalogLoading = false; let catalogBusy = false;
+  let catalogDraft = EMPTY_CATALOG_DRAFT();
+  let activeSection = 'all'; let inspectedUser = null;
+  let userFilters = { role: 'all', tier: 'all', status: 'all' };
+  let catalogFilters = { kind: 'all', tier: 'all', query: '' };
+  let auditFilters = { action: 'all', query: '' };
+
+  const hasCmsAccess = canAccessCms(profile);
+  const canViewUsersAudit = canReadUsersAndAudit(profile);
+  const canEditUsers = canEditUsersAndFlags(profile);
+  const canEditCatalog = canManageCatalog(profile);
+  const envLabel = import.meta.env.VITE_APP_ENV || 'development';
+
+  const preserveFocusRender = (selector) => {
+    const active = root.querySelector(selector);
+    const pos = active && typeof active.selectionStart === 'number' ? active.selectionStart : null;
+    render();
+    const next = root.querySelector(selector);
+    if (next) {
+      next.focus();
+      if (pos !== null && typeof next.setSelectionRange === 'function') next.setSelectionRange(pos, pos);
+    }
+  };
 
   const render = () => {
-    const en = getLang() === 'en';
-    if (!isAdmin) {
-      root.innerHTML = `<section class="saas-admin-card"><div class="saas-auth-brand"><span class="saas-auth-mark">SL</span><span>SafeLift3D</span></div><h1>${en ? 'Administrator access required' : 'Cần quyền quản trị viên'}</h1><p>${en ? 'This account does not have access to the CMS.' : 'Tài khoản này không có quyền truy cập CMS.'}</p><div class="saas-admin-actions"><a href="/">${en ? 'Return to workspace' : 'Quay lại không gian làm việc'}</a><button type="button" data-action="signout">${en ? 'Sign out' : 'Đăng xuất'}</button></div></section>`;
+    const lang = getLang();
+    const tr = (key, vars) => saasT(key, vars, lang);
+    const errorSummary = getSessionErrorSummary();
+    if (!hasCmsAccess) {
+      root.innerHTML = renderUnauthorizedAdminCard(tr);
       root.querySelector('[data-action="signout"]')?.addEventListener('click', signOut);
       return;
     }
-    root.innerHTML = `
-      <header class="saas-admin-header">
-        <div class="saas-auth-brand"><span class="saas-auth-mark">SL</span><span>SafeLift3D <small>ADMIN CMS</small></span></div>
-        <div class="saas-admin-actions"><a href="/">${en ? 'Workspace' : 'Không gian làm việc'}</a><button type="button" data-action="language">${en ? 'Tiếng Việt' : 'English'}</button><button type="button" data-action="signout">${en ? 'Sign out' : 'Đăng xuất'}</button></div>
-      </header>
-      <section class="saas-admin-card">
-        <div class="saas-admin-title-row"><div><div class="saas-auth-kicker">${en ? 'PLATFORM ACCESS' : 'QUẢN LÝ TRUY CẬP'}</div><h1>${en ? 'User management' : 'Quản lý người dùng'}</h1><p>${en ? 'Review account status and assign access tiers.' : 'Xem trạng thái tài khoản và gán gói truy cập.'}</p></div><button type="button" class="saas-secondary-button" data-action="refresh" ${loading ? 'disabled' : ''}>${loading ? (en ? 'Loading…' : 'Đang tải…') : (en ? 'Refresh' : 'Làm mới')}</button></div>
-        <div class="saas-admin-stats"><div><span>${en ? 'Registered users' : 'Tổng tài khoản'}</span><strong>${users.length}</strong></div><div><span>${en ? 'Active' : 'Đang hoạt động'}</span><strong>${users.filter((u) => u.status === 'active').length}</strong></div><div><span>${en ? 'Premium' : 'Premium'}</span><strong>${users.filter((u) => u.tier === 'premium').length}</strong></div></div>
-        ${status ? `<div class="saas-admin-notice ${error ? 'is-error' : ''}" role="status">${escapeHtml(status)}</div>` : ''}
-        <div class="saas-table-wrap"><table class="saas-users-table"><thead><tr><th>${en ? 'User' : 'Người dùng'}</th><th>${en ? 'Role' : 'Vai trò'}</th><th>${en ? 'Tier' : 'Gói'}</th><th>${en ? 'Status' : 'Trạng thái'}</th><th>${en ? 'Actions' : 'Thao tác'}</th></tr></thead><tbody>
-          ${users.map((user) => `<tr><td><strong>${escapeHtml(user.displayName || user.email || user.uid)}</strong><small>${escapeHtml(user.email || user.uid)}</small></td><td>${escapeHtml(user.role || 'user')}</td><td><span class="saas-pill tier-${user.tier === 'premium' ? 'premium' : 'free'}">${escapeHtml(user.tier || 'free')}</span></td><td><span class="saas-pill status-${escapeHtml(user.status || 'unknown')}">${escapeHtml(user.status || 'unknown')}</span></td><td><div class="saas-row-actions"><button type="button" data-tier="${user.tier === 'premium' ? 'free' : 'premium'}" data-uid="${escapeHtml(user.uid)}">${user.tier === 'premium' ? (en ? 'Set Free' : 'Gói Free') : (en ? 'Set Premium' : 'Gói Premium')}</button><button type="button" data-status="${user.status === 'active' ? 'locked' : 'active'}" data-uid="${escapeHtml(user.uid)}" ${user.uid === authUser.uid ? 'disabled title="Cannot suspend the current admin account"' : ''}>${user.status === 'active' ? (en ? 'Suspend' : 'Khóa') : (en ? 'Activate' : 'Mở khóa')}</button><button type="button" class="saas-danger-button" data-status="banned" data-uid="${escapeHtml(user.uid)}" ${user.uid === authUser.uid ? 'disabled title="Cannot ban the current admin account"' : ''}>${en ? 'Ban' : 'Cấm'}</button></div></td></tr>`).join('')}
-          ${users.length ? '' : `<tr><td colspan="5" class="saas-empty-row">${loading ? (en ? 'Loading users…' : 'Đang tải tài khoản…') : (en ? 'No users found.' : 'Chưa có tài khoản.')}</td></tr>`}
-        </tbody></table></div>
-      </section>`;
-    root.querySelector('[data-action="signout"]')?.addEventListener('click', signOut);
-    root.querySelector('[data-action="language"]')?.addEventListener('click', () => { setLang(en ? 'vi' : 'en'); render(); });
-    root.querySelector('[data-action="refresh"]')?.addEventListener('click', loadUsers);
-    root.querySelectorAll('[data-tier], [data-status]').forEach((button) => button.addEventListener('click', async () => {
+
+    const kpi = computeAdminKpiSummary({ users, catalogItems, flags, errorSummary, auditLogs });
+    const kpiSection = renderKpiRibbon({ tr, kpi });
+    const usersSection = canViewUsersAudit ? [
+      activeSection === 'all' || activeSection === 'users'
+        ? renderUsersSection({ tr, lang, loading, canEditUsers, users, emailPrefix, accessReason, authUser, pageIndex, hasMore, userFilters }) : '',
+      activeSection === 'all' || activeSection === 'config'
+        ? renderFlagsSection({ tr, canEditUsers, flags, flagsReason, flagsBusy, errorSummary }) : '',
+      activeSection === 'all' || activeSection === 'audit'
+        ? renderAuditSection({ tr, auditLoading, auditLogs, auditFilters }) : ''
+    ].join('') : '';
+    const catalogSection = canEditCatalog && (activeSection === 'all' || activeSection === 'catalog')
+      ? renderCatalogSection({ tr, catalogLoading, catalogDraft, catalogBusy, catalogItems, catalogFilters }) : '';
+    root.innerHTML = renderAdminShell({
+      tr, profile, status, error, usersSection, catalogSection, kpiSection,
+      activeSection, flags, envLabel, canViewUsersAudit, canEditCatalog,
+      modalHtml: renderUserDetailModal({ tr, user: inspectedUser })
+    });
+
+    const on = (sel, evt, fn) => root.querySelector(sel)?.addEventListener(evt, fn);
+    const onAll = (sel, evt, fn) => root.querySelectorAll(sel).forEach((el) => el.addEventListener(evt, (e) => fn(el, e)));
+    on('[data-action="signout"]', 'click', signOut);
+    on('[data-action="language"]', 'click', () => { setLang(lang === 'en' ? 'vi' : 'en'); render(); });
+    onAll('[data-nav-section]', 'click', (btn) => { activeSection = btn.dataset.navSection || 'all'; render(); });
+    on('[data-action="refresh"]', 'click', loadUsers);
+    on('[data-action="refresh-audit"]', 'click', loadAudit);
+    on('[data-action="refresh-catalog"]', 'click', loadCatalog);
+    on('#admin-access-reason', 'input', (e) => { accessReason = e.currentTarget.value; });
+    on('#admin-flags-reason', 'input', (e) => { flagsReason = e.currentTarget.value; });
+    on('[data-filter-role]', 'change', (e) => { userFilters = { ...userFilters, role: e.currentTarget.value }; render(); });
+    on('[data-filter-tier]', 'change', (e) => { userFilters = { ...userFilters, tier: e.currentTarget.value }; render(); });
+    on('[data-filter-status]', 'change', (e) => { userFilters = { ...userFilters, status: e.currentTarget.value }; render(); });
+    on('[data-catalog-search]', 'input', (e) => { catalogFilters = { ...catalogFilters, query: e.currentTarget.value }; preserveFocusRender('[data-catalog-search]'); });
+    on('[data-catalog-filter-kind]', 'change', (e) => { catalogFilters = { ...catalogFilters, kind: e.currentTarget.value }; render(); });
+    on('[data-catalog-filter-tier]', 'change', (e) => { catalogFilters = { ...catalogFilters, tier: e.currentTarget.value }; render(); });
+    on('[data-audit-search]', 'input', (e) => { auditFilters = { ...auditFilters, query: e.currentTarget.value }; preserveFocusRender('[data-audit-search]'); });
+    on('[data-audit-filter-action]', 'change', (e) => { auditFilters = { ...auditFilters, action: e.currentTarget.value }; render(); });
+    onAll('[data-quick-reason]', 'click', (btn) => {
+      accessReason = btn.dataset.quickReason || '';
+      const input = root.querySelector('#admin-access-reason');
+      if (input) { input.value = accessReason; input.focus(); }
+    });
+    onAll('[data-inspect-uid]', 'click', (btn) => {
+      inspectedUser = users.find((u) => (u.uid || u.id) === btn.dataset.inspectUid) || null;
+      render();
+    });
+    onAll('[data-action="close-user-modal"]', 'click', () => { inspectedUser = null; render(); });
+    on('[data-user-modal-backdrop]', 'click', (e) => { if (e.target === e.currentTarget) { inspectedUser = null; render(); } });
+    on('[data-copy-uid]', 'click', async (e) => {
+      try { await navigator.clipboard?.writeText(e.currentTarget.dataset.copyUid || ''); } catch { /* clipboard optional */ }
+      status = tr('cmsUidCopied'); error = false; render();
+    });
+    on('[data-action="export-users-csv"]', 'click', () => {
+      const visible = filterUsersList(users, userFilters);
+      triggerCsvDownload('safelift3d-users.csv', buildUsersCsv(visible));
+      status = tr('cmsCsvExported', { count: visible.length }); error = false; render();
+    });
+    on('[data-action="export-audit-csv"]', 'click', () => {
+      const visible = filterAuditLogs(auditLogs, auditFilters);
+      triggerCsvDownload('safelift3d-audit-logs.csv', buildAuditCsv(visible));
+      status = tr('cmsCsvExported', { count: visible.length }); error = false; render();
+    });
+    onAll('[data-limit-preset]', 'click', (btn) => {
+      const formEl = root.querySelector('[data-action="flags-form"]');
+      if (formEl) flags = normalizeFeatureFlags(readFlagsFormPayload(new FormData(formEl)));
+      flags = { ...flags, freePlanLimit: Number(btn.dataset.limitPreset || 20) };
+      render();
+    });
+    onAll('[data-toggle-module]', 'click', (btn) => {
+      const formEl = root.querySelector('[data-action="flags-form"]');
+      const draft = formEl ? normalizeFeatureFlags(readFlagsFormPayload(new FormData(formEl))) : flags;
+      const toggled = toggleModuleInList(draft.disabledModules, btn.dataset.toggleModule);
+      flags = { ...draft, disabledModules: toggled.list };
+      render();
+    });
+    on('[data-action="flags-form"]', 'submit', async (event) => {
+      event.preventDefault();
+      if (flagsBusy || !canEditUsers) return;
+      const form = new FormData(event.currentTarget);
+      const reasonInput = String(form.get('flagsReason') || flagsReason || '').trim();
+      const beforeFlags = { ...flags };
+      flagsBusy = true; render();
+      try {
+        flags = await saveFeatureFlagsWithAudit(db, authUser.uid, readFlagsFormPayload(form), { reason: reasonInput, beforeFlags });
+        flagsReason = ''; status = saasT('adminFlagsSaved'); error = false; loadAudit();
+      } catch {
+        status = saasT('adminFlagsError'); error = true;
+      } finally {
+        flagsBusy = false; render();
+      }
+    });
+    on('[data-action="search-form"]', 'submit', (event) => {
+      event.preventDefault();
+      emailPrefix = root.querySelector('#admin-user-search')?.value.trim().toLowerCase() || '';
+      pageIndex = 0; pageCursors = [null]; loadUsers();
+    });
+    on('[data-action="clear-search"]', 'click', () => {
+      emailPrefix = ''; userFilters = { role: 'all', tier: 'all', status: 'all' };
+      pageIndex = 0; pageCursors = [null]; loadUsers();
+    });
+    on('[data-action="previous"]', 'click', () => { if (pageIndex > 0) { pageIndex -= 1; loadUsers(); } });
+    on('[data-action="next"]', 'click', () => { if (hasMore && nextCursor) { pageCursors[pageIndex + 1] = nextCursor; pageIndex += 1; loadUsers(); } });
+    onAll('[data-tier], [data-status]', 'click', async (button) => {
+      if (!canEditUsers) return;
+      const cleanReason = String(root.querySelector('#admin-access-reason')?.value || accessReason || '').trim();
+      if (!cleanReason) {
+        status = saasT('adminReasonRequired'); error = true; render();
+        root.querySelector('#admin-access-reason')?.focus(); return;
+      }
       const update = button.dataset.tier ? { tier: button.dataset.tier } : { status: button.dataset.status };
+      const targetUid = button.dataset.uid;
+      const targetUser = users.find((u) => u.uid === targetUid || u.id === targetUid) || null;
+      if ((update.status === 'locked' || update.status === 'banned') && typeof window.confirm === 'function') {
+        if (!window.confirm(saasT('adminConfirmDangerousStatus', { status: update.status, target: targetUser?.email || targetUid }))) return;
+      }
       button.disabled = true;
       try {
-        await setUserAccess(db, button.dataset.uid, update);
-        status = en ? 'Access updated.' : 'Đã cập nhật quyền truy cập.';
-        error = false;
-        await loadUsers(false);
+        await setUserAccessWithAudit(db, authUser.uid, targetUid, update, { reason: cleanReason, beforeUser: targetUser });
+        accessReason = ''; status = saasT('adminAccessUpdated'); error = false;
+        await loadUsers(false); loadAudit();
       } catch (e) {
-        status = e?.code === 'permission-denied'
-          ? (en ? 'Firestore rejected this change. Check the admin role and Firestore rules.' : 'Firestore từ chối thay đổi. Kiểm tra quyền admin và Firestore rules.')
-          : (en ? 'Unable to update this account. Please try again.' : 'Không thể cập nhật tài khoản này. Vui lòng thử lại.');
-        error = true;
-        render();
+        status = e?.code === 'permission-denied' ? saasT('adminUpdateDenied') : saasT('adminUpdateFailed');
+        error = true; render();
       }
-    }));
+    });
+    onAll('[data-catalog-template]', 'click', (btn) => {
+      const tpl = CATALOG_QUICK_TEMPLATES.find((item) => item.id === btn.dataset.catalogTemplate);
+      if (!tpl) return;
+      catalogDraft = { id: tpl.id, kind: tpl.kind, title: tpl.title, category: tpl.category, wllT: tpl.wllT, massKg: tpl.massKg, tier: tpl.tier, enabled: tpl.enabled, notes: tpl.notes };
+      render();
+    });
+    on('[data-action="reset-catalog"]', 'click', () => { catalogDraft = EMPTY_CATALOG_DRAFT(); render(); });
+    const runCatalogAction = async (errorKey, task) => {
+      if (catalogBusy || !canEditCatalog) return;
+      catalogBusy = true; render();
+      try { await task(); } catch { status = saasT(errorKey); error = true; } finally { catalogBusy = false; render(); }
+    };
+    on('[data-action="catalog-form"]', 'submit', async (event) => {
+      event.preventDefault();
+      const form = new FormData(event.currentTarget);
+      const id = String(form.get('id') || '').trim().toLowerCase();
+      const existingItem = catalogItems.find((item) => item.id === id) || null;
+      await runCatalogAction('adminCatalogSaveError', async () => {
+        const saved = await saveCatalogItem(db, authUser.uid, readCatalogFormPayload(form), { beforeItem: existingItem });
+        status = saasT('adminCatalogSaved', { id: saved.id }); error = false;
+        catalogDraft = EMPTY_CATALOG_DRAFT(); await loadCatalog(false);
+        if (canViewUsersAudit) loadAudit();
+      });
+    });
+    onAll('[data-catalog-edit]', 'click', (button) => {
+      const match = catalogItems.find((item) => item.id === button.dataset.catalogEdit);
+      if (!match) return;
+      catalogDraft = catalogDraftFromItem(match); render();
+    });
+    onAll('[data-catalog-delete]', 'click', async (button) => {
+      const itemId = button.dataset.catalogDelete;
+      const existingItem = catalogItems.find((item) => item.id === itemId) || null;
+      await runCatalogAction('adminCatalogDeleteError', async () => {
+        await deleteCatalogItem(db, authUser.uid, itemId, { beforeItem: existingItem });
+        status = saasT('adminCatalogDeleted', { id: itemId }); error = false;
+        if (catalogDraft.id === itemId) catalogDraft = EMPTY_CATALOG_DRAFT();
+        await loadCatalog(false); if (canViewUsersAudit) loadAudit();
+      });
+    });
   };
 
   async function loadUsers(showLoading = true) {
-    if (!isAdmin || loading) return;
-    loading = showLoading;
-    if (showLoading) render();
+    if (!canViewUsersAudit || loading) return;
+    loading = showLoading; if (showLoading) render();
     try {
-      users = await listAllUsers(db);
-      error = false;
+      const page = await listUsersPage(db, { cursor: pageCursors[pageIndex], emailPrefix });
+      users = page.users; nextCursor = page.cursor; hasMore = page.hasMore; error = false;
       if (!status) status = '';
     } catch (e) {
-      users = [];
-      error = true;
-      status = e?.code === 'permission-denied'
-        ? (getLang() === 'en' ? 'Firestore denied this read. Confirm the administrator profile and deployed rules.' : 'Firestore từ chối truy vấn. Kiểm tra hồ sơ admin và rules đã triển khai.')
-        : (getLang() === 'en' ? 'Could not load users. Check your connection and try again.' : 'Không thể tải danh sách người dùng. Kiểm tra kết nối rồi thử lại.');
-    } finally {
-      loading = false;
-      render();
-    }
+      users = []; nextCursor = null; hasMore = false; error = true;
+      status = e?.code === 'permission-denied' ? saasT('adminLoadDenied') : saasT('adminLoadFailed');
+    } finally { loading = false; render(); }
   }
+  async function runSafeLoad(allowed, isBusy, setBusy, fetchFn, applyFn, showLoading) {
+    if (!allowed || isBusy()) return;
+    setBusy(showLoading); if (showLoading) render();
+    try { applyFn(await fetchFn()); } catch { applyFn([]); } finally { setBusy(false); render(); }
+  }
+  const loadAudit = (show = true) => runSafeLoad(canViewUsersAudit, () => auditLoading, (v) => { auditLoading = v; }, () => listAuditLogs(db, 20), (rows) => { auditLogs = rows; }, show);
+  const loadCatalog = (show = true) => runSafeLoad(canEditCatalog, () => catalogLoading, (v) => { catalogLoading = v; }, () => listCatalogItems(db, 30), (rows) => { catalogItems = rows; }, show);
 
   render();
-  if (isAdmin) loadUsers();
+  if (canViewUsersAudit) { loadUsers(); loadAudit(); readFeatureFlags(db).then((loaded) => { flags = loaded; render(); }).catch(() => {}); }
+  if (canEditCatalog) loadCatalog();
   return { dispose() { root.remove(); } };
-}
-
-function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
 }

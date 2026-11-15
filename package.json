@@ -8,13 +8,18 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:preview": "vite build --mode preview",
+    "build:staging": "vite build --mode staging",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:rules": "firebase emulators:exec --only firestore --project safelift3d-rules-test \"node --test test/firestore-rules-emulator.mjs\"",
     "test:ui": "playwright test",
+    "test:e2e:auth": "npx --yes firebase-tools@15.12.0 emulators:exec --only auth,firestore --project safelift3d-rules-test \"npx playwright test -c playwright.auth.config.js --reporter=list\"",
     "test:all": "vitest run && playwright test",
     "architecture:gate": "node scripts/architecture-gate.mjs",
+    "check:dist": "node scripts/check-dist.mjs",
     "lint": "npm run architecture:gate",
-    "ci": "npm run architecture:gate && npm test && npm run build"
+    "ci": "npm run architecture:gate && npm test && npm run build && npm run check:dist"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.21.0",
@@ -26,11 +31,12 @@
     "@grpc/grpc-js": "^1.14.7"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^6.0.0",
     "@playwright/test": "^1.65.0",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
-    "vite": "^5.4.11",
-    "vitest": "^1.6.1"
+    "vite": "^6.4.6",
+    "vitest": "^4.1.12"
   }
 }
