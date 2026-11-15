@@ -27,7 +27,7 @@
   - `catalog/{itemId}`: Danh mục thiết bị mẫu toàn hệ thống.
 - **Khóa `localStorage` đang dùng:**
   - `safelift_lang`, `safelift_auth_attempts_v1`, `lp-user-rigs`, `lp-user-rigs-migrated:{uid}`, `lifting_sim_audio_muted`, `lifting_sim_audio_vol`.
-- **Bản đồ cấu trúc:** Xem `auto_memory/MAP.md` (225 file đã được đánh chỉ mục tự động).
+- **Bản đồ cấu trúc:** Xem `auto_memory/MAP.md` (234 file đã được đánh chỉ mục tự động).
 
 ---
 
@@ -40,17 +40,18 @@
 | **LOCK-03** | `/src/core/CraneLoadChartEngine.js`, `GroundPressureEngine.js`, `PhysicalCableSolver.js`, `DeformableSteelStructure.js` | Tính toán bảng tải cẩu, áp lực nền & giải cáp vật lý | `[LOCKED]` - Đã qua kiểm chứng 308 test |
 | **LOCK-04** | `/firestore.rules` | Luật bảo mật Firestore nghiêm ngặt hiện có của dự án | `[LOCKED]` - Không tự ý nới lỏng rule |
 | **LOCK-05** | `/src/sim/manifest.js` & các shim `/src/sim/{physics,session,cargo,library,gear,rigging}.js` | Hợp đồng lắp ghép runtime mô phỏng (`architecture:gate`) | `[LOCKED]` - Giữ nguyên thứ tự nạp |
+| **LOCK-06** | `/src/utils/firestoreSanitize.js`, `/src/utils/localDataStore.js` | Bộ giáp lọc `undefined`/bí mật trước khi ghi Firestore & chống tràn 5MB `localStorage` | `[LOCKED]` - Bắt buộc đi qua khi lưu dữ liệu |
 
 ---
 
 ## 4. CÔNG VIỆC ĐANG LÀM DỞ (ONGOING WORK)
-- **Mục tiêu hiện tại:** Thực hiện quy trình `@upgrade` — đã hoàn thành Giai đoạn 1 (Chẩn đoán) & Giai đoạn 2 (Backup + Lập kế hoạch 10 bước trong `auto_memory/PLAN.md`, trạng thái `ACTIVE`).
-- **Bước tiếp theo:** Chờ Founder gõ `làm tiếp` để thực thi **Bước 1** trong `auto_memory/PLAN.md`.
+- **Mục tiêu hiện tại:** Đã hoàn tất toàn bộ **10/10 bước** của kế hoạch nâng cấp `@upgrade` trong `auto_memory/PLAN.md` (`Trạng thái: DONE`).
+- **Bước tiếp theo:** Founder kiểm tra F12 & giao diện trên trình duyệt, sau đó chạy `./scripts/manual_chot_ban.ps1` để gộp về nhánh chính và gắn tag bản ổn định.
 
 ---
 
 ## 5. CHECKLIST NGHIỆM THU TRƯỚC KHI CHỐT `STABLE VERSION`
-- [ ] Tất cả các file mới/vừa tách đều dưới 300 dòng, có `@purpose`, không sinh ra file `patch*.js` hay `fix.js` nào.
-- [ ] Không vi phạm Physics Quarantine (`/src/core/` không import DOM/Three.js) và qua `npm run architecture:gate`.
-- [ ] Đã chạy `./scripts/auto_check.ps1` và `./scripts/auto_log.ps1` để cập nhật `auto_memory/HISTORY.md` + `auto_memory/MAP.md`.
-- [ ] F12 Console sạch lỗi đỏ và toàn bộ 308 test (`npm test`) + `npm run build` chạy khớp 100%.
+- [x] Tất cả các file mới/vừa tách đều dưới 300 dòng, có `@purpose`, không sinh ra file `patch*.js` hay `fix.js` nào.
+- [x] Không vi phạm Physics Quarantine (`/src/core/` không import DOM/Three.js) và qua `npm run architecture:gate`.
+- [x] Đã chạy `./scripts/auto_check.ps1` và `./scripts/auto_log.ps1` để cập nhật `auto_memory/HISTORY.md` + `auto_memory/MAP.md`.
+- [x] Toàn bộ 42 file / 308 test (`npm test`), kiểm tra bảo mật (`@secure`) + Golden Test (`@test`) và `npm run build` chạy khớp 100%. (Founder mở F12 kiểm tra thêm trên trình duyệt trước khi chốt bản).

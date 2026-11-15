@@ -1,5 +1,5 @@
 # KẾ HOẠCH (bàn giao: model mạnh viết → model thực thi làm từng bước)
-Trạng thái: ACTIVE        <!-- NONE | ACTIVE | DONE -->
+Trạng thái: DONE        <!-- NONE | ACTIVE | DONE -->
 
 ## Mục tiêu
 Nâng cấp & tái cấu trúc dự án `LIFTING PLAN SIMULATOR PRO (SafeLift3D)` về chuẩn AI Starter Kit Pro V7 (`@upgrade`) theo nguyên tắc **"Phẫu thuật từng lát mỏng"**:
@@ -62,7 +62,7 @@ Nâng cấp & tái cấu trúc dự án `LIFTING PLAN SIMULATOR PRO (SafeLift3D)
   - CẤM đụng: `src/core/*`, `test/graphics.test.js`
   - Kiểm tra xong: `src/graphics/pbr/ProceduralTextures.js` ≤ 300 dòng; chạy `npx vitest run test/graphics.test.js` và `npm run build` xanh 100%
 
-- [ ] Bước 10: Kiểm tra tổng thể bảo mật (`@secure`), chạy bộ kiểm thử Golden Test (`@test`) & nghiệm thu kế hoạch
+- [x] Bước 10: Kiểm tra tổng thể bảo mật (`@secure`), chạy bộ kiểm thử Golden Test (`@test`) & nghiệm thu kế hoạch
   - Sửa: `STATE.md` (cập nhật danh sách `[LOCKED]` mới và tick checklist mục 5), `auto_memory/PLAN.md` (đổi trạng thái sang `DONE`)
   - CẤM đụng: `src/core/*`, `firestore.rules`
   - Kiểm tra xong: Chạy `npm run architecture:gate && npm test && npm run build` xanh 100%, chạy `./scripts/auto_check.ps1` và `./scripts/auto_log.ps1`, báo cáo founder chạy `./scripts/manual_chot_ban.ps1`

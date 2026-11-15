@@ -10,7 +10,7 @@
 - Hosting: Cloudflare Pages / Vercel | Dữ liệu & Auth: Firebase (`safelift3d`, Staging: `safelift3d-staging`) + App Check (`ReCaptchaEnterpriseProvider`)
 - Giai đoạn: `PROTOTYPE` / `STAGING` -> tiến tới `PRODUCTION` (chi tiết ở `STATE.md`)
 
-## 3. Cấu trúc tóm tắt (chi tiết từng file ở `auto_memory/MAP.md` — 225 file)
+## 3. Cấu trúc tóm tắt (chi tiết từng file ở `auto_memory/MAP.md` — 234 file)
 - `src/core/` : **VÙNG CÁCH LY KỸ THUẬT (`Physics Quarantine`)** — `physics-world/` (Rapier, Cannon, FixedStepLoop), `standards/` (RiggingRuleEngine, wireRope, chain, slingAngle), `EngineeringEngine.js`, `CraneLoadChartEngine.js`. **CẤM import DOM, React hoặc Three.js vào đây.**
 - `src/graphics/` : Chỉ VẼ 3D (`SceneRenderer.js`, `PBRMaterialFactory.js`, `EnvironmentManager.js`).
 - `src/rigging/`, `src/sim/`, `src/simulation/` : Mô hình cáp XPBD, trạng thái & vòng lặp mô phỏng.
@@ -28,6 +28,7 @@
 - **LocalStorage Keys:** `safelift_lang`, `safelift_auth_attempts_v1`, `lp-user-rigs`, `lp-user-rigs-migrated:{uid}`, `lifting_sim_audio_muted`, `lifting_sim_audio_vol`.
 
 ## 5. Quyết định quan trọng (mới nhất ở trên) — ghi KÈM LÝ DO
+- [2026-11-15] Hoàn tất nâng cấp `@upgrade` 10 bước (`PLAN.md` -> `DONE`): lắp giáp `firestoreSanitize` + `localDataStore` (`LOCK-06`), tách 7 cụm SaaS & Đồ họa (`auth_rate_limit`, `plan_snapshot`, `admin_panels`, `workspace_views`, `session_ui_bindings`, `HorizonSkyDome`, `ProceduralTextures`) dưới 300 dòng mà giữ nguyên 308 test & `architecture:gate`.
 - [2026-11-15] Lập bệnh án & kế hoạch nâng cấp `@upgrade` (`auto_memory/PLAN.md` 10 bước) — tái cấu trúc từng lát mỏng các file >300 dòng và lắp bộ giáp dữ liệu V7 mà giữ nguyên 100% hành vi & 308 test.
 - [2026-11-15] Nâng cấp chân trời 3D tự nhiên (đĩa tròn 460m + làm mờ lưới đo tròn + vòm bầu trời khớp sương mù 1:1) — xóa góc vuông mặt sàn ở đường chân trời.
 - [2026-11-15] Gắn bộ não AI Starter Kit Pro V7 (`MODULE_3D` + `auto_memory/MAP.md` 225 file) — để AI đọc bản đồ dự án trong 1 giây thay vì quét mò toàn bộ source code.

@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-15 14:58 | Nhánh: codex/safelift-g0-ci | Commit cuối: 1893739 refactor(upgrade): step 8 split HorizonSkyDome.js and trim graphics core files under 300 lines (2 minutes ago)
+Cập nhật: 2026-11-15 15:00 | Nhánh: codex/safelift-g0-ci | Commit cuối: cc9fdc2 refactor(upgrade): step 9 split ProceduralTextures.js from PBRMaterialFactory.js (2 minutes ago)
 Tổng: 234 file, 70542 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
