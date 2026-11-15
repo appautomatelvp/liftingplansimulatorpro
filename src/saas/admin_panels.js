@@ -3,6 +3,12 @@ import {
   CMS_CONTROLLABLE_MODULES, QUICK_AUDIT_REASONS, computeAdminKpiSummary,
   filterUsersList
 } from './admin_helpers.js';
+import { escapeHtml } from './session_ui_bindings.js';
+import {
+  formatAuditTime, renderAuditSection, renderCatalogSection, renderUserDetailModal
+} from './admin_catalog_audit_panels.js';
+
+export { escapeHtml, formatAuditTime, renderAuditSection, renderCatalogSection, renderUserDetailModal };
 
 export const EMPTY_CATALOG_DRAFT = () => ({
   id: '', kind: 'hardware', title: '', category: '', wllT: '', massKg: '', tier: 'free', enabled: true, notes: ''
@@ -31,18 +37,6 @@ export function readCatalogFormPayload(form) {
     wllT: form.get('wllT'), massKg: form.get('massKg'), tier: form.get('tier'),
     enabled: form.get('enabled') === 'on', notes: form.get('notes')
   };
-}
-
-export function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
-}
-
-export function formatAuditTime(ts) {
-  if (!ts) return '—';
-  const date = typeof ts?.toDate === 'function'
-    ? ts.toDate()
-    : (typeof ts?.seconds === 'number' ? new Date(ts.seconds * 1000) : new Date(ts));
-  return Number.isNaN(date.getTime()) ? '—' : date.toISOString().replace('T', ' ').slice(0, 19);
 }
 
 export function renderUnauthorizedAdminCard(tr) {
@@ -139,43 +133,13 @@ export function renderFlagsSection({ tr, canEditUsers, flags, flagsReason, flags
 }
 
 export function renderUsersAndFlagsSections(props) {
-  const { tr, auditLoading, auditLogs } = props;
-  const usersHtml = renderUsersSection(props);
-  const flagsHtml = renderFlagsSection(props);
-  const auditHtml = `<section class="saas-admin-card" data-section="audit">
-    <div class="saas-admin-title-row"><div><div class="saas-auth-kicker">${tr('cmsAuditKicker')}</div><h2>${tr('adminAuditTitle')}</h2><p>${tr('adminAuditSubtitle')}</p></div><button type="button" class="saas-secondary-button" data-action="refresh-audit" ${auditLoading ? 'disabled' : ''}>${auditLoading ? tr('adminLoading') : tr('adminRefresh')}</button></div>
-    <div class="saas-table-wrap"><table class="saas-users-table"><thead><tr><th>${tr('adminAuditColTime')}</th><th>${tr('adminAuditColActor')}</th><th>${tr('adminAuditColAction')}</th><th>${tr('adminAuditColTarget')}</th><th>${tr('adminAuditColReason')}</th><th>${tr('adminAuditColDiff')}</th><th>${tr('adminAuditColSummary')}</th></tr></thead><tbody>
-      ${auditLogs.map((e) => `<tr><td>${escapeHtml(formatAuditTime(e.createdAt))}</td><td><small>${escapeHtml(e.actorUid || '')}</small></td><td><span class="saas-pill">${escapeHtml(e.action || '')}</span></td><td>${escapeHtml(`${e.targetType || ''}:${e.targetId || ''}`)}</td><td>${escapeHtml(e.reason || '—')}</td><td><span class="saas-cms-diff">${escapeHtml(e.before || e.after ? `${e.before || '∅'} → ${e.after || '∅'}` : '—')}</span></td><td>${escapeHtml(e.summary || '')}</td></tr>`).join('')}
-      ${auditLogs.length ? '' : `<tr><td colspan="7" class="saas-empty-row">${auditLoading ? tr('adminLoading') : tr('adminAuditEmpty')}</td></tr>`}
-    </tbody></table></div>
-  </section>`;
-  return `${usersHtml}${flagsHtml}${auditHtml}`;
-}
-
-export function renderCatalogSection({ tr, catalogLoading, catalogDraft, catalogBusy, catalogItems }) {
-  return `<section class="saas-admin-card" data-section="catalog">
-    <div class="saas-admin-title-row"><div><div class="saas-auth-kicker">${tr('cmsCatalogKicker')}</div><h2>${tr('adminCatalogTitle')}</h2><p>${tr('adminCatalogSubtitle')}</p></div><button type="button" class="saas-secondary-button" data-action="refresh-catalog" ${catalogLoading ? 'disabled' : ''}>${catalogLoading ? tr('adminLoading') : tr('adminRefresh')}</button></div>
-    <form class="saas-admin-search" data-action="catalog-form"><div class="saas-cms-form-grid">
-      <label class="saas-cms-field">${tr('adminCatalogIdLabel')}<input type="text" name="id" required maxlength="64" pattern="[a-z0-9_-]{2,64}" value="${escapeHtml(catalogDraft.id)}" ${catalogBusy ? 'disabled' : ''}></label>
-      <label class="saas-cms-field">${tr('adminCatalogKindLabel')}<select name="kind" ${catalogBusy ? 'disabled' : ''}>${['cargo', 'beam', 'sling', 'hardware'].map((kind) => `<option value="${kind}" ${catalogDraft.kind === kind ? 'selected' : ''}>${kind}</option>`).join('')}</select></label>
-      <label class="saas-cms-field">${tr('adminCatalogTitleLabel')}<input type="text" name="title" required maxlength="100" value="${escapeHtml(catalogDraft.title)}" ${catalogBusy ? 'disabled' : ''}></label>
-      <label class="saas-cms-field">${tr('adminCatalogCategoryLabel')}<input type="text" name="category" maxlength="60" value="${escapeHtml(catalogDraft.category)}" ${catalogBusy ? 'disabled' : ''}></label>
-      <label class="saas-cms-field">${tr('adminCatalogWllLabel')}<input type="number" name="wllT" min="0" max="100000" step="any" value="${escapeHtml(catalogDraft.wllT)}" ${catalogBusy ? 'disabled' : ''}></label>
-      <label class="saas-cms-field">${tr('adminCatalogMassLabel')}<input type="number" name="massKg" min="0" max="10000000" step="any" value="${escapeHtml(catalogDraft.massKg)}" ${catalogBusy ? 'disabled' : ''}></label>
-      <label class="saas-cms-field">${tr('adminCatalogTierLabel')}<select name="tier" ${catalogBusy ? 'disabled' : ''}>${['free', 'premium'].map((tier) => `<option value="${tier}" ${catalogDraft.tier === tier ? 'selected' : ''}>${tier}</option>`).join('')}</select></label>
-      <label class="saas-cms-checkbox-row"><input type="checkbox" name="enabled" ${catalogDraft.enabled ? 'checked' : ''} ${catalogBusy ? 'disabled' : ''}> ${tr('adminCatalogEnabledLabel')}</label>
-      <label class="saas-cms-field saas-cms-span-2">${tr('adminCatalogNotesLabel')}<input type="text" name="notes" maxlength="300" value="${escapeHtml(catalogDraft.notes)}" ${catalogBusy ? 'disabled' : ''}></label>
-    </div><div class="saas-cms-btn-row"><button type="submit" class="saas-secondary-button saas-cms-primary-btn" ${catalogBusy ? 'disabled' : ''}>${tr('adminCatalogSaveBtn')}</button><button type="button" class="saas-secondary-button" data-action="reset-catalog" ${catalogBusy ? 'disabled' : ''}>${tr('adminCatalogResetBtn')}</button></div></form>
-    <div class="saas-table-wrap"><table class="saas-users-table"><thead><tr><th>${tr('adminCatalogColId')}</th><th>${tr('adminCatalogColKind')}</th><th>${tr('adminCatalogColSpecs')}</th><th>${tr('adminCatalogColState')}</th><th>${tr('adminColActions')}</th></tr></thead><tbody>
-      ${catalogItems.map((item) => `<tr><td><strong>${escapeHtml(item.title || item.id)}</strong><small>${escapeHtml(item.id)} · ${escapeHtml(item.category || '—')}</small></td><td>${escapeHtml(item.kind)} · <span class="saas-pill tier-${item.tier === 'premium' ? 'premium' : 'free'}">${escapeHtml(item.tier || 'free')}</span></td><td><small>WLL: ${item.wllT ?? '—'} t · Mass: ${item.massKg ?? '—'} kg</small></td><td><span class="saas-pill ${item.enabled ? 'status-active' : 'status-locked'}">${item.enabled ? tr('adminCatalogEnabled') : tr('adminCatalogDisabled')}</span></td><td><div class="saas-row-actions"><button type="button" data-catalog-edit="${escapeHtml(item.id)}">${tr('adminCatalogEditBtn')}</button><button type="button" class="saas-danger-button" data-catalog-delete="${escapeHtml(item.id)}" ${catalogBusy ? 'disabled' : ''}>${tr('adminCatalogDeleteBtn')}</button></div></td></tr>`).join('')}
-      ${catalogItems.length ? '' : `<tr><td colspan="5" class="saas-empty-row">${catalogLoading ? tr('adminLoading') : tr('adminCatalogEmpty')}</td></tr>`}
-    </tbody></table></div>
-  </section>`;
+  return `${renderUsersSection(props)}${renderFlagsSection(props)}${renderAuditSection(props)}`;
 }
 
 export function renderAdminShell({
   tr, profile, status, error, usersSection = '', catalogSection = '', kpiSection = '',
-  activeSection = 'all', flags = null, envLabel = 'development', canViewUsersAudit = true, canEditCatalog = true
+  activeSection = 'all', flags = null, envLabel = 'development', canViewUsersAudit = true, canEditCatalog = true,
+  modalHtml = ''
 }) {
   const navItems = [{ id: 'all', label: tr('cmsNavAll') }];
   if (canViewUsersAudit) navItems.push({ id: 'users', label: tr('cmsNavUsers') }, { id: 'config', label: tr('cmsNavConfig') }, { id: 'audit', label: tr('cmsNavAudit') });
@@ -190,5 +154,6 @@ export function renderAdminShell({
     <nav class="saas-cms-nav">${navItems.map((n) => `<button type="button" class="saas-cms-nav-btn ${activeSection === n.id ? 'is-active' : ''}" data-nav-section="${n.id}">${n.label}</button>`).join('')}</nav>
   </header>
   ${status ? `<div class="saas-admin-notice ${error ? 'is-error' : ''}" role="status">${escapeHtml(status)}</div>` : ''}
-  <div class="saas-cms-container">${kpiHtml}${usersSection}${catalogSection}</div>`;
+  <div class="saas-cms-container">${kpiHtml}${usersSection}${catalogSection}</div>
+  ${modalHtml}`;
 }

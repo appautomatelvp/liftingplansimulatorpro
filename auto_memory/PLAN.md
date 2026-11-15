@@ -46,7 +46,7 @@ Nâng cấp toàn diện hệ thống **CMS Quản trị (`http://localhost:5173
   - CẤM đụng: `src/saas/cms_data.js`, `firestore.rules`, `src/core/*`
   - Kiểm tra xong: `src/saas/admin_panels.js` ≤ 250 dòng; giữ nguyên toàn bộ selector bắt buộc của `e2e/cms-roles.spec.js`
 
-- [ ] Bước 5: Tạo `src/saas/admin_catalog_audit_panels.js` (Phân hệ Catalog Thiết bị 3 cột, Nhật ký Kiểm toán Diff & Modal Chi tiết Người dùng)
+- [x] Bước 5: Tạo `src/saas/admin_catalog_audit_panels.js` (Phân hệ Catalog Thiết bị 3 cột, Nhật ký Kiểm toán Diff & Modal Chi tiết Người dùng)
   - Sửa: `src/saas/admin_catalog_audit_panels.js` (tạo mới `<220 dòng`, có `@purpose`, chứa `renderCatalogSection` với 4 nút Mẫu Thiết bị Chuẩn + lưới 3 cột + thanh lọc Kind/Tier/Search, `renderAuditSection` với bộ lọc Action/Search + nút Xuất CSV + thẻ Diff `Trước → Sau`, và `renderUserDetailModal`), `src/saas/admin_panels.js` (re-export `renderCatalogSection`, `renderAuditSection`, `renderUserDetailModal` và cập nhật `renderUsersAndFlagsSections` để tương thích ngược)
   - CẤM đụng: `src/saas/cms_data.js`, `firestore.rules`, `src/core/*`
   - Kiểm tra xong: `src/saas/admin_catalog_audit_panels.js` và `src/saas/admin_panels.js` đều ≤ 250 dòng; chạy `npm test` và `npm run build` xanh 100%

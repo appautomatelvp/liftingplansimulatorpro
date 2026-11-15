@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-15 15:28 | Nhánh: codex/safelift-g0-ci | Commit cuối: 4732204 feat(cms): step 3 add pure admin_helpers and unit tests (2 minutes ago)
-Tổng: 237 file, 71099 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-15 15:33 | Nhánh: codex/safelift-g0-ci | Commit cuối: 1ed191d feat(cms): step 4 upgrade admin_panels Command Center, KPI ribbon, users & flags panels (5 minutes ago)
+Tổng: 238 file, 71153 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -178,10 +178,11 @@ Tổng: 237 file, 71099 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/RiggingPhysicsSolver.js` | 682 | src/rigging/RiggingPhysicsSolver.js ⚠️>300 |
 | `src/rigging/riggingUIStore.js` | 100 | src/rigging/riggingUIStore.js |
 | `src/saas/access.js` | 48 |  |
+| `src/saas/admin_catalog_audit_panels.js` | 89 | Dựng giao diện phân hệ Catalog thiết bị 3 cột, Nhật ký Kiểm toán Diff và Modal chi tiết người dùng |
 | `src/saas/admin_cms.css` | 170 | Giao diện CSS chuẩn Enterprise Command Center cho CMS Quản trị (/admin) |
 | `src/saas/admin_dashboard.js` | 253 |  ⚠️>250 |
 | `src/saas/admin_helpers.js` | 194 | Các hằng số cấu hình và hàm thuần tính KPI, lọc đa chiều, công tắc module, mẫu Catalog và xuất CSV cho CMS |
-| `src/saas/admin_panels.js` | 194 | Các hàm dựng HTML giao diện Enterprise Command Center và đọc dữ liệu form cho bảng quản trị CMS |
+| `src/saas/admin_panels.js` | 159 | Các hàm dựng HTML giao diện Enterprise Command Center và đọc dữ liệu form cho bảng quản trị CMS |
 | `src/saas/app_check_config.js` | 15 |  |
 | `src/saas/auth_rate_limit.js` | 85 | Kiểm soát giới hạn tốc độ thử đăng nhập và chuẩn hóa thông báo lỗi xác thực (VI/EN) |
 | `src/saas/auth_screen.js` | 234 |  |
