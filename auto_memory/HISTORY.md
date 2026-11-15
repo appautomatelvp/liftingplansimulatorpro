@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-15 14:38 [refactor] Upgrade Buoc 3: Tach auth_rate_limit.js (85 dong) khoi auth_screen.js (giam con 234 dong, duoi nguong 300).
+- Nhánh: codex/safelift-g0-ci | Commit trước đó: 32d2497
+- File: src/saas/auth_rate_limit.js,src/saas/auth_screen.js,auto_memory/PLAN.md
+
 ## 2026-11-15 14:35 [refactor] Upgrade Buoc 2: Tich hop prepareFirestorePayload vao firebase_data.js va safeReadLocalStore/safeWriteLocalStore vao auth_screen.js, i18n/index.js.
 - Nhánh: codex/safelift-g0-ci | Commit trước đó: 63b186c
 - File: src/saas/firebase_data.js,src/saas/auth_screen.js,src/i18n/index.js,auto_memory/PLAN.md
