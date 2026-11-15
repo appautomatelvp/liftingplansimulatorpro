@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-15 14:53 | Nhánh: codex/safelift-g0-ci | Commit cuối: 29e7c17 refactor(upgrade): step 6 split workspace_views.js from workspace_dashboard.js (3 minutes ago)
-Tổng: 232 file, 71165 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-15 14:56 | Nhánh: codex/safelift-g0-ci | Commit cuối: dfda219 refactor(upgrade): step 7 split session_ui_bindings.js from session.js (3 minutes ago)
+Tổng: 233 file, 70806 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -16,9 +16,7 @@ Tổng: 232 file, 71165 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/core/LiftPlanModel.js (1073 dòng)
 - src/core/RiggingDictionary.js (434 dòng)
 - src/core/SimulationEngine.js (560 dòng)
-- src/graphics/EnvironmentManager.js (763 dòng)
 - src/graphics/PBRMaterialFactory.js (659 dòng)
-- src/graphics/SceneRenderer.js (321 dòng)
 - src/i18n/keys.js (595 dòng)
 - src/rigging/CableDynamicsXPBD.js (310 dòng)
 - src/rigging/RiggingPhysicsSolver.js (682 dòng)
@@ -161,10 +159,11 @@ Tổng: 232 file, 71165 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/domain/rigging/types.js` | 25 | Rigging domain vocabulary (pure). |
 | `src/domain/site/types.js` | 9 | Site / quay domain vocabulary (pure). |
 | `src/domain/standards/index.js` | 26 |  |
-| `src/graphics/EnvironmentManager.js` | 763 |  ⚠️>300 |
+| `src/graphics/EnvironmentManager.js` | 258 | Quản lý ánh sáng IBL, sương mù chân trời, HDR và đồng bộ thời gian thực cho cảnh 3D ⚠️>250 |
+| `src/graphics/HorizonSkyDome.js` | 179 | Dựng vòm bầu trời HorizonSkyDome, preset ánh sáng và cấu hình khí quyển theo giờ Việt Nam |
 | `src/graphics/index.js` | 10 |  |
 | `src/graphics/PBRMaterialFactory.js` | 659 |  ⚠️>300 |
-| `src/graphics/SceneRenderer.js` | 321 |  ⚠️>300 |
+| `src/graphics/SceneRenderer.js` | 288 |  ⚠️>250 |
 | `src/i18n/cargo_labels.js` | 48 |  |
 | `src/i18n/index.js` | 97 |  |
 | `src/i18n/keys.js` | 595 |  ⚠️>300 |

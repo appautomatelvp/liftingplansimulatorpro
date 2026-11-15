@@ -52,7 +52,7 @@ Nâng cấp & tái cấu trúc dự án `LIFTING PLAN SIMULATOR PRO (SafeLift3D)
   - CẤM đụng: `src/saas/firebase.js`, `firestore.rules`, `src/core/*`
   - Kiểm tra xong: `src/saas/session.js` và `src/saas/session_ui_bindings.js` đều ≤ 300 dòng; chạy `npm test` và `npm run build` xanh 100%
 
-- [ ] Bước 8: Tách `src/graphics/SceneRenderer.js` (321 dòng) & `src/graphics/EnvironmentManager.js` (763 dòng)
+- [x] Bước 8: Tách `src/graphics/SceneRenderer.js` (321 dòng) & `src/graphics/EnvironmentManager.js` (763 dòng)
   - Sửa: `src/graphics/HorizonSkyDome.js` (tạo mới `<180 dòng`, chứa class/helper dựng vòm bầu trời `HorizonSkyDome` và cấu hình preset khí quyển), `src/graphics/EnvironmentManager.js` (import từ `HorizonSkyDome.js`), `src/graphics/SceneRenderer.js` (rút gọn phần khởi tạo pass/gizmo để xuống ≤ 300 dòng)
   - CẤM đụng: `src/core/*`, `test/graphics.test.js`
   - Kiểm tra xong: `src/graphics/SceneRenderer.js` và `src/graphics/HorizonSkyDome.js` đều ≤ 300 dòng; chạy `npx vitest run test/graphics.test.js` và `npm run build` xanh 100%

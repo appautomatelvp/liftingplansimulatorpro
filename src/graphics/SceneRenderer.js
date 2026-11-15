@@ -19,57 +19,24 @@ import { PBRMaterialFactory } from './PBRMaterialFactory.js';
 
 export const QUALITY_TIERS = {
     ultra: {
-        id: 'ultra',
-        name: 'Ultra (AAA Photoreal)',
-        shadowMapSize: 4096,
-        shadowType: 'soft',
-        aoEnabled: true,
-        aoType: 'gtao',
-        bloomEnabled: true,
-        smaaEnabled: true,
-        msaaSamples: 4,
-        maxDPR: 2.0
+        id: 'ultra', name: 'Ultra (AAA Photoreal)', shadowMapSize: 4096, shadowType: 'soft',
+        aoEnabled: true, aoType: 'gtao', bloomEnabled: true, smaaEnabled: true, msaaSamples: 4, maxDPR: 2.0
     },
-    // Default interactive tier — 1080p ~60 FPS + native MSAA (no răng cưa)
+    // Default interactive tier — 1080p ~60 FPS + native MSAA
     high: {
-        id: 'high',
-        name: 'High (1080p / Cân bằng)',
-        shadowMapSize: 4096,
-        shadowType: 'pcf',
-        aoEnabled: false,
-        aoType: 'gtao',
-        bloomEnabled: false,
-        smaaEnabled: false,
-        antialias: true,
-        msaaSamples: 0,
-        maxDPR: 1.0,
-        bypassComposer: true
+        id: 'high', name: 'High (1080p / Cân bằng)', shadowMapSize: 4096, shadowType: 'pcf',
+        aoEnabled: false, aoType: 'gtao', bloomEnabled: false, smaaEnabled: false,
+        antialias: true, msaaSamples: 0, maxDPR: 1.0, bypassComposer: true
     },
     studio: {
-        id: 'studio',
-        name: 'CAD / Liebherr Studio (Sắc Nét)',
-        shadowMapSize: 2048,
-        shadowType: 'pcf',
-        aoEnabled: false,
-        bloomEnabled: false,
-        smaaEnabled: false,
-        antialias: true,
-        msaaSamples: 4,
-        maxDPR: 2.0,
-        bypassComposer: true
+        id: 'studio', name: 'CAD / Liebherr Studio (Sắc Nét)', shadowMapSize: 2048, shadowType: 'pcf',
+        aoEnabled: false, bloomEnabled: false, smaaEnabled: false,
+        antialias: true, msaaSamples: 4, maxDPR: 2.0, bypassComposer: true
     },
     performance: {
-        id: 'performance',
-        name: 'Performance (Tiết Kiệm Pin / 60 FPS)',
-        shadowMapSize: 1024,
-        shadowType: 'basic',
-        aoEnabled: false,
-        bloomEnabled: false,
-        smaaEnabled: false,
-        antialias: true,
-        msaaSamples: 0,
-        maxDPR: 1.0,
-        bypassComposer: true
+        id: 'performance', name: 'Performance (Tiết Kiệm Pin / 60 FPS)', shadowMapSize: 1024, shadowType: 'basic',
+        aoEnabled: false, bloomEnabled: false, smaaEnabled: false,
+        antialias: true, msaaSamples: 0, maxDPR: 1.0, bypassComposer: true
     }
 };
 
