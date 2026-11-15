@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-15 14:58 [refactor] Buoc 9: Tach toan bo ham ve canvas texture be tong cang, cap thep, xich, sling, mat nuoc va vach canh bao sang src/graphics/pbr/ProceduralTextures.js (196 dong) va gom chung helper _buildRepeatTexture giup PBRMaterialFactory.js giam tu 659 xuong 199 dong.
+- Nhánh: codex/safelift-g0-ci | Commit trước đó: 1893739
+- File: src/graphics/pbr/ProceduralTextures.js,src/graphics/PBRMaterialFactory.js,auto_memory/PLAN.md
+
 ## 2026-11-15 14:56 [refactor] Buoc 8: Tach shader vom bau troi HorizonSkyDome, LIGHTING_PRESETS va bang khi quyen gio Viet Nam sang HorizonSkyDome.js (179 dong), thu gon EnvironmentManager.js tu 763 xuong 258 dong va SceneRenderer.js tu 321 xuong 288 dong.
 - Nhánh: codex/safelift-g0-ci | Commit trước đó: dfda219
 - File: src/graphics/HorizonSkyDome.js,src/graphics/EnvironmentManager.js,src/graphics/SceneRenderer.js,auto_memory/PLAN.md

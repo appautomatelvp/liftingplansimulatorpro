@@ -57,7 +57,7 @@ Nâng cấp & tái cấu trúc dự án `LIFTING PLAN SIMULATOR PRO (SafeLift3D)
   - CẤM đụng: `src/core/*`, `test/graphics.test.js`
   - Kiểm tra xong: `src/graphics/SceneRenderer.js` và `src/graphics/HorizonSkyDome.js` đều ≤ 300 dòng; chạy `npx vitest run test/graphics.test.js` và `npm run build` xanh 100%
 
-- [ ] Bước 9: Tách `src/graphics/PBRMaterialFactory.js` (659 dòng)
+- [x] Bước 9: Tách `src/graphics/PBRMaterialFactory.js` (659 dòng)
   - Sửa: `src/graphics/pbr/ProceduralTextures.js` (tạo mới `<240 dòng`, chứa các hàm vẽ canvas texture bê tông cảng, sợi cáp thép, mặt nước biển và vạch cảnh báo), `src/graphics/PBRMaterialFactory.js` (gọi helper từ `ProceduralTextures.js`, giữ nguyên toàn bộ method public)
   - CẤM đụng: `src/core/*`, `test/graphics.test.js`
   - Kiểm tra xong: `src/graphics/pbr/ProceduralTextures.js` ≤ 300 dòng; chạy `npx vitest run test/graphics.test.js` và `npm run build` xanh 100%
