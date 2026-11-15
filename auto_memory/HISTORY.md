@@ -1,6 +1,14 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-15 15:16 [feat] Buoc 1/6 CMS Enterprise: Tao tu dien song ngu src/i18n/cms_keys.js (137 dong) cho Command Center, 6 KPI, bo loc da chieu, cong tac module, mau Catalog va xuat CSV
+- Nhánh: codex/safelift-g0-ci | Commit trước đó: a16dfc1
+- File: src/i18n/cms_keys.js,src/i18n/keys.js,auto_memory/PLAN.md,STATE.md
+
+## 2026-11-15 15:13 [docs] Lap ke hoach 6 buoc nang cap he thong CMS Quan tri (/admin) len chuan Enterprise Command Center quoc te trong auto_memory/PLAN.md
+- Nhánh: codex/safelift-g0-ci | Commit trước đó: a16dfc1
+- File: auto_memory/PLAN.md,STATE.md,auto_memory/CONTEXT.md
+
 ## 2026-11-15 15:00 [docs] Buoc 10: Hoan tat kiem tra bao mat (@secure), chay Golden Test va bo 308 test (@test), khoa LOCK-06 trong STATE.md va nghiem thu ke hoach @upgrade sang DONE.
 - Nhánh: codex/safelift-g0-ci | Commit trước đó: cc9fdc2
 - File: STATE.md,auto_memory/PLAN.md,auto_memory/CONTEXT.md

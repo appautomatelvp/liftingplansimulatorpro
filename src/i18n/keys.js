@@ -2,6 +2,7 @@
  * Keyed UI strings (data-i18n / bi / t).
  * Professional EN ↔ VN engineering terminology for SafeLift3D.
  */
+import { CMS_KEYS } from './cms_keys.js';
 
 export const KEYS = {
   vi: {
@@ -577,6 +578,8 @@ export const SAAS_KEYS = {
   }
 };
 
+Object.assign(SAAS_KEYS.vi, CMS_KEYS.vi);
+Object.assign(SAAS_KEYS.en, CMS_KEYS.en);
 Object.assign(KEYS.vi, SAAS_KEYS.vi);
 Object.assign(KEYS.en, SAAS_KEYS.en);
 

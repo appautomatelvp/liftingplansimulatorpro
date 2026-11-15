@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-15 15:13 | Nhánh: codex/safelift-g0-ci | Commit cuối: a1ebe7c docs(upgrade): step 10 lock data armor, audit security/tests and mark plan DONE (13 minutes ago)
-Tổng: 234 file, 70542 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-15 15:17 | Nhánh: codex/safelift-g0-ci | Commit cuối: a16dfc1 Snapshot 151315112026 (test): truoc khi lam enterprise-admin-cms (3 minutes ago)
+Tổng: 235 file, 70682 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -16,7 +16,7 @@ Tổng: 234 file, 70542 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/core/LiftPlanModel.js (1073 dòng)
 - src/core/RiggingDictionary.js (434 dòng)
 - src/core/SimulationEngine.js (560 dòng)
-- src/i18n/keys.js (595 dòng)
+- src/i18n/keys.js (598 dòng)
 - src/rigging/CableDynamicsXPBD.js (310 dòng)
 - src/rigging/RiggingPhysicsSolver.js (682 dòng)
 - src/sim/audio.js (725 dòng)
@@ -165,8 +165,9 @@ Tổng: 234 file, 70542 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/graphics/PBRMaterialFactory.js` | 199 | Nhà máy tạo vật liệu PBR chuẩn công nghiệp hàng hải và đồng bộ không gian màu Three.js r170+ |
 | `src/graphics/SceneRenderer.js` | 288 |  ⚠️>250 |
 | `src/i18n/cargo_labels.js` | 48 |  |
+| `src/i18n/cms_keys.js` | 137 | Bộ từ điển song ngữ VI/EN chuyên biệt cho hệ thống CMS Enterprise Command Center |
 | `src/i18n/index.js` | 97 |  |
-| `src/i18n/keys.js` | 595 |  ⚠️>300 |
+| `src/i18n/keys.js` | 598 |  ⚠️>300 |
 | `src/main.js` | 65 |  |
 | `src/rigging/CableDynamicsXPBD.js` | 310 |  ⚠️>300 |
 | `src/rigging/constraints/CornerProtectorModel.js` | 51 |  |

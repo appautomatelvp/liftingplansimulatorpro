@@ -26,7 +26,7 @@ Nâng cấp toàn diện hệ thống **CMS Quản trị (`http://localhost:5173
 
 ## Các bước (làm ĐÚNG 1 bước mỗi lần khi founder gõ `làm tiếp`)
 
-- [ ] Bước 1: Tạo bộ từ điển song ngữ VI/EN chuyên biệt cho CMS Enterprise (`src/i18n/cms_keys.js` & `src/i18n/keys.js`)
+- [x] Bước 1: Tạo bộ từ điển song ngữ VI/EN chuyên biệt cho CMS Enterprise (`src/i18n/cms_keys.js` & `src/i18n/keys.js`)
   - Sửa: `src/i18n/cms_keys.js` (tạo mới `<170 dòng`, có `@purpose`, chứa đầy đủ khóa `vi` và `en` cho điều hướng phân hệ, 6 thẻ KPI, bộ lọc Role/Tier/Status/Kind/Audit, Quick Reason Chips, công tắc module, bảng lỗi phiên, mẫu thiết bị Catalog, modal chi tiết user và nút xuất CSV), `src/i18n/keys.js` (import `CMS_KEYS` và gộp vào `SAAS_KEYS.vi` / `SAAS_KEYS.en` trong ≤ 6 dòng)
   - CẤM đụng: Mọi file `[LOCKED]` trong `STATE.md`, `src/core/*`, `firestore.rules`
   - Kiểm tra xong: Chạy `npx vitest run test/i18n_keys.test.js` và `npm run build` xanh 100%; `src/i18n/cms_keys.js` ≤ 250 dòng
