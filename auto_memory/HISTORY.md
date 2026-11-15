@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-15 15:26 [feat] Buoc 3/6 CMS Enterprise: Tao admin_helpers.js (194 dong) tinh 6 chi so KPI, loc da chieu user/catalog/audit, cong tac 7 module, 4 mau Catalog, xuat CSV an toan va bo sung Unit Test trong test/cms_data.test.js
+- Nhánh: codex/safelift-g0-ci | Commit trước đó: 100fd5f
+- File: src/saas/admin_helpers.js,test/cms_data.test.js,auto_memory/PLAN.md,STATE.md
+
 ## 2026-11-15 15:23 [feat] Buoc 2/6 CMS Enterprise: Tao stylesheet admin_cms.css (170 dong) va tach CSS admin khoi saas.css (246 dong), sua triet de loi hop den che man hinh, dropdown trang xoa va nut keo gian 100%
 - Nhánh: codex/safelift-g0-ci | Commit trước đó: 94d46ed
 - File: src/saas/admin_cms.css,src/saas/saas.css,auto_memory/PLAN.md,STATE.md

@@ -9,6 +9,17 @@ import {
   normalizeCatalogItem,
   serializeAuditState
 } from '../src/saas/cms_data.js';
+import {
+  buildAuditCsv,
+  buildUsersCsv,
+  CATALOG_QUICK_TEMPLATES,
+  CMS_CONTROLLABLE_MODULES,
+  computeAdminKpiSummary,
+  filterAuditLogs,
+  filterCatalogList,
+  filterUsersList,
+  toggleModuleInList
+} from '../src/saas/admin_helpers.js';
 
 describe('CMS roles, immutable audit entry builder, and catalog validation', () => {
   it('enforces granular CMS permissions for admin, support, catalog-editor, and regular users', () => {
@@ -129,5 +140,48 @@ describe('CMS roles, immutable audit entry builder, and catalog validation', () 
     expect(item).toMatchObject({ id: 'shackle_55t', kind: 'hardware', wllT: 55, massKg: 39, tier: 'premium', updatedBy: 'cat-editor-1' });
     expect(() => normalizeCatalogItem({ id: 'bad id!', title: 'Test' }, 'cat-editor-1')).toThrow(/Catalog ID/);
     expect(() => normalizeCatalogItem({ id: 'valid-id', title: '' }, 'cat-editor-1')).toThrow(/title is required/);
+  });
+
+  it('computes KPI summary, multi-criteria filters, module toggles, and safe CSV exports', () => {
+    const users = [
+      { uid: 'u1', email: 'adm@test.com', role: 'admin', tier: 'premium', status: 'active' },
+      { uid: 'u2', email: 'eng@test.com', role: 'user', tier: 'free', status: 'locked' },
+      { uid: 'u3', email: 'sup@test.com', role: 'support', tier: 'premium', status: 'active' }
+    ];
+    const catalogItems = [
+      { id: 'shackle-55t', kind: 'hardware', title: 'Bow Shackle 55t', category: 'shackle', tier: 'free', enabled: true },
+      { id: 'sts-40ft', kind: 'beam', title: 'STS Spreader', category: 'spreader', tier: 'premium', enabled: false }
+    ];
+    const auditLogs = [
+      { actorUid: 'u1', action: 'USER_ACCESS_UPDATE', targetType: 'user', targetId: 'u2', reason: 'Invoice #99', summary: 'tier' },
+      { actorUid: 'u1', action: 'CATALOG_UPSERT', targetType: 'catalog', targetId: 'sts-40ft', reason: '', summary: 'Spreader' }
+    ];
+
+    const kpi = computeAdminKpiSummary({
+      users, catalogItems, auditLogs,
+      flags: { maintenanceMode: true, freePlanLimit: 50, disabledModules: ['cargo.oog'] },
+      errorSummary: { totalCount: 3 }
+    });
+    expect(kpi).toMatchObject({
+      totalUsers: 3, adminCount: 1, supportCount: 1, activeUsers: 2, activePct: 67,
+      lockedOrBannedUsers: 1, premiumUsers: 2, premiumPct: 67,
+      totalCatalog: 2, activeCatalog: 1, premiumCatalog: 1,
+      maintenanceMode: true, freePlanLimit: 50, disabledModulesCount: 1, sessionErrors: 3, auditCount: 2
+    });
+
+    expect(filterUsersList(users, { role: 'user', tier: 'free', status: 'locked' }).map((u) => u.uid)).toEqual(['u2']);
+    expect(filterCatalogList(catalogItems, { kind: 'beam', query: 'spreader' }).map((c) => c.id)).toEqual(['sts-40ft']);
+    expect(filterAuditLogs(auditLogs, { action: 'USER_ACCESS_UPDATE', query: 'invoice' })).toHaveLength(1);
+    expect(CMS_CONTROLLABLE_MODULES).toHaveLength(7);
+    expect(CATALOG_QUICK_TEMPLATES).toHaveLength(4);
+
+    const toggledOn = toggleModuleInList('cargo.oog', 'beam.frame');
+    expect(toggledOn.text).toBe('cargo.oog, beam.frame');
+    expect(toggleModuleInList(toggledOn.list, 'cargo.oog').text).toBe('beam.frame');
+
+    const csvUsers = buildUsersCsv([{ uid: 'u9', email: '=cmd|test', role: 'user', tier: 'free', status: 'active' }]);
+    expect(csvUsers).toContain('"\'=cmd|test"');
+    const csvAudit = buildAuditCsv(auditLogs);
+    expect(csvAudit).toContain('"USER_ACCESS_UPDATE"');
   });
 });

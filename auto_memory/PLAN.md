@@ -36,7 +36,7 @@ Nâng cấp toàn diện hệ thống **CMS Quản trị (`http://localhost:5173
   - CẤM đụng: Mọi file `[LOCKED]` trong `STATE.md`, `src/core/*`, `src/styles/app.css`
   - Kiểm tra xong: `src/saas/admin_cms.css` và `src/saas/saas.css` đều ≤ 260 dòng; chạy `npm test` và `npm run build` xanh 100%
 
-- [ ] Bước 3: Xây dựng module hàm thuần `src/saas/admin_helpers.js` (KPI, Bộ lọc Đa chiều, Gợi ý Nhanh, Mẫu Thiết bị & Xuất CSV) kèm Unit Test
+- [x] Bước 3: Xây dựng module hàm thuần `src/saas/admin_helpers.js` (KPI, Bộ lọc Đa chiều, Gợi ý Nhanh, Mẫu Thiết bị & Xuất CSV) kèm Unit Test
   - Sửa: `src/saas/admin_helpers.js` (tạo mới `<210 dòng`, có `@purpose`, xuất các hằng số & hàm thuần: `CMS_CONTROLLABLE_MODULES`, `QUICK_AUDIT_REASONS`, `CATALOG_QUICK_TEMPLATES`, `computeAdminKpiSummary`, `filterUsersList`, `filterCatalogList`, `filterAuditLogs`, `toggleModuleInList`, `buildUsersCsv`, `buildAuditCsv`, `triggerCsvDownload`), `test/cms_data.test.js` (bổ sung bài test kiểm chứng `computeAdminKpiSummary`, các hàm lọc, `toggleModuleInList` và `buildUsersCsv` / `buildAuditCsv`, tổng số dòng `test/cms_data.test.js` ≤ 240 dòng)
   - CẤM đụng: `src/saas/cms_data.js`, `firestore.rules`, `src/core/*`
   - Kiểm tra xong: Chạy `npx vitest run test/cms_data.test.js` và `npm test` xanh 100%; `src/saas/admin_helpers.js` và `test/cms_data.test.js` đều ≤ 250 dòng

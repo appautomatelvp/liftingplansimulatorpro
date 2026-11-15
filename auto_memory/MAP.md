@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-15 15:23 | Nhánh: codex/safelift-g0-ci | Commit cuối: 94d46ed feat(cms): step 1 add bilingual CMS_KEYS dictionary (7 minutes ago)
-Tổng: 236 file, 70805 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-15 15:26 | Nhánh: codex/safelift-g0-ci | Commit cuối: 100fd5f feat(cms): step 2 split Enterprise admin_cms.css and fix header/select layout (3 minutes ago)
+Tổng: 237 file, 71053 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -180,6 +180,7 @@ Tổng: 236 file, 70805 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/saas/access.js` | 48 |  |
 | `src/saas/admin_cms.css` | 170 | Giao diện CSS chuẩn Enterprise Command Center cho CMS Quản trị (/admin) |
 | `src/saas/admin_dashboard.js` | 253 |  ⚠️>250 |
+| `src/saas/admin_helpers.js` | 194 | Các hằng số cấu hình và hàm thuần tính KPI, lọc đa chiều, công tắc module, mẫu Catalog và xuất CSV cho CMS |
 | `src/saas/admin_panels.js` | 148 | Các hàm dựng HTML và đọc dữ liệu form cho bảng quản trị CMS |
 | `src/saas/app_check_config.js` | 15 |  |
 | `src/saas/auth_rate_limit.js` | 85 | Kiểm soát giới hạn tốc độ thử đăng nhập và chuẩn hóa thông báo lỗi xác thực (VI/EN) |
@@ -264,7 +265,7 @@ Tổng: 236 file, 70805 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/cable_morphology_and_deformation.test.js` | 426 |  ⚠️>300 |
 | `test/cargo_labels.test.js` | 63 |  |
 | `test/catalog_client.test.js` | 94 |  |
-| `test/cms_data.test.js` | 133 |  |
+| `test/cms_data.test.js` | 187 |  |
 | `test/cog_tilt_stability.test.js` | 231 |  |
 | `test/custom_slings.test.js` | 712 |  ⚠️>300 |
 | `test/deployment_environment.test.js` | 21 |  |
