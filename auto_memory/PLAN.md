@@ -1,5 +1,5 @@
 # KẾ HOẠCH (bàn giao: model mạnh viết → model thực thi làm từng bước)
-Trạng thái: ACTIVE      <!-- NONE | ACTIVE | DONE -->
+Trạng thái: DONE        <!-- NONE | ACTIVE | DONE -->
 
 ## Mục tiêu
 Cập nhật hình nền khởi động / đăng nhập bằng ảnh công nghiệp chỉnh màu bản quyền sạch với hiệu ứng **Zoom Out**, đồng thời sửa lỗi mất logo ở màn hình Đăng nhập và **đồng bộ 100% Logo + Icon SafeLift3D cùng 1 loại duy nhất** trên toàn hệ thống (Favicon/App Icon, Splash Khởi động, Đăng nhập/Xác thực, Thanh Top-Bar 3D, và CMS `/admin`):
@@ -42,7 +42,7 @@ Cập nhật hình nền khởi động / đăng nhập bằng ảnh công nghi�
   - CẤM đụng: `src/core/*`, `src/saas/firebase*.js`, `firestore.rules`
   - Kiểm tra xong: `npx vitest run test/auth_screen.test.js`, `npm run build`, `./scripts/auto_check.ps1` xanh 100%; kiểm tra số dòng `auth_screen.js` `<250` và `saas.css` `<260`.
 
-- [ ] Bước 4: Đồng bộ Logo + Icon tại CMS `/admin`, dọn `main-logo.svg` & Kiểm tra Nghiệm thu Toàn diện trên Trình duyệt
+- [x] Bước 4: Đồng bộ Logo + Icon tại CMS `/admin`, dọn `main-logo.svg` & Kiểm tra Nghiệm thu Toàn diện trên Trình duyệt
   - Sửa: `src/saas/admin_panels.js` (`<200 dòng`), `src/saas/admin_cms.css` (`<200 dòng`), `public/safelift3d-icons/branding/main-logo.svg` (chuyển thành SVG tự chứa nhúng PNG data URI hoặc vector đồng bộ `app-icon.png` để không bao giờ rỗng nếu mở trực tiếp), `STATE.md`, `auto_memory/CONTEXT.md`:
     1) Trong `admin_panels.js` (`renderUnauthorizedAdminCard` và `renderAdminShell`) + `admin_cms.css`: dùng đúng icon `/safelift3d-icons/branding/app-icon.png` + wordmark đồng bộ thay vì `/brand/safelift3d-lockup.png` cắt nền cam lạc tông.
     2) Chạy `npm run architecture:gate && npm test && npm run build` và `./scripts/auto_check.ps1` xanh 100%.

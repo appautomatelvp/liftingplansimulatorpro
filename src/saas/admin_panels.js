@@ -40,7 +40,7 @@ export function readCatalogFormPayload(form) {
 }
 
 export function renderUnauthorizedAdminCard(tr) {
-  return `<section class="saas-admin-card"><div class="saas-cms-brand"><img class="saas-cms-brand-logo" src="/brand/safelift3d-lockup.png" alt="SafeLift3D"></div><h1>${tr('adminRequiredTitle')}</h1><p>${tr('adminRequiredBody')}</p><div class="saas-admin-actions"><a href="/">${tr('adminReturnWorkspace')}</a><button type="button" data-action="signout">${tr('adminSignOut')}</button></div></section>`;
+  return `<section class="saas-admin-card"><div class="saas-brand-lockup" style="margin-bottom:14px"><img class="saas-brand-icon" src="/safelift3d-icons/branding/app-icon.png" alt="SafeLift3D"><div class="saas-brand-wordmark"><strong>SAFELIFT<span>3D</span></strong><small>HEAVY RIGGING &amp; LIFT PLANNER</small></div></div><h1>${tr('adminRequiredTitle')}</h1><p>${tr('adminRequiredBody')}</p><div class="saas-admin-actions"><a href="/">${tr('adminReturnWorkspace')}</a><button type="button" data-action="signout">${tr('adminSignOut')}</button></div></section>`;
 }
 
 export function renderKpiRibbon({ tr, kpi }) {
@@ -148,7 +148,7 @@ export function renderAdminShell({
   const kpiHtml = kpiSection || renderKpiRibbon({ tr, kpi: computeAdminKpiSummary({ flags: flags || {} }) });
   return `<header class="saas-admin-header">
     <div class="saas-cms-header-top">
-      <div class="saas-cms-brand"><img class="saas-cms-brand-logo" src="/brand/safelift3d-lockup.png" alt="SafeLift3D"><div class="saas-cms-title-stack"><strong>${tr('cmsCommandTitle')}</strong><div class="saas-cms-badges"><span class="saas-cms-badge">${escapeHtml(tr('adminRoleLabel', { role: profile.role }))}</span><span class="saas-cms-badge is-env">${escapeHtml(tr('cmsEnvBadge', { env: String(envLabel).toUpperCase() }))}</span><span class="saas-cms-badge ${maint ? 'is-maint' : 'is-live'}">${maint ? tr('cmsStatusMaint') : tr('cmsStatusLive')}</span></div></div></div>
+      <div class="saas-cms-brand"><img class="saas-cms-brand-logo" src="/safelift3d-icons/branding/app-icon.png" alt="SafeLift3D"><div class="saas-cms-title-stack"><strong>${tr('cmsCommandTitle')}</strong><div class="saas-cms-badges"><span class="saas-cms-badge">${escapeHtml(tr('adminRoleLabel', { role: profile.role }))}</span><span class="saas-cms-badge is-env">${escapeHtml(tr('cmsEnvBadge', { env: String(envLabel).toUpperCase() }))}</span><span class="saas-cms-badge ${maint ? 'is-maint' : 'is-live'}">${maint ? tr('cmsStatusMaint') : tr('cmsStatusLive')}</span></div></div></div>
       <div class="saas-admin-actions"><a href="/">${tr('adminWorkspaceLink')}</a><button type="button" data-action="language">${tr('adminToggleLang')}</button><button type="button" data-action="signout">${tr('adminSignOut')}</button></div>
     </div>
     <nav class="saas-cms-nav">${navItems.map((n) => `<button type="button" class="saas-cms-nav-btn ${activeSection === n.id ? 'is-active' : ''}" data-nav-section="${n.id}">${n.label}</button>`).join('')}</nav>
