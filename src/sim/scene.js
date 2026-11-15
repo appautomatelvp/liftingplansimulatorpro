@@ -267,7 +267,7 @@
 
         function initScene() {
             scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.15, 450);
+            camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.15, 1200);
             // Perspective framing on Flat Rack Container + Spreader Beam + Hook (1/3 left offset for open right drawer)
             // High-angle 1/3 composition (cargo left of free stage when right drawer opens)
             camera.position.set(-13.5, 9.2, 19.5);
@@ -390,19 +390,18 @@
             cameraFollowMarker.visible = false;
             scene.add(cameraFollowMarker);
 
-            // Wide Flat Engineered Concrete Testbed Slab (200m x 200m, zero background obstacles)
+            // Wide Circular Engineered Concrete Testbed Slab (radius 460m, zero square corners)
             floorMesh = new THREE.Mesh(
-                new THREE.PlaneGeometry(200, 200),
+                createCircularGroundGeometry(460, 'flat'),
                 MATS.quayConcrete || new THREE.MeshStandardMaterial({ color: 0x263244, roughness: 0.88, metalness: 0.06 })
             );
-            floorMesh.rotation.x = -Math.PI / 2;
             floorMesh.receiveShadow = true;
             scene.add(floorMesh);
 
             // Dual-Scale Engineering Metric Grid (1m subdivisions + 5m major grid)
-            // Materials keep fog:true so linear scene.fog dissolves lines into the void at the pad edge
+            // Soft circular radial fade + scene.fog dissolves grid smoothly with zero square borders
             gridHelper = new THREE.Group();
-            const minorGrid = new THREE.GridHelper(100, 100, 0x334155, 0x1e293b);
+            const minorGrid = new THREE.GridHelper(140, 140, 0x334155, 0x1e293b);
             const enableGridFog = (mat) => {
                 const mats = Array.isArray(mat) ? mat : [mat];
                 mats.forEach(m => {
@@ -410,6 +409,18 @@
                     m.transparent = true;
                     m.fog = true;
                     m.depthWrite = false;
+                    m.customProgramCacheKey = () => 'grid-radial-fade-v1';
+                    m.onBeforeCompile = (shader) => {
+                        shader.vertexShader = shader.vertexShader
+                            .replace('#include <common>', '#include <common>\nvarying vec2 vGridLocalXZ;')
+                            .replace('#include <begin_vertex>', '#include <begin_vertex>\nvGridLocalXZ = position.xz;');
+                        shader.fragmentShader = shader.fragmentShader
+                            .replace('#include <common>', '#include <common>\nvarying vec2 vGridLocalXZ;')
+                            .replace(
+                                '#include <color_fragment>',
+                                '#include <color_fragment>\nfloat gridDist = length(vGridLocalXZ);\ndiffuseColor.a *= (1.0 - smoothstep(32.0, 66.0, gridDist));'
+                            );
+                    };
                 });
             };
             enableGridFog(minorGrid.material);
@@ -418,7 +429,7 @@
             } else {
                 minorGrid.material.opacity = 0.42;
             }
-            const majorGrid = new THREE.GridHelper(100, 20, 0x475569, 0x334155);
+            const majorGrid = new THREE.GridHelper(140, 28, 0x475569, 0x334155);
             majorGrid.position.y = 0.002;
             enableGridFog(majorGrid.material);
             if (Array.isArray(majorGrid.material)) {
@@ -457,6 +468,78 @@
             window.addEventListener('pointerup', onPointerUp);
             window.addEventListener('resize', onWindowResize);
             buildWorld();
+        }
+
+        function createCircularGroundGeometry(radius = 460, groundId = 'flat') {
+            if (groundId === 'flat') {
+                const geo = new THREE.CircleGeometry(radius, 128);
+                geo.rotateX(-Math.PI / 2);
+                const pos = geo.attributes.position;
+                const uv = geo.attributes.uv;
+                if (uv) {
+                    for (let i = 0; i < pos.count; i++) {
+                        uv.setXY(i, pos.getX(i) / 180 + 0.5, pos.getZ(i) / 180 + 0.5);
+                    }
+                    uv.needsUpdate = true;
+                }
+                return geo;
+            }
+
+            // Circular polar-ring heightfield so soil/rough terrain has zero square corners
+            const angularSegs = 72;
+            const ringRadii = [0];
+            const innerRings = 28;
+            const innerRadius = 70;
+            for (let i = 1; i <= innerRings; i++) {
+                ringRadii.push((i / innerRings) * innerRadius);
+            }
+            const outerRings = 14;
+            for (let j = 1; j <= outerRings; j++) {
+                const f = j / outerRings;
+                ringRadii.push(innerRadius + Math.pow(f, 1.55) * (radius - innerRadius));
+            }
+
+            const positions = [0, groundSurfaceY(0, 0), 0];
+            const uvs = [0.5, 0.5];
+            const indices = [];
+
+            for (let rIdx = 1; rIdx < ringRadii.length; rIdx++) {
+                const r = ringRadii[rIdx];
+                const horizonAtten = r <= 95 ? 1 : Math.max(0, 1 - (r - 95) / 110);
+                for (let aIdx = 0; aIdx < angularSegs; aIdx++) {
+                    const theta = (aIdx / angularSegs) * Math.PI * 2;
+                    const x = Math.cos(theta) * r;
+                    const z = Math.sin(theta) * r;
+                    const y = groundSurfaceY(x, z) * horizonAtten;
+                    positions.push(x, y, z);
+                    uvs.push(x / 180 + 0.5, z / 180 + 0.5);
+                }
+            }
+
+            for (let aIdx = 0; aIdx < angularSegs; aIdx++) {
+                const next = (aIdx + 1) % angularSegs;
+                indices.push(0, 1 + next, 1 + aIdx);
+            }
+            for (let rIdx = 1; rIdx < ringRadii.length - 1; rIdx++) {
+                const ringStart = 1 + (rIdx - 1) * angularSegs;
+                const nextRingStart = ringStart + angularSegs;
+                for (let aIdx = 0; aIdx < angularSegs; aIdx++) {
+                    const next = (aIdx + 1) % angularSegs;
+                    const a = ringStart + aIdx;
+                    const b = ringStart + next;
+                    const c = nextRingStart + aIdx;
+                    const d = nextRingStart + next;
+                    indices.push(a, b, d);
+                    indices.push(a, d, c);
+                }
+            }
+
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+            geo.setIndex(indices);
+            geo.computeVertexNormals();
+            return geo;
         }
 
         function groundSurfaceY(x, z) {
@@ -530,8 +613,8 @@
             } else {
                 // Fallback (no GFX env manager): fog color === background for soft infinite pad
                 const isLightSheet = state.sceneId === 'sheet';
-                let fogNear = isLightSheet ? 120 : 85;
-                let fogFar = isLightSheet ? 280 : 230;
+                let fogNear = isLightSheet ? 110 : 68;
+                let fogFar = isLightSheet ? 260 : 205;
                 let sky = isLightSheet ? 0xeef2f6 : 0xe4e2d8;
                 // Vietnam TOD clock sync in fallback (Asia/Ho_Chi_Minh)
                 try {
@@ -544,25 +627,25 @@
                     if (!isLightSheet) {
                         if (t >= 19.25 || t < 5.25) {
                             sky = 0x0c121e;
-                            fogNear = 75;
-                            fogFar = 200;
+                            fogNear = 60;
+                            fogFar = 185;
                         } else if (t >= 16.5 && t < 18.0) {
                             sky = 0xd49258;
-                            fogNear = 80;
-                            fogFar = 220;
+                            fogNear = 65;
+                            fogFar = 198;
                         } else if (t >= 5.25 && t < 6.5) {
                             sky = 0xc8a296;
-                            fogNear = 80;
-                            fogFar = 220;
+                            fogNear = 65;
+                            fogFar = 198;
                         } else if (t >= 18.0 && t < 19.25) {
                             sky = 0x1e2438;
-                            fogNear = 75;
-                            fogFar = 200;
+                            fogNear = 60;
+                            fogFar = 185;
                         } else {
                             // Daytime: bright warm golden sunlight ("sáng màu hơi vàng nắng")
                             sky = 0xe4e2d8;
-                            fogNear = 85;
-                            fogFar = 230;
+                            fogNear = 68;
+                            fogFar = 205;
                         }
                     }
                 } catch (_) { /* keep base sky */ }
@@ -598,21 +681,8 @@
             }
 
             const prevGeo = floorMesh.geometry;
-            if (state.groundId === 'flat') {
-                const geo = new THREE.PlaneGeometry(280, 280);
-                geo.rotateX(-Math.PI / 2);
-                floorMesh.geometry = geo;
-                floorMesh.rotation.x = 0;
-            } else {
-                const seg = state.groundId === 'rough' ? 52 : 28;
-                const geo = new THREE.PlaneGeometry(140, 140, seg, seg);
-                geo.rotateX(-Math.PI / 2);
-                const p = geo.attributes.position;
-                for (let i = 0; i < p.count; i++) p.setY(i, groundSurfaceY(p.getX(i), p.getZ(i)));
-                geo.computeVertexNormals();
-                floorMesh.geometry = geo;
-                floorMesh.rotation.x = 0;
-            }
+            floorMesh.geometry = createCircularGroundGeometry(460, state.groundId);
+            floorMesh.rotation.x = 0;
             prevGeo.dispose();
             gridHelper.visible = state.groundId === 'flat';
 

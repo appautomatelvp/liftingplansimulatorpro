@@ -21,9 +21,9 @@ export const LIGHTING_PRESETS = {
         sunPosition: [28, 44, 24],
         fillColor: 0x9ec8f5,
         fillIntensity: 0.85,
-        // Linear fog pushed far away: cargo & lifting area are 100% crisp & clear
-        fogNear: 85,
-        fogFar: 230,
+        // Linear fog pushed far enough so lifting gear stays crisp while distant edge dissolves completely
+        fogNear: 68,
+        fogFar: 205,
         fogDensity: 0.0001, // legacy Exp2 fallback
         exposure: 1.18,
         envIntensity: 1.18,
@@ -33,15 +33,15 @@ export const LIGHTING_PRESETS = {
     overcast: {
         id: 'overcast',
         name: 'Daylight Test Pad (Sân Bê Tông Ban Ngày)',
-        skyColor: 0x64748b,
+        skyColor: 0x8395aa,
         horizonColor: 0xdde3ea,
         sunColor: 0xfffbeb,
         sunIntensity: 2.5,
         sunPosition: [24, 46, 28],
         fillColor: 0x93c5fd,
         fillIntensity: 0.8,
-        fogNear: 85,
-        fogFar: 230,
+        fogNear: 68,
+        fogFar: 205,
         fogDensity: 0.0001,
         exposure: 1.16,
         envIntensity: 1.1,
@@ -51,15 +51,15 @@ export const LIGHTING_PRESETS = {
     print_plan: {
         id: 'print_plan',
         name: 'Lift Plan CAD Sheet (Bản Vẽ ASME Nền Sáng)',
-        skyColor: 0xf1f5f9,
+        skyColor: 0xe5ebf2,
         horizonColor: 0xeef2f6,
         sunColor: 0xffffff,
         sunIntensity: 1.75,
         sunPosition: [20, 52, 22],
         fillColor: 0xcbd5e1,
         fillIntensity: 0.85,
-        fogNear: 120,
-        fogFar: 280,
+        fogNear: 110,
+        fogFar: 260,
         fogDensity: 0.00005,
         exposure: 1.08,
         envIntensity: 0.95,
@@ -69,15 +69,15 @@ export const LIGHTING_PRESETS = {
     sunset: {
         id: 'sunset',
         name: 'Warm Industrial Bay (Ánh Sáng Xưởng Ấm / Hoàng Hôn)',
-        skyColor: 0x3d281e,
+        skyColor: 0x3b486e,
         horizonColor: 0xd49258,
         sunColor: 0xff9e44,
         sunIntensity: 2.8,
         sunPosition: [34, 20, 26],
         fillColor: 0x38bdf8,
         fillIntensity: 0.6,
-        fogNear: 80,
-        fogFar: 220,
+        fogNear: 65,
+        fogFar: 198,
         fogDensity: 0.0001,
         exposure: 1.2,
         envIntensity: 1.15,
@@ -87,15 +87,15 @@ export const LIGHTING_PRESETS = {
     night: {
         id: 'night',
         name: 'High-Contrast Inspection (Xưởng Đêm Chiếu Sáng)',
-        skyColor: 0x090d16,
-        horizonColor: 0x0f172a,
+        skyColor: 0x050811,
+        horizonColor: 0x0c121e,
         sunColor: 0xdbe8fa,
         sunIntensity: 2.1,
         sunPosition: [-20, 38, 22],
         fillColor: 0x38bdf8,
         fillIntensity: 0.52,
-        fogNear: 75,
-        fogFar: 200,
+        fogNear: 60,
+        fogFar: 185,
         fogDensity: 0.0001,
         exposure: 1.22,
         envIntensity: 0.95,
@@ -167,10 +167,107 @@ export class EnvironmentManager {
         this.sunLight = null;
         this.fillLight = null;
         this.nightSpotlights = [];
+        this.skyDome = null;
 
         this.initLights();
+        this.ensureSkyDome();
         this.applyPreset('liebherr_studio');
         this.startRealtimeClock();
+    }
+
+    /**
+     * Creates a camera-centered procedural atmospheric Sky Dome whose horizon band (y = 0)
+     * matches scene.fog.color 1:1 for a natural, seamless 360-degree horizon.
+     */
+    ensureSkyDome() {
+        if (this.skyDome) return this.skyDome;
+        const geo = new THREE.SphereGeometry(900, 48, 24);
+        const mat = new THREE.ShaderMaterial({
+            name: 'AtmosphericHorizonSkyDome',
+            side: THREE.BackSide,
+            depthWrite: false,
+            depthTest: true,
+            fog: false,
+            toneMapped: false,
+            uniforms: {
+                uHorizonColor: { value: new THREE.Color(0xe4e2d8) },
+                uMidSkyColor: { value: new THREE.Color(0xbcd0e2) },
+                uSkyColor: { value: new THREE.Color(0x6c9ece) },
+                uSunDir: { value: new THREE.Vector3(28, 44, 24).normalize() },
+                uSunColor: { value: new THREE.Color(0xfff6dc) },
+                uSunGlow: { value: 0.38 },
+                uHorizonHaze: { value: 0.34 }
+            },
+            vertexShader: `
+                varying vec3 vSkyDir;
+                void main() {
+                    vSkyDir = position;
+                    vec4 mvPosition = modelViewMatrix * vec4(position + cameraPosition, 1.0);
+                    gl_Position = projectionMatrix * mvPosition;
+                }
+            `,
+            fragmentShader: `
+                uniform vec3 uHorizonColor;
+                uniform vec3 uMidSkyColor;
+                uniform vec3 uSkyColor;
+                uniform vec3 uSunDir;
+                uniform vec3 uSunColor;
+                uniform float uSunGlow;
+                uniform float uHorizonHaze;
+                varying vec3 vSkyDir;
+                void main() {
+                    vec3 dir = normalize(vSkyDir);
+                    float y = dir.y;
+                    float up = clamp(y, 0.0, 1.0);
+                    float horizonToMid = 1.0 - smoothstep(0.0, max(0.08, uHorizonHaze), up);
+                    float midToZenith = smoothstep(0.06, 0.72, up);
+                    vec3 skyGrad = mix(uMidSkyColor, uSkyColor, midToZenith);
+                    float mistWeight = pow(horizonToMid, 1.35);
+                    vec3 col = mix(skyGrad, uHorizonColor, mistWeight);
+
+                    float sunCos = max(dot(dir, normalize(uSunDir)), 0.0);
+                    float sunAtmosphere = pow(sunCos, 6.0) * 0.20 + pow(sunCos, 48.0) * 0.28;
+                    float aboveHorizon = smoothstep(0.0, 0.18, y);
+                    col += uSunColor * (sunAtmosphere * uSunGlow * aboveHorizon);
+
+                    if (y < 0.0) {
+                        float down = clamp(-y * 2.5, 0.0, 1.0);
+                        col = mix(uHorizonColor, uHorizonColor * 0.92, down);
+                    }
+
+                    gl_FragColor = vec4(col, 1.0);
+                    #include <colorspace_fragment>
+                }
+            `
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.name = 'HorizonSkyDome';
+        mesh.frustumCulled = false;
+        mesh.renderOrder = -1000;
+        mesh.castShadow = false;
+        mesh.receiveShadow = false;
+        this.scene.add(mesh);
+        this.skyDome = mesh;
+        return mesh;
+    }
+
+    updateSkyDome({ skyColor, midSkyColor, horizonColor, sunGlow = 0.35, horizonHaze = 0.34, visible = true }) {
+        const dome = this.ensureSkyDome();
+        dome.visible = visible;
+        const u = dome.material.uniforms;
+        if (this.scene.fog && this.scene.fog.isFog) {
+            u.uHorizonColor.value = this.scene.fog.color;
+        } else if (horizonColor != null) {
+            u.uHorizonColor.value.set(horizonColor);
+        }
+        if (skyColor != null) u.uSkyColor.value.set(skyColor);
+        if (midSkyColor != null) u.uMidSkyColor.value.set(midSkyColor);
+        if (this.sunLight) {
+            u.uSunDir.value.copy(this.sunLight.position).normalize();
+            u.uSunColor.value.copy(this.sunLight.color);
+        }
+        u.uSunGlow.value = sunGlow;
+        u.uHorizonHaze.value = horizonHaze;
     }
 
     /**
@@ -240,7 +337,7 @@ export class EnvironmentManager {
      * Linear fog color === exact scene background → soft infinite floor / no hard horizon cut.
      * near: lifting gear & cargo stay 100% crisp; far: distant grid dissolves smoothly into the sky.
      */
-    applyMatchedHorizonFog(bgColor, near = 85, far = 230, opts) {
+    applyMatchedHorizonFog(bgColor, near = 68, far = 205, opts) {
         const fogColor = (bgColor && bgColor.isColor)
             ? bgColor.clone()
             : new THREE.Color(bgColor != null ? bgColor : 0xe4e2d8);
@@ -253,6 +350,9 @@ export class EnvironmentManager {
         } else {
             this.scene.fog = new THREE.Fog(fogColor.getHex(), near, far);
         }
+        if (this.skyDome && this.skyDome.material && this.skyDome.material.uniforms.uHorizonColor) {
+            this.skyDome.material.uniforms.uHorizonColor.value = this.scene.fog.color;
+        }
         return this.scene.fog;
     }
 
@@ -264,7 +364,15 @@ export class EnvironmentManager {
         const preset = basePreset || LIGHTING_PRESETS[this.currentPresetId] || LIGHTING_PRESETS.liebherr_studio;
         // CAD sheet stays neutral white — no TOD wash
         if (preset.id === 'print_plan') {
-            this.applyMatchedHorizonFog(preset.solidBackground || 0xeef2f6, preset.fogNear || 120, preset.fogFar || 280);
+            this.applyMatchedHorizonFog(preset.solidBackground || 0xeef2f6, preset.fogNear || 110, preset.fogFar || 260);
+            this.updateSkyDome({
+                horizonColor: 0xeef2f6,
+                midSkyColor: 0xebf0f5,
+                skyColor: 0xe5ebf2,
+                sunGlow: 0.0,
+                horizonHaze: 0.40,
+                visible: true
+            });
             return 'day';
         }
 
@@ -273,12 +381,20 @@ export class EnvironmentManager {
         const t = timeInfo.t;
 
         let fogColorHex = 0xe4e2d8;
-        let near = preset.fogNear != null ? preset.fogNear : 85;
-        let far = preset.fogFar != null ? preset.fogFar : 230;
+        let midSkyHex = 0xbcd0e2;
+        let skyColorHex = 0x6c9ece;
+        let sunGlow = 0.38;
+        let horizonHaze = 0.34;
+        let near = preset.fogNear != null ? preset.fogNear : 68;
+        let far = preset.fogFar != null ? preset.fogFar : 205;
 
         if (preset.id === 'night') {
             fogColorHex = 0x0c121e;
-            near = 75; far = 200;
+            midSkyHex = 0x090f1a;
+            skyColorHex = 0x050811;
+            sunGlow = 0.06;
+            horizonHaze = 0.30;
+            near = 60; far = 185;
             if (this.sunLight) {
                 this.sunLight.color.setHex(0xdbe8fa);
                 this.sunLight.intensity = 2.05;
@@ -295,7 +411,11 @@ export class EnvironmentManager {
             this.renderer.toneMappingExposure = 1.22;
         } else if (preset.id === 'sunset') {
             fogColorHex = 0xd49258;
-            near = 80; far = 220;
+            midSkyHex = 0x8f6b70;
+            skyColorHex = 0x3b486e;
+            sunGlow = 0.65;
+            horizonHaze = 0.38;
+            near = 65; far = 198;
             if (this.sunLight) {
                 this.sunLight.color.setHex(0xff9e44);
                 this.sunLight.intensity = 2.8;
@@ -312,7 +432,11 @@ export class EnvironmentManager {
             this.renderer.toneMappingExposure = 1.20;
         } else if (preset.id === 'overcast') {
             fogColorHex = 0xdde3ea;
-            near = 85; far = 230;
+            midSkyHex = 0xbec9d6;
+            skyColorHex = 0x8395aa;
+            sunGlow = 0.18;
+            horizonHaze = 0.42;
+            near = 68; far = 205;
             if (this.sunLight) {
                 this.sunLight.color.setHex(0xfffbeb);
                 this.sunLight.intensity = 2.5;
@@ -331,7 +455,11 @@ export class EnvironmentManager {
             // Default: Real-time Vietnam Time-Of-Day atmosphere
             if (band === 'dawn') {
                 fogColorHex = 0xc8a296; // Soft morning rose-gold dawn
-                near = 80; far = 220;
+                midSkyHex = 0x8c87a6;
+                skyColorHex = 0x465278;
+                sunGlow = 0.55;
+                horizonHaze = 0.38;
+                near = 65; far = 198;
                 if (this.sunLight) {
                     this.sunLight.color.setHex(0xffd4a8);
                     this.sunLight.intensity = 2.2;
@@ -348,7 +476,11 @@ export class EnvironmentManager {
                 this.renderer.toneMappingExposure = 1.15;
             } else if (band === 'golden') {
                 fogColorHex = 0xd49258; // Rich warm amber sunset
-                near = 80; far = 220;
+                midSkyHex = 0x8f6b70;
+                skyColorHex = 0x3b486e;
+                sunGlow = 0.65;
+                horizonHaze = 0.38;
+                near = 65; far = 198;
                 if (this.sunLight) {
                     this.sunLight.color.setHex(0xff9e44);
                     this.sunLight.intensity = 2.8;
@@ -365,7 +497,11 @@ export class EnvironmentManager {
                 this.renderer.toneMappingExposure = 1.20;
             } else if (band === 'dusk') {
                 fogColorHex = 0x1e2438; // Dusk twilight
-                near = 75; far = 200;
+                midSkyHex = 0x171f33;
+                skyColorHex = 0x0d1322;
+                sunGlow = 0.20;
+                horizonHaze = 0.32;
+                near = 60; far = 185;
                 if (this.sunLight) {
                     this.sunLight.color.setHex(0xa07c6f);
                     this.sunLight.intensity = 1.1;
@@ -381,7 +517,11 @@ export class EnvironmentManager {
                 this.renderer.toneMappingExposure = 1.16;
             } else if (band === 'night') {
                 fogColorHex = 0x0c121e; // Night void
-                near = 75; far = 200;
+                midSkyHex = 0x090f1a;
+                skyColorHex = 0x050811;
+                sunGlow = 0.06;
+                horizonHaze = 0.30;
+                near = 60; far = 185;
                 if (this.sunLight) {
                     this.sunLight.color.setHex(0xdbe8fa);
                     this.sunLight.intensity = 2.05;
@@ -400,7 +540,11 @@ export class EnvironmentManager {
                 // Daytime (06:30 - 16:30, including morning ~09:00 AM)
                 // "sáng màu hơi vàng nắng vì đang ban ngày"
                 fogColorHex = 0xe4e2d8; // Bright daylight with subtle warm golden sunlit hue
-                near = 85; far = 230;
+                midSkyHex = 0xbcd0e2;
+                skyColorHex = 0x6c9ece;
+                sunGlow = 0.38;
+                horizonHaze = 0.34;
+                near = 68; far = 205;
 
                 const sunPos = (t < 11.5)
                     ? [28, 44, 24] // Morning ascending sun (East-South-East)
@@ -426,6 +570,14 @@ export class EnvironmentManager {
 
         const fogColor = new THREE.Color(fogColorHex);
         this.applyMatchedHorizonFog(fogColor, near, far);
+        this.updateSkyDome({
+            horizonColor: fogColor,
+            midSkyColor: midSkyHex,
+            skyColor: skyColorHex,
+            sunGlow,
+            horizonHaze,
+            visible: true
+        });
         this._vietnamHorizonBand = band;
         return band;
     }
@@ -453,6 +605,7 @@ export class EnvironmentManager {
         if (!this.currentHDREnvMap) {
             this.generateProceduralSkyHDR(preset);
         } else if (preset.solidBackground === undefined) {
+            if (this.skyDome) this.skyDome.visible = false;
             this.scene.background = this.currentHDREnvMap;
             this.scene.backgroundBlurriness = preset.backgroundBlur || 0.0;
         }
@@ -499,13 +652,14 @@ export class EnvironmentManager {
             if (preset && preset.solidBackground !== undefined) {
                 this.applyVietnamHorizonAtmosphere(preset);
             } else {
+                if (this.skyDome) this.skyDome.visible = false;
                 this.scene.background = envMap;
                 this.scene.backgroundBlurriness = options.blurriness || (preset && preset.backgroundBlur) || 0.0;
                 if (preset) {
                     this.applyMatchedHorizonFog(
                         preset.horizonColor || 0xe4e2d8,
-                        preset.fogNear != null ? preset.fogNear : 85,
-                        preset.fogFar != null ? preset.fogFar : 230,
+                        preset.fogNear != null ? preset.fogNear : 68,
+                        preset.fogFar != null ? preset.fogFar : 205,
                         { setBackground: false }
                     );
                 }
