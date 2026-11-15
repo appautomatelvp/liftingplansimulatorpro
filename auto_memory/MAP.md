@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-15 14:29 | Nhánh: codex/safelift-g0-ci | Commit cuối: e438e54 feat(graphics): upgrade 3D horizon with circular ground, radial grid fade, and sky dome (28 minutes ago)
-Tổng: 225 file, 71050 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-15 14:33 | Nhánh: codex/safelift-g0-ci | Commit cuối: 68928c3 Snapshot 142915112026 (test): truoc khi lam upgrade-v7 (3 minutes ago)
+Tổng: 227 file, 71135 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -59,6 +59,10 @@ Tổng: 225 file, 71050 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - test/physics_master_blueprint.test.js (524 dòng)
 - test/rigging.test.js (1367 dòng)
 - test/rigging_physics_and_alarms.test.js (306 dòng)
+
+## 🔒 File đã khóa [LOCKED]
+- src/utils/firestoreSanitize.js
+- src/utils/localDataStore.js
 
 ## Danh sách file
 | File | Dòng | Mục đích |
@@ -242,6 +246,8 @@ Tổng: 225 file, 71050 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/telemetry/sensor-engine/SensorEngine.js` | 185 |  |
 | `src/ui/controllers/index.js` | 35 |  |
 | `src/ui/services/index.js` | 48 |  |
+| `src/utils/firestoreSanitize.js` | 39 | Bộ lọc làm sạch dữ liệu Firestore, loại bỏ undefined và trường nhạy cảm, giữ nguyên Timestamp/Date 🔒 |
+| `src/utils/localDataStore.js` | 46 | Đọc ghi LocalStorage an toàn chống tràn 5MB và tự gọt ảnh DataURL 🔒 |
 | `tailwind.config.js` | 12 |  |
 | `test/admin_users.test.js` | 56 |  |
 | `test/app_check_config.test.js` | 29 |  |

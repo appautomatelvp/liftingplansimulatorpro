@@ -17,7 +17,7 @@ Nâng cấp & tái cấu trúc dự án `LIFTING PLAN SIMULATOR PRO (SafeLift3D)
 
 ## Các bước (làm ĐÚNG 1 bước mỗi lần khi founder gõ `làm tiếp`)
 
-- [ ] Bước 1: Lắp bộ giáp dữ liệu V7 (`firestoreSanitize.js`, `localDataStore.js`) & tinh chỉnh `auto_check.ps1`
+- [x] Bước 1: Lắp bộ giáp dữ liệu V7 (`firestoreSanitize.js`, `localDataStore.js`) & tinh chỉnh `auto_check.ps1`
   - Sửa: `src/utils/firestoreSanitize.js` (tạo mới từ `auto_kit/templates_src/utils/firestoreSanitize.js`, thêm `@purpose`), `src/utils/localDataStore.js` (tạo mới từ `auto_kit/templates_src/utils/localDataStore.js`, thêm `@purpose`), `scripts/auto_check.ps1` (sửa regex mục 2 thành `^(patch|fix[-_.]|revert|replace)` để không bắt nhầm `FixedStepLoop.js`, và mục 4 bỏ qua `firebase.js` chứa public Firebase `apiKey`)
   - CẤM đụng: Mọi file `[LOCKED]` trong `STATE.md`, `src/core/*`, `firestore.rules`
   - Kiểm tra xong: Chạy `npm run architecture:gate && npm test && npm run build` đạt 100%; `./scripts/auto_check.ps1` không còn báo lỗi giả ở `FixedStepLoop.js` và `src/saas/firebase.js`
