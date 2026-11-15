@@ -193,7 +193,10 @@ export class SceneRenderer {
      * Executes the rendering loop for each frame.
      * Automatically handles gizmo layer isolation to avoid ambient occlusion artifacts.
      */
-    render(dt = 0.016) {
+    render(dt = 0.016, { force = false } = {}) {
+        if (!force && typeof document !== 'undefined' && (document.body?.classList?.contains('saas-locked') || document.getElementById('saas-workspace-backdrop'))) {
+            return;
+        }
         const quality = QUALITY_TIERS[this.currentQuality] || QUALITY_TIERS.high;
         const useComposer = Boolean(this.composer && !quality.bypassComposer);
         const needGizmoMask = Boolean(useComposer && quality.aoEnabled);
@@ -278,7 +281,7 @@ export class SceneRenderer {
         const curH = this.renderer.domElement.height;
 
         this.setSize(width, height);
-        this.render(0.016);
+        this.render(0.016, { force: true });
         const dataUrl = this.renderer.domElement.toDataURL('image/jpeg', 0.95);
 
         // Restore original dimensions

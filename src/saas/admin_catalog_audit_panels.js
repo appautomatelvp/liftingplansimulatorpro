@@ -23,7 +23,7 @@ export function renderCatalogSection({
     <div class="saas-cms-chips"><span>${tr('cmsCatalogTemplatesLabel')}</span>${CATALOG_QUICK_TEMPLATES.map((tpl) => `<button type="button" class="saas-cms-chip" data-catalog-template="${tpl.id}" ${catalogBusy ? 'disabled' : ''}>${escapeHtml(tpl.templateLabel)}</button>`).join('')}</div>
     ${editingExisting ? `<div class="saas-admin-notice">${escapeHtml(tr('cmsCatalogEditBanner', { id: catalogDraft.id }))}</div>` : ''}
     <form class="saas-admin-search" data-action="catalog-form"><div class="saas-cms-form-grid">
-      <label class="saas-cms-field">${tr('adminCatalogIdLabel')}<input type="text" name="id" required maxlength="64" pattern="[a-z0-9_-]{2,64}" value="${escapeHtml(catalogDraft.id)}" ${catalogBusy ? 'disabled' : ''}></label>
+      <label class="saas-cms-field">${tr('adminCatalogIdLabel')}<input type="text" name="id" required maxlength="64" pattern="[a-z0-9_\\-]{2,64}" value="${escapeHtml(catalogDraft.id)}" ${catalogBusy ? 'disabled' : ''}></label>
       <label class="saas-cms-field">${tr('adminCatalogKindLabel')}<select name="kind" ${catalogBusy ? 'disabled' : ''}>${['cargo', 'beam', 'sling', 'hardware'].map((kind) => `<option value="${kind}" ${catalogDraft.kind === kind ? 'selected' : ''}>${kind}</option>`).join('')}</select></label>
       <label class="saas-cms-field">${tr('adminCatalogTitleLabel')}<input type="text" name="title" required maxlength="100" value="${escapeHtml(catalogDraft.title)}" ${catalogBusy ? 'disabled' : ''}></label>
       <label class="saas-cms-field">${tr('adminCatalogCategoryLabel')}<input type="text" name="category" maxlength="60" value="${escapeHtml(catalogDraft.category)}" ${catalogBusy ? 'disabled' : ''}></label>

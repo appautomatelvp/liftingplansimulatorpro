@@ -196,7 +196,7 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
       unsubscribeProfile = watchUserProfile(firebase.db, authUser.uid, (freshProfile) => {
         if (!freshProfile || freshProfile.status !== 'active') {
           pendingAuthNotice = { message: saasT('saasAccountSuspended'), isError: true };
-          if (authScreen) authScreen.showMessage(saasT('saasAccountSuspended'), true);
+          showSignedOut();
           signOut(firebase.auth).catch((error) => console.error('[SafeLift3D] Sign-out failed', error));
           return;
         }
@@ -210,7 +210,7 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
         const suspendedMsg = saasT('saasAccountSuspendedContact');
         pendingAuthNotice = { message: suspendedMsg, isError: true };
         authScreen?.showMessage(suspendedMsg, true);
-        await signOut(firebase.auth);
+        await signOut(firebase.auth).catch(() => {});
       } else {
         authScreen?.showMessage(t('authVerifyAccountError', getLang()), true);
       }

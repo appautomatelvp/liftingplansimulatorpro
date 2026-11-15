@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-15 16:31 | Nhánh: codex/safelift-g0-ci | Commit cuối: e002cdf feat(brand): step 4 sync CMS logo-icon, self-contain main-logo.svg, and complete visual QA (25 minutes ago)
-Tổng: 239 file, 71111 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-15 17:08 | Nhánh: codex/safelift-g0-ci | Commit cuối: 4864b45 fix(ci): allow 180s per E2E test on software-WebGL CI runners (38 minutes ago)
+Tổng: 239 file, 71114 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -163,7 +163,7 @@ Tổng: 239 file, 71111 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/graphics/index.js` | 10 |  |
 | `src/graphics/pbr/ProceduralTextures.js` | 196 | Vẽ texture canvas thủ công (bê tông cảng, cáp thép, xích, sling, mặt nước, vạch cảnh báo) |
 | `src/graphics/PBRMaterialFactory.js` | 199 | Nhà máy tạo vật liệu PBR chuẩn công nghiệp hàng hải và đồng bộ không gian màu Three.js r170+ |
-| `src/graphics/SceneRenderer.js` | 288 |  ⚠️>250 |
+| `src/graphics/SceneRenderer.js` | 291 |  ⚠️>250 |
 | `src/i18n/cargo_labels.js` | 48 |  |
 | `src/i18n/cms_keys.js` | 137 | Bộ từ điển song ngữ VI/EN chuyên biệt cho hệ thống CMS Enterprise Command Center |
 | `src/i18n/index.js` | 97 |  |

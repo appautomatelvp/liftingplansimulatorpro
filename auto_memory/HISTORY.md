@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-15 17:08 [fix] Ngắt render WebGL khi màn hình đang khóa hoặc mở modal Workspace để giải phóng CPU SwiftShader, cho phép khóa tài khoản tức thì khi Firebase Auth gặp DB_TIMEOUT, sửa pattern regex /v ở Catalog CMS và đồng bộ timeout Playwright Auth CI.
+- Nhánh: codex/safelift-g0-ci | Commit trước đó: 4864b45
+- File: src/graphics/SceneRenderer.js,src/saas/session.js,src/saas/admin_catalog_audit_panels.js,playwright.auth.config.js
+
 ## 2026-11-15 16:31 [fix] Tang timeout Playwright tren GitHub CI (180s) de khong bi cat ngang khi SwiftShader render khung hinh 1080p/1440p
 - Nhánh: codex/safelift-g0-ci | Commit trước đó: e002cdf
 - File: playwright.config.js
