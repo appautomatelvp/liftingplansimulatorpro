@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-15 14:01 | Nhánh: codex/safelift-g0-ci | Commit cuối: f0ccc83 docs(plan): T-10 record final V3 verification results (2 days ago)
-Tổng: 225 file, 71038 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-15 14:29 | Nhánh: codex/safelift-g0-ci | Commit cuối: e438e54 feat(graphics): upgrade 3D horizon with circular ground, radial grid fade, and sky dome (28 minutes ago)
+Tổng: 225 file, 71050 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -98,7 +98,7 @@ Tổng: 225 file, 71038 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `README.md` | 81 |  |
 | `scripts/architecture-gate.mjs` | 45 |  |
 | `scripts/auto_backup.ps1` | 70 | BACKUP KÉP: ZIP (HHmmddMMyyyy) + NHÁNH GIT NHÁP — chạy TRƯỚC khi nhờ AI làm việc lớn |
-| `scripts/auto_check.ps1` | 63 | KIỂM TRA SỨC KHỎE DỰ ÁN (AI chạy cuối mỗi việc). Chỉ ĐỌC, không sửa gì. |
+| `scripts/auto_check.ps1` | 75 | KIỂM TRA SỨC KHỎE DỰ ÁN (AI chạy cuối mỗi việc). Chỉ ĐỌC, không sửa gì. |
 | `scripts/auto_log.ps1` | 37 | GHI NHẬT KÝ THAY ĐỔI vào auto_memory/HISTORY.md (mới nhất ở trên) rồi cập nhật MAP. |
 | `scripts/auto_map.ps1` | 101 | SINH BẢN ĐỒ DỰ ÁN: auto_memory/MAP.md  (cây file + số dòng + mục đích + file LOCKED) |
 | `scripts/capture-screens.js` | 56 |  |
