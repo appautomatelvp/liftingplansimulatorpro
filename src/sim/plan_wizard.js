@@ -376,8 +376,6 @@
                     ['spreader', T('Spreader beam', 'Dầm ngáng'), T('Compression + upper/lower', 'Chịu nén + cáp trên/dưới')],
                     ['lifting_beam', T('Lifting beam', 'Dầm nâng'), T('Bending, low headroom', 'Chịu uốn')],
                     ['frame', T('H-frame', 'Khung H'), T('Rigid 4-corner', 'Cứng 4 góc')],
-                    ['cascaded', T('Cascaded', 'Nhiều tầng'), T('Beam + hangers + sub', 'Dầm + treo + phụ')],
-                    ['modular_truss', T('Lattice truss', 'Giàn'), T('Heavy compression', 'Chịu nén lớn')],
                     ['basket', T('Basket', 'Ôm đáy'), T('Under-slings', 'Cáp dưới đáy')]
                 ];
                 return `<div class="wiz-layer-body">

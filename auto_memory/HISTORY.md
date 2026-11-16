@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-16 14:27 [refactor] Loại bỏ 3 loại ngáng thừa khỏi giao diện chọn ngáng, Wizard và danh mục mặc định (Cascaded Spreader System, Spreader Beam Truss, Equalizer Beam) mà vẫn giữ tương thích nếu phương án cũ có lưu
+- Nhánh: feat/horizon-clouds | Commit trước đó: 7965757
+- File: index.html,src/sim/plan_wizard.js,src/sim/state.js,src/saas/feature_access_ui.js
+
 ## 2026-11-16 14:01 [fix] Sửa lỗi hàm chiếu bề mặt 3D thật đẩy ngang các đoạn cáp ở trên cao (làm gãy khúc dây dưới ma-ní ngáng basket) và căn chiều dài đoạn cáp căng trong PhysicalCableSolver
 - Nhánh: feat/horizon-clouds | Commit trước đó: a937ce5
 - File: src/rigging/TrueMeshSurfaceContact.js,src/sim/rigging/draw_update.js,test/rigging_realism_sts_contact.test.js
