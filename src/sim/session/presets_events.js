@@ -2350,19 +2350,28 @@
                         : phy.hoistSpeed;
                     return;
                 }
-                if (phy._trialLiftActive) {
+                if (phy._trialLiftActive || phy._autoTargetClearanceM > 0) {
                     phy.hoistSpeed = 0;
                     return;
                 }
                 // Hold position — do NOT unload / drop a suspended load.
                 freezeSuspendedHoist();
             };
+            btnUp.addEventListener('dblclick', e => {
+                e.preventDefault();
+                hoistHoldArmed = false;
+                if (typeof beginAutoHoistToClearance === 'function') {
+                    beginAutoHoistToClearance(10.0);
+                }
+            });
             btnUp.addEventListener('pointerdown', e => {
                 e.preventDefault();
                 try { btnUp.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
                 hoistHoldArmed = true;
                 phy._setDownActive = false;
+                phy._setDownFullSlack = false;
                 phy._trialLiftActive = false;
+                phy._autoTargetClearanceM = 0;
                 phy._nhomFreezeSpreader = false;
                 // Keep Nhớm snug L0 into the lift, but immediately relieve any pin span
                 // that already exceeds L0 (otherwise the first winch frame snaps Zone-3).
@@ -2449,9 +2458,11 @@
                 try { btnDown.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
                 hoistHoldArmed = true;
                 phy._trialLiftActive = false;
+                phy._autoTargetClearanceM = 0;
                 phy._nhomFreezeSpreader = false;
                 // Operator Hạ cancels an in-progress Hạ đất auto sequence
                 phy._setDownActive = false;
+                phy._setDownFullSlack = false;
                 const clearance = Math.max(
                     phy.groundClearance || 0,
                     (typeof cargoAabbClearance === 'function') ? cargoAabbClearance() : 0
@@ -2512,6 +2523,15 @@
                 phy.hoistSpeed = (typeof hoistHoldSpeed === 'function')
                     ? hoistHoldSpeed(-1)
                     : -0.22 * (typeof hoistSpeedScaleFactor === 'function' ? hoistSpeedScaleFactor() : (state.hoistSpeedScale || 1));
+            });
+            btnDown.addEventListener('dblclick', e => {
+                e.preventDefault();
+                hoistHoldArmed = false;
+                phy._setDownFullSlack = true;
+                phy._setDownSlackSteps = 0;
+                if (typeof beginSmoothSetDown === 'function') {
+                    beginSmoothSetDown();
+                }
             });
             btnDown.addEventListener('pointerup', stopHoistHold);
             btnDown.addEventListener('pointercancel', stopHoistHold);
@@ -2606,11 +2626,10 @@
                 }
                 state.holdCableLength = false;
                 state.heldCableL0 = null;
-                // Drop per-cable Nhớm userSet locks — otherwise L0 stays glued to the
-                // seated span and the first centimetre of hoist overstretches to MBL.
+                // Drop only Nhớm auto-snug locks — preserve manual user-entered cable lengths!
                 if (state.gear) {
                     const unlock = (rec) => {
-                        if (!rec || !rec.userSet) return;
+                        if (!rec || !rec.userSet || rec._manualLengthOverride) return;
                         rec.userSet = false;
                         rec.lengthM = null;
                     };

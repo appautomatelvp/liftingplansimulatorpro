@@ -72,15 +72,25 @@
                 }
                 return;
             }
-            // If already on ground, seat and lock immediately
+            // If already on ground, finish unless a full-slack double-click drop still has taut slings
             const alreadyDown = clearance < 0.04;
-            if (alreadyDown) {
+            const stsDirect = state.beamType === 'container_spreader'
+                && typeof isStsDirectAttach === 'function'
+                && isStsDirectAttach();
+            const hasTautCables = !stsDirect && typeof attachWorld === 'function' && (phy.cables || []).some(c => {
+                if (typeof cableIsBroken === 'function' && cableIsBroken(c)) return false;
+                const span = attachWorld(c.a).distanceTo(attachWorld(c.b));
+                return span >= (c.L0 || 1) - 0.025;
+            });
+            if (alreadyDown && !(phy._setDownFullSlack && hasTautCables)) {
                 finishSmoothSetDown();
                 return;
             }
-            // Cancel any active trial lift
+            // Cancel any active trial lift or target hoist
             phy._trialLiftActive = false;
+            phy._autoTargetClearanceM = 0;
             phy._nhomFreezeSpreader = false;
+            phy._setDownSlackSteps = 0;
             state.poseLock = false;
             if (typeof syncPoseLockUI === 'function') syncPoseLockUI();
             // Allow upper/leg payout while descending
@@ -90,20 +100,26 @@
             phy._stsPinsSnug = true;
             phy.autoHoistActive = true;
             phy.hoistSpeed = 0;
-            if (phy.hookPos) phy.hookTarget.copy(phy.hookPos);
+            if (phy.hookPos) {
+                phy.hookTarget.copy(phy.hookPos);
+                if (alreadyDown && phy._setDownFullSlack) phy.hookTarget.y = Math.max(0.5, phy.hookPos.y - 0.8);
+            }
 
             const st = document.getElementById('sim-status-text');
             if (st) {
                 st.textContent = (typeof L === 'function')
-                    ? L('Setting down — lowering smoothly until cargo touches the quay.',
-                        'Hạ đất — hạ êm từ từ theo tốc độ cài đặt đến khi kiện chạm đất an toàn.')
-                    : 'Hạ đất — hạ êm từ từ theo tốc độ cài đặt đến khi kiện chạm đất an toàn.';
+                    ? L('Setting down — lowering smoothly until cargo rests on deck and all slings go slack.',
+                        'Hạ đất — hạ êm từ từ đến khi kiện chạm hẳn mặt sàn và toàn bộ dây cáp trùng xuống.')
+                    : 'Hạ đất — hạ êm từ từ đến khi kiện chạm hẳn mặt sàn và toàn bộ dây cáp trùng xuống.';
             }
         }
 
         function finishSmoothSetDown() {
             phy._setDownActive = false;
+            phy._setDownFullSlack = false;
+            phy._setDownSlackSteps = 0;
             phy._trialLiftActive = false;
+            phy._autoTargetClearanceM = 0;
             phy.autoHoistActive = false;
             phy.hoistSpeed = 0;
             if (phy.hookVel) phy.hookVel.set(0, 0, 0);
@@ -138,10 +154,15 @@
                 if (typeof attachWorld === 'function' && Array.isArray(phy.cables)) {
                     phy.cables.forEach(c => {
                         if (typeof cableIsBroken === 'function' && cableIsBroken(c)) return;
-                        const span = attachWorld(c.a).distanceTo(attachWorld(c.b));
-                        const slack = Math.min(0.28, Math.max(0.08, span * 0.03));
-                        c.L0 = Math.max(0.08, span + slack);
-                        c.designL0 = c.L0;
+                        const item = c.role === 'leg' ? (state.gear?.legs?.[c.index])
+                            : (c.role === 'upper' ? (state.gear?.uppers?.[c.index])
+                            : (c.role === 'hanger' ? (state.gear?.hangers?.[c.index]) : null));
+                        if (!item || !item._manualLengthOverride) {
+                            const span = attachWorld(c.a).distanceTo(attachWorld(c.b));
+                            const slack = Math.min(0.28, Math.max(0.08, span * 0.03));
+                            c.L0 = Math.max(0.08, span + slack);
+                            c.designL0 = c.L0;
+                        }
                         c.slack = true;
                         c.tensionT = 0;
                     });
@@ -152,9 +173,56 @@
             phy.legTensions = [0, 0, 0, 0, 0, 0, 0, 0];
             phy.upperTensions = [0, 0, 0, 0, 0, 0, 0, 0];
         }
+
+        /** Smoothly auto-hoist cargo to target ground clearance (e.g. 10.0 m on Kéo dblclick). */
+        function beginAutoHoistToClearance(targetM = 10.0) {
+            const wantM = Math.max(0.5, Number(targetM) || 10.0);
+            const curClr = Math.max(
+                phy.groundClearance || 0,
+                (typeof cargoAabbClearance === 'function') ? cargoAabbClearance() : 0
+            );
+            if (curClr >= wantM - 0.05) {
+                const st = document.getElementById('sim-status-text');
+                if (st) {
+                    st.textContent = (typeof L === 'function')
+                        ? L(`Cargo is already at ${wantM.toFixed(1)} m clearance.`, `Kiện hàng đã ở độ cao ${wantM.toFixed(1)} m và đang giữ treo ổn định.`)
+                        : `Kiện hàng đã ở độ cao ${wantM.toFixed(1)} m và đang giữ treo ổn định.`;
+                }
+                return;
+            }
+            phy._setDownActive = false;
+            phy._setDownFullSlack = false;
+            phy._trialLiftActive = false;
+            phy._nhomFreezeSpreader = false;
+            if (state.poseLock || curClr < 0.05) {
+                if (state.beamType === 'container_spreader' && typeof seatStsSpreaderToCargo === 'function') {
+                    seatStsSpreaderToCargo();
+                }
+                state.poseLock = false;
+                if (typeof syncPoseLockUI === 'function') syncPoseLockUI();
+            }
+            if (typeof relieveCableOverstretch === 'function') {
+                relieveCableOverstretch({ rising: true, margin: 0.025 });
+            }
+            state.holdCableLength = false;
+            state.heldCableL0 = null;
+            phy._stsPinsSnug = true;
+            phy.hoistSpeed = 0;
+            phy._autoTargetClearanceM = wantM;
+            phy.autoHoistActive = true;
+            autoPositionHookForLift(wantM);
+
+            const st = document.getElementById('sim-status-text');
+            if (st) {
+                st.textContent = (typeof L === 'function')
+                    ? L(`Auto-hoisting smoothly to ${wantM.toFixed(1)} m height...`, `Đang tự động kéo nâng êm lên độ cao ${wantM.toFixed(1)} m...`)
+                    : `Đang tự động kéo nâng êm lên độ cao ${wantM.toFixed(1)} m...`;
+            }
+        }
         if (typeof window !== 'undefined') {
             window.beginSmoothSetDown = beginSmoothSetDown;
             window.finishSmoothSetDown = finishSmoothSetDown;
+            window.beginAutoHoistToClearance = beginAutoHoistToClearance;
         }
 
         function resetToInitialPreLiftState() {

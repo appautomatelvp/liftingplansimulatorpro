@@ -45,7 +45,7 @@ Nhánh Git: feat/horizon-clouds
   3. `src/graphics/index.js`: export `ElevationRulerMath`.
 - **Kiểm tra:** `npx vitest run test/v2_ux_dunnage_ruler_regression.test.js` + `npm run architecture:gate` + `npm run build`.
 
-### [ ] Bước 4: Double-Click `Hạ` (chạm hẳn đất & toàn bộ cáp trùng) + Double-Click `Kéo` (lên đúng `10.0 m`) + giữ chiều dài khi bấm `Nhấc thử`
+### [x] Bước 4: Double-Click `Hạ` (chạm hẳn đất & toàn bộ cáp trùng) + Double-Click `Kéo` (lên đúng `10.0 m`) + giữ chiều dài khi bấm `Nhấc thử`
 - **File sửa (3 file):**
   1. `src/sim/session/prelift_reset.js`: thêm/nâng cấp `beginSmoothSetDown()` + `finishSmoothSetDown()` để khi chạm mặt đất/đà gỗ tự xả trùng toàn bộ các nhánh cáp treo (`c.slack = true`, `c.tensionT = 0`), và thêm `beginAutoHoistToClearance(10.0)` để tự động nâng êm tới độ cao `10.0 m`.
   2. `src/sim/physics/hoist_contacts.js`: cập nhật `advanceHook(dt)` hỗ trợ đích độ cao tự động `_autoTargetClearanceM` (cho lệnh `Kéo` double-click tới `10.0 m`) và hạ thả chùng dây trọn vẹn cho `_setDownActive` trước khi khóa `finishSmoothSetDown()`.

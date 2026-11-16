@@ -187,13 +187,31 @@
             if (groundedNow && lowering && !rising) {
                 if (phy.cargoVel) phy.cargoVel.set(0, 0, 0);
                 if (phy.cargoOmega) phy.cargoOmega.set(0, 0, 0);
-                if (phy._setDownActive && typeof finishSmoothSetDown === 'function') {
-                    finishSmoothSetDown();
-                    return;
+                const stsDirectDown = state.beamType === 'container_spreader'
+                    && typeof isStsDirectAttach === 'function'
+                    && isStsDirectAttach();
+                const allSlingsSlack = stsDirectDown || (phy.cables || []).every(c => {
+                    if (cableIsBroken(c)) return true;
+                    const span = attachWorld(c.a).distanceTo(attachWorld(c.b));
+                    return c.slack || span < (c.L0 || 1) - 0.02;
+                });
+                const prevHookY = phy.hookPos.y;
+                if (phy._setDownActive && phy._setDownFullSlack && !allSlingsSlack && (phy._setDownSlackSteps || 0) < 140) {
+                    phy._setDownSlackSteps = (phy._setDownSlackSteps || 0) + 1;
+                    // Keep paying out slightly on deck until every sling drapes slack (or solid clamp stops hook).
+                    if (phy._setDownSlackSteps > 6 && Math.abs(prevHookY - (phy._setDownLastHookY ?? prevHookY)) < 1e-4) {
+                        phy._setDownSlackSteps = 140;
+                    }
+                    phy._setDownLastHookY = prevHookY;
+                } else {
+                    if (phy._setDownActive && typeof finishSmoothSetDown === 'function') {
+                        finishSmoothSetDown();
+                        return;
+                    }
+                    // Manual Hạ at quay: damp cargo gently without snapping quaternion or teleporting
+                    phy._setDownActive = false;
+                    phy.groundClearance = 0;
                 }
-                // Manual Hạ at quay: damp cargo gently without snapping quaternion or teleporting
-                phy._setDownActive = false;
-                phy.groundClearance = 0;
             }
             if (!dragging) {
                 maxWinch = Math.min(maxWinch, rising ? rates.up : rates.down);
@@ -322,30 +340,44 @@
                 const keepWinching = manual || !!phy._setDownActive;
                 hoist.winchSpeed = keepWinching ? lineSpeed : dist / Math.max(dt, 1e-4);
                 if (!keepWinching) {
-                    phy.autoHoistActive = false;
-                    // Nhấc thử arrived: freeze suspended pose (do not drop).
-                    if (phy._trialLiftActive && !lowering) {
-                        phy._trialLiftActive = false;
-                        if (typeof freezeSuspendedHoist === 'function') freezeSuspendedHoist();
+                    const targetClr = phy._trialLiftActive ? 3.0 : (phy._autoTargetClearanceM || 0);
+                    if (targetClr > 0 && (phy.groundClearance || 0) < targetClr - 0.04) {
+                        phy.hookTarget.y = Math.min(48.0, phy.hookPos.y + Math.max(0.25, targetClr - (phy.groundClearance || 0)));
+                    } else {
+                        phy.autoHoistActive = false;
+                        // Nhấc thử / 10m auto arrived: freeze suspended pose (do not drop).
+                        if ((phy._trialLiftActive || phy._autoTargetClearanceM > 0) && !lowering) {
+                            phy._trialLiftActive = false;
+                            phy._autoTargetClearanceM = 0;
+                            if (typeof freezeSuspendedHoist === 'function') freezeSuspendedHoist();
+                        }
                     }
                 }
             } else {
                 hoist.kin.addScaledVector(to.multiplyScalar(1 / dist), maxStep);
                 hoist.winchSpeed = lineSpeed;
             }
-            // Trial lift stops at exactly 3.0 m clearance (with ease-out settling)
-            if (phy._trialLiftActive && (phy.groundClearance || 0) >= 2.98 && rising) {
+            // Trial lift stops at 3.0 m, or double-click Kéo stops at configured _autoTargetClearanceM (10.0 m)
+            const autoClearanceGoal = phy._trialLiftActive ? 3.0 : (phy._autoTargetClearanceM || 0);
+            if (autoClearanceGoal > 0 && (phy.groundClearance || 0) >= autoClearanceGoal - 0.02 && rising) {
+                const wasTrial = !!phy._trialLiftActive;
                 phy.autoHoistActive = false;
                 phy.hoistSpeed = 0;
                 phy.hookTarget.y = phy.hookPos.y;
                 phy._trialLiftActive = false;
+                phy._autoTargetClearanceM = 0;
                 if (typeof freezeSuspendedHoist === 'function') freezeSuspendedHoist();
                 const st = document.getElementById('sim-status-text');
                 if (st) {
-                    st.textContent = (typeof L === 'function')
-                        ? L('Trial lift complete — Cargo hovering steadily at 3.0 m above ground.',
-                            'Đã hoàn thành nhấc thử — Kiện hàng cách đất 3.0 m và đang giữ treo ổn định.')
-                        : 'Đã hoàn thành nhấc thử — Kiện hàng cách đất 3.0 m và đang giữ treo ổn định.';
+                    st.textContent = wasTrial
+                        ? ((typeof L === 'function')
+                            ? L('Trial lift complete — Cargo hovering steadily at 3.0 m above ground.',
+                                'Đã hoàn thành nhấc thử — Kiện hàng cách đất 3.0 m và đang giữ treo ổn định.')
+                            : 'Đã hoàn thành nhấc thử — Kiện hàng cách đất 3.0 m và đang giữ treo ổn định.')
+                        : ((typeof L === 'function')
+                            ? L(`Auto-hoist complete — Cargo hovering steadily at ${autoClearanceGoal.toFixed(1)} m.`,
+                                `Đã tự động nâng xong — Kiện hàng đạt độ cao ${autoClearanceGoal.toFixed(1)} m và đang giữ treo ổn định.`)
+                            : `Đã tự động nâng xong — Kiện hàng đạt độ cao ${autoClearanceGoal.toFixed(1)} m và đang giữ treo ổn định.`);
                 }
             }
 
