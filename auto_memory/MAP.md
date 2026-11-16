@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 13:34 | Nhánh: feat/horizon-clouds | Commit cuối: ea0e2a7 step 1: add TrueMeshSurfaceContact 3D skin solver (4 minutes ago)
-Tổng: 247 file, 73327 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 13:36 | Nhánh: feat/horizon-clouds | Commit cuối: 6ef2e08 step 2: wire true 3D surface contact into shell rebuild and sling routing (2 minutes ago)
+Tổng: 247 file, 73328 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -28,7 +28,7 @@ Tổng: 247 file, 73327 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/library/core.js (641 dòng)
 - src/sim/library/parsers.js (652 dòng)
 - src/sim/library/reconstruction_export.js (2136 dòng)
-- src/sim/physics/beams_seed.js (2884 dòng)
+- src/sim/physics/beams_seed.js (2885 dòng)
 - src/sim/physics/cables_break.js (1556 dòng)
 - src/sim/physics/flatrack_payload.js (629 dòng)
 - src/sim/physics/footprint_rig.js (834 dòng)
@@ -229,7 +229,7 @@ Tổng: 247 file, 73327 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/library/reconstruction_export.js` | 2136 | --- 2D IMAGE TO 3D CONTOUR & RELIEF RECONSTRUCTION ENGINE --- ⚠️>300 |
 | `src/sim/manifest.js` | 39 |  |
 | `src/sim/physics.js` | 6 |  |
-| `src/sim/physics/beams_seed.js` | 2884 |  ⚠️>300 |
+| `src/sim/physics/beams_seed.js` | 2885 |  ⚠️>300 |
 | `src/sim/physics/cables_break.js` | 1556 |  ⚠️>300 |
 | `src/sim/physics/flatrack_payload.js` | 629 | --- FLAT RACK LASHING RUPTURE, DECK SLIDING & FALLING PAYLOAD PHYSICS --- ⚠️>300 |
 | `src/sim/physics/footprint_rig.js` | 834 |  ⚠️>300 |

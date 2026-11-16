@@ -85,8 +85,8 @@
 
 ---
 
-### Bước 3: Sửa triệt để lỗi Dầm ngang chữ H lòi các thanh đen ra ngoài bụng dầm khi chịu tải (`editor.js`, `beams_seed.js`)
-- [ ] **Trạng thái:** Chưa làm
+### Bước 3: Sửa triệt để lỗi Dầm ngang chữ H lòi các thanh đen ra ngoài bụng dầm khi chịu tải (`specialty_meshes.js`, `beams_seed.js`)
+- [x] **Trạng thái:** Hoàn tất (`widthSegments=32` cho dầm H vàng, gân đen gọn trong bụng dầm, `I_beam` thực tế; `architecture:gate` & `vite build` xanh)
 - **Mục tiêu:** Làm cho toàn bộ dầm nâng chữ H màu vàng (`web`, `topFlange`, `botFlange`) và các gân tăng cứng màu đen (`rib`) uốn cong đồng bộ 100% như một khối thép liền mạch, không bao giờ có thanh đen nào lòi ra khỏi đáy dầm.
 - **File được phép sửa (tối đa 2 file):**
   1. `src/sim/gear/editor.js` *(sửa $\le 18$ dòng tại nhánh `beamType === 'lifting_beam'`, dòng 2341–2372)*:

@@ -2338,18 +2338,18 @@
                 addJointShackle(main.b, -0.22, -0.065, 'main', { role: 'leg',   index: 2 });
 
             } else if (beamType === 'lifting_beam') {
-                // HEAVY WIDE-FLANGE STEEL H-SECTION LIFTING BEAM (ASME B30.20)
+                // HEAVY WIDE-FLANGE STEEL H-SECTION LIFTING BEAM (ASME B30.20, 32-seg bendable along span)
                 const main = memberSpec('main');
-                const web = new THREE.Mesh(new THREE.BoxGeometry(main.length, 0.28, 0.032));
-                const topFlange = new THREE.Mesh(new THREE.BoxGeometry(main.length, 0.036, 0.24));
+                const web = new THREE.Mesh(new THREE.BoxGeometry(main.length, 0.274, 0.028, 32, 1, 1));
+                const topFlange = new THREE.Mesh(new THREE.BoxGeometry(main.length, 0.036, 0.24, 32, 1, 1));
                 topFlange.position.y = 0.155;
-                const botFlange = new THREE.Mesh(new THREE.BoxGeometry(main.length, 0.036, 0.24));
+                const botFlange = new THREE.Mesh(new THREE.BoxGeometry(main.length, 0.036, 0.24, 32, 1, 1));
                 botFlange.position.y = -0.155;
                 tagMember(web, 'main');
                 tagMember(topFlange, 'main');
                 tagMember(botFlange, 'main');
 
-                // End closure plates & vertical web stiffener ribs
+                // End closure plates & internal web stiffener ribs (tucked strictly between top/bottom flanges)
                 [-main.length / 2, main.length / 2].forEach(ex => {
                     const endCap = new THREE.Mesh(new THREE.BoxGeometry(0.024, 0.34, 0.24), MATS.darkSteel);
                     endCap.position.x = ex;
@@ -2361,8 +2361,8 @@
                 const ribs = Math.max(4, Math.round(main.length / 0.65));
                 for (let r = 0; r < ribs; r++) {
                     const rx = -main.length / 2 + (r + 0.5) * (main.length / ribs);
-                    [-0.08, 0.08].forEach(rz => {
-                        const rib = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.27, 0.075), MATS.darkSteel);
+                    [-0.068, 0.068].forEach(rz => {
+                        const rib = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.244, 0.064), MATS.darkSteel);
                         rib.position.set(rx, 0, rz);
                         rib.userData.gearKind = 'member';
                         rib.userData.memberId = 'main';

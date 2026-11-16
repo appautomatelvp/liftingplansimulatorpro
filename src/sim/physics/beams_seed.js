@@ -2775,8 +2775,9 @@
             if (phy.beams && phy.beams.length && state.beamType !== 'none') {
                 const topBeam = phy.beams[0];
                 const beamL = Math.max(1.0, topBeam.len || (state.beamLength || 6.0));
-                const I_beam = 1.0e-4; // m^4 (HEB / tubular spreader section)
-                const J_beam = 5.0e-5; // m^4
+                const swlRef = Math.max(10, (state.gear?.beam?.swlT) || topBeam.swl || 30);
+                const I_beam = Math.max(8.5e-4, beamL * beamL * swlRef * 4.5e-7); // m^4 (HEB / welded girder scaled with span & SWL)
+                const J_beam = I_beam * 0.45; // m^4
                 const P_compressionN = Math.max(0, (phy.beamCompression || 0) * 1000 * 9.81);
 
                 // Vertical bending force on the beam (lower legs pulling down while upper bridle pulls up)
@@ -2817,7 +2818,7 @@
                                 beamVerticalLoadN,
                                 P_compressionN,
                                 beamTorqueNm,
-                                Math.min(8, visScale),
+                                Math.min(3.0, visScale),
                                 topBeam.axis === 'z' ? 'z' : 'x'
                             );
                         } else {
