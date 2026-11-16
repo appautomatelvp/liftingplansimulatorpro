@@ -45,8 +45,8 @@
 ---
 
 ## 4. CÔNG VIỆC ĐANG LÀM DỞ (ONGOING WORK)
-- **Mục tiêu hiện tại:** Hoàn tất 4/4 bước ẩn thông tin cá nhân nhà phát triển khỏi màn hình công khai/HTML/bundle và nâng cấp hộp thoại Góp ý chống bot/spam 5 lớp (`auto_memory/PLAN.md` `Trạng thái: DONE`, nhánh `feat/hide-dev-contact-antispam`).
-- **Bước tiếp theo:** Founder kiểm tra màn hình khởi động, màn hình đăng nhập và bấm mở hộp thoại Góp ý; sau khi ưng ý thì gộp PR/deploy lên Cloudflare Pages.
+- **Mục tiêu hiện tại:** Lập kế hoạch 6 bước nâng cấp **Hyper-Realistic Rigging Simulator (True Physics & Photorealistic PBR Upgrade)** trong `auto_memory/PLAN.md` (`Trạng thái: ACTIVE`): (1) CCD & Ma sát/Độ nảy theo cặp vật liệu + Chống xuyên giữa các sợi cáp, (2) XPBD Whip & Recoil khi đứt cáp, (3) Trọng trường $g = 9.81\text{ m/s}^2$ & Quán tính lệch tâm Steiner-Huygens, (4) Vật liệu PBR Thép sơn/Thép rèn + Hiển thị ứng suất căng cơ học, (5) Bộ Golden Test 20 tấn nâng lệch tâm & cắt cáp.
+- **Bước tiếp theo:** Founder chuyển sang model thực thi (Auto/Flash/Hydro…) và gõ `làm tiếp` 1 lần để chạy một mạch từ Bước 1 đến hết Bước 6 trong `auto_memory/PLAN.md`.
 
 ---
 

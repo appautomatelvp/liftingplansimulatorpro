@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-16 12:05 [docs] Lập kế hoạch 6 bước nâng cấp Hyper-Realistic Rigging Simulator (CCD, ma sát/độ nảy vật liệu, quật cáp XPBD, quán tính lệch tâm và PBR ứng suất căng) trong auto_memory/PLAN.md
+- Nhánh: feat/horizon-clouds | Commit trước đó: 00a0f18
+- File: auto_memory/PLAN.md,STATE.md,auto_memory/CONTEXT.md
+
 ## 2026-11-16 11:56 [fix] Nâng cấp bộ tạo mây vòm trời sang 3D Quintic Gradient Noise trên mặt cầu liền mạch để xóa hoàn toàn hiện tượng mây vỡ thành khối chắp vá và tia kéo giãn ở góc trên
 - Nhánh: feat/horizon-clouds | Commit trước đó: db93241
 - File: src/graphics/HorizonSkyDome.js
