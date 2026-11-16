@@ -173,4 +173,34 @@ describe('Nhớm Cáp (pretensionRig) — Grounded Cargo + Full Real-Length Taut
       }
     }
   });
+
+  it('4. Basket Spreader Cradle actually lifts 40ft Flat Rack cargo off ground without stretching lower cables', () => {
+    const sim = createHeadlessSim();
+    const s = sim.getState();
+    const phy = sim.getPhy();
+
+    s.cargoType = 'flatrack';
+    s.L = 12.192;
+    s.W = 2.438;
+    s.H = 2.591;
+    s.oogCargoH = 2.591;
+    s.weight = 24;
+    s.beamType = 'basket';
+    s.upperSlingLength = 10.0;
+    s.lowerSlingLength = 2.0;
+    s.slingUserSet = true;
+    sim.rebuildCargoAndRig(true);
+
+    s.poseLock = false;
+    phy.hookPos.y = 15.1;
+    phy.hookTarget.y = 15.1;
+    sim.stepSim(40);
+
+    expect(phy.groundClearance).toBeGreaterThan(0.5);
+    for (const c of phy.cables) {
+      const span = sim.attachWorld(c.a).distanceTo(sim.attachWorld(c.b));
+      expect(span, `${c.role}[${c.index}] no stretch`).toBeLessThanOrEqual(c.L0 + 0.03);
+    }
+    expect(phy.legTensions[0]).toBeGreaterThan(1.0);
+  });
 });

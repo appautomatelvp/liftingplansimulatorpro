@@ -653,14 +653,21 @@
             }
             const uppers = (phy.cables || []).filter(c => c.role === 'upper' && !cableIsBroken(c) && c.b && c.b.body === b);
             if (!uppers.length) return true;
+            // Kinematic basket presentation: upper solver skips impulse calculation, so c.slack
+            // must not gate suspension — check live span vs L0 while bar is clear of cargo roof.
+            if (state.beamType === 'basket' && basketUsesKinematicPose()) {
+                return uppers.some(c => {
+                    const pa = attachWorld(c.a);
+                    const pb = attachWorld(c.b);
+                    return pa.distanceTo(pb) >= (c.L0 || 1) - 0.025;
+                });
+            }
             const anyTaut = uppers.some(c => {
                 const pa = attachWorld(c.a);
                 const pb = attachWorld(c.b);
                 const chord = pa.distanceTo(pb);
                 return !c.slack && (c._j > 1e-4 || chord >= (c.L0 || 1) - 0.02);
             });
-            // Kinematic basket presentation is only "suspended" while uppers actually carry the bar
-            if (state.beamType === 'basket' && basketUsesKinematicPose()) return anyTaut;
             return anyTaut;
         }
 
@@ -2403,6 +2410,8 @@
                         const n = delta.multiplyScalar(1 / dist);
                         c.n = n.clone().negate();
                         if (basketUsesKinematicPose() && c.role === 'upper') {
+                            const bar = c.b && c.b.body;
+                            c.slack = dist < (c.L0 - 0.025) || !!(bar && bar.isRestingOnCargo);
                             return;
                         }
                         const slackThresh = c.slack ? (c.L0 - 0.001) : (c.L0 - 0.004);
@@ -2442,7 +2451,9 @@
                             && isStsDirectAttach();
                         const isLegUnderRestingBeam = !stsDirectPin
                             && c.role === 'leg' && c.a && c.a.body
-                            && (c.a.body.isRestingOnCargo || !beamIsSuspended(c.a.body));
+                            && (c.a.body.isRestingOnCargo
+                                || !beamIsSuspended(c.a.body)
+                                || (state.beamType === 'basket' && basketUsesKinematicPose() && c.a.body._basketPathReady === false));
                         kickEnd(c.a, n, j, invMass, invI, vCom, omega);
                         if (!isLegUnderRestingBeam) {
                             kickEnd(c.b, n, -j, invMass, invI, vCom, omega);

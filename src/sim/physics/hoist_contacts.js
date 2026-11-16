@@ -974,6 +974,8 @@
                 const distXZ = Math.hypot(eMid.x - master.x, eMid.z - master.z);
                 const roofTethered = eMid.clone().addScaledVector(sideXZ, -Math.min(dxLowRoof, Math.max(0, distXZ - 0.14)));
                 roofTethered.y = cargoCeilingUnderBeam(roofTethered.x, roofTethered.z, spec, b);
+                // Cargo cannot be lifted at a shallow kink before full r1 + r2 length is taken up.
+                b._basketPathReady = !state.poseLock && ((phy.groundClearance || 0) > 0.015 || dist >= r1 + r2 - 0.03);
 
                 if (!cargoAirborne && distFree <= r2 + 0.02) {
                     // Lower sling is long enough to remain slack at plumb hang → gravity holds bar vertically under hook.

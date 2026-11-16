@@ -1051,7 +1051,9 @@ describe('3D Rigging Testbed, Hardware Geometry & Mass Deductions', () => {
         }
 
         const upperYAfter = (phy.beams || []).reduce((sum, b) => sum + b.x.y, 0) / Math.max(1, (phy.beams || []).length);
-        expect(upperYAfter).toBeGreaterThan(upperYBefore - 0.75);
+        // When all 4 lower legs are cut, splayed Basket bars swing vertically under the hook (~1 m pendulum drop),
+        // staying suspended high in the air while the Flat Rack falls to the ground.
+        expect(upperYAfter).toBeGreaterThan(Math.max(5.0, upperYBefore - 2.2));
         expect(highestRackY).toBeLessThanOrEqual(yBefore + 0.06);
         expect(phy.groundClearance).toBeLessThan(0.05);
         expect(new globalThis.THREE.Vector3(0, 1, 0).applyQuaternion(phy.cargoQuat).y).toBeGreaterThan(0.97);

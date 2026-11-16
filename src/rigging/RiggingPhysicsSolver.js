@@ -558,9 +558,11 @@ export function evaluate(phy, state, deps = {}) {
     const sf = Math.max(1.5, gearLeg.sf || 5.0);
     const MBL = SWL_effective * sf;
 
-    // Quasi-static design tension (DNV diagonal) vs live XPBD tension
+    // Quasi-static design tension (DNV diagonal) vs live XPBD tension.
+    // A genuinely slack/unloaded cable (e.g. hanging loose after its upper bridle
+    // snaps) carries zero tension and must never trigger a phantom 1/sin(α) MBL snap.
     let designT = 0;
-    if (dnvShares && dnvShares[i] != null) {
+    if (isTaut && dnvShares && dnvShares[i] != null) {
       const vertShareT = dnvShares[i] * payloadWeightT;
       designT = computeLegTension(vertShareT, 1.0, angleInfo.angleDeg, Kdyn);
     }

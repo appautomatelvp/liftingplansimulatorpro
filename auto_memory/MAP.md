@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 16:36 | Nhánh: feat/horizon-clouds | Commit cuối: 5c2f0fb fix: enforce fixed upper/lower cable lengths on Basket spreader bars when lowering (17 minutes ago)
-Tổng: 253 file, 74633 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 17:03 | Nhánh: feat/horizon-clouds | Commit cuối: 8bf431e fix: compute true lower sling axial reach dLowAx in Basket bar equilibrium (27 minutes ago)
+Tổng: 253 file, 74680 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -17,7 +17,7 @@ Tổng: 253 file, 74633 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/core/RiggingDictionary.js (434 dòng)
 - src/core/SimulationEngine.js (560 dòng)
 - src/i18n/keys.js (598 dòng)
-- src/rigging/RiggingPhysicsSolver.js (682 dòng)
+- src/rigging/RiggingPhysicsSolver.js (684 dòng)
 - src/sim/audio.js (725 dòng)
 - src/sim/cargo/containers_iso.js (1490 dòng)
 - src/sim/cargo/shell_rebuild.js (567 dòng)
@@ -28,11 +28,11 @@ Tổng: 253 file, 74633 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/library/core.js (641 dòng)
 - src/sim/library/parsers.js (652 dòng)
 - src/sim/library/reconstruction_export.js (2136 dòng)
-- src/sim/physics/beams_seed.js (2940 dòng)
+- src/sim/physics/beams_seed.js (2951 dòng)
 - src/sim/physics/cables_break.js (1557 dòng)
 - src/sim/physics/flatrack_payload.js (629 dòng)
 - src/sim/physics/footprint_rig.js (840 dòng)
-- src/sim/physics/hoist_contacts.js (1068 dòng)
+- src/sim/physics/hoist_contacts.js (1070 dòng)
 - src/sim/physics/step_engine.js (782 dòng)
 - src/sim/plan_wizard.js (650 dòng)
 - src/sim/rigging/draw_update.js (875 dòng)
@@ -48,7 +48,7 @@ Tổng: 253 file, 74633 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - test/custom_slings.test.js (712 dòng)
 - test/engineering.test.js (410 dòng)
 - test/physics_master_blueprint.test.js (524 dòng)
-- test/rigging.test.js (1367 dòng)
+- test/rigging.test.js (1369 dòng)
 - test/rigging_physics_and_alarms.test.js (306 dòng)
 
 ## 🔒 File đã khóa [LOCKED]
@@ -180,7 +180,7 @@ Tổng: 253 file, 74633 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/index.js` | 19 | src/rigging/index.js |
 | `src/rigging/PretensionSolver.js` | 296 | Giải cao độ móc cẩu và dầm ngáng tại trạng thái Nhớm Cáp (kiện chạm đất, toàn bộ cáp căng đúng chiều dài thực) ⚠️>250 |
 | `src/rigging/riggingConstants.js` | 69 | src/rigging/riggingConstants.js |
-| `src/rigging/RiggingPhysicsSolver.js` | 682 | src/rigging/RiggingPhysicsSolver.js ⚠️>300 |
+| `src/rigging/RiggingPhysicsSolver.js` | 684 | src/rigging/RiggingPhysicsSolver.js ⚠️>300 |
 | `src/rigging/riggingUIStore.js` | 100 | src/rigging/riggingUIStore.js |
 | `src/rigging/RigidInertialDynamics.js` | 212 | Động lực học vật rắn lệch tâm (Steiner-Huygens Inertia Tensor), mô-men xoắn/nghiêng khi cẩu và rơi tự do 9.81 m/s² |
 | `src/rigging/StsSpreaderRealism.js` | 174 | Chuẩn hóa kích thước ISO 668/1161, hệ cáp tời 8 nhánh và cơ học nâng hạ thực tế cho Ngáng cẩu Container STS |
@@ -232,11 +232,11 @@ Tổng: 253 file, 74633 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/library/reconstruction_export.js` | 2136 | --- 2D IMAGE TO 3D CONTOUR & RELIEF RECONSTRUCTION ENGINE --- ⚠️>300 |
 | `src/sim/manifest.js` | 39 |  |
 | `src/sim/physics.js` | 6 |  |
-| `src/sim/physics/beams_seed.js` | 2940 |  ⚠️>300 |
+| `src/sim/physics/beams_seed.js` | 2951 |  ⚠️>300 |
 | `src/sim/physics/cables_break.js` | 1557 |  ⚠️>300 |
 | `src/sim/physics/flatrack_payload.js` | 629 | --- FLAT RACK LASHING RUPTURE, DECK SLIDING & FALLING PAYLOAD PHYSICS --- ⚠️>300 |
 | `src/sim/physics/footprint_rig.js` | 840 |  ⚠️>300 |
-| `src/sim/physics/hoist_contacts.js` | 1068 |  ⚠️>300 |
+| `src/sim/physics/hoist_contacts.js` | 1070 |  ⚠️>300 |
 | `src/sim/physics/index.js` | 9 | Bounded context index — parts are assembled via src/sim/manifest.js (shared scope). |
 | `src/sim/physics/port.js` | 59 |  |
 | `src/sim/physics/step_engine.js` | 782 |  ⚠️>300 |
@@ -293,8 +293,8 @@ Tổng: 253 file, 74633 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/physics_destruction.test.js` | 69 |  |
 | `test/physics_master_blueprint.test.js` | 524 |  ⚠️>300 |
 | `test/pipeline.test.js` | 232 |  |
-| `test/pretension_nhom_cap.test.js` | 176 | Kiểm thử vàng nút Nhớm Cáp (pretensionRig): kiện chạm đất 0.00m và toàn bộ hệ cáp căng đúng chiều dài thực |
-| `test/rigging.test.js` | 1367 |  ⚠️>300 |
+| `test/pretension_nhom_cap.test.js` | 206 | Kiểm thử vàng nút Nhớm Cáp (pretensionRig): kiện chạm đất 0.00m và toàn bộ hệ cáp căng đúng chiều dài thực |
+| `test/rigging.test.js` | 1369 |  ⚠️>300 |
 | `test/rigging_alarms_and_tolerances.test.js` | 216 |  |
 | `test/rigging_groups_and_dynamics.test.js` | 84 |  |
 | `test/rigging_physics_and_alarms.test.js` | 306 | test/rigging_physics_and_alarms.test.js ⚠️>300 |

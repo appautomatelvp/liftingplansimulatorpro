@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-16 17:03 [fix] Mở khóa lực kéo nhấc kiện hàng thật cho Basket Spreader (beams_seed.js, hoist_contacts.js, RiggingPhysicsSolver.js), ngăn giãn cáp dưới và thêm test kiểm chứng nhấc tải Basket (pretension_nhom_cap.test.js)
+- Nhánh: feat/horizon-clouds | Commit trước đó: 8bf431e
+- File: src/sim/physics/beams_seed.js,src/sim/physics/hoist_contacts.js,src/rigging/RiggingPhysicsSolver.js,test/pretension_nhom_cap.test.js,test/rigging.test.js,auto_memory/CONTEXT.md
+
 ## 2026-11-16 16:35 [fix] Sửa lỗi dLowAx trừ nhầm halfZ^2 khiến ngáng vàng Basket lơ lửng trên xích dưới chùng (hoist_contacts.js) và khóa test không cho xích dưới chùng giữa không trung (pretension_nhom_cap.test.js)
 - Nhánh: feat/horizon-clouds | Commit trước đó: 5c2f0fb
 - File: src/sim/physics/hoist_contacts.js,test/pretension_nhom_cap.test.js,auto_memory/CONTEXT.md
