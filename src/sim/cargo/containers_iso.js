@@ -7,9 +7,13 @@
  * These files are assembled into one module so they share state, physics and the scene.
  */
         // --- 6. BUILD 3D CARGO, TIMBER DUNNAGE & SPREADER BEAMS ---
-        /** Floor cribbing intentionally omitted — propped blocks made static cargo sit proud of the ground. */
+        /** Rebuild 3D timber dunnage cribbing, soil pad & slope synced with Tab 6 Site controls. */
         function rebuildDunnageBlocks() {
             if (!dunnageGroup) return;
+            if (typeof GFX !== 'undefined' && GFX.rebuildDunnageVisual3D) {
+                GFX.rebuildDunnageVisual3D({ THREE, dunnageGroup, state, MATS });
+                return;
+            }
             while (dunnageGroup.children.length > 0) dunnageGroup.remove(dunnageGroup.children[0]);
             dunnageGroup.name = 'Timber_Dunnage';
             dunnageGroup.visible = false;

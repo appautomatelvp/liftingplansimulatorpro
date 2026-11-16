@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 19:57 | Nhánh: feat/horizon-clouds | Commit cuối: cf04c60 feat: unify constant cargo hoist speed across all plans and eliminate STS spreader catapult (23 seconds ago)
-Tổng: 260 file, 75848 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 20:09 | Nhánh: feat/horizon-clouds | Commit cuối: 494c806 docs: log unified hoist speed profile and STS catapult fix (12 minutes ago)
+Tổng: 261 file, 76078 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -20,7 +20,7 @@ Tổng: 260 file, 75848 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/i18n/keys.js (598 dòng)
 - src/rigging/RiggingPhysicsSolver.js (684 dòng)
 - src/sim/audio.js (725 dòng)
-- src/sim/cargo/containers_iso.js (1490 dòng)
+- src/sim/cargo/containers_iso.js (1494 dòng)
 - src/sim/cargo/shell_rebuild.js (573 dòng)
 - src/sim/cargo/specialty_meshes.js (2512 dòng)
 - src/sim/compliance.js (625 dòng)
@@ -162,7 +162,8 @@ Tổng: 260 file, 75848 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/graphics/GraphicsToneHelper.js` | 114 | Điều chỉnh và lưu độ sáng tối (Brightness) và tương phản (Contrast) cho khung hình 3D như game |
 | `src/graphics/GroundHorizonFade.js` | 46 | Hòa mượt mép ngoài đĩa mặt đất vào màu sương mù chân trời không lộ đường cắt |
 | `src/graphics/HorizonSkyDome.js` | 282 | Dựng vòm bầu trời HorizonSkyDome với mây chân trời 3D Gradient Quintic mềm mại và màu khí quyển thực tế ⚠️>250 |
-| `src/graphics/index.js` | 22 |  |
+| `src/graphics/index.js` | 28 |  |
+| `src/graphics/JobsiteSiteVisuals.js` | 220 | Dựng và đồng bộ hình khối 3D cho đà kê gỗ, đệm địa chất độ dốc và tấm lót chân chống cẩu ở Tab 6. |
 | `src/graphics/pbr/ProceduralTextures.js` | 276 | Vẽ texture canvas thủ công (bê tông cảng, cáp thép, xích, sling, mặt nước, vạch cảnh báo) ⚠️>250 |
 | `src/graphics/pbr/StressPBRMaterials.js` | 146 | Tạo bản đồ PBR thép sơn công nghiệp, thép rèn mạ kẽm và màu ứng suất căng cơ học thời gian thực |
 | `src/graphics/PBRMaterialFactory.js` | 244 | Nhà máy tạo vật liệu PBR chuẩn công nghiệp hàng hải và đồng bộ không gian màu Three.js r170+ |
@@ -225,7 +226,7 @@ Tổng: 260 file, 75848 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/shared/index.js` | 1 |  |
 | `src/sim/audio.js` | 725 |  ⚠️>300 |
 | `src/sim/cargo.js` | 6 |  |
-| `src/sim/cargo/containers_iso.js` | 1490 |  ⚠️>300 |
+| `src/sim/cargo/containers_iso.js` | 1494 |  ⚠️>300 |
 | `src/sim/cargo/shell_rebuild.js` | 573 | --- 6B. SHELL CONTACT — pad-eyes weld to the real mesh, not the bounding box --- ⚠️>300 |
 | `src/sim/cargo/specialty_meshes.js` | 2512 | --- HIGH-FIDELITY 3D REFRIGERATION MACHINERY UNIT (CARRIER TRANSICOLD / THERMO KING) --- ⚠️>300 |
 | `src/sim/compliance.js` | 625 |  ⚠️>300 |
