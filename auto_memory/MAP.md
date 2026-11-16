@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 09:43 | Nhánh: feat/hide-dev-contact-antispam | Commit cuối: 1b39800 step 2: add anti-spam developer contact dialog UI and styles (5 minutes ago)
+Cập nhật: 2026-11-16 09:46 | Nhánh: feat/hide-dev-contact-antispam | Commit cuối: fe8bb18 step 3: strip personal phone and email from public UI and wire anti-spam contact dialog (3 minutes ago)
 Tổng: 241 file, 71541 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)

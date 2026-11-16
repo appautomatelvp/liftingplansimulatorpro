@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-16 09:46 [feat] An hoan toan SDT va email ca nhan khoi man hinh cong khai, HTML tinh va goi dist/, thay bang hop thoai Gui gop y chong bot/spam 5 lop va chi giai ma ban giao email khi khach xac minh gui thanh cong.
+- Nhánh: feat/hide-dev-contact-antispam | Commit trước đó: fe8bb18
+- File: src/saas/feedback.js,src/saas/contact_dialog.js,src/i18n/contact_keys.js,src/saas/i18n.js,src/saas/saas.css,src/saas/branding.js,src/saas/auth_rate_limit.js,src/saas/auth_screen.js,src/saas/feature_access_ui.js,src/saas/session_ui_bindings.js,index.html,test/feedback_mailto.test.js,test/auth_screen.test.js
+
 ## 2026-11-15 17:08 [fix] Ngắt render WebGL khi màn hình đang khóa hoặc mở modal Workspace để giải phóng CPU SwiftShader, cho phép khóa tài khoản tức thì khi Firebase Auth gặp DB_TIMEOUT, sửa pattern regex /v ở Catalog CMS và đồng bộ timeout Playwright Auth CI.
 - Nhánh: codex/safelift-g0-ci | Commit trước đó: 4864b45
 - File: src/graphics/SceneRenderer.js,src/saas/session.js,src/saas/admin_catalog_audit_panels.js,playwright.auth.config.js

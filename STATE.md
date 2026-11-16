@@ -45,8 +45,8 @@
 ---
 
 ## 4. CÔNG VIỆC ĐANG LÀM DỞ (ONGOING WORK)
-- **Mục tiêu hiện tại:** Hoàn tất 4/4 bước đồng bộ Logo + Icon (`app-icon.png` + wordmark `SAFELIFT3D`) và cập nhật Background công nghiệp chỉnh màu bản quyền sạch kèm hiệu ứng Zoom-Out (`auto_memory/PLAN.md` `Trạng thái: DONE`).
-- **Bước tiếp theo:** Founder F5 kiểm tra màn hình khởi động/đăng nhập (`http://localhost:5173/`) và CMS `/admin` khi đã đăng nhập, sau đó chạy `./scripts/manual_chot_ban.ps1` để chốt bản ổn định.
+- **Mục tiêu hiện tại:** Hoàn tất 4/4 bước ẩn thông tin cá nhân nhà phát triển khỏi màn hình công khai/HTML/bundle và nâng cấp hộp thoại Góp ý chống bot/spam 5 lớp (`auto_memory/PLAN.md` `Trạng thái: DONE`, nhánh `feat/hide-dev-contact-antispam`).
+- **Bước tiếp theo:** Founder kiểm tra màn hình khởi động, màn hình đăng nhập và bấm mở hộp thoại Góp ý; sau khi ưng ý thì gộp PR/deploy lên Cloudflare Pages.
 
 ---
 

@@ -1,5 +1,5 @@
 # KẾ HOẠCH (Model cao nhất lập Plan → Model thực thi chạy 1 mạch từ Bước 1 đến Bước cuối)
-Trạng thái: ACTIVE        <!-- NONE | ACTIVE | DONE -->
+Trạng thái: DONE        <!-- NONE | ACTIVE | DONE -->
 
 ## Mục tiêu
 Ẩn hoàn toàn số điện thoại cá nhân và email nhà phát triển khỏi toàn bộ màn hình công khai, HTML tĩnh và mã nguồn đóng gói (`dist/`); chỉ giữ tên nhà phát triển (`Lê Việt Phương (Mr)`) kèm nút mở hộp thoại **Gửi email góp ý / Hỗ trợ**, chỉ giải mã & bàn giao email cho ứng dụng mail của khách sau khi vượt qua hàng rào chống bot/spam đa lớp (ẩn địa chỉ tới tận lúc khách gửi thật).
@@ -45,6 +45,6 @@ Trạng thái: ACTIVE        <!-- NONE | ACTIVE | DONE -->
     - `test/auth_screen.test.js`: Thêm test kiểm chứng footer Auth không chứa chuỗi email/SĐT thô và có nút mở góp ý.
   - Kiểm tra xong: quét `src/` + `index.html` + `dist/` xác nhận KHÔNG còn SĐT `968.*051` hay chuỗi email thô `levietphuong.hcmutrans`; chạy `npm run architecture:gate && npm test && npm run build && npm run check:dist`.
 
-- [ ] Bước 4: Nghiệm thu toàn diện & cập nhật bộ nhớ dự án V7
+- [x] Bước 4: Nghiệm thu toàn diện & cập nhật bộ nhớ dự án V7
   - Sửa: `auto_memory/PLAN.md` (`DONE`), `STATE.md`, `auto_memory/CONTEXT.md`
   - Kiểm tra xong: Chạy E2E `npx playwright test e2e/saas-accessibility.spec.js --reporter=list`, chạy `./scripts/auto_log.ps1`, chạy `./scripts/auto_check.ps1` (kiểm tra trạng thái cuối, lưu ý rõ nếu `index.html` đã commit ở Bước 3) và tổng kết báo cáo 3 dòng cho Founder.
