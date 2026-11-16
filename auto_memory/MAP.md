@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 18:30 | Nhánh: feat/horizon-clouds | Commit cuối: 7b2d8c1 step 5: dirty-check HUD DOM updates and set high shadow map to 2048 (7 minutes ago)
+Cập nhật: 2026-11-16 18:30 | Nhánh: feat/horizon-clouds | Commit cuối: 0203cc3 step 6: add Vitest suite and finalize horizon/cargo/perf optimizations (26 seconds ago)
 Tổng: 257 file, 75272 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)

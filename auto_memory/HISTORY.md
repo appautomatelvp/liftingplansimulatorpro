@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-16 18:30 [feat] Hoan tat 6 buoc toi uu tong the va sua loi: hoa muot chan troi, bo sung 3D Steel Pipe (OOG), dong nhat Vehicle xe buyt, toi uu tai CAD va vong lap 60Hz
+- Nhánh: feat/horizon-clouds | Commit trước đó: 0203cc3
+- File: src/graphics/GroundHorizonFade.js,src/graphics/HorizonSkyDome.js,src/graphics/SpecialtyCargoMeshes.js,src/graphics/index.js,src/rigging/SlingPerfHelper.js,src/rigging/index.js,src/core/AssetLoaders.js,src/sim/scene.js,src/sim/state.js,src/sim/cargo/specialty_meshes.js,src/sim/cargo/shell_rebuild.js,src/sim/library/parsers.js,src/sim/rigging/draw_update.js,src/sim/telemetry.js,test/optimize_horizon_cargo_perf.test.js
+
 ## 2026-11-16 17:37 [fix] Sửa trạng thái khởi tạo/Reset cho Basket Spreader (footprint_rig.js, park_apply.js, prelift_reset.js, presets_events.js): giữ cáp dưới ngắn 2 m và 2 ngáng vàng gần hai đầu kiện, bỏ chia 58/42 và bỏ ghi đè giãn L0 khi Reset
 - Nhánh: feat/horizon-clouds | Commit trước đó: cb1e232
 - File: src/sim/physics/footprint_rig.js,src/sim/gear/park_apply.js,src/sim/session/prelift_reset.js,src/sim/session/presets_events.js,test/pretension_nhom_cap.test.js,test/rigging.test.js,auto_memory/CONTEXT.md
