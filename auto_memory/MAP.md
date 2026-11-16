@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 17:03 | Nhánh: feat/horizon-clouds | Commit cuối: 8bf431e fix: compute true lower sling axial reach dLowAx in Basket bar equilibrium (27 minutes ago)
-Tổng: 253 file, 74680 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 17:38 | Nhánh: feat/horizon-clouds | Commit cuối: cb1e232 fix: enable real cargo hoisting and tension transmission for Basket Spreader (35 minutes ago)
+Tổng: 253 file, 74743 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -31,15 +31,15 @@ Tổng: 253 file, 74680 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/physics/beams_seed.js (2951 dòng)
 - src/sim/physics/cables_break.js (1557 dòng)
 - src/sim/physics/flatrack_payload.js (629 dòng)
-- src/sim/physics/footprint_rig.js (840 dòng)
+- src/sim/physics/footprint_rig.js (838 dòng)
 - src/sim/physics/hoist_contacts.js (1070 dòng)
 - src/sim/physics/step_engine.js (782 dòng)
 - src/sim/plan_wizard.js (650 dòng)
 - src/sim/rigging/draw_update.js (875 dòng)
 - src/sim/rigging/hook_pool.js (3118 dòng)
 - src/sim/scene.js (1974 dòng)
-- src/sim/session/prelift_reset.js (1014 dòng)
-- src/sim/session/presets_events.js (3563 dòng)
+- src/sim/session/prelift_reset.js (1030 dòng)
+- src/sim/session/presets_events.js (3573 dòng)
 - src/sim/session/ui_units_bom.js (1953 dòng)
 - src/sim/state.js (605 dòng)
 - src/sim/telemetry.js (1106 dòng)
@@ -48,7 +48,7 @@ Tổng: 253 file, 74680 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - test/custom_slings.test.js (712 dòng)
 - test/engineering.test.js (410 dòng)
 - test/physics_master_blueprint.test.js (524 dòng)
-- test/rigging.test.js (1369 dòng)
+- test/rigging.test.js (1370 dòng)
 - test/rigging_physics_and_alarms.test.js (306 dòng)
 
 ## 🔒 File đã khóa [LOCKED]
@@ -225,7 +225,7 @@ Tổng: 253 file, 74680 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/dynamics.js` | 848 |  ⚠️>300 |
 | `src/sim/gear.js` | 6 |  |
 | `src/sim/gear/editor.js` | 3539 |  ⚠️>300 |
-| `src/sim/gear/park_apply.js` | 73 |  |
+| `src/sim/gear/park_apply.js` | 81 |  |
 | `src/sim/library.js` | 6 |  |
 | `src/sim/library/core.js` | 641 |  ⚠️>300 |
 | `src/sim/library/parsers.js` | 652 | --- HIGH-SPEED BINARY & ASCII .STL / .OBJ / .GLB PARSERS --- ⚠️>300 |
@@ -235,7 +235,7 @@ Tổng: 253 file, 74680 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/physics/beams_seed.js` | 2951 |  ⚠️>300 |
 | `src/sim/physics/cables_break.js` | 1557 |  ⚠️>300 |
 | `src/sim/physics/flatrack_payload.js` | 629 | --- FLAT RACK LASHING RUPTURE, DECK SLIDING & FALLING PAYLOAD PHYSICS --- ⚠️>300 |
-| `src/sim/physics/footprint_rig.js` | 840 |  ⚠️>300 |
+| `src/sim/physics/footprint_rig.js` | 838 |  ⚠️>300 |
 | `src/sim/physics/hoist_contacts.js` | 1070 |  ⚠️>300 |
 | `src/sim/physics/index.js` | 9 | Bounded context index — parts are assembled via src/sim/manifest.js (shared scope). |
 | `src/sim/physics/port.js` | 59 |  |
@@ -246,8 +246,8 @@ Tổng: 253 file, 74680 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/rigging/hook_pool.js` | 3118 |  ⚠️>300 |
 | `src/sim/scene.js` | 1974 |  ⚠️>300 |
 | `src/sim/session.js` | 6 |  |
-| `src/sim/session/prelift_reset.js` | 1014 |  ⚠️>300 |
-| `src/sim/session/presets_events.js` | 3563 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
+| `src/sim/session/prelift_reset.js` | 1030 |  ⚠️>300 |
+| `src/sim/session/presets_events.js` | 3573 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
 | `src/sim/session/ui_units_bom.js` | 1953 | --- 12. UI EVENT BINDINGS & COLLAPSIBLE PANELS --- ⚠️>300 |
 | `src/sim/state.js` | 605 | Floor cribbing removed: static cargo rests flush on the quay / ground plane. ⚠️>300 |
 | `src/sim/telemetry.js` | 1106 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
@@ -293,8 +293,8 @@ Tổng: 253 file, 74680 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/physics_destruction.test.js` | 69 |  |
 | `test/physics_master_blueprint.test.js` | 524 |  ⚠️>300 |
 | `test/pipeline.test.js` | 232 |  |
-| `test/pretension_nhom_cap.test.js` | 206 | Kiểm thử vàng nút Nhớm Cáp (pretensionRig): kiện chạm đất 0.00m và toàn bộ hệ cáp căng đúng chiều dài thực |
-| `test/rigging.test.js` | 1369 |  ⚠️>300 |
+| `test/pretension_nhom_cap.test.js` | 236 | Kiểm thử vàng nút Nhớm Cáp (pretensionRig): kiện chạm đất 0.00m và toàn bộ hệ cáp căng đúng chiều dài thực |
+| `test/rigging.test.js` | 1370 |  ⚠️>300 |
 | `test/rigging_alarms_and_tolerances.test.js` | 216 |  |
 | `test/rigging_groups_and_dynamics.test.js` | 84 |  |
 | `test/rigging_physics_and_alarms.test.js` | 306 | test/rigging_physics_and_alarms.test.js ⚠️>300 |

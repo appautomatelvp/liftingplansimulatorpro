@@ -2145,6 +2145,16 @@
                     }
                     // Prefer default β=50° lengths for the new topology (even metres)
                     if (typeof applyPullAnglePreset === 'function') applyPullAnglePreset(50);
+                    if (state.beamType !== 'none' && state.lowerSlingLength == null) {
+                        const specNew = (typeof getRigSpec === 'function') ? getRigSpec() : null;
+                        const recL = (specNew && specNew.recLower) || 2.0;
+                        state.lowerSlingLength = recL;
+                        if (state.gear && state.gear.legs) {
+                            state.gear.legs.forEach(l => {
+                                if (l) { l.lengthM = recL; l.userSet = true; }
+                            });
+                        }
+                    }
 
                     rebuildSpreaderVisuals();
                     // Always re-seat level — inheriting a mid-air tilt into a new cable graph

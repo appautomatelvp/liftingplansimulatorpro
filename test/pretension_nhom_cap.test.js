@@ -203,4 +203,34 @@ describe('Nhớm Cáp (pretensionRig) — Grounded Cargo + Full Real-Length Taut
     }
     expect(phy.legTensions[0]).toBeGreaterThan(1.0);
   });
+
+  it('5. Auto-sized & Reset Basket keeps short 2m lower slings and bars near ends (never collapsed to center)', () => {
+    const sim = createHeadlessSim();
+    const s = sim.getState();
+    const phy = sim.getPhy();
+
+    s.cargoType = 'flatrack';
+    s.L = 12.192;
+    s.W = 2.438;
+    s.H = 2.591;
+    s.oogCargoH = 2.78;
+    s.oogOh = 0.30;
+    s.beamType = 'basket';
+    s.slingUserSet = false;
+    s.upperSlingLength = null;
+    s.lowerSlingLength = null;
+    sim.rebuildCargoAndRig(true);
+
+    for (let i = 0; i < 2; i++) {
+      globalThis.finishSmoothSetDown();
+      sim.stepSim(10);
+      const leg = phy.cables.find((c) => c.role === 'leg');
+      const up = phy.cables.find((c) => c.role === 'upper');
+      expect(leg.L0).toBeCloseTo(2.0, 1);
+      expect(up.L0).toBeGreaterThanOrEqual(9.5);
+      for (const b of phy.beams) {
+        expect(Math.abs(b.x.x)).toBeGreaterThan(3.5);
+      }
+    }
+  });
 });

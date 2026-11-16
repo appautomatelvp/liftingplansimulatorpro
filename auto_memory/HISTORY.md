@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-16 17:37 [fix] Sửa trạng thái khởi tạo/Reset cho Basket Spreader (footprint_rig.js, park_apply.js, prelift_reset.js, presets_events.js): giữ cáp dưới ngắn 2 m và 2 ngáng vàng gần hai đầu kiện, bỏ chia 58/42 và bỏ ghi đè giãn L0 khi Reset
+- Nhánh: feat/horizon-clouds | Commit trước đó: cb1e232
+- File: src/sim/physics/footprint_rig.js,src/sim/gear/park_apply.js,src/sim/session/prelift_reset.js,src/sim/session/presets_events.js,test/pretension_nhom_cap.test.js,test/rigging.test.js,auto_memory/CONTEXT.md
+
 ## 2026-11-16 17:03 [fix] Mở khóa lực kéo nhấc kiện hàng thật cho Basket Spreader (beams_seed.js, hoist_contacts.js, RiggingPhysicsSolver.js), ngăn giãn cáp dưới và thêm test kiểm chứng nhấc tải Basket (pretension_nhom_cap.test.js)
 - Nhánh: feat/horizon-clouds | Commit trước đó: 8bf431e
 - File: src/sim/physics/beams_seed.js,src/sim/physics/hoist_contacts.js,src/rigging/RiggingPhysicsSolver.js,test/pretension_nhom_cap.test.js,test/rigging.test.js,auto_memory/CONTEXT.md

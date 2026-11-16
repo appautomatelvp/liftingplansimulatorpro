@@ -315,17 +315,15 @@
                         lowerDrop = Math.sqrt(Math.max(0.04, lower * lower - horizL * horizL));
                     }
                 } else {
-                    const requested = state.slingUserSet
-                        ? Math.max(minUpper + minLower, state.slingLength)
-                        : Math.max(recUpper, minUpper + minLower);
-                    const total = chordAt(horizU, requested);
-                    const totalPlane = Math.sqrt(Math.max(0.64, total.len * total.len - halfZ * halfZ));
-                    const upperAx = Math.max(0.55, (totalPlane - 0.28) * 0.58);
-                    topLeg = Math.max(minUpper, Math.hypot(upperAx, halfZ));
-                    lower = Math.max(minLower, totalPlane - 0.28 - upperAx);
-                    topDrop = total.drop * 0.58;
-                    lowerDrop = total.drop * 0.42;
-                    betaDeg = total.beta * 180 / Math.PI;
+                    const reqTotal = state.slingUserSet
+                        ? Math.max(recUpper, state.slingLength || recUpper)
+                        : recUpper;
+                    const upper = chordAt(horizU, reqTotal);
+                    topLeg = Math.max(minUpper, reqTotal);
+                    topDrop = upper.drop;
+                    betaDeg = upper.beta * 180 / Math.PI;
+                    lower = recLower;
+                    lowerDrop = Math.sqrt(Math.max(0.04, lower * lower - horizL * horizL));
                 }
                 return {
                     spanX, spanZ, topDrop, lower, lowerDrop, topLeg, mast: 0, betaDeg,

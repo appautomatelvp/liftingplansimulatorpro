@@ -144,57 +144,73 @@
             phy.groundClearance = 0;
             syncPoseLockUI();
             parkHookSlack();
-            // Seat the spreader on the cargo roof FIRST, then pay out L0 past the
-            // live span. Measuring while the beam was still hanging made uppers
-            // re-taut and snatch the cargo up a few cm after Hạ đất.
-            if (Array.isArray(phy.beams) && state.beamType !== 'none') {
-                phy.beams.forEach(b => {
-                    if (typeof clampBeamAboveCargoRoof === 'function') {
-                        clampBeamAboveCargoRoof(b);
-                    }
-                    const spec = (typeof getRigSpec === 'function') ? getRigSpec() : null;
-                    if (typeof cargoCeilingUnderBeam === 'function') {
-                        const floorY = cargoCeilingUnderBeam(b.x.x, b.x.z, spec, b);
-                        if (isFinite(floorY) && floorY > -1e5) {
-                            b.x.y = floorY;
-                            b.isRestingOnCargo = true;
-                            if (b.v) b.v.set(0, 0, 0);
-                            if (b.group) b.group.position.copy(b.x);
+            if (state.beamType === 'basket') {
+                if (typeof alignBasketBars === 'function') alignBasketBars();
+                if (typeof attachWorld === 'function' && Array.isArray(phy.cables)) {
+                    phy.cables.forEach(c => {
+                        if (typeof cableIsBroken === 'function' && cableIsBroken(c)) return;
+                        const span = attachWorld(c.a).distanceTo(attachWorld(c.b));
+                        c.slack = span < (c.L0 || 1) - 0.02;
+                        c.tensionT = 0;
+                    });
+                    phy.legSlacks = [true, true, true, true, true, true, true, true];
+                    phy.legTensions = [0, 0, 0, 0, 0, 0, 0, 0];
+                    phy.upperTensions = [0, 0, 0, 0, 0, 0, 0, 0];
+                }
+                phy._nhomFreezeSpreader = false;
+            } else {
+                // Seat the spreader on the cargo roof FIRST, then pay out L0 past the
+                // live span. Measuring while the beam was still hanging made uppers
+                // re-taut and snatch the cargo up a few cm after Hạ đất.
+                if (Array.isArray(phy.beams) && state.beamType !== 'none') {
+                    phy.beams.forEach(b => {
+                        if (typeof clampBeamAboveCargoRoof === 'function') {
+                            clampBeamAboveCargoRoof(b);
                         }
+                        const spec = (typeof getRigSpec === 'function') ? getRigSpec() : null;
+                        if (typeof cargoCeilingUnderBeam === 'function') {
+                            const floorY = cargoCeilingUnderBeam(b.x.x, b.x.z, spec, b);
+                            if (isFinite(floorY) && floorY > -1e5) {
+                                b.x.y = floorY;
+                                b.isRestingOnCargo = true;
+                                if (b.v) b.v.set(0, 0, 0);
+                                if (b.group) b.group.position.copy(b.x);
+                            }
+                        }
+                    });
+                }
+                if (typeof attachWorld === 'function' && Array.isArray(phy.cables)) {
+                    if (state.gear && state.gear.legs) {
+                        state.gear.legs.forEach(leg => {
+                            if (!leg) return;
+                            leg.lengthM = null;
+                            leg.userSet = false;
+                        });
                     }
-                });
-            }
-            if (typeof attachWorld === 'function' && Array.isArray(phy.cables)) {
-                if (state.gear && state.gear.legs) {
-                    state.gear.legs.forEach(leg => {
-                        if (!leg) return;
-                        leg.lengthM = null;
-                        leg.userSet = false;
+                    if (state.gear && state.gear.uppers) {
+                        state.gear.uppers.forEach(u => {
+                            if (!u) return;
+                            u.lengthM = null;
+                            u.userSet = false;
+                        });
+                    }
+                    phy.cables.forEach(c => {
+                        if (typeof cableIsBroken === 'function' && cableIsBroken(c)) return;
+                        const span = attachWorld(c.a).distanceTo(attachWorld(c.b));
+                        const slack = Math.min(0.55, Math.max(0.18, span * 0.05));
+                        const L0 = Math.max(0.08, span + slack);
+                        c.L0 = L0;
+                        c.designL0 = L0;
+                        c.slack = true;
+                        c.tensionT = 0;
                     });
+                    phy.legSlacks = [true, true, true, true, true, true, true, true];
+                    phy.legTensions = [0, 0, 0, 0, 0, 0, 0, 0];
+                    phy.upperTensions = [0, 0, 0, 0, 0, 0, 0, 0];
                 }
-                if (state.gear && state.gear.uppers) {
-                    state.gear.uppers.forEach(u => {
-                        if (!u) return;
-                        u.lengthM = null;
-                        u.userSet = false;
-                    });
-                }
-                phy.cables.forEach(c => {
-                    if (typeof cableIsBroken === 'function' && cableIsBroken(c)) return;
-                    const span = attachWorld(c.a).distanceTo(attachWorld(c.b));
-                    const slack = Math.min(0.55, Math.max(0.18, span * 0.05));
-                    const L0 = Math.max(0.08, span + slack);
-                    c.L0 = L0;
-                    c.designL0 = L0;
-                    c.slack = true;
-                    c.tensionT = 0;
-                });
-                phy.legSlacks = [true, true, true, true, true, true, true, true];
-                phy.legTensions = [0, 0, 0, 0, 0, 0, 0, 0];
-                phy.upperTensions = [0, 0, 0, 0, 0, 0, 0, 0];
+                // Keep beam on the roof after payout (kinematic hang would lift it again).
+                phy._nhomFreezeSpreader = true;
             }
-            // Keep beam on the roof after payout (kinematic hang would lift it again).
-            phy._nhomFreezeSpreader = true;
             if (Array.isArray(phy.beams)) {
                 phy.beams.forEach(b => {
                     if (typeof clampBeamAboveCargoRoof === 'function') clampBeamAboveCargoRoof(b);

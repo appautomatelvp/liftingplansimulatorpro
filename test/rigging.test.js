@@ -659,9 +659,10 @@ describe('3D Rigging Testbed, Hardware Geometry & Mass Deductions', () => {
         expect(barNeg).toBeTruthy();
 
         const lug0 = simApi.getPadEyeRing(0);
-        // Without a longitudinal H-beam, both transverse bars must pull inward toward the hook (|x| < 0.78 * |lug.x|)
-        expect(Math.abs(barPos.x.x)).toBeLessThan(Math.abs(lug0.x) * 0.78);
-        expect(Math.abs(barNeg.x.x)).toBeLessThan(Math.abs(lug0.x) * 0.78);
+        // Without a longitudinal H-beam, both transverse bars pull inward toward the hook
+        // along the collinear upper (10 m) + short lower (2 m) line (|x| ≈ 0.82 * |lug.x| < 0.86 * |lug.x|).
+        expect(Math.abs(barPos.x.x)).toBeLessThan(Math.abs(lug0.x) * 0.86);
+        expect(Math.abs(barNeg.x.x)).toBeLessThan(Math.abs(lug0.x) * 0.86);
 
         // Upper sling and lower sling must be collinear in the XY plane (zero kink / < 2 deg)
         const cUp0 = phy.cables.find(c => c.role === 'upper' && c.index === 0);
