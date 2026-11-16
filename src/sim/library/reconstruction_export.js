@@ -881,17 +881,19 @@
 
         function pushReplaySample() {
             if (!replay.recording || typeof RIG === 'undefined' || !RIG.captureReplayFrame) return;
-            const res = RIG.captureReplayFrame({ replay, state, phy });
+            const res = RIG.captureReplayFrame({ replay, state, phy, activeCargoVisual });
             if (!res) return;
             const lbl = document.getElementById('lbl-replay');
-            if (lbl) lbl.textContent = res.full ? 'Đầy 36s' : ('REC ' + res.t.toFixed(1) + 's');
+            if (lbl) lbl.textContent = res.full ? 'Đầy 60s' : `REC ${res.t.toFixed(1)}s/60s`;
+            if (res.full) document.getElementById('btn-rec')?.classList.remove('ring-2', 'ring-rose-400', 'animate-pulse');
         }
 
         function stepReplay(dt) {
             if (typeof RIG === 'undefined' || !RIG.stepReplayPlayback) { replay.playing = false; return; }
-            const res = RIG.stepReplayPlayback({ THREE, replay, state, phy, dt });
+            const res = RIG.stepReplayPlayback({ THREE, replay, state, phy, activeCargoVisual, dt });
             const lbl = document.getElementById('lbl-replay');
             if (lbl) lbl.textContent = res.done ? 'Hết bản ghi' : ('PLAY ' + res.t.toFixed(1) + 's');
+            if (res.done) document.getElementById('btn-replay')?.classList.remove('ring-2', 'ring-sky-400');
         }
 
         let prevFollowWorldPos = null;

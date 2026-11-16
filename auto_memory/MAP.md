@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 22:16 | Nhánh: feat/horizon-clouds | Commit cuối: 1839403 Snapshot 221116112026 (test): truoc khi lam dunnage-replay60s-tablet-ruler-sts-deploy (4 minutes ago)
-Tổng: 268 file, 77789 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 22:17 | Nhánh: feat/horizon-clouds | Commit cuối: 7110f69 step 1: project dunnage contacts under shifted/rotated cargo and damp STS hoist spring (89 seconds ago)
+Tổng: 268 file, 77852 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -28,7 +28,7 @@ Tổng: 268 file, 77789 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/gear/editor.js (3614 dòng)
 - src/sim/library/core.js (641 dòng)
 - src/sim/library/parsers.js (654 dòng)
-- src/sim/library/reconstruction_export.js (2110 dòng)
+- src/sim/library/reconstruction_export.js (2112 dòng)
 - src/sim/physics/beams_seed.js (2987 dòng)
 - src/sim/physics/cables_break.js (1555 dòng)
 - src/sim/physics/flatrack_payload.js (657 dòng)
@@ -188,7 +188,7 @@ Tổng: 268 file, 77789 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/HStyleLiftingBeam.js` | 188 | Cấu tạo 3D và thông số khớp nối H-Style Lifting Beam (tùy chọn trên Direct Hook/2-Cáp và dưới 4-Cáp/Twistlock) |
 | `src/rigging/index.js` | 23 | src/rigging/index.js |
 | `src/rigging/PretensionSolver.js` | 297 | Giải cao độ móc cẩu và dầm ngáng tại trạng thái Nhớm Cáp (kiện chạm đất, toàn bộ cáp căng đúng chiều dài thực) ⚠️>250 |
-| `src/rigging/ReplayRecorder.js` | 200 | Ghi và phát lại toàn bộ trạng thái mô phỏng (Hook, Ngáng dầm, Kiện hàng, Dây cáp, Cẩu, OOG/Lashing) cho nút Ghi / Xem / Dừng. |
+| `src/rigging/ReplayRecorder.js` | 261 | Ghi và phát lại toàn bộ trạng thái mô phỏng (Hook, Ngáng dầm, Kiện, Cáp đứt/chùng, Lashing/OOG rơi, Cẩu) tối đa 60 giây. ⚠️>250 |
 | `src/rigging/riggingConstants.js` | 69 | src/rigging/riggingConstants.js |
 | `src/rigging/RiggingPhysicsSolver.js` | 684 | src/rigging/RiggingPhysicsSolver.js ⚠️>300 |
 | `src/rigging/riggingUIStore.js` | 100 | src/rigging/riggingUIStore.js |
@@ -241,7 +241,7 @@ Tổng: 268 file, 77789 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/library.js` | 6 |  |
 | `src/sim/library/core.js` | 641 |  ⚠️>300 |
 | `src/sim/library/parsers.js` | 654 | --- HIGH-SPEED BINARY & ASCII .STL / .OBJ / .GLB PARSERS --- ⚠️>300 |
-| `src/sim/library/reconstruction_export.js` | 2110 | --- 2D IMAGE TO 3D CONTOUR & RELIEF RECONSTRUCTION ENGINE --- ⚠️>300 |
+| `src/sim/library/reconstruction_export.js` | 2112 | --- 2D IMAGE TO 3D CONTOUR & RELIEF RECONSTRUCTION ENGINE --- ⚠️>300 |
 | `src/sim/manifest.js` | 39 |  |
 | `src/sim/physics.js` | 6 |  |
 | `src/sim/physics/beams_seed.js` | 2987 |  ⚠️>300 |

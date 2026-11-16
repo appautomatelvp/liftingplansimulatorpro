@@ -31,7 +31,7 @@ Nhánh Git: feat/horizon-clouds
   - *(Chú ý giới hạn 3 file/bước: Bước 1A làm `JobsiteSiteVisuals.js`, `beams_seed.js`, `step_engine.js`; Bước 1B hay gộp `dynamics.js`/`hoist_contacts.js` — hãy giữ đúng 3 file: `JobsiteSiteVisuals.js`, `beams_seed.js`, `step_engine.js`, xử lý hoàn chỉnh cả gỗ kê & hạ STS!)*
 - **Kiểm tra:** `npx vitest run test/v2_ux_dunnage_ruler_regression.test.js test/v3_ruler_drag_hoist_sts_gear_regression.test.js test/pretension_nhom_cap.test.js` + `npm run architecture:gate` + `npm run build`.
 
-### [ ] Bước 2: Hoàn thiện `Ghi / Xem / Dừng` tái hiện 100% Lắc kiện, Cắt cáp, Rớt kiện OOG, Đứt dây chằng (giới hạn 60s)
+### [x] Bước 2: Hoàn thiện `Ghi / Xem / Dừng` tái hiện 100% Lắc kiện, Cắt cáp, Rớt kiện OOG, Đứt dây chằng (giới hạn 60s)
 - **File sửa (3 file):**
   1. `src/rigging/ReplayRecorder.js` (`< 260` dòng): tăng giới hạn `MAX_REPLAY_FRAMES = 1200` (`60.0s`), lưu & phát lại đầy đủ trạng thái OOG (`status`, `strapsBroken`, `lashing.isIntact`, `localPos`, `worldPos`, `worldQuat`, vị trí/góc 3D `flatRackOogCargo`, trạng thái đứt từng dây `strapNodes`), lưu đầy đủ `cable.broken` + `break.frac/upperLen/lowerLen/tipU/tipL` + `cable._failureProcessed` và áp trực tiếp vào `activeCargoVisual` trong `applyReplayFrame()`.
   2. `src/sim/library/reconstruction_export.js`: truyền `activeCargoVisual` (và `cableIsBroken` / `clearCableBreak` / `syncOOG`) vào `ReplayRecorder`, hiển thị đếm ngược `REC Xs / 60s`.
