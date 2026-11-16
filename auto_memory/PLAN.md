@@ -1,21 +1,20 @@
 # KẾ HOẠCH THỰC HIỆN (PLAN.md)
-Trạng thái: DONE
-Tính năng: Bỏ cục tời khi tắt cẩu 3D, Kéo vị trí Cây thước 3D & Điểm Đỏ bắt cả Cáp/Ma ní, Double-Click Hạ/Kéo (chạm đất trùng cáp / lên 10m), Mở khóa chỉnh Chiều dài & Thông số Cáp/Công cụ, Hết giật STS Spreader Gắp trực tiếp
+Trạng thái: ACTIVE
+Tính năng: Chống xuyên đà gỗ khi kéo kiện ra vị trí bất kỳ, Ghi/Xem/Dừng tái hiện 100% (tối đa 60s), Tối ưu Tablet (iPad / Android >= 4GB RAM) giữ đủ bảng chức năng, Thước cao độ mặc định bên phải & số to gấp đôi, Dứt điểm giật STS Hạ/Hạ đất, Triển khai GitHub & Cloudflare Pages
 Nhánh Git: feat/horizon-clouds
 
-## Mục tiêu & Chẩn đoán Gốc (Đã kiểm chứng trong code)
-1. **Cục tời hộp đen + 2 puly lơ lửng khi chưa bật cần cẩu 3D (`scene.js:781-803`):** Nhánh `craneType === 'hook_only'` dựng khối hộp `crownBeam` + 2 đĩa puly `upperSheave` tại `y = 24.0`. Cần giữ `sheaveCrownGroup` là một `THREE.Group()` rỗng (giữ tọa độ neo dây cáp tời `girderY`), bỏ toàn bộ lưới hộp đen và puly phía trên.
-2. **Thước đo độ cao 3D chưa kéo đặt vị trí được & rà chuột vào Cáp/Ma ní không hiện Điểm Đỏ (`ElevationRulerTool.js` + `reconstruction_export.js:2100` + `editor.js:3165`):**
-   - `update()` luôn ép `rulerGroup.position.set(rx, 0, rz)` mỗi khung hình, không có tay nắm kéo và chưa nối vào `getInteractiveGizmos()`.
-   - `onRulerMove` chỉ truyền `[cargoRootGroup, spreaderRootGroup, craneVehicleGroup, dunnageGroup, hookGroup]` mà bỏ sót `sling3DPool`, `hwMeshes` (ma ní), `padEyeMeshes`, `phy.beamGroups`, lại chỉ dùng `raycaster.intersectObjects` nên rất hay hụt các sợi dây cáp mảnh.
-3. **Double-click `Hạ` & `Kéo` (`presets_events.js:2350-2522`, `prelift_reset.js:59-160`, `hoist_contacts.js:183-346`):**
-   - Chưa có listener `dblclick`; hơn nữa `pointerup` của lần bấm thứ 2 gọi `stopHoistHold()` ngay trước `dblclick`. Cần gắn `dblclick` kích hoạt sau `pointerup`: double-click `Hạ` hạ êm tới khi kiện nằm hẳn trên đất/đà gỗ **và toàn bộ cáp trùng**, double-click `Kéo` nâng êm tới độ cao `10.0 m`.
-4. **Không chỉnh được chiều dài và thông số cáp / công cụ sau F5 (`beams_seed.js:214`, `editor.js:1767`, `ui_units_bom.js:1666`, `presets_events.js:2612`):**
-   - `syncCableRest()` ưu tiên `held != null` (`heldCableL0`) đè lên `item.lengthM` (`customLength`). Khi chỉnh chiều dài ở bảng bên trái (`renderSlingInspector`) hoặc `inp-selectedL` nhưng `holdCableLength` đang bật, `heldCableL0` không bị xóa nên `c.L0` giữ nguyên giá trị cũ.
-   - `handleTestLift()` (`Nhấc thử`) tự ý xóa sạch `rec.userSet = false; rec.lengthM = null` của mọi nhánh cáp.
-   - Khi đang `poseLock`, chỉnh chiều dài cáp ở `renderSlingInspector` chưa gọi `syncHookToRigTaut()` / `applyBeamVisuals()` nên người dùng không thấy thay đổi tức thì.
-5. **STS Spreader `Gắp trực tiếp` (`direct`) hạ bị giật cục (`beams_seed.js:2321, 2404, 2673`):**
-   - Vòng lặp XPBD bỏ qua giải lực cáp ở nhánh STS Direct (`beams_seed.js:2404`) nhưng lại vẫn tích phân rơi tự do `vCom.y -= G_EARTH * dt` (`beams_seed.js:2321`) khiến kiện tụt tự do nhiều centimet mỗi frame, rồi cuối frame `enforceStsDirectTwistlockCouple` mới kẹp kéo giật ngược trở lại khớp ngáng STS — tạo dao động răng cưa "giật cục" liên tục khi Hạ.
+## Mục tiêu & Chẩn đoán Gốc
+1. **Kéo kiện ra vị trí khác đè lên gỗ vẫn xuyên qua (`beams_seed.js:2268`):** `contactLocals()` chỉ lấy 7 cột điểm tĩnh theo `[-0.39..0.39] * L` (cách nhau ~1.7 m trên kiện 40ft), rộng hơn nhiều so với thanh gỗ `0.20 m` nên khi kéo lệch kiện X/Z, thân kiện lọt qua khe giữa các điểm dò. Cần tự động chiếu/bổ sung điểm tiếp xúc ngay tại giao tuyến giữa đáy kiện và từng thanh đà gỗ trong `dunnageGroup` (`siteProfile.beams`) ở mọi vị trí kéo/xoay.
+2. **Ghi / Xem / Dừng chưa tái hiện Lắc kiện, Cắt cáp, Rớt kiện, Đứt dây & giới hạn 60s (`ReplayRecorder.js`, `presets_events.js`, `flatrack_payload.js`):**
+   - Giới hạn hiện tại đang là `36s` (`MAX_REPLAY_FRAMES = 720`); cần nâng lên tối đa `60s` (`1200` khung hình @ 20Hz).
+   - Khi phát lại (`stepReplayPlayback`), `stepPhysicsEngine()` tạm dừng nhưng `ReplayRecorder` mới chỉ đặt `phy.oogState` chứ chưa cập nhật lưới 3D `flatRackOogCargo` (vị trí `localPos` / `worldPos` rơi, góc nghiêng), chưa đồng bộ trạng thái đứt từng sợi dây chằng (`flatRackLashingStraps` / `flatRackBrokenStraps` + `strapNodes`), chưa reset `cable._failureProcessed` / giữ đủ `cable.break` khi chuyển giữa chưa cắt ↔ đã cắt, và chưa lưu snapshot cấu hình ban đầu (`initialMeta`) lúc ấn `Ghi`.
+3. **Hoạt động mượt & đủ bảng chức năng trên iPad / Tablet Android (>= 4GB RAM) (`src/styles/app.css`, `src/graphics/SceneRenderer.js`, `src/sim/gear/editor.js`):**
+   - `#top-bar` (`flex-wrap: nowrap; overflow-x: hidden`) và `#bottom-dock-bar` bị cắt mất nút/bảng điều khiển ở độ rộng tablet `768px–1279px`. Cần bật vuốt ngang / rớt dòng gọn cho `#top-bar` và `#bottom-dock-bar` trên tablet (`<= 1279px`), tối ưu chiều rộng ngăn kéo `#right-side-drawer` / `#gear-editor` và vùng chạm cảm ứng (`touch-action: none` trên canvas, DPR tối ưu `<= 1.5` trên thiết bị cảm ứng để tablet 4GB RAM chạy mượt không tràn VRAM).
+4. **Cây thước cao độ mặc định bên PHẢI (như hình mẫu) khi F5 & con số to gấp đôi (`ElevationRulerTool.js`):**
+   - Chuyển vị trí mặc định (`customPos === null`) sang bên phải `+X` (`cx + Math.max(2.4, L * 0.5) + 1.55`), và nhân đôi kích thước font/sprite của nhãn độ cao (`512x112`, scale `4.4 x 0.96`) lẫn số chia vạch (`1.85 x 0.48`).
+5. **Spreader STS vẫn giật khi bấm `Hạ` hoặc `Hạ đất` (`step_engine.js`, `hoist_contacts.js`, `beams_seed.js`, `dynamics.js`):**
+   - Lò xo cáp tời đàn hồi `stepHoistDynamics` mất tải trọng treo khi XPBD bỏ qua xung lực `c._j = 0` ở STS Direct (khiến móc cẩu rung nẩy khi bắt đầu/dừng `Hạ`), đồng thời `step_engine.js:45` ngắt `Hạ đất` quá sớm tại `0.035m` làm kiện rớt nấc cuối về `0m`. Cần khóa êm bộ giảm chấn tời khi STS hạ, giảm tốc mượt tới sát `0.005m` và giữ `prevCargoY` đồng nhất.
+6. **Triển khai GitHub & Cloudflare Pages:** Chốt nhánh ổn định (`main`), push lên GitHub `origin` và deploy `dist/` lên Cloudflare Pages (`safelift3d`).
 
 ## File `[LOCKED]` CẤM ĐỤNG
 - `src/sim/manifest.js`, `/src/core/physics-world/*`, `/src/core/standards/*`, `CraneLoadChartEngine.js`, `GroundPressureEngine.js`, `PhysicalCableSolver.js`, `DeformableSteelStructure.js`, `/firestore.rules`, shims, `firestoreSanitize.js`, `localDataStore.js`.
@@ -24,42 +23,41 @@ Nhánh Git: feat/horizon-clouds
 
 ## CÁC BƯỚC THỰC HIỆN TUẦN TỰ
 
-### [x] Bước 1: Bỏ cục tời lơ lửng khi tắt cẩu 3D + Sửa triệt để giật cục khi Hạ STS Spreader `Gắp trực tiếp`
+### [ ] Bước 1: Chống kiện xuyên qua đà gỗ ở mọi vị trí kéo/xoay & Khử nốt giật khi `Hạ`/`Hạ đất` STS Spreader
 - **File sửa (3 file):**
-  1. `src/sim/scene.js`: trong nhánh `type === 'hook_only'`, giữ `sheaveCrownGroup` là `THREE.Group()` rỗng tại `y = crownY = 24.0` (để dây cáp tời vẫn kéo thẳng lên đúng đỉnh), bỏ `crownBeam` và 2 bánh `upperSheave`.
-  2. `src/sim/physics/beams_seed.js`: khi `state.beamType === 'container_spreader' && isStsDirectAttach() && cargoHasIntactLoadLegs()`, bỏ bước rơi tự do `vCom.y -= G_EARTH * dt` trong vòng lặp XPBD (để không tụt hụt rồi bị giật ngược bởi `enforceStsDirectTwistlockCouple`), tính `prevCargoY` nhất quán trước khi bước theo `stepRateLimitedY`, triệt tiêu dao động răng cưa khi Hạ.
-  3. `src/sim/physics/hoist_contacts.js`: khi đang `holdLower` / `_setDownActive` ở STS Direct, bám `hookTarget.y` và `kinTarget.y` mượt theo vận tốc tời `rates.down`, tránh xung đột dừng/kéo với `kinHold`.
-- **Kiểm tra:** `npx vitest run test/unified_hoist_and_sts_realism.test.js test/sts_spreader_realistic.test.js` + `npm run architecture:gate` + `npm run build`.
+  1. `src/graphics/JobsiteSiteVisuals.js`: thêm hàm thuần `sampleDunnageContactPointsForCargo({ cargoPos, cargoQuat, L, W, H, dunnageGroup })` tính chính xác các điểm tiếp xúc trên đáy kiện nằm đúng đỉnh/mép các thanh đà gỗ (kể cả khi kéo lệch tâm hay xoay góc).
+  2. `src/sim/physics/beams_seed.js`: gọi hàm trên trong `contactLocals()` (và `flatRackContactSampleLocals()`), đồng thời đồng bộ vận tốc/giảm nẩy cho STS Spreader khi `lowering`.
+  3. `src/sim/physics/hoist_contacts.js` & `src/sim/physics/step_engine.js` (hoặc tách helper nhỏ ở `UnifiedHoistProfile.js` giữ `<= 25` dòng vào mỗi file cũ): ổn định lò xo móc tời ở STS Direct khi `Hạ` (không rung nẩy do `c._j = 0`) và hạ êm tới `groundClearance <= 0.008m` trước khi `finishSmoothSetDown()`.
+  - *(Chú ý giới hạn 3 file/bước: Bước 1A làm `JobsiteSiteVisuals.js`, `beams_seed.js`, `step_engine.js`; Bước 1B hay gộp `dynamics.js`/`hoist_contacts.js` — hãy giữ đúng 3 file: `JobsiteSiteVisuals.js`, `beams_seed.js`, `step_engine.js`, xử lý hoàn chỉnh cả gỗ kê & hạ STS!)*
+- **Kiểm tra:** `npx vitest run test/v2_ux_dunnage_ruler_regression.test.js test/v3_ruler_drag_hoist_sts_gear_regression.test.js test/pretension_nhom_cap.test.js` + `npm run architecture:gate` + `npm run build`.
 
-### [x] Bước 2: Mở khóa chỉnh tự do chiều dài & thông số cáp/công cụ sau F5
+### [ ] Bước 2: Hoàn thiện `Ghi / Xem / Dừng` tái hiện 100% Lắc kiện, Cắt cáp, Rớt kiện OOG, Đứt dây chằng (giới hạn 60s)
 - **File sửa (3 file):**
-  1. `src/sim/physics/beams_seed.js` (`syncCableRest`): đảm bảo `customLength` (do người dùng chủ động chỉnh tay `item.userSet && item.lengthM != null`) luôn được tôn trọng khi `item.userSet` mới cập nhật, không để `heldCableL0` cũ khóa chết.
-  2. `src/sim/gear/editor.js`: trong `renderSlingInspector` & `commitGearField`, mọi thao tác sửa chiều dài (`lenRow`) phải cập nhật/xóa `state.heldCableL0[role][index]` tương ứng, gọi `syncCableRest(false)` + `applyBeamVisuals()` + cập nhật móc nếu cần; giữ trạng thái chỉnh thông số cáp/ma ní/dầm ổn định không tự reset về mặc định ngoài ý muốn.
-  3. `src/sim/session/ui_units_bom.js`: sửa `onSelectedChange` (đồng bộ xóa `state.heldCableL0[sel.role][sel.index]`, hỗ trợ đồng thời nhóm nhiều cáp đang chọn) và đảm bảo các ô chỉnh chiều dài/thông số trong bảng cáp ghi thẳng xuống `state.gear` & `phy.cables`.
-- **Kiểm tra:** `npx vitest run test/custom_slings.test.js test/v2_ux_dunnage_ruler_regression.test.js` + `npm run architecture:gate` + `npm run build`.
+  1. `src/rigging/ReplayRecorder.js` (`< 260` dòng): tăng giới hạn `MAX_REPLAY_FRAMES = 1200` (`60.0s`), lưu & phát lại đầy đủ trạng thái OOG (`status`, `strapsBroken`, `lashing.isIntact`, `localPos`, `worldPos`, `worldQuat`, vị trí/góc 3D `flatRackOogCargo`, trạng thái đứt từng dây `strapNodes`), lưu đầy đủ `cable.broken` + `break.frac/upperLen/lowerLen/tipU/tipL` + `cable._failureProcessed` và áp trực tiếp vào `activeCargoVisual` trong `applyReplayFrame()`.
+  2. `src/sim/library/reconstruction_export.js`: truyền `activeCargoVisual` (và `cableIsBroken` / `clearCableBreak` / `syncOOG`) vào `ReplayRecorder`, hiển thị đếm ngược `REC Xs / 60s`.
+  3. `src/sim/session/presets_events.js`: khi bấm `Ghi` ghi ngay cấu hình ban đầu; khi bấm `Xem` khôi phục sạch về frame `0` (reset các cờ vật lý cũ không cho dính sang lần xem lại), chạy trơn tru tới hết; khi bấm `Dừng` chốt frame cuối rõ ràng.
+- **Kiểm tra:** `npx vitest run test/v3_ruler_drag_hoist_sts_gear_regression.test.js` + `npm run architecture:gate` + `npm run build`.
 
-### [x] Bước 3: Nâng cấp Cây thước đo độ cao 3D — Cho phép kéo đặt vị trí tùy ý & Bắt Điểm Đỏ cả dây cáp lẫn ma ní
+### [ ] Bước 3: Cây thước đo độ cao mặc định bên PHẢI khi F5 & con số to gấp đôi
+- **File sửa (3 file):**
+  1. `src/graphics/ElevationRulerTool.js` (`< 298` dòng): đổi tọa độ mặc định (`customPos === null`) sang bên phải `+X` (`cx + Math.max(2.4, L * 0.5) + 1.55`) đúng như vị trí chuẩn trong hình F5; tăng gấp đôi độ lớn font + khung nhãn của 4 mốc (`Hook`, `Ngáng`, `Đỉnh`, `Đáy`), `Điểm Đỏ` và vạch số `2m, 4m...`.
+  2. `src/sim/physics/hoist_contacts.js`: bổ sung chốt mượt chống giật cho `advanceHook()` khi STS Direct bắt đầu/kết thúc `Hạ` (tránh `clampHookOutOfSolids()` nẩy ngược khi chạm đất).
+  3. `test/v2_ux_dunnage_ruler_regression.test.js`: cập nhật assertion kiểm tra vị trí phải mặc định & kích thước nhãn to gấp đôi của thước.
+- **Kiểm tra:** `npx vitest run test/v2_ux_dunnage_ruler_regression.test.js test/v3_ruler_drag_hoist_sts_gear_regression.test.js` + `npm run build`.
+
+### [ ] Bước 4: Tối ưu Tablet (iPad / Android >= 4GB RAM) & Không mất bảng điều khiển chức năng
 - **File tạo/sửa (3 file):**
-  1. Tạo `src/graphics/ElevationRulerMath.js` (`< 120` dòng, `@purpose:`): hàm thuần bắt điểm 3D kết hợp Raycaster khối lớn + khoảng cách tia chuột tới từng đoạn dây cáp/xích và cụm ma ní/pad-eye (`segmentDistSq <= threshold^2`) để rê chuột vào bất kỳ đâu từ Hook đến Đáy kiện đều bắt chuẩn xác.
-  2. `src/graphics/ElevationRulerTool.js` (`< 285` dòng): bổ sung tay nắm đế thước 3D (`userData.dragType = 'ruler'`), giữ vị trí người dùng đặt tay (`setCustomPosition(x, z)`, `clearCustomPosition()`), và nâng cấp `updateHover` dùng `ElevationRulerMath` bắt đủ Hook, Spreader, Dây cáp/Xích, Ma ní, Pad-eye, Kiện hàng, Đà gỗ.
-  3. `src/graphics/index.js`: export `ElevationRulerMath`.
-- **Kiểm tra:** `npx vitest run test/v2_ux_dunnage_ruler_regression.test.js` + `npm run architecture:gate` + `npm run build`.
+  1. Tạo `src/styles/tablet.css` (`< 140` dòng, `@purpose:`): media rules chuyên cho tablet (`max-width: 1280px` & `pointer: coarse`): thanh `#top-bar` cho phép cuộn ngang chạm mượt hoặc rớt dòng không bị ẩn nút bên phải; `#bottom-dock-bar` hiển thị trọn đủ cụm `Ghi/Xem/Dừng`, `Kéo/Hạ`, `Nhấc thử/Cân bằng/Hạ đất` không tràn mép; ngăn kéo `#right-side-drawer` & `#gear-editor` co giãn vừa vặn theo màn hình tablet, nút bấm tối thiểu `36–44px` dễ chạm; `#canvas-container canvas` đặt `touch-action: none`.
+  2. `src/main.js` (hoặc `index.html` CSS import): import `tablet.css` đúng chỗ.
+  3. `src/graphics/SceneRenderer.js`: tự nhận diện tablet/touch (`pointer: coarse` / RAM >= 4GB) giới hạn `maxDPR <= 1.5` ở chế độ mặc định để GPU iPad/Android giữ ổn định 60 FPS, không tụt khung hình hay văng WebGL.
+- **Kiểm tra:** `npm run architecture:gate` + `npm run build` + `npm run check:dist`.
 
-### [x] Bước 4: Double-Click `Hạ` (chạm hẳn đất & toàn bộ cáp trùng) + Double-Click `Kéo` (lên đúng `10.0 m`) + giữ chiều dài khi bấm `Nhấc thử`
-- **File sửa (3 file):**
-  1. `src/sim/session/prelift_reset.js`: thêm/nâng cấp `beginSmoothSetDown()` + `finishSmoothSetDown()` để khi chạm mặt đất/đà gỗ tự xả trùng toàn bộ các nhánh cáp treo (`c.slack = true`, `c.tensionT = 0`), và thêm `beginAutoHoistToClearance(10.0)` để tự động nâng êm tới độ cao `10.0 m`.
-  2. `src/sim/physics/hoist_contacts.js`: cập nhật `advanceHook(dt)` hỗ trợ đích độ cao tự động `_autoTargetClearanceM` (cho lệnh `Kéo` double-click tới `10.0 m`) và hạ thả chùng dây trọn vẹn cho `_setDownActive` trước khi khóa `finishSmoothSetDown()`.
-  3. `src/sim/session/presets_events.js`: gắn `dblclick` lên `#btn-hoist-down` (gọi auto hạ đất trùng cáp) và `#btn-hoist-up` (gọi auto nâng tới `10.0 m`) tách bạch khỏi `stopHoistHold()`; đồng thời bỏ đoạn xóa `rec.userSet`/`rec.lengthM` trong `handleTestLift()` để độ dài người dùng vừa chỉnh không bị mất khi bấm `Nhấc thử`.
-- **Kiểm tra:** `npx vitest run test/rigging.test.js test/unified_hoist_and_sts_realism.test.js` + `npm run architecture:gate` + `npm run build`.
+### [ ] Bước 5: Nghiệm thu toàn bộ kiểm thử mới + kiểm tra an toàn V7
+- **File sửa/chạy (2 file):**
+  1. Cập nhật `test/v3_ruler_drag_hoist_sts_gear_regression.test.js`: bổ sung test kéo kiện lệch tâm lên thanh gỗ không xuyên, test ReplayRecorder 60s tái hiện đủ OOG rơi + đứt dây chằng + cắt cáp + đong đưa, test thước mặc định bên phải & font gấp đôi, test tablet viewport/CSS & STS hạ êm tới sát sàn.
+  2. Chạy toàn bộ: `npx vitest run`, `npm run architecture:gate`, `npm run build`, `npm run check:dist`, `./scripts/auto_check.ps1`, `./scripts/auto_log.ps1`.
 
-### [x] Bước 5: Nối mạch kéo Thước 3D + Bắt Điểm Đỏ đủ Cáp/Ma ní trên Scene & Viết kiểm thử nghiệm thu
-- **File sửa/tạo (3 file):**
-  1. `src/sim/gear/editor.js`: cho phép nắm kéo tay cầm `'ruler'` của Cây thước 3D trên mặt sàn XZ mượt mà (`controls.enabled = false` khi đang kéo, trả lại khi nhả chuột).
-  2. `src/sim/library/reconstruction_export.js`: truyền đầy đủ `targets` và `segmentSources` (`hookGroup`, `spreaderRootGroup`, `phy.beamGroups`, `sling3DPool`, `hwMeshes`, `padEyeMeshes`, `cargoRootGroup`, `dunnageGroup`) vào `phy._elevationRuler.updateHover` + truyền danh sách mesh kéo của thước nếu cần.
-  3. Tạo `test/v3_ruler_drag_hoist_sts_gear_regression.test.js` kiểm chứng cả 6 yêu cầu + chạy trọn bộ: `npx vitest run`, `npm run architecture:gate`, `npm run build`, `npm run check:dist`, `./scripts/auto_check.ps1`, `./scripts/auto_log.ps1`.
-
-### [x] Bước 6: Nâng cấp `Ghi / Xem / Dừng` ghi & phát lại TOÀN BỘ trạng thái mô phỏng
-- **File tạo/sửa (3 file):**
-  1. Tạo `src/sim/library/ReplayRecorder.js` (`< 240` dòng, `@purpose:`): bộ ghi & phát lại toàn trạng thái (Hook + Dầm/Ngáng `beams[]` + Kiện + Từng sợi cáp `L0/tensionT/slack/broken/break tips` + Góc quay cẩu `craneAngleDeg` + Khóa `poseLock` & `groundClearance`), lưu snapshot ban đầu khi bấm `Ghi`, khôi phục sạch khi `Dừng`.
-  2. `src/sim/library/reconstruction_export.js`: ủy quyền `pushReplaySample()` và `stepReplay()` sang `ReplayRecorder` (`<= 18` dòng).
-  3. `src/sim/session/presets_events.js` & `test/v3_ruler_drag_hoist_sts_gear_regression.test.js`: nối nút `Ghi`/`Xem`/`Dừng` với ReplayRecorder và bổ sung kiểm thử hồi quy cho toàn bộ, rồi chạy kiểm tra toàn bộ dự án (`npx vitest run`, `npm run architecture:gate`, `npm run build`, `npm run check:dist`, `./scripts/auto_check.ps1`, `./scripts/auto_log.ps1`).
+### [ ] Bước 6: Triển khai lên GitHub & Cloudflare Pages
+- **Thao tác:**
+  1. Kiểm tra `git status` sạch sẽ, gộp nhánh `feat/horizon-clouds` về `main` (hoặc chốt qua `./scripts/manual_chot_ban.ps1` / `git merge` + `git push origin main` theo xác nhận của Founder).
+  2. Chạy `npm run build && npm run check:dist` lần cuối, rồi deploy `dist/` lên Cloudflare Pages (`npx wrangler pages deploy dist --project-name safelift3d`) và báo link production thực tế cho Founder.

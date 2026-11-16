@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 21:52 | Nhánh: feat/horizon-clouds | Commit cuối: cde2199 step 6: full-state Ghi/Xem/Dung ReplayRecorder (hook, beams, cargo, cables, slew, OOG) (19 seconds ago)
+Cập nhật: 2026-11-16 22:11 | Nhánh: feat/horizon-clouds | Commit cuối: 5406229 docs: log 6 UX/physics & replay improvements in HISTORY and MAP (19 minutes ago)
 Tổng: 268 file, 77753 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
