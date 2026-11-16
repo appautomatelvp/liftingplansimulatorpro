@@ -61,7 +61,7 @@ Nâng cấp toàn diện **SafeLift3D** từ trình mô phỏng 3D cơ bản lê
     3. Kết nối `resolveStressTintedMaterial` vào `update3DSlingGeometry` trong `src/sim/rigging/draw_update.js` để cáp chịu tải cao hiển thị ứng suất trực quan theo thời gian thực.
   - Kiểm tra xong: `npx vitest run test/graphics.test.js` và `npm run build` xanh, mọi file trong `src/graphics/` đều `< 300` dòng.
 
-- [ ] Bước 5: Tạo bộ Kiểm thử Vàng Kịch bản 20 Tấn Nâng Lệch Tâm → Cắt Cáp → Quật Cáp → Va Chạm Mặt Đất (`test/hyper_realistic_physics_pbr.test.js`)
+- [x] Bước 5: Tạo bộ Kiểm thử Vàng Kịch bản 20 Tấn Nâng Lệch Tâm → Cắt Cáp → Quật Cáp → Va Chạm Mặt Đất (`test/hyper_realistic_physics_pbr.test.js`)
   - Sửa: `test/hyper_realistic_physics_pbr.test.js` (tạo mới `< 240` dòng, mở đầu bằng `// @purpose:`)
   - CẤM đụng: `src/core/standards/*`, `firestore.rules`
   - Chi tiết:

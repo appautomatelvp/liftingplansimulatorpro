@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 12:15 | Nhánh: feat/horizon-clouds | Commit cuối: d907b92 step 3: add RigidInertialDynamics and wire CCD + broken whip into simulation loop (89 seconds ago)
-Tổng: 245 file, 72895 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 12:17 | Nhánh: feat/horizon-clouds | Commit cuối: 0df7476 step 4: add StressPBRMaterials for painted/forged steel PBR maps and SWL strain shading (2 minutes ago)
+Tổng: 246 file, 73079 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -280,6 +280,7 @@ Tổng: 245 file, 72895 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/feedback_mailto.test.js` | 144 |  |
 | `test/firestore-rules-emulator.mjs` | 351 |  |
 | `test/graphics.test.js` | 113 |  |
+| `test/hyper_realistic_physics_pbr.test.js` | 184 | Kiểm thử Vàng 3 trụ cột: Va chạm CCD & Ma sát, Cẩu 20 tấn lệch tâm + Cắt cáp quật XPBD, và Vật liệu PBR Ứng suất |
 | `test/i18n_keys.test.js` | 56 |  |
 | `test/inclined_lashing_slide.test.js` | 67 |  |
 | `test/liftplan.test.js` | 153 |  |
