@@ -14,7 +14,7 @@ import { saasT } from './i18n.js';
 import { installBoundedErrorCounter, normalizeFeatureFlags, readFeatureFlags } from './telemetry_usage.js';
 import { isMaintenance, loadFlagsOnce } from './runtime_flags.js';
 import { mountWorkspaceDashboard } from './workspace_dashboard.js';
-import { clearAppSplash, ensureSaasRoot, installSessionShellUI, mountAccountWidget } from './session_ui_bindings.js';
+import { clearAppSplash, ensureSaasRoot, installSessionShellUI, mountAccountWidget, playCinemaWorkspaceReveal } from './session_ui_bindings.js';
 
 function createGoogleProvider() {
   const provider = new GoogleAuthProvider();
@@ -113,8 +113,10 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
       clearAppSplash();
       return;
     }
+    const enteringFromAuth = Boolean(authScreen);
     if (authScreen) { authScreen.dispose(); authScreen = null; }
     root.hidden = true;
+    if (enteringFromAuth) playCinemaWorkspaceReveal();
     accountWidget?.dispose();
     accountWidget = mountAccountWidget(profile, authUser, () => signOut(firebase.auth), () => {
       if (isMaintenance(sessionFlags, window.SafeLift?.saas?.profile || profile)) {
@@ -185,8 +187,6 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
     return { dispose() { featureAccess.dispose(); } };
   }
 
-  renderAuthView({ configured: true });
-
   async function completeAuthorizedSession(authUser, run) {
     if (authScreen) authScreen.showMessage(saasT('saasCheckingAccess'));
     try {
@@ -206,6 +206,7 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
     } catch (error) {
       if (run !== authRun) return;
       console.error('[SafeLift3D] Account profile could not be loaded', error);
+      if (!authScreen) showInitial();
       if (error?.code === 'safelift/account-suspended') {
         const suspendedMsg = saasT('saasAccountSuspendedContact');
         pendingAuthNotice = { message: suspendedMsg, isError: true };
@@ -220,12 +221,13 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
   unsubscribeAuth = onAuthStateChanged(firebase.auth, async (authUser) => {
     if (!authUser) {
       if (currentUser) showSignedOut();
-      else if (!workspaceStarted && onAdminRoute) showInitial();
+      else if (!workspaceStarted) showInitial();
       return;
     }
     currentUser = authUser;
     const run = ++authRun;
     if (needsEmailVerification(authUser)) {
+      if (!authScreen) showInitial();
       authScreen?.showVerificationPending({
         email: authUser.email,
         onResend: () => sendEmailVerification(firebase.auth.currentUser || authUser),

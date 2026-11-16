@@ -1,5 +1,6 @@
 import { saasT } from './i18n.js';
 import { AUTH_COPY as COPY, consumeRateLimit, messageFor } from './auth_rate_limit.js';
+import { openDeveloperContact } from './contact_dialog.js';
 
 export { consumeRateLimit, messageFor };
 
@@ -51,10 +52,11 @@ export function mountAuthScreen(container, { lang, configured, actions, onLangua
         <div class="saas-auth-links">
           <button type="button" data-action="verify-signout">${copy.verifySignOut}</button>
         </div>
-        <div class="saas-auth-footer"><span>ASME P30.1 · B30.9 / B30.20 · DNV-ST-N001</span><small>${copy.developer}</small><a href="mailto:levietphuong.hcmutrans@gmail.com">levietphuong.hcmutrans@gmail.com</a><a href="tel:+84968051697">+84 968 051 697</a></div>
+        <div class="saas-auth-footer"><span>ASME P30.1 · B30.9 / B30.20 · DNV-ST-N001</span><small>${copy.developer}</small><button type="button" class="saas-auth-contact-btn" data-action="contact-developer">${copy.contactCta}</button></div>
       </div>`;
 
       root.querySelector('[data-action="language"]')?.addEventListener('click', () => onLanguageChange());
+      root.querySelector('[data-action="contact-developer"]')?.addEventListener('click', () => openDeveloperContact());
       root.querySelector('[data-action="verify-check"]')?.addEventListener('click', async () => {
         if (busy) return;
         busy = true;
@@ -125,10 +127,11 @@ export function mountAuthScreen(container, { lang, configured, actions, onLangua
             <button type="button" data-action="mode">${mode === 'create' ? copy.switchSignIn : copy.switchCreate}</button>
           </div>
         ` : `<div class="saas-config-notice" role="alert">${copy.config}<code>VITE_FIREBASE_API_KEY · VITE_FIREBASE_AUTH_DOMAIN · VITE_FIREBASE_PROJECT_ID · VITE_FIREBASE_APP_ID · VITE_FIREBASE_APPCHECK_SITE_KEY</code></div>`}
-        <div class="saas-auth-footer"><span>ASME P30.1 · B30.9 / B30.20 · DNV-ST-N001</span><small>${copy.developer}</small><a href="mailto:levietphuong.hcmutrans@gmail.com">levietphuong.hcmutrans@gmail.com</a><a href="tel:+84968051697">+84 968 051 697</a></div>
+        <div class="saas-auth-footer"><span>ASME P30.1 · B30.9 / B30.20 · DNV-ST-N001</span><small>${copy.developer}</small><button type="button" class="saas-auth-contact-btn" data-action="contact-developer">${copy.contactCta}</button></div>
       </div>`;
 
     root.querySelector('[data-action="language"]')?.addEventListener('click', () => onLanguageChange());
+    root.querySelector('[data-action="contact-developer"]')?.addEventListener('click', () => openDeveloperContact());
     root.querySelector('[data-action="mode"]')?.addEventListener('click', () => { mode = mode === 'create' ? 'sign-in' : 'create'; render(); });
     root.querySelector('[data-action="google"]')?.addEventListener('click', () => run('google', () => actions.google()));
     root.querySelector('[data-action="reset"]')?.addEventListener('click', async () => {

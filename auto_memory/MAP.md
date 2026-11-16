@@ -1,10 +1,10 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-15 17:08 | Nhánh: codex/safelift-g0-ci | Commit cuối: 4864b45 fix(ci): allow 180s per E2E test on software-WebGL CI runners (38 minutes ago)
-Tổng: 239 file, 71114 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 11:27 | Nhánh: feat/default-en-clean | Commit cuối: 47ab30e feat: default startup language to English and synchronize EN/VI across all layers (14 minutes ago)
+Tổng: 241 file, 71870 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
-- index.html (3133 dòng)
+- index.html (3122 dòng)
 - scripts/generate_port_assets.js (477 dòng)
 - src/core/AssemblyEngine.js (433 dòng)
 - src/core/AssetManager.js (325 dòng)
@@ -83,13 +83,13 @@ Tổng: 239 file, 71114 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `eslint.config.js` | 23 | Flat ESLint config — architecture gates for app/domain layers (optional eslint install). |
 | `firebase.json` | 29 |  |
 | `firestore.rules` | 239 |  |
-| `index.html` | 3133 |  ⚠️>300 |
+| `index.html` | 3122 |  ⚠️>300 |
 | `jsconfig.json` | 19 |  |
 | `package.json` | 42 |  |
 | `playwright.auth.config.js` | 28 |  |
 | `playwright.config.js` | 45 |  |
 | `postcss.config.js` | 6 |  |
-| `public/loading-screen-init.js` | 19 |  |
+| `public/loading-screen-init.js` | 28 |  |
 | `public/safelift3d-icons/README.md` | 29 |  |
 | `README.md` | 81 |  |
 | `scripts/architecture-gate.mjs` | 45 |  |
@@ -166,9 +166,10 @@ Tổng: 239 file, 71114 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/graphics/SceneRenderer.js` | 291 |  ⚠️>250 |
 | `src/i18n/cargo_labels.js` | 48 |  |
 | `src/i18n/cms_keys.js` | 137 | Bộ từ điển song ngữ VI/EN chuyên biệt cho hệ thống CMS Enterprise Command Center |
-| `src/i18n/index.js` | 97 |  |
+| `src/i18n/contact_keys.js` | 73 | Bộ từ điển song ngữ VI/EN chuẩn công nghiệp cho hộp thoại Hỗ trợ kỹ thuật & Góp ý |
+| `src/i18n/index.js` | 131 |  |
 | `src/i18n/keys.js` | 598 |  ⚠️>300 |
-| `src/main.js` | 65 |  |
+| `src/main.js` | 66 |  |
 | `src/rigging/CableDynamicsXPBD.js` | 310 |  ⚠️>300 |
 | `src/rigging/constraints/CornerProtectorModel.js` | 51 |  |
 | `src/rigging/constraints/HardwareConstraint.js` | 236 |  |
@@ -185,24 +186,25 @@ Tổng: 239 file, 71114 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/saas/admin_panels.js` | 159 | Các hàm dựng HTML giao diện Enterprise Command Center và đọc dữ liệu form cho bảng quản trị CMS |
 | `src/saas/app_check_config.js` | 15 |  |
 | `src/saas/auth_rate_limit.js` | 85 | Kiểm soát giới hạn tốc độ thử đăng nhập và chuẩn hóa thông báo lỗi xác thực (VI/EN) |
-| `src/saas/auth_screen.js` | 238 |  |
-| `src/saas/branding.js` | 54 |  |
+| `src/saas/auth_screen.js` | 241 |  |
+| `src/saas/branding.js` | 49 |  |
 | `src/saas/catalog_client.js` | 87 |  |
 | `src/saas/cms_data.js` | 247 |  |
+| `src/saas/contact_dialog.js` | 267 | Hộp thoại Liên hệ & Góp ý kỹ thuật chuẩn Enterprise với khóa trượt xác nhận hành vi chống bot ⚠️>250 |
 | `src/saas/deployment_environment.js` | 22 |  |
 | `src/saas/dialog_accessibility.js` | 45 |  |
-| `src/saas/feature_access_ui.js` | 191 |  |
-| `src/saas/feedback.js` | 31 |  |
+| `src/saas/feature_access_ui.js` | 196 |  |
+| `src/saas/feedback.js` | 194 | Giải mã động địa chỉ nhận góp ý và xác thực hành vi thao tác chống bot/spam đa lớp |
 | `src/saas/firebase.js` | 95 |  |
 | `src/saas/firebase_data.js` | 82 |  |
-| `src/saas/i18n.js` | 12 | Format a localized template key from `src/i18n/keys.js` with optional `{var}` substitutions. |
+| `src/saas/i18n.js` | 15 | Định dạng khóa ngôn ngữ SaaS và hộp thoại góp ý theo ngôn ngữ hiện tại |
 | `src/saas/plan_snapshot.js` | 170 | Chuẩn hóa dữ liệu thiết bị và đóng gói/giải mã/di trú snapshot phương án nâng hạ |
 | `src/saas/runtime_flags.js` | 63 |  |
-| `src/saas/saas.css` | 244 | saas-root[hidden] { display: none !important; } |
-| `src/saas/session.js` | 260 |  ⚠️>250 |
-| `src/saas/session_ui_bindings.js` | 165 | Gắn kết giao diện header, widget tài khoản, banner bảo trì và hộp thoại liên hệ SaaS |
+| `src/saas/saas.css` | 267 | saas-root[hidden] { display: none !important; } |
+| `src/saas/session.js` | 262 |  ⚠️>250 |
+| `src/saas/session_ui_bindings.js` | 157 | Gắn kết giao diện header, widget tài khoản, banner bảo trì và hộp thoại liên hệ SaaS |
 | `src/saas/telemetry_usage.js` | 143 |  |
-| `src/saas/workspace_dashboard.js` | 257 |  ⚠️>250 |
+| `src/saas/workspace_dashboard.js` | 260 |  ⚠️>250 |
 | `src/saas/workspace_data.js` | 228 |  |
 | `src/saas/workspace_views.js` | 184 | Các hàm dựng HTML, hộp thoại chọn phụ trợ và di trú dữ liệu rig cũ cho Workspace SaaS |
 | `src/shared/events.js` | 31 |  |
@@ -246,7 +248,7 @@ Tổng: 239 file, 71114 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/weather_fx.js` | 572 |  ⚠️>300 |
 | `src/simulation/destruction-manager/DestructionSolver.js` | 147 |  |
 | `src/styles/app.css` | 1018 |  |
-| `src/styles/brand_splash.css` | 36 | Hiệu ứng nền công nghiệp Zoom-Out & khóa nhận diện đồng bộ cho màn hình khởi động |
+| `src/styles/brand_splash.css` | 81 | Hiệu ứng nền công nghiệp 2K Cinematic Zoom-In & màn trập Fade-in Đen mở dần hệ thống 3D |
 | `src/telemetry/sensor-engine/SensorEngine.js` | 185 |  |
 | `src/ui/controllers/index.js` | 35 |  |
 | `src/ui/services/index.js` | 48 |  |
@@ -262,7 +264,7 @@ Tổng: 239 file, 71114 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/architecture/runtime_boot.test.js` | 24 |  |
 | `test/assembly.test.js` | 172 |  |
 | `test/audio.test.js` | 265 |  ⚠️>250 |
-| `test/auth_screen.test.js` | 30 |  |
+| `test/auth_screen.test.js` | 56 |  |
 | `test/cable_dynamics_xpbd.test.js` | 64 |  |
 | `test/cable_morphology_and_deformation.test.js` | 426 |  ⚠️>300 |
 | `test/cargo_labels.test.js` | 63 |  |
@@ -272,10 +274,10 @@ Tổng: 239 file, 71114 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/custom_slings.test.js` | 712 |  ⚠️>300 |
 | `test/deployment_environment.test.js` | 21 |  |
 | `test/engineering.test.js` | 410 |  ⚠️>300 |
-| `test/feedback_mailto.test.js` | 32 |  |
+| `test/feedback_mailto.test.js` | 144 |  |
 | `test/firestore-rules-emulator.mjs` | 351 |  |
 | `test/graphics.test.js` | 91 |  |
-| `test/i18n_keys.test.js` | 45 |  |
+| `test/i18n_keys.test.js` | 56 |  |
 | `test/inclined_lashing_slide.test.js` | 67 |  |
 | `test/liftplan.test.js` | 153 |  |
 | `test/phase1_core_safety.test.js` | 208 |  |

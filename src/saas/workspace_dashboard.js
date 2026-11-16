@@ -32,9 +32,11 @@ export function mountWorkspaceDashboard({ db, profile, flags = null, dataService
   const legacyRigs = readLegacyRigs();
   const migratedRigIds = readMigratedRigIds(profile.uid);
   const tr = (key, vars = null) => saasT(key, vars, getLang());
-  const timestamp = (value) => value?.toDate ? value.toDate().toLocaleDateString({ en: 'en-US', vi: 'vi-VN' }[getLang()] || 'vi-VN') : '';
+  const timestamp = (value) => value?.toDate ? value.toDate().toLocaleDateString({ en: 'en-US', vi: 'vi-VN' }[getLang()] || 'en-US') : '';
+  const onLanguageChanged = () => { if (backdrop.isConnected) template(); };
   const closeWorkspace = () => {
     if (onKey) document.removeEventListener('keydown', onKey);
+    window.removeEventListener('safelift:language-changed', onLanguageChanged);
     backdrop.remove();
     releaseWorkspaceFocus();
   };
@@ -251,6 +253,7 @@ export function mountWorkspaceDashboard({ db, profile, flags = null, dataService
   });
   onKey = (event) => { if (event.key === 'Escape') closeWorkspace(); };
   document.addEventListener('keydown', onKey);
+  window.addEventListener('safelift:language-changed', onLanguageChanged);
   document.body.append(backdrop);
   releaseWorkspaceFocus = trapDialogFocus(backdrop.querySelector('[role="dialog"]'), { initialFocus: backdrop.querySelector('[data-search]') });
   return { dispose: closeWorkspace };

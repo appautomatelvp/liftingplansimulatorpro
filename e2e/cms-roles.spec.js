@@ -21,7 +21,7 @@ test.describe('CMS granular roles and audit log UI on Emulator', () => {
       password: 'Password123!'
     });
     await page.goto('/admin');
-    await expect(page.locator('.saas-admin-card h1')).toContainText(/Cần quyền quản trị viên|Admin access required/i, { timeout: 15_000 });
+    await expect(page.locator('.saas-admin-card h1')).toContainText(/Cần quyền quản trị viên|Admin(?:istrator)? access required/i, { timeout: 15_000 });
     await expect(page.locator('[data-action="search-form"]')).toHaveCount(0);
     await expect(page.locator('[data-action="catalog-form"]')).toHaveCount(0);
     await expect(page.locator('[data-action="flags-form"]')).toHaveCount(0);

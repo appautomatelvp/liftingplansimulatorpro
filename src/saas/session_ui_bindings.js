@@ -3,8 +3,9 @@ import { canAccessCms } from './cms_data.js';
 import { getLang } from '../i18n/index.js';
 import { saasT } from './i18n.js';
 import { isMaintenance } from './runtime_flags.js';
-import { buildDeveloperContactMailto } from './feedback.js';
-import { trapDialogFocus } from './dialog_accessibility.js';
+import { openDeveloperContact } from './contact_dialog.js';
+
+export { openDeveloperContact };
 
 export function ensureSaasRoot() {
   let root = document.getElementById('saas-root');
@@ -20,6 +21,44 @@ export function ensureSaasRoot() {
 export function clearAppSplash() {
   const splash = document.getElementById('app-loading-screen');
   if (splash) splash.remove();
+}
+
+export function playCinemaWorkspaceReveal() {
+  if (typeof document === 'undefined' || !document.body) return;
+  document.getElementById('saas-cinema-curtain')?.remove();
+  const curtain = document.createElement('div');
+  curtain.id = 'saas-cinema-curtain';
+  curtain.className = 'saas-cinema-curtain';
+  curtain.setAttribute('aria-hidden', 'true');
+  document.body.append(curtain);
+
+  let revealed = false;
+  let observer = null;
+  const startReveal = () => {
+    if (revealed) return;
+    revealed = true;
+    observer?.disconnect();
+    document.body.classList.add('saas-cinema-entering');
+    requestAnimationFrame(() => {
+      curtain.classList.add('is-revealing');
+    });
+    setTimeout(() => {
+      curtain.remove();
+      document.body?.classList.remove('saas-cinema-entering');
+    }, 900);
+  };
+
+  if (document.body.classList.contains('app-ready')) {
+    setTimeout(startReveal, 220);
+  } else if (typeof MutationObserver !== 'undefined') {
+    observer = new MutationObserver(() => {
+      if (document.body.classList.contains('app-ready')) startReveal();
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    setTimeout(startReveal, 1600);
+  } else {
+    setTimeout(startReveal, 900);
+  }
 }
 
 export function escapeHtml(value) {
@@ -72,53 +111,6 @@ export function mountAccountWidget(profile, authUser, onSignOut, onWorkspace) {
       widget.remove();
     }
   };
-}
-
-export function openDeveloperContact() {
-  let lastFeedbackAt = 0;
-  const lang = getLang();
-  const tr = (key) => saasT(key, null, lang);
-  document.getElementById('saas-contact-dialog')?.remove();
-  const dialog = document.createElement('div');
-  dialog.id = 'saas-contact-dialog';
-  dialog.className = 'saas-contact-backdrop';
-  dialog.innerHTML = `<section class="saas-contact-dialog" role="dialog" aria-modal="true" aria-labelledby="saas-contact-title">
-    <button type="button" class="saas-contact-close" aria-label="${tr('saasClose')}" data-contact-close>×</button>
-    <div class="saas-contact-kicker">SAFELIFT3D · DEVELOPER</div>
-    <h2 id="saas-contact-title">${tr('saasContactTitle')}</h2>
-    <p class="saas-contact-person">Lê Việt Phương (Mr)</p>
-    <div class="saas-contact-details"><a href="mailto:levietphuong.hcmutrans@gmail.com">levietphuong.hcmutrans@gmail.com</a><a href="tel:+84968051697">+84 968 051 697</a></div>
-    <form class="saas-contact-form">
-      <label>${tr('saasContactSubjectLabel')}<input name="subject" maxlength="120" required value="${tr('saasContactSubjectDefault')}"></label>
-      <label>${tr('saasContactMessageLabel')}<textarea name="message" maxlength="3000" rows="5" required placeholder="${tr('saasContactMessagePlaceholder')}"></textarea></label>
-      <small>${tr('saasContactMailHint')}</small>
-      <button type="submit" class="saas-primary-button">${tr('saasContactSubmit')}</button>
-    </form>
-  </section>`;
-  let releaseFocusTrap = () => {};
-  const close = () => { dialog.remove(); releaseFocusTrap(); };
-  dialog.addEventListener('click', (event) => { if (event.target === dialog || event.target.closest('[data-contact-close]')) close(); });
-  dialog.addEventListener('keydown', (event) => { if (event.key === 'Escape') close(); });
-  dialog.querySelector('form')?.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const now = Date.now();
-    try {
-      const href = buildDeveloperContactMailto({
-        subject: form.get('subject'),
-        message: form.get('message'),
-        lastSentAt: lastFeedbackAt,
-        now
-      });
-      lastFeedbackAt = now;
-      window.location.href = href;
-      close();
-    } catch {
-      /* Keep dialog open when input is blank or cooldown is active. */
-    }
-  });
-  document.body.append(dialog);
-  releaseFocusTrap = trapDialogFocus(dialog.querySelector('[role="dialog"]'), { initialFocus: dialog.querySelector('[name="message"]') });
 }
 
 export function installSessionShellUI({ getProfile, getFlags }) {

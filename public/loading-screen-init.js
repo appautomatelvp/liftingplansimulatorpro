@@ -1,10 +1,19 @@
 (function () {
   var y = document.getElementById('app-loading-year');
   if (y) y.textContent = String(new Date().getFullYear());
-  var lang = 'vi';
+  var lang = 'en';
   try {
+    if (localStorage.getItem('safelift-en-init') !== '1') {
+      if (localStorage.getItem('safelift3d.lang') === '"vi"') {
+        localStorage.removeItem('safelift3d.lang');
+      }
+      localStorage.setItem('safelift-en-init', '1');
+    }
     var savedLang = localStorage.getItem('safelift3d.lang');
-    if (savedLang === 'en' || savedLang === 'vi') lang = savedLang;
+    if (savedLang) {
+      var cleaned = savedLang.replace(/^"|"$/g, '');
+      if (cleaned === 'en' || cleaned === 'vi') lang = cleaned;
+    }
   } catch (e) {}
   document.documentElement.lang = lang;
   var status = document.getElementById('app-loading-status');

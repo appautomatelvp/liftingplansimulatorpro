@@ -78,7 +78,7 @@
 .saas-paywall .saas-auth-kicker { margin-top: 0; }
 .saas-paywall h2 { margin: 8px 0; color: #f8fafc; font-size: 21px; font-weight: 850; }
 .saas-paywall p { margin: 10px 0 20px; color: #94a3b8; font-size: 13px; line-height: 1.55; }
-.saas-contact-link { display: inline-flex; padding: 10px 15px; border: 1px solid #f59e0b; border-radius: 8px; color: #fef3c7; background: rgba(120, 53, 15, .4); text-decoration: none; font-size: 12px; font-weight: 850; }
+.saas-contact-link { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 15px; border: 1px solid #f59e0b; border-radius: 8px; color: #fef3c7; background: rgba(120, 53, 15, .4); text-decoration: none; font: 850 12px Inter, ui-sans-serif, system-ui, sans-serif; cursor: pointer; }
 
 /* SafeLift3D engineering identity: shared lifting mark and blueprint field. */
 .saas-auth-screen {
@@ -89,21 +89,23 @@
 .saas-auth-screen::after {
   content: "";
   position: fixed;
-  inset: -4%;
+  inset: 0;
   z-index: -2;
   pointer-events: none;
-  background: url('/brand/industrial-lifting-bg.png') center / cover no-repeat;
-  transform-origin: 65% 45%;
-  animation: saas-industrial-zoom-out 20s cubic-bezier(.16, 1, .3, 1) forwards;
+  background: url('/brand/industrial-lifting-bg.png?v=2k') center / cover no-repeat;
+  transform-origin: 68% 48%;
+  will-change: transform;
+  backface-visibility: hidden;
+  animation: saas-industrial-zoom-in 28s cubic-bezier(.37, 0, .22, 1) infinite alternate;
 }
-@keyframes saas-industrial-zoom-out { from { transform: scale(1.14); filter: brightness(.92); } to { transform: scale(1); filter: brightness(1); } }
+@keyframes saas-industrial-zoom-in { from { transform: scale(1) translateZ(0); filter: contrast(1.04) saturate(1.05); } to { transform: scale(1.075) translateZ(0); filter: contrast(1.07) saturate(1.1); } }
 .saas-auth-screen::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: radial-gradient(circle at 70% 45%, rgba(7, 17, 27, .3) 0%, rgba(4, 9, 18, .78) 70%, rgba(4, 9, 18, .92) 100%);
+  background: radial-gradient(circle at 68% 48%, rgba(5, 13, 24, .1) 0%, rgba(4, 10, 20, .5) 68%, rgba(3, 7, 15, .78) 100%);
 }
 .saas-auth-card {
   border-color: rgba(84, 198, 232, .34);
@@ -115,29 +117,46 @@
 #saas-root :focus-visible, .saas-paywall-backdrop :focus-visible, .saas-contact-backdrop :focus-visible, .saas-workspace-backdrop :focus-visible { outline: 2px solid #fbbf24; outline-offset: 3px; }
 .brand-identity-mark { display: flex; align-items: center; justify-content: center; }
 .brand-identity-mark img { display: block; width: 100%; height: 100%; object-fit: contain; }
-.saas-auth-footer { display: grid; gap: 6px; }
+.saas-auth-footer { display: grid; gap: 6px; justify-items: center; }
 .saas-auth-footer small { color: #a8bacd; font: 600 10px Inter, ui-sans-serif, system-ui, sans-serif; letter-spacing: .02em; }
-.saas-auth-footer a { color: #83cceb; font: 500 10px Inter, ui-sans-serif, system-ui, sans-serif; letter-spacing: .01em; text-decoration: none; }
-.saas-auth-footer a:hover { color: #e0f2fe; text-decoration: underline; }
+.saas-auth-contact-btn { min-height: 36px; padding: 6px 12px; border: 1px solid rgba(84, 198, 232, .35); border-radius: 999px; color: #83cceb; background: rgba(12, 40, 54, .55); font: 600 11px Inter, ui-sans-serif, system-ui, sans-serif; cursor: pointer; }
+.saas-auth-contact-btn:hover { border-color: #54c6e8; color: #e0f2fe; background: rgba(14, 119, 179, .24); }
 .saas-auth-form input { border-radius: 6px; background: #060d15; }
 .saas-primary-button { border-radius: 6px; background: #54c6e8; }
 .saas-google-button { border-radius: 6px; }
 
 .saas-contact-backdrop { position: fixed; inset: 0; z-index: 1300000; display: grid; place-items: center; padding: 18px; background: rgba(2, 6, 23, .76); backdrop-filter: blur(8px); }
-.saas-contact-dialog { position: relative; width: min(100%, 470px); max-height: calc(100dvh - 36px); box-sizing: border-box; overflow: auto; padding: 28px; border: 1px solid rgba(84, 198, 232, .42); border-radius: 16px; color: #e2e8f0; background: linear-gradient(155deg, #101c2a, #050b14); box-shadow: 0 28px 90px rgba(0, 0, 0, .58); }
+.saas-contact-dialog { position: relative; width: min(100%, 490px); max-height: calc(100dvh - 36px); box-sizing: border-box; overflow: auto; padding: 26px; border: 1px solid rgba(84, 198, 232, .42); border-radius: 16px; color: #e2e8f0; background: linear-gradient(155deg, #101c2a, #050b14); box-shadow: 0 28px 90px rgba(0, 0, 0, .58); }
 .saas-contact-close { position: absolute; top: 10px; right: 13px; border: 0; color: #94a3b8; background: none; font-size: 26px; cursor: pointer; }
 .saas-contact-kicker { color: #54c6e8; font: 800 9px ui-monospace, monospace; letter-spacing: .16em; }
-.saas-contact-dialog h2 { margin: 9px 28px 4px 0; color: #f8fafc; font-size: 22px; font-weight: 850; }
-.saas-contact-person { margin: 7px 0; color: #cbd5e1; font-size: 13px; font-weight: 700; }
-.saas-contact-details { display: grid; gap: 4px; margin-bottom: 20px; }
-.saas-contact-details a { width: fit-content; color: #83cceb; font-size: 11px; text-decoration: none; }
-.saas-contact-details a:hover { text-decoration: underline; }
-.saas-contact-form { display: grid; gap: 12px; }
-.saas-contact-form label { display: grid; gap: 6px; color: #cbd5e1; font-size: 11px; font-weight: 700; }
-.saas-contact-form input, .saas-contact-form textarea { width: 100%; box-sizing: border-box; padding: 10px 11px; border: 1px solid #334155; border-radius: 8px; outline: none; color: #f8fafc; background: #060d15; font: 12px Inter, ui-sans-serif, system-ui, sans-serif; resize: vertical; }
-.saas-contact-form input:focus, .saas-contact-form textarea:focus { border-color: #54c6e8; box-shadow: 0 0 0 3px rgba(84, 198, 232, .13); }
+.saas-contact-dialog h2 { margin: 9px 28px 6px 0; color: #f8fafc; font-size: 21px; font-weight: 850; }
+.saas-contact-identity { display: grid; gap: 3px; margin: 4px 0 16px; padding-bottom: 12px; border-bottom: 1px solid rgba(51, 65, 85, .65); }
+.saas-contact-person { margin: 0; color: #f8fafc; font-size: 13px; font-weight: 750; }
+.saas-contact-role { color: #7dd3fc; font: 600 10px ui-monospace, monospace; letter-spacing: .04em; }
+.saas-contact-form { display: grid; gap: 11px; }
+.saas-contact-form label { display: grid; gap: 5px; color: #cbd5e1; font-size: 11px; font-weight: 700; }
+.saas-contact-form input, .saas-contact-form select, .saas-contact-form textarea { width: 100%; box-sizing: border-box; padding: 10px 11px; border: 1px solid #334155; border-radius: 8px; outline: none; color: #f8fafc; background: #060d15; font: 12px Inter, ui-sans-serif, system-ui, sans-serif; resize: vertical; }
+.saas-contact-form input:focus, .saas-contact-form select:focus, .saas-contact-form textarea:focus { border-color: #54c6e8; box-shadow: 0 0 0 3px rgba(84, 198, 232, .13); }
 .saas-contact-form small { color: #94a3b8; font-size: 10px; line-height: 1.5; }
-.saas-contact-form .saas-primary-button { margin-top: 2px; }
+.saas-hp-field { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
+.saas-interlock-wrap { display: grid; gap: 6px; }
+.saas-interlock-caption { color: #cbd5e1; font-size: 11px; font-weight: 700; }
+.saas-interlock { position: relative; display: flex; align-items: center; justify-content: center; height: 42px; border: 1px solid #334155; border-radius: 9px; overflow: hidden; background: #060d15; user-select: none; }
+.saas-interlock-fill { position: absolute; inset: 0 auto 0 0; width: 0; background: linear-gradient(90deg, rgba(14, 165, 233, .22), rgba(56, 189, 248, .38)); pointer-events: none; }
+.saas-interlock-text { position: relative; z-index: 1; padding: 0 46px; color: #94a3b8; font: 600 11px Inter, ui-sans-serif, system-ui, sans-serif; pointer-events: none; text-align: center; }
+.saas-interlock-thumb { position: absolute; top: 3px; left: 3px; z-index: 2; display: grid; place-items: center; width: 36px; height: 34px; border: 1px solid rgba(84, 198, 232, .55); border-radius: 7px; color: #04111b; background: linear-gradient(135deg, #38bdf8, #7dd3fc); font-size: 15px; font-weight: 900; pointer-events: none; box-shadow: 0 4px 12px rgba(0, 0, 0, .4); }
+.saas-interlock input[type="range"] { position: absolute; inset: 0; z-index: 3; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: grab; }
+.saas-interlock.is-verified { border-color: rgba(16, 185, 129, .6); background: rgba(6, 78, 59, .24); }
+.saas-interlock.is-verified .saas-interlock-fill { background: linear-gradient(90deg, rgba(16, 185, 129, .25), rgba(16, 185, 129, .42)); }
+.saas-interlock.is-verified .saas-interlock-text { color: #a7f3d0; font-weight: 700; }
+.saas-interlock.is-verified .saas-interlock-thumb { border-color: #34d399; color: #022c22; background: linear-gradient(135deg, #10b981, #6ee7b7); }
+.saas-contact-status { padding: 10px 12px; border-radius: 8px; font-size: 11px; line-height: 1.45; }
+.saas-contact-status.is-error { border: 1px solid #9f1239; color: #fecdd3; background: rgba(136, 19, 55, .28); }
+.saas-contact-status.is-ok { display: grid; gap: 6px; border: 1px solid #166534; color: #d1fae5; background: rgba(6, 78, 59, .32); }
+.saas-contact-status code { width: fit-content; padding: 4px 8px; border-radius: 6px; color: #7dd3fc; background: #060d15; font-size: 11px; user-select: all; }
+.saas-contact-post-actions { display: grid; gap: 8px; }
+.saas-contact-post-actions a { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box; }
+.saas-contact-form .saas-primary-button { margin-top: 2px; min-height: 44px; }
 
 @media (prefers-reduced-motion: reduce) {
   #app-loading-screen,
@@ -146,6 +165,10 @@
   .saas-paywall-backdrop *,
   .saas-contact-backdrop *,
   .saas-workspace-backdrop *,
+  .saas-cinema-curtain,
+  body.saas-cinema-entering #canvas-container,
+  body.saas-cinema-entering #top-bar,
+  body.saas-cinema-entering #ui-layer,
   .saas-auth-screen,
   .saas-auth-screen::after,
   .saas-auth-screen * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
