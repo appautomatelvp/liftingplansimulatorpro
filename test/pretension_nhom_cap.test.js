@@ -123,4 +123,39 @@ describe('Nhớm Cáp (pretensionRig) — Grounded Cargo + Full Real-Length Taut
     expect(phy.cargoPos.y).toBeGreaterThan(s.H * 0.5 + 0.5);
     expect(phy.cables.every((c) => !s.gear?.legs?.[c.index]?.broken)).toBe(true);
   });
+
+  it('3. Gravity keeps Basket steel bars pulling upper cables taut or resting on roof (never floating mid-air with slack uppers)', () => {
+    const sim = createHeadlessSim();
+    const s = sim.getState();
+    const phy = sim.getPhy();
+
+    s.cargoType = 'iso40';
+    s.L = 12.192;
+    s.W = 2.438;
+    s.H = 2.591;
+    s.weight = 24;
+    s.beamType = 'basket';
+    s.upperSlingLength = 8.0;
+    s.lowerSlingLength = 2.0;
+    s.slingUserSet = true;
+    sim.rebuildCargoAndRig(true);
+
+    for (const testHookY of [8.5, 9.6, 10.6]) {
+      s.poseLock = false;
+      phy.hookPos.y = testHookY;
+      phy.hookTarget.y = testHookY;
+      sim.stepSim(20);
+
+      for (const b of phy.beams) {
+        const resting = b.isRestingOnCargo || b.x.y <= s.H + 0.36;
+        if (!resting) {
+          const ups = phy.cables.filter((c) => c.role === 'upper' && c.b.body === b);
+          for (const u of ups) {
+            const span = sim.attachWorld(u.a).distanceTo(sim.attachWorld(u.b));
+            expect(span, `hookY=${testHookY} bar=${b.id}`).toBeGreaterThanOrEqual(u.L0 - 0.04);
+          }
+        }
+      }
+    }
+  });
 });

@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-16 15:53 [fix] Sửa vật lý trọng trường cho 2 thanh ngáng Basket (alignBasketBars): thanh thép nặng kéo căng thẳng cáp trên hoặc ngồi lên nóc hàng thay vì bay lơ lửng ra ngoài khi cáp chùng
+- Nhánh: feat/horizon-clouds | Commit trước đó: 41026f4
+- File: src/sim/physics/hoist_contacts.js,test/pretension_nhom_cap.test.js
+
 ## 2026-11-16 15:44 [fix] Sửa nút Nhớm Cáp (pretensionRig -> PretensionSolver.js) để kéo móc cẩu & ngáng lên đúng cao độ căng toàn bộ cáp thực tế trong khi kiện hàng vẫn chạm đất 0.00 m trên đủ 11 cấu hình ngáng
 - Nhánh: feat/horizon-clouds | Commit trước đó: b1648c1
 - File: src/rigging/PretensionSolver.js,src/rigging/index.js,src/sim/session/prelift_reset.js,src/sim/physics/step_engine.js,src/sim/physics/beams_seed.js,src/sim/physics/hoist_contacts.js,src/sim/rigging/draw_update.js,test/pretension_nhom_cap.test.js
