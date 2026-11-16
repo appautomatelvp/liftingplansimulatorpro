@@ -3196,6 +3196,9 @@
             if (cargoGroundAngleGroup && (phy.groundClearance || 0) <= 0.08) {
                 cargoGroundAngleGroup.traverse(o => { if (o.userData?.dragType) list.push(o); });
             }
+            if (phy._elevationRuler && phy._elevationRuler.dragHandle && phy._elevationRuler.group?.visible) {
+                list.push(phy._elevationRuler.dragHandle);
+            }
             return list;
         }
 
@@ -3397,6 +3400,20 @@
                     document.getElementById('sim-status-text').textContent = (state.lang === 'en')
                         ? '🧭 Rotating cargo ground orientation (yaw)...'
                         : '🧭 Đang kéo xoay hướng kiện hàng trên nền đất...';
+
+                } else if (dragType === 'ruler') {
+                    dragTarget = { type: 'ruler', offsetX: 0, offsetZ: 0 };
+                    const gy = (typeof groundSurfaceY === 'function') ? groundSurfaceY(0, 0) : 0;
+                    dragPlane.setFromNormalAndCoplanarPoint(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, gy, 0));
+                    const hitPt = new THREE.Vector3();
+                    if (raycaster.ray.intersectPlane(dragPlane, hitPt) && phy._elevationRuler?.group) {
+                        dragTarget.offsetX = phy._elevationRuler.group.position.x - hitPt.x;
+                        dragTarget.offsetZ = phy._elevationRuler.group.position.z - hitPt.z;
+                    }
+                    e.preventDefault();
+                    document.getElementById('sim-status-text').textContent = (state.lang === 'en')
+                        ? '📏 Dragging 3D Elevation Ruler position on deck...'
+                        : '📏 Đang kéo đặt vị trí Cây thước đo độ cao 3D...';
                 }
             }
         }
@@ -3459,6 +3476,15 @@
 
             const intersectPt = new THREE.Vector3();
             if (!raycaster.ray.intersectPlane(dragPlane, intersectPt)) return;
+
+            if (dragTarget.type === 'ruler') {
+                const rx = THREE.MathUtils.clamp(intersectPt.x + (dragTarget.offsetX || 0), -25, 25);
+                const rz = THREE.MathUtils.clamp(intersectPt.z + (dragTarget.offsetZ || 0), -25, 25);
+                if (phy._elevationRuler && phy._elevationRuler.setCustomPosition) {
+                    phy._elevationRuler.setCustomPosition(rx, rz);
+                }
+                return;
+            }
 
             if (dragTarget.type === 'cargoYaw') {
                 const dx = intersectPt.x - phy.cargoPos.x;

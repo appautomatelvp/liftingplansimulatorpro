@@ -31,4 +31,4 @@ export {
   computeElevationMarkers,
   createElevationRulerTool
 } from './ElevationRulerTool.js';
-export { pickBestElevationHoverPoint } from './ElevationRulerMath.js';
+export { pickBestElevationHoverPoint, buildRulerHoverInputs } from './ElevationRulerMath.js';

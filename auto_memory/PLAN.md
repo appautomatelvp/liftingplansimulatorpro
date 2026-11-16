@@ -52,7 +52,7 @@ Nhánh Git: feat/horizon-clouds
   3. `src/sim/session/presets_events.js`: gắn `dblclick` lên `#btn-hoist-down` (gọi auto hạ đất trùng cáp) và `#btn-hoist-up` (gọi auto nâng tới `10.0 m`) tách bạch khỏi `stopHoistHold()`; đồng thời bỏ đoạn xóa `rec.userSet`/`rec.lengthM` trong `handleTestLift()` để độ dài người dùng vừa chỉnh không bị mất khi bấm `Nhấc thử`.
 - **Kiểm tra:** `npx vitest run test/rigging.test.js test/unified_hoist_and_sts_realism.test.js` + `npm run architecture:gate` + `npm run build`.
 
-### [ ] Bước 5: Nối mạch kéo Thước 3D + Bắt Điểm Đỏ đủ Cáp/Ma ní trên Scene & Viết kiểm thử nghiệm thu
+### [x] Bước 5: Nối mạch kéo Thước 3D + Bắt Điểm Đỏ đủ Cáp/Ma ní trên Scene & Viết kiểm thử nghiệm thu
 - **File sửa/tạo (3 file):**
   1. `src/sim/gear/editor.js`: cho phép nắm kéo tay cầm `'ruler'` của Cây thước 3D trên mặt sàn XZ mượt mà (`controls.enabled = false` khi đang kéo, trả lại khi nhả chuột).
   2. `src/sim/library/reconstruction_export.js`: truyền đầy đủ `targets` và `segmentSources` (`hookGroup`, `spreaderRootGroup`, `phy.beamGroups`, `sling3DPool`, `hwMeshes`, `padEyeMeshes`, `cargoRootGroup`, `dunnageGroup`) vào `phy._elevationRuler.updateHover` + truyền danh sách mesh kéo của thước nếu cần.

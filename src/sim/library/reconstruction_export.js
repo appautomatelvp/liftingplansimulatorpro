@@ -2097,10 +2097,15 @@
                 phy._elevationRuler = GFX.createElevationRulerTool({ THREE, scene });
                 const onRulerMove = (ev) => {
                     if (!phy._elevationRuler || !state.displayOptions?.showRuler) return;
-                    const targets = [cargoRootGroup, spreaderRootGroup, craneVehicleGroup, dunnageGroup];
-                    if (typeof hookGroup !== 'undefined' && hookGroup) targets.push(hookGroup);
+                    const hoverData = GFX.buildRulerHoverInputs
+                        ? GFX.buildRulerHoverInputs({
+                            THREE, phy, cargoRootGroup, spreaderRootGroup, craneVehicleGroup,
+                            dunnageGroup, hookAssemblyGroup, padEyeMeshes, hwMeshes, sling3DPool, attachWorld
+                        })
+                        : { targets: [cargoRootGroup, spreaderRootGroup, craneVehicleGroup, dunnageGroup], segments: [] };
                     phy._elevationRuler.updateHover({
-                        clientX: ev.clientX, clientY: ev.clientY, domElement: renderer.domElement, camera, targets
+                        clientX: ev.clientX, clientY: ev.clientY, domElement: renderer.domElement, camera,
+                        targets: hoverData.targets, segments: hoverData.segments
                     });
                 };
                 renderer.domElement.addEventListener('pointermove', onRulerMove);

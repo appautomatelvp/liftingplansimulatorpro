@@ -69,3 +69,49 @@ export function pickBestElevationHoverPoint({
   }
   return bestMeshHit ? bestMeshHit.point.clone() : null;
 }
+
+/**
+ * Collects all 3D meshes (including slings, shackles, pad-eyes, beams, hook) and world cable/shackle segments
+ * so hovering any point from Hook down to Cargo Bottom shows the Red Dot cleanly.
+ */
+export function buildRulerHoverInputs({
+  THREE, phy, cargoRootGroup, spreaderRootGroup, craneVehicleGroup,
+  dunnageGroup, hookAssemblyGroup, padEyeMeshes, hwMeshes, sling3DPool, attachWorld
+} = {}) {
+  const targets = [cargoRootGroup, spreaderRootGroup, craneVehicleGroup, dunnageGroup];
+  if (hookAssemblyGroup) targets.push(hookAssemblyGroup);
+  if (Array.isArray(phy?.beamGroups)) phy.beamGroups.forEach((g) => { if (g) targets.push(g); });
+  if (Array.isArray(padEyeMeshes)) padEyeMeshes.forEach((p) => { if (p && p.visible !== false) targets.push(p); });
+  if (Array.isArray(hwMeshes)) hwMeshes.forEach((h) => { if (h && h.visible !== false) targets.push(h); });
+  if (Array.isArray(sling3DPool)) sling3DPool.forEach((s) => { if (s?.group && s.group.visible) targets.push(s.group); });
+  if (phy?._stsHbVis?.root && phy._stsHbVis.root.visible) targets.push(phy._stsHbVis.root);
+
+  const segments = [];
+  if (THREE && phy?.hookPos) {
+    const hp = phy.hookPos.clone();
+    segments.push({ a: hp.clone().setY(hp.y + 0.35), b: hp.clone().setY(hp.y - 0.65), radius: 0.28 });
+  }
+  if (typeof attachWorld === 'function' && Array.isArray(phy?.cables)) {
+    phy.cables.forEach((c) => {
+      if (!c || !c.a || !c.b) return;
+      const pA = attachWorld(c.a);
+      const pB = attachWorld(c.b);
+      if (c.broken && c.break) {
+        if (c.break.tipU) segments.push({ a: pA, b: c.break.tipU, radius: 0.16 });
+        if (c.break.tipL) segments.push({ a: pB, b: c.break.tipL, radius: 0.16 });
+      } else {
+        segments.push({ a: pA, b: pB, radius: 0.18 });
+      }
+    });
+  }
+  if (THREE && Array.isArray(hwMeshes)) {
+    const offY = new THREE.Vector3(0, 0.14, 0);
+    hwMeshes.forEach((h) => {
+      if (!h || h.visible === false) return;
+      const wp = new THREE.Vector3();
+      h.getWorldPosition(wp);
+      segments.push({ a: wp.clone().sub(offY), b: wp.clone().add(offY), radius: 0.24 });
+    });
+  }
+  return { targets, segments };
+}

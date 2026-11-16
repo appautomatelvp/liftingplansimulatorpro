@@ -43,8 +43,20 @@
                     ? cargoAabbClearance()
                     : (phy.groundClearance || 0);
                 const seated = (phy.groundClearance || 0) < 0.035 && aabbClr < 0.04;
-                if (seated) {
+                if (seated && !phy._setDownFullSlack) {
                     if (typeof finishSmoothSetDown === 'function') finishSmoothSetDown();
+                } else if (seated && phy._setDownFullSlack) {
+                    const stsDirectDown = state.beamType === 'container_spreader'
+                        && typeof isStsDirectAttach === 'function' && isStsDirectAttach();
+                    const allSlackNow = stsDirectDown || (typeof attachWorld === 'function' && (phy.cables || []).every(c => {
+                        if (typeof cableIsBroken === 'function' && cableIsBroken(c)) return true;
+                        return c.slack || attachWorld(c.a).distanceTo(attachWorld(c.b)) < (c.L0 || 1) - 0.02;
+                    }));
+                    if (allSlackNow && typeof finishSmoothSetDown === 'function') {
+                        finishSmoothSetDown();
+                    } else {
+                        phy.hoistSpeed = (typeof hoistHoldSpeed === 'function') ? hoistHoldSpeed(-1) : -0.35;
+                    }
                 } else {
                     state.poseLock = false;
                     phy.autoHoistActive = false;
@@ -110,6 +122,7 @@
                 }
                 resetFlatRackPayloadState();
                 applyLockedPose();
+                if (typeof syncCableRest === 'function') syncCableRest(false);
                 // Paying out onto the cargo roof: drop Nhớm freeze so the beam can
                 // follow the hook down and seat on the lid (never tunnel through).
                 if ((phy.hoistSpeed || 0) < -0.01 || (phy.hookTarget && phy.hookPos && phy.hookTarget.y < phy.hookPos.y - 0.04)) {
