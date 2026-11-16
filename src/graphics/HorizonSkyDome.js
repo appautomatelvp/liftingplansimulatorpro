@@ -124,13 +124,11 @@ const SKY_FRAGMENT_SHADER = `
   uniform float uTime;
   varying vec3 vSkyDir;
 
+  // Sin-free integer/fract hash is 4-5x faster on software WebGL (SwiftShader) & tablet GPUs
   vec3 hash33(vec3 p) {
-    p = vec3(
-      dot(p, vec3(127.1, 311.7, 74.7)),
-      dot(p, vec3(269.5, 183.3, 246.1)),
-      dot(p, vec3(113.5, 271.9, 124.6))
-    );
-    return -1.0 + 2.0 * fract(sin(p) * 43758.5453123);
+    p = fract(p * vec3(0.1031, 0.1030, 0.0973));
+    p += dot(p, p.yxz + 33.33);
+    return -1.0 + 2.0 * fract((p.xxy + p.yxx) * p.zyx);
   }
 
   // C2-continuous 3D Quintic Gradient Noise (zero grid creases or boxy facets)
@@ -158,6 +156,12 @@ const SKY_FRAGMENT_SHADER = `
     -0.80,  0.36, -0.48,
     -0.60, -0.48,  0.64
   );
+
+  float fbm2(vec3 p) {
+    float v = 0.56 * gnoise3(p);
+    p = OCT_ROT * p * 2.04 + vec3(11.3, 5.9, 17.7);
+    return v + 0.28 * gnoise3(p);
+  }
 
   float fbm4(vec3 p) {
     float v = 0.0;
@@ -201,7 +205,7 @@ const SKY_FRAGMENT_SHADER = `
       float cumAlpha = cumShape * cumEnvelope;
 
       vec3 pCir = vec3(dir.x * 1.85, elev * 14.0, dir.z * 1.85) + drift * 0.6 + vec3(warp * 0.7, 0.0, warp * 0.5);
-      float nCir = fbm4(pCir);
+      float nCir = fbm2(pCir);
       float cirShape = pow(smoothstep(0.02, 0.48, nCir), 1.65);
       float cirEnvelope = smoothstep(0.05, 0.13, elev) * (1.0 - smoothstep(0.18, 0.38, elev));
       float cirAlpha = cirShape * cirEnvelope * 0.36;

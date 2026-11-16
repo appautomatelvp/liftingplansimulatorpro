@@ -564,6 +564,9 @@
         // language switch never relies on browser auto-translation.
         Object.assign(UI_EN, {
             '📌 Đã lưu mốc ban đầu': '📌 Initial baseline saved',
+            '📌 Đã lưu mốc lơ lửng': '📌 Saved suspended pose',
+            '🔄 Đã khôi phục mốc ban đầu': '🔄 Restored initial baseline',
+            '🔄 Đã khôi phục mốc lơ lửng': '🔄 Restored suspended pose',
             '👁️ Hiển Thị': '👁️ Display',
             '✨ Đồ Họa': '✨ Graphics',
             '📋 Hồ Sơ & Chuẩn': '📋 Plans & Standards',
@@ -1046,6 +1049,7 @@
             'Tai cẩu LP4': 'Pad-eye LP4',
             'Tọa độ tùy chỉnh…': 'Custom coordinates…',
             '= cinematic tự xoay ·': '= cinematic auto-rotation ·',
+            '= bám theo kiện hàng (giữ nguyên góc & zoom) ·': '= track cargo motion (keep angle & zoom) ·',
             '= đứng yên ·': '= stationary ·',
             '= mỗi lần nhấn sang góc tiếp theo (12 góc quanh kiện) ·': '= each click advances to the next of 12 views around the cargo ·',
             '= flycam chuyên nghiệp, xoay liên tục quanh kiện.\n                Điều khiển nhanh ở hàng': '= professional flycam, continuously orbiting the cargo.\n                Quick controls are in the row',

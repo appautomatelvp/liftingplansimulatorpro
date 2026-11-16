@@ -115,7 +115,7 @@ test.describe('SafeLift3D dialog accessibility', () => {
           if (/Lê Việt Phương/.test(value)) continue;
           leaks.push({ type: 'text', value });
         }
-        document.querySelectorAll('body *').forEach((element) => {
+        document.querySelectorAll('body [title], body [aria-label], body [placeholder]').forEach((element) => {
           if (!isVisible(element)) return;
           for (const attribute of ['title', 'aria-label', 'placeholder']) {
             const value = element.getAttribute(attribute);
