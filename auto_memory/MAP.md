@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 21:52 | Nhánh: feat/horizon-clouds | Commit cuối: 0b093ed step 5: wire ruler drag, full cable/shackle red-dot picking, and poseLock sync (6 minutes ago)
+Cập nhật: 2026-11-16 21:52 | Nhánh: feat/horizon-clouds | Commit cuối: cde2199 step 6: full-state Ghi/Xem/Dung ReplayRecorder (hook, beams, cargo, cables, slew, OOG) (19 seconds ago)
 Tổng: 268 file, 77753 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)

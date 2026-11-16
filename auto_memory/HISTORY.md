@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-16 21:52 [feat] Hoan tat 6 buoc UX/Vat ly 3D & Ghi/Xem lai: bo cuc toi khi tat cau, keo dat thuoc & bat Diem Do cap/ma ni, dblclick Ha/Keo, mo khoa chinh thong so cap, het giat STS Direct, va ReplayRecorder ghi toan bo trang thai
+- Nhánh: feat/horizon-clouds | Commit trước đó: cde2199
+- File: src/sim/scene.js,src/sim/physics/beams_seed.js,src/sim/physics/hoist_contacts.js,src/sim/physics/step_engine.js,src/sim/gear/editor.js,src/sim/session/ui_units_bom.js,src/sim/session/prelift_reset.js,src/sim/session/presets_events.js,src/graphics/ElevationRulerMath.js,src/graphics/ElevationRulerTool.js,src/rigging/ReplayRecorder.js,src/sim/library/reconstruction_export.js
+
 ## 2026-11-16 21:03 [feat] Nang cap 7 diem UX & Vat ly 3D: Ha/Ha dat em tai cho, Camera Goc xoay muot khi dang nang ha, day Lashing om khit khong toe vay, multi-select chinh dong thoi thiet bi cung loai, kien dung/nghieng that tren go ke 3D, mac dinh SWL >= 12 MT giu nguyen duong kinh, va bo sung Cay thuoc do cao do 3D (Hook/Ngang/Dinh/Day) + Diem do di chuot (ElevationRulerTool.js)
 - Nhánh: feat/horizon-clouds | Commit trước đó: b6fa36d
 - File: src/graphics/ElevationRulerTool.js,src/graphics/JobsiteSiteVisuals.js,src/rigging/FlatRackLashingPhysics.js,src/rigging/PretensionSolver.js,src/sim/gear/editor.js,src/sim/library/reconstruction_export.js,src/sim/physics/beams_seed.js,src/sim/physics/cables_break.js,src/sim/physics/hoist_contacts.js,src/sim/scene.js,src/sim/session/prelift_reset.js,src/sim/session/presets_events.js,src/sim/state.js,src/sim/telemetry.js,index.html,test/pretension_nhom_cap.test.js,test/optimize_horizon_cargo_perf.test.js,test/v2_ux_dunnage_ruler_regression.test.js
