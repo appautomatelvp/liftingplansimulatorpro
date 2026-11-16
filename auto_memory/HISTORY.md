@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-16 22:23 [feat] Hoan tat V4: chong xuyen da go khi keo lech/xoay kien, ReplayRecorder 60s day du OOG/Lashing/cat cap, thuoc do ben phai so 2x, toi uu Tablet & STS Ha em
+- Nhánh: feat/horizon-clouds | Commit trước đó: cabbd24
+- File: src/graphics/JobsiteSiteVisuals.js,src/sim/physics/beams_seed.js,src/sim/physics/step_engine.js,src/rigging/ReplayRecorder.js,src/sim/library/reconstruction_export.js,src/sim/session/presets_events.js,src/graphics/ElevationRulerTool.js,src/styles/tablet.css,src/main.js,src/graphics/SceneRenderer.js
+
 ## 2026-11-16 21:52 [feat] Hoan tat 6 buoc UX/Vat ly 3D & Ghi/Xem lai: bo cuc toi khi tat cau, keo dat thuoc & bat Diem Do cap/ma ni, dblclick Ha/Keo, mo khoa chinh thong so cap, het giat STS Direct, va ReplayRecorder ghi toan bo trang thai
 - Nhánh: feat/horizon-clouds | Commit trước đó: cde2199
 - File: src/sim/scene.js,src/sim/physics/beams_seed.js,src/sim/physics/hoist_contacts.js,src/sim/physics/step_engine.js,src/sim/gear/editor.js,src/sim/session/ui_units_bom.js,src/sim/session/prelift_reset.js,src/sim/session/presets_events.js,src/graphics/ElevationRulerMath.js,src/graphics/ElevationRulerTool.js,src/rigging/ReplayRecorder.js,src/sim/library/reconstruction_export.js

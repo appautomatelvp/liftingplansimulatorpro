@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 22:20 | Nhánh: feat/horizon-clouds | Commit cuối: c1afaef step 3: right-side default Elevation Ruler on F5, 2x labels, smooth STS setDown (73 seconds ago)
-Tổng: 269 file, 77950 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 22:23 | Nhánh: feat/horizon-clouds | Commit cuối: cabbd24 step 4: tablet responsive layout (iPad/Android >=4GB) and coarse-pointer DPR cap (2 minutes ago)
+Tổng: 269 file, 78026 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -325,6 +325,6 @@ Tổng: 269 file, 77950 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/sts_twin_cable_flare.test.js` | 106 |  |
 | `test/telemetry_usage.test.js` | 50 |  |
 | `test/v2_ux_dunnage_ruler_regression.test.js` | 151 | Kiểm thử hồi quy 7 tính năng mới: Lashing khít đáy, SWL >= 12MT, Chỉnh đồng bộ, Hạ êm, Góc xoay mượt, Gỗ kê đỡ/nghiêng kiện, Thước cao độ 3D + Điểm đỏ. |
-| `test/v3_ruler_drag_hoist_sts_gear_regression.test.js` | 196 | Kiểm thử hồi quy 6 nâng cấp mới: bỏ cục tời khi tắt cẩu 3D, kéo đặt thước 3D & bắt Điểm Đỏ cáp/ma ní, dblclick Hạ/Kéo, mở khóa chỉnh cáp, hết giật STS Direct. |
+| `test/v3_ruler_drag_hoist_sts_gear_regression.test.js` | 272 | Kiểm thử hồi quy 6 nâng cấp mới: bỏ cục tời khi tắt cẩu 3D, kéo đặt thước 3D & bắt Điểm Đỏ cáp/ma ní, dblclick Hạ/Kéo, mở khóa chỉnh cáp, hết giật STS Direct. ⚠️>250 |
 | `test/workspace_data.test.js` | 155 |  |
 | `vite.config.js` | 115 |  |

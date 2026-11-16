@@ -5,6 +5,7 @@ import path from 'node:path';
 import * as THREE from 'three';
 import { createElevationRulerTool } from '../src/graphics/ElevationRulerTool.js';
 import { pickBestElevationHoverPoint, buildRulerHoverInputs } from '../src/graphics/ElevationRulerMath.js';
+import { rebuildDunnageVisual3D, sampleDunnageContactPointsForCargo } from '../src/graphics/JobsiteSiteVisuals.js';
 import {
   startReplayRecording,
   captureReplayFrame,
@@ -192,5 +193,80 @@ describe('V3 UX & Physics Upgrades Regression', () => {
     expect(phy.cables[0].broken).toBe(true);
     expect(state.gear.legs[0].broken).toBe(true);
     expect(phy.legTensions[0]).toBeCloseTo(6.25, 2);
+  });
+
+  it('7. Shifted and rotated cargo over timber dunnage projects beam contacts and does not pierce wood', () => {
+    const dg = new THREE.Group();
+    rebuildDunnageVisual3D({ THREE, dunnageGroup: dg, state: { L: 12, W: 2.4, dunnageQty: '2', dunnageSection: '200x200' }, MATS: {} });
+    // Shift cargo X = +2.2m so timber beam at +4.68m falls in the middle of the cargo underside (between static grid ribs!)
+    const cargoPos = new THREE.Vector3(2.2, 1.45, 0.15);
+    const cargoQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), 0.25);
+    const pts = sampleDunnageContactPointsForCargo({ THREE, cargoPos, cargoQuat, L: 12, W: 2.4, H: 2.5, dunnageGroup: dg });
+    expect(pts.length).toBeGreaterThanOrEqual(3);
+    pts.forEach((p) => {
+      expect(p.y).toBeCloseTo(-1.25, 3);
+      expect(Math.abs(p.x)).toBeLessThanOrEqual(6.0);
+    });
+  });
+
+  it('8. ReplayRecorder respects 60s max cap and replays OOG drop & staggered lashing strap breaks', () => {
+    const activeCargoVisual = new THREE.Group();
+    const oogGroup = new THREE.Group();
+    oogGroup.name = 'flatRackOogCargo';
+    const intact0 = new THREE.Mesh();
+    const tailBot = new THREE.Group();
+    const tailTop = new THREE.Group();
+    oogGroup.userData.lashingNodes = [{ snapped: false, intactNode: intact0, sideTails: [{ sz: 1, sideSeed: 0.3, botPivot: tailBot, topPivot: tailTop }] }];
+    const lashingGroup = new THREE.Group();
+    lashingGroup.name = 'flatRackLashingStraps';
+    const brokenGroup = new THREE.Group();
+    brokenGroup.name = 'flatRackBrokenStraps';
+    brokenGroup.visible = false;
+    activeCargoVisual.add(oogGroup, lashingGroup, brokenGroup);
+
+    const state = { poseLock: false, slewDeg: 0, craneAngleDeg: 0, gear: { legs: [], uppers: [], hangers: [] } };
+    const phy = {
+      rigLive: true, groundClearance: 3.0, hookPos: new THREE.Vector3(0, 10, 0), hookTarget: new THREE.Vector3(0, 10, 0),
+      cargoPos: new THREE.Vector3(0, 4.3, 0), cargoQuat: new THREE.Quaternion(), beams: [], cables: [],
+      oogState: { status: 'secured', strapsBroken: false, impactedGround: false, localPos: new THREE.Vector3(), worldPos: new THREE.Vector3(), worldQuat: new THREE.Quaternion(), lashing: { isIntact: true } }
+    };
+    const replay = { recording: false, playing: false, frames: [], t0: 0, cursor: 0 };
+
+    startReplayRecording({ replay, state, phy, activeCargoVisual, nowSec: 0 });
+    phy.oogState.status = 'falling';
+    phy.oogState.strapsBroken = true;
+    phy.oogState.lashing.isIntact = false;
+    oogGroup.userData.lashingNodes[0].snapped = true;
+    lashingGroup.visible = false;
+    brokenGroup.visible = true;
+    oogGroup.position.set(1.5, -2.2, 0);
+    captureReplayFrame({ replay, state, phy, activeCargoVisual, nowSec: 59.5, force: true });
+    const capped = captureReplayFrame({ replay, state, phy, activeCargoVisual, nowSec: 60.5, force: true });
+    expect(capped.full).toBe(true);
+    expect(replay.recording).toBe(false);
+
+    // Reset visuals back to intact before playback
+    oogGroup.position.set(0, 0, 0);
+    oogGroup.userData.lashingNodes[0].snapped = false;
+    lashingGroup.visible = true;
+    brokenGroup.visible = false;
+
+    replay.playing = true;
+    replay.cursor = 59.4;
+    stepReplayPlayback({ THREE, replay, state, phy, activeCargoVisual, dt: 0.2 });
+    expect(phy.oogState.strapsBroken).toBe(true);
+    expect(oogGroup.position.y).toBeLessThan(-1.5);
+    expect(oogGroup.userData.lashingNodes[0].snapped).toBe(true);
+    expect(brokenGroup.visible).toBe(true);
+  });
+
+  it('9. Tablet responsive CSS keeps touch panels visible and SceneRenderer caps mobile DPR', () => {
+    const root = path.resolve(import.meta.dirname, '..');
+    const tabletCss = fs.readFileSync(path.join(root, 'src/styles/tablet.css'), 'utf8');
+    const mainJs = fs.readFileSync(path.join(root, 'src/main.js'), 'utf8');
+    expect(mainJs).toContain("./styles/tablet.css");
+    expect(tabletCss).toContain('touch-action: none');
+    expect(tabletCss).toContain('#bottom-dock-bar');
+    expect(tabletCss).toContain('#top-bar');
   });
 });

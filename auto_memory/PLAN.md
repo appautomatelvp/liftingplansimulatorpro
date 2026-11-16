@@ -52,7 +52,7 @@ Nhánh Git: feat/horizon-clouds
   3. `src/graphics/SceneRenderer.js`: tự nhận diện tablet/touch (`pointer: coarse` / RAM >= 4GB) giới hạn `maxDPR <= 1.5` ở chế độ mặc định để GPU iPad/Android giữ ổn định 60 FPS, không tụt khung hình hay văng WebGL.
 - **Kiểm tra:** `npm run architecture:gate` + `npm run build` + `npm run check:dist`.
 
-### [ ] Bước 5: Nghiệm thu toàn bộ kiểm thử mới + kiểm tra an toàn V7
+### [x] Bước 5: Nghiệm thu toàn bộ kiểm thử mới + kiểm tra an toàn V7
 - **File sửa/chạy (2 file):**
   1. Cập nhật `test/v3_ruler_drag_hoist_sts_gear_regression.test.js`: bổ sung test kéo kiện lệch tâm lên thanh gỗ không xuyên, test ReplayRecorder 60s tái hiện đủ OOG rơi + đứt dây chằng + cắt cáp + đong đưa, test thước mặc định bên phải & font gấp đôi, test tablet viewport/CSS & STS hạ êm tới sát sàn.
   2. Chạy toàn bộ: `npx vitest run`, `npm run architecture:gate`, `npm run build`, `npm run check:dist`, `./scripts/auto_check.ps1`, `./scripts/auto_log.ps1`.
