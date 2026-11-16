@@ -27,6 +27,14 @@
                 const upperH = Math.sqrt(Math.max(0.25, upperL * upperL - halfSpan * halfSpan));
                 // +0.35 m so parked pose has slack, not a taut re-hoist.
                 standbyHookY = THREE.MathUtils.clamp(maxY + lowerL + upperH + 0.35, 2.4, 35.0);
+            } else if (state.beamType === 'basket') {
+                const upperL = meanL0('upper', state.upperSlingLength || 10.0);
+                const lowerL = meanL0('leg', state.lowerSlingLength || 2.0);
+                const halfX = Math.max(0.5, (state.L || 12.0) * 0.5 - lowerL);
+                const upperH = Math.sqrt(Math.max(1.0, upperL * upperL - halfX * halfX));
+                // Park just below touchdown so bars rest cleanly near cargo ends tethered by short lowers
+                // while upper chains drape into a natural ~1 m catenary curve.
+                standbyHookY = THREE.MathUtils.clamp(maxY + upperH - 0.35, 2.4, 35.0);
             } else if (state.beamType === 'container_spreader') {
                 // Direct / cable STS: seat twistlocks or cable stand-off, then return.
                 if (typeof seatStsSpreaderToCargo === 'function') {

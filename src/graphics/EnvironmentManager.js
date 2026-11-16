@@ -14,10 +14,10 @@ import {
 export { LIGHTING_PRESETS, getVietnamTimeInfo, getVietnamHorizonBand };
 
 const STUDIO_SKY_BAND_OVERRIDES = {
-  day: [0x6299cb, 0xe4e2d8],
-  golden: [0x3d281e, 0xd49258],
-  dawn: [0x484b65, 0xc8a296],
-  night: [0x090d16, 0x0f172a]
+  day: [0x0c63b8, 0xcfe7f7],
+  golden: [0x163b7a, 0xf08c36],
+  dawn: [0x1f4378, 0xe8a586],
+  night: [0x040812, 0x0b1526]
 };
 
 export class EnvironmentManager {
@@ -34,6 +34,9 @@ export class EnvironmentManager {
     this.fillLight = null;
     this.nightSpotlights = [];
     this.skyDome = null;
+    this._baseFogColor = new THREE.Color(0xcfe7f7);
+    this._baseFogNear = 72;
+    this._baseFogFar = 215;
     this.initLights();
     this.ensureSkyDome();
     this.applyPreset('liebherr_studio');
@@ -94,11 +97,14 @@ export class EnvironmentManager {
     }
   }
 
-  applyMatchedHorizonFog(bgColor, near = 68, far = 205, opts) {
+  applyMatchedHorizonFog(bgColor, near = 72, far = 215, opts) {
     const fogColor = (bgColor && bgColor.isColor)
       ? bgColor.clone()
-      : new THREE.Color(bgColor != null ? bgColor : 0xe4e2d8);
-    if (!(opts && opts.setBackground === false)) this.scene.background = fogColor;
+      : new THREE.Color(bgColor != null ? bgColor : 0xcfe7f7);
+    this._baseFogColor.copy(fogColor);
+    this._baseFogNear = near;
+    this._baseFogFar = far;
+    if (!(opts && opts.setBackground === false)) this.scene.background = fogColor.clone();
     if (this.scene.fog && this.scene.fog.isFog) {
       this.scene.fog.color.copy(fogColor);
       this.scene.fog.near = near;
@@ -107,16 +113,29 @@ export class EnvironmentManager {
       this.scene.fog = new THREE.Fog(fogColor.getHex(), near, far);
     }
     if (this.skyDome?.material?.uniforms?.uHorizonColor) {
-      this.skyDome.material.uniforms.uHorizonColor.value = this.scene.fog.color;
+      this.skyDome.material.uniforms.uHorizonColor.value.copy(fogColor);
     }
     return this.scene.fog;
+  }
+
+  syncFrameAtmosphere(dt = 0.016) {
+    if (this.scene?.fog?.isFog && this._baseFogColor) {
+      this.scene.fog.color.copy(this._baseFogColor);
+      this.scene.fog.near = this._baseFogNear;
+      this.scene.fog.far = this._baseFogFar;
+    }
+    const u = this.skyDome?.material?.uniforms;
+    if (u) {
+      if (this._baseFogColor) u.uHorizonColor.value.copy(this._baseFogColor);
+      if (u.uTime) u.uTime.value += Math.min(0.1, Math.max(0, dt));
+    }
   }
 
   applyVietnamHorizonAtmosphere(basePreset) {
     const preset = basePreset || LIGHTING_PRESETS[this.currentPresetId] || LIGHTING_PRESETS.liebherr_studio;
     if (preset.id === 'print_plan') {
       this.applyMatchedHorizonFog(preset.solidBackground || 0xeef2f6, preset.fogNear || 110, preset.fogFar || 260);
-      this.updateSkyDome({ horizonColor: 0xeef2f6, midSkyColor: 0xebf0f5, skyColor: 0xe5ebf2, sunGlow: 0.0, horizonHaze: 0.40, visible: true });
+      this.updateSkyDome({ horizonColor: 0xeef2f6, midSkyColor: 0xebf0f5, skyColor: 0xe5ebf2, sunGlow: 0.0, horizonHaze: 0.40, cloudOpacity: 0.0, visible: true });
       return 'day';
     }
     const timeInfo = getVietnamTimeInfo();
@@ -138,8 +157,11 @@ export class EnvironmentManager {
       horizonColor: fogColor,
       midSkyColor: cfg.mid,
       skyColor: cfg.sky,
+      cloudLightColor: cfg.cloudLight,
+      cloudShadeColor: cfg.cloudShade,
       sunGlow: cfg.glow,
       horizonHaze: cfg.haze,
+      cloudOpacity: cfg.cloudOpacity ?? 0.8,
       visible: true
     });
     this._vietnamHorizonBand = timeInfo.band;

@@ -6,17 +6,29 @@ export function makeCanvas(width, height) {
     cvs.height = height;
     return cvs;
   }
+  const gradStub = { addColorStop: () => {} };
   return {
     width,
     height,
     getContext: () => ({
       fillStyle: '',
+      strokeStyle: '',
+      lineWidth: 1,
+      globalAlpha: 1,
+      globalCompositeOperation: 'source-over',
       fillRect: () => {},
+      clearRect: () => {},
+      strokeRect: () => {},
       beginPath: () => {},
+      closePath: () => {},
       moveTo: () => {},
       lineTo: () => {},
+      quadraticCurveTo: () => {},
+      arc: () => {},
       fill: () => {},
-      createLinearGradient: () => ({ addColorStop: () => {} }),
+      stroke: () => {},
+      createLinearGradient: () => gradStub,
+      createRadialGradient: () => gradStub,
       getImageData: () => ({ data: new Uint8ClampedArray(width * height * 4) }),
       putImageData: () => {}
     })
@@ -28,54 +40,122 @@ function addStops(grad, stops) {
   return grad;
 }
 
-export function drawQuayConcreteMaps(size = 1024, includeJoints = false) {
+function drawTileableBlotch(ctx, x, y, r, colorInner, colorOuter, size) {
+  for (let ox = -1; ox <= 1; ox++) {
+    for (let oy = -1; oy <= 1; oy++) {
+      const cx = x + ox * size;
+      const cy = y + oy * size;
+      if (cx + r < 0 || cx - r > size || cy + r < 0 || cy - r > size) continue;
+      const g = ctx.createRadialGradient(cx, cy, r * 0.1, cx, cy, r);
+      g.addColorStop(0, colorInner);
+      g.addColorStop(1, colorOuter);
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+}
+
+export function drawQuayConcreteMaps(size = 1024, includeJoints = true) {
   const cvsBase = makeCanvas(size, size), ctxBase = cvsBase.getContext('2d');
   const cvsNorm = makeCanvas(size, size), ctxNorm = cvsNorm.getContext('2d');
   const cvsRough = makeCanvas(size, size), ctxRough = cvsRough.getContext('2d');
   const cvsAO = makeCanvas(size, size), ctxAO = cvsAO.getContext('2d');
 
-  ctxBase.fillStyle = '#424a56';
+  ctxBase.fillStyle = '#4e5662';
   ctxBase.fillRect(0, 0, size, size);
+  ctxRough.fillStyle = 'rgb(218, 218, 218)';
+  ctxRough.fillRect(0, 0, size, size);
+  ctxAO.fillStyle = 'rgb(252, 252, 252)';
+  ctxAO.fillRect(0, 0, size, size);
+
+  // Subtle cured slab-to-slab tonal variation before adding trowel mottling
+  const half = size * 0.5;
+  if (includeJoints) {
+    const slabShades = ['rgba(255,255,255,0.025)', 'rgba(15,23,42,0.035)', 'rgba(15,23,42,0.015)', 'rgba(255,255,255,0.018)'];
+    [[0, 0], [half, 0], [0, half], [half, half]].forEach(([sx, sy], idx) => {
+      ctxBase.fillStyle = slabShades[idx];
+      ctxBase.fillRect(sx, sy, half, half);
+    });
+  }
+
+  // Multi-scale weathered troweled concrete blotches & moisture stains (seamless tiling)
+  for (let b = 0; b < 36; b++) {
+    const bx = Math.random() * size;
+    const by = Math.random() * size;
+    const br = size * (0.06 + Math.random() * 0.14);
+    const dark = b % 2 === 0;
+    drawTileableBlotch(
+      ctxBase, bx, by, br,
+      dark ? 'rgba(30, 36, 46, 0.16)' : 'rgba(148, 163, 184, 0.12)',
+      'rgba(0, 0, 0, 0)',
+      size
+    );
+    drawTileableBlotch(
+      ctxRough, bx, by, br,
+      dark ? 'rgba(165, 165, 165, 0.35)' : 'rgba(240, 240, 240, 0.30)',
+      'rgba(218, 218, 218, 0)',
+      size
+    );
+  }
+
+  // Coarse + fine mineral aggregate texture so concrete grain survives camera distance & mipmaps
   const imgData = ctxBase.getImageData(0, 0, size, size);
   const d = imgData.data;
-  for (let i = 0; i < d.length; i += 4) {
-    const noise = (Math.random() - 0.5) * 28;
-    d[i] = Math.min(255, Math.max(0, d[i] + noise));
-    d[i + 1] = Math.min(255, Math.max(0, d[i + 1] + noise));
-    d[i + 2] = Math.min(255, Math.max(0, d[i + 2] + noise * 0.9));
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const i = (y * size + x) * 4;
+      const cell = (((x >> 2) * 73856093) ^ ((y >> 2) * 19349663)) & 31;
+      const macro = (cell - 15.5) * 0.85;
+      const fine = (Math.random() - 0.5) * 34;
+      const delta = macro + fine;
+      d[i] = Math.min(255, Math.max(0, d[i] + delta));
+      d[i + 1] = Math.min(255, Math.max(0, d[i + 1] + delta));
+      d[i + 2] = Math.min(255, Math.max(0, d[i + 2] + delta * 0.92));
+    }
   }
   ctxBase.putImageData(imgData, 0, 0);
+
+  // Micro-aggregate stone flecks & surface pits
+  for (let k = 0; k < 520; k++) {
+    const px = Math.random() * size;
+    const py = Math.random() * size;
+    const pr = 1.1 + Math.random() * 2.4;
+    ctxBase.fillStyle = k % 3 === 0 ? 'rgba(203, 213, 225, 0.18)' : 'rgba(20, 25, 34, 0.22)';
+    ctxBase.beginPath();
+    ctxBase.arc(px, py, pr, 0, Math.PI * 2);
+    ctxBase.fill();
+  }
 
   ctxNorm.fillStyle = 'rgb(128, 128, 255)';
   ctxNorm.fillRect(0, 0, size, size);
   const normData = ctxNorm.getImageData(0, 0, size, size);
   const nd = normData.data;
   for (let i = 0; i < nd.length; i += 4) {
-    nd[i] = Math.min(255, Math.max(0, 128 + (Math.random() - 0.5) * 12));
-    nd[i + 1] = Math.min(255, Math.max(0, 128 + (Math.random() - 0.5) * 12));
+    nd[i] = Math.min(255, Math.max(0, 128 + (Math.random() - 0.5) * 26));
+    nd[i + 1] = Math.min(255, Math.max(0, 128 + (Math.random() - 0.5) * 26));
     nd[i + 2] = 255;
   }
   ctxNorm.putImageData(normData, 0, 0);
 
-  ctxRough.fillStyle = 'rgb(215, 215, 215)';
-  ctxRough.fillRect(0, 0, size, size);
-  ctxAO.fillStyle = 'rgb(255, 255, 255)';
-  ctxAO.fillRect(0, 0, size, size);
-
   if (includeJoints) {
-    const joints = [0, size / 2, size - 1];
+    const joints = [0, half, size - 1];
     joints.forEach((p) => {
-      ctxBase.fillStyle = '#1e242c';
+      ctxBase.fillStyle = '#232a34';
       ctxBase.fillRect(p - 2, 0, 4, size);
       ctxBase.fillRect(0, p - 2, size, 4);
-      ctxNorm.fillStyle = 'rgb(90, 128, 255)'; ctxNorm.fillRect(p - 3, 0, 3, size);
-      ctxNorm.fillStyle = 'rgb(165, 128, 255)'; ctxNorm.fillRect(p, 0, 3, size);
-      ctxNorm.fillStyle = 'rgb(128, 90, 255)'; ctxNorm.fillRect(0, p - 3, size, 3);
-      ctxNorm.fillStyle = 'rgb(128, 165, 255)'; ctxNorm.fillRect(0, p, size, 3);
-      ctxRough.fillStyle = 'rgb(90, 90, 90)';
+      ctxBase.fillStyle = 'rgba(148, 163, 184, 0.18)';
+      ctxBase.fillRect(p + 2, 0, 2, size);
+      ctxBase.fillRect(0, p + 2, size, 2);
+      ctxNorm.fillStyle = 'rgb(88, 128, 255)'; ctxNorm.fillRect(p - 3, 0, 3, size);
+      ctxNorm.fillStyle = 'rgb(168, 128, 255)'; ctxNorm.fillRect(p, 0, 3, size);
+      ctxNorm.fillStyle = 'rgb(128, 88, 255)'; ctxNorm.fillRect(0, p - 3, size, 3);
+      ctxNorm.fillStyle = 'rgb(128, 168, 255)'; ctxNorm.fillRect(0, p, size, 3);
+      ctxRough.fillStyle = 'rgb(100, 100, 100)';
       ctxRough.fillRect(p - 3, 0, 6, size);
       ctxRough.fillRect(0, p - 3, size, 6);
-      ctxAO.fillStyle = 'rgb(110, 110, 110)';
+      ctxAO.fillStyle = 'rgb(115, 115, 115)';
       ctxAO.fillRect(p - 4, 0, 8, size);
       ctxAO.fillRect(0, p - 4, size, 8);
     });

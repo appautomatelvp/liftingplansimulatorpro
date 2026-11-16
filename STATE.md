@@ -45,8 +45,8 @@
 ---
 
 ## 4. CÔNG VIỆC ĐANG LÀM DỞ (ONGOING WORK)
-- **Mục tiêu hiện tại:** Hoàn tất 4/4 bước ẩn thông tin cá nhân nhà phát triển khỏi màn hình công khai/HTML/bundle và nâng cấp hộp thoại Góp ý chống bot/spam 5 lớp (`auto_memory/PLAN.md` `Trạng thái: DONE`, nhánh `feat/hide-dev-contact-antispam`).
-- **Bước tiếp theo:** Founder kiểm tra màn hình khởi động, màn hình đăng nhập và bấm mở hộp thoại Góp ý; sau khi ưng ý thì gộp PR/deploy lên Cloudflare Pages.
+- **Mục tiêu hiện tại:** Đã hoàn tất tối ưu tổng thể & chuẩn hóa đồng bộ tốc độ nâng/hạ + chống bắn kiện hàng trên STS Spreader ([UnifiedHoistProfile.js](src/rigging/UnifiedHoistProfile.js), nhánh `feat/horizon-clouds`), bổ sung mây trôi đa múi, vật liệu bê tông cảng, bịt kín xe/container 3D và thanh chỉnh Độ sáng/Tương phản trong Graphics. Toàn bộ `47/47` file / `355/355` test xanh, `vite build` & `architecture:gate` & `check:dist` đạt 100%.
+- **Bước tiếp theo:** Founder kiểm tra trực quan 3D trên trình duyệt (chân trời ở các preset bầu trời, chọn `Vehicle`, chọn `Steel Pipe (OOG)`, xoay kéo mượt), khi ưng ý thì chạy `./scripts/manual_chot_ban.ps1` để chốt bản ổn định.
 
 ---
 
@@ -54,4 +54,4 @@
 - [x] Tất cả các file mới/vừa tách đều dưới 300 dòng, có `@purpose`, không sinh ra file `patch*.js` hay `fix.js` nào.
 - [x] Không vi phạm Physics Quarantine (`/src/core/` không import DOM/Three.js) và qua `npm run architecture:gate`.
 - [x] Đã chạy `./scripts/auto_check.ps1` và `./scripts/auto_log.ps1` để cập nhật `auto_memory/HISTORY.md` + `auto_memory/MAP.md`.
-- [x] Toàn bộ 42 file / 308 test (`npm test`), kiểm tra bảo mật (`@secure`) + Golden Test (`@test`) và `npm run build` chạy khớp 100%. (Founder mở F12 kiểm tra thêm trên trình duyệt trước khi chốt bản).
+- [x] Toàn bộ 47 file / 355 test (`npm test`), kiểm tra bảo mật (`@secure`) + Golden Test (`@test`) và `npm run build` chạy khớp 100%. (Founder mở F12 kiểm tra thêm trên trình duyệt trước khi chốt bản).

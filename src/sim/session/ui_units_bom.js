@@ -1007,8 +1007,32 @@
         window.syncSlingSlidersFromState = syncSlingSlidersFromState;
         window.updateCableQuickSelector = updateCableQuickSelector;
 
+        function updateLiftingBeamModeUI() {
+            const isLb = state.beamType === 'lifting_beam';
+            const lbPanel = document.getElementById('lifting-beam-mode-panel');
+            if (lbPanel) {
+                lbPanel.classList.toggle('hidden', !isLb);
+                lbPanel.classList.toggle('flex', isLb);
+            }
+            if (!isLb) return;
+            const topM = state.liftingBeamTopMode || 'bridle2';
+            const botM = state.liftingBeamBottomMode || 'cable';
+            const paintGroup = (sel, attr, activeVal) => {
+                document.querySelectorAll(sel).forEach(btn => {
+                    const on = btn.getAttribute(attr) === activeVal;
+                    btn.classList.toggle('border-amber-500/80', on);
+                    btn.classList.toggle('bg-amber-950/50', on);
+                    btn.classList.toggle('border-slate-700', !on);
+                    btn.classList.toggle('bg-slate-950/90', !on);
+                });
+            };
+            paintGroup('.btn-lb-top', 'data-lb-top', topM);
+            paintGroup('.btn-lb-bot', 'data-lb-bot', botM);
+        }
+
         /** Toggle §3.2: STS ISO twistlock pitches vs generic beam L slider. */
         function updateStsBeamDimUI() {
+            updateLiftingBeamModeUI();
             const isSts = state.beamType === 'container_spreader';
             const stsPanel = document.getElementById('sts-size-panel');
             const genPanel = document.getElementById('generic-beam-dim-panel');
@@ -1205,6 +1229,23 @@
         }
         window.applyStsAttachMode = applyStsAttachMode;
 
+        function applyLiftingBeamModes({ topMode, bottomMode } = {}) {
+            if (topMode) state.liftingBeamTopMode = topMode === 'direct_hook' ? 'direct_hook' : 'bridle2';
+            if (bottomMode) state.liftingBeamBottomMode = bottomMode === 'direct' ? 'direct' : 'cable';
+            state.beamType = 'lifting_beam';
+            if (state.liftingBeamTopMode === 'direct_hook') state.upperSlingLength = 0.14;
+            else if (!state.upperSlingLength || state.upperSlingLength < 1.0) state.upperSlingLength = 4.0;
+            if (state.liftingBeamBottomMode === 'direct') state.lowerSlingLength = 0.06;
+            else if (!state.lowerSlingLength || state.lowerSlingLength < 0.5) state.lowerSlingLength = 2.0;
+            if (typeof rebuildCargoAndRig === 'function') rebuildCargoAndRig(true);
+            if (typeof resetToInitialPreLiftState === 'function') resetToInitialPreLiftState();
+            else if (typeof syncHookToRigTaut === 'function') syncHookToRigTaut();
+            syncSlingSlidersFromState();
+            updateStsBeamDimUI();
+            updateRiggingBOMUI();
+        }
+        window.applyLiftingBeamModes = applyLiftingBeamModes;
+
         /**
          * Apply STS telescopic size: ISO 1161 twistlock centres (not outer / phủ bì).
          * @param {20|40|45|'twin'} size
@@ -1393,6 +1434,12 @@
                 btn.addEventListener('click', () => {
                     applyStsAttachMode(btn.dataset.stsAttach || 'direct');
                 });
+            });
+            document.querySelectorAll('.btn-lb-top').forEach(btn => {
+                btn.addEventListener('click', () => applyLiftingBeamModes({ topMode: btn.dataset.lbTop }));
+            });
+            document.querySelectorAll('.btn-lb-bot').forEach(btn => {
+                btn.addEventListener('click', () => applyLiftingBeamModes({ bottomMode: btn.dataset.lbBot }));
             });
             const chkTwin = document.getElementById('chk-sts-twin');
             if (chkTwin) {
@@ -1616,8 +1663,21 @@
                 if (source === 'number' && inpSel) inpSel.value = clampedVal.toFixed(2);
 
                 const lenM = fromInputLen(clampedVal);
-                rec.lengthM = lenM;
-                rec.userSet = true;
+                const matchingSlings = (state.gear && state.gear.selection)
+                    ? state.gear.selection.filter(s => s.kind === 'sling' && s.role === sel.role)
+                    : [sel];
+                (matchingSlings.length ? matchingSlings : [sel]).forEach(s => {
+                    const r = (typeof gearRecord === 'function') ? gearRecord(s) : null;
+                    if (r) {
+                        r.lengthM = lenM;
+                        r.userSet = true;
+                        r._nhomAutoLen = false;
+                        r._manualLengthOverride = true;
+                    }
+                    if (state.heldCableL0 && s.role && state.heldCableL0[s.role]) {
+                        state.heldCableL0[s.role][s.index] = null;
+                    }
+                });
                 state.slingUserSet = true;
 
                 if (sel.role === 'upper') {
@@ -1628,14 +1688,14 @@
                     state.hangerSlingLength = lenM;
                     if (state.gear && state.gear.hangers) {
                         state.gear.hangers.forEach(h => {
-                            if (h) { h.lengthM = lenM; h.userSet = true; }
+                            if (h) { h.lengthM = lenM; h.userSet = true; h._manualLengthOverride = true; }
                         });
                     }
                 }
                 markCableAdjustMode();
 
-                if (typeof syncHookToRigTaut === 'function') syncHookToRigTaut();
                 if (typeof syncCableRest === 'function') syncCableRest(false);
+                if (typeof syncHookToRigTaut === 'function') syncHookToRigTaut();
                 rebuildCargoAndRig(false);
                 if (typeof renderGearFields === 'function') renderGearFields();
                 syncSlingSlidersFromState();

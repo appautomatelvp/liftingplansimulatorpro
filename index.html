@@ -470,7 +470,7 @@
 
                     <span class="text-[8.5px] font-extrabold uppercase text-violet-300 tracking-wider">Cam:</span>
                     <div class="flex items-center gap-0.5" data-testid="dock-cam-behavior">
-                        <button id="btn-cam-cinema" type="button" class="pendant-btn !py-0.5 !px-1.5 text-[10px] font-bold whitespace-nowrap !bg-sky-700 !border-sky-400 !text-white" title="Auto — đưa kiện về góc cinematic rule-of-thirds (1/3), dễ nhìn nhất">Auto</button>
+                        <button id="btn-cam-cinema" type="button" class="pendant-btn !py-0.5 !px-1.5 text-[10px] font-bold whitespace-nowrap !bg-sky-700 !border-sky-400 !text-white" title="Follow — bám theo kiện hàng di chuyển (giữ nguyên góc &amp; zoom)">Follow</button>
                         <button id="btn-cam-lock" type="button" class="pendant-btn !py-0.5 !px-1.5 text-[10px] font-bold whitespace-nowrap text-slate-300" title="Giữ — camera đứng yên tại góc hiện tại">Giữ</button>
                         <button id="btn-cam-hold-angle" type="button" class="pendant-btn !py-0.5 !px-1.5 text-[10px] font-bold whitespace-nowrap text-slate-300" title="Góc — mỗi lần nhấn chuyển 1/12 góc cinematic quanh kiện (chiều kim đồng hồ)">Góc</button>
                         <button id="btn-cam-flycam" type="button" class="pendant-btn !py-0.5 !px-1.5 text-[10px] font-bold whitespace-nowrap text-slate-300" title="Flycam — giả lập góc quay bay chuyên nghiệp, xoay liên tục quanh kiện">Fly</button>
@@ -1136,18 +1136,6 @@
                                 <div class="text-[11px] font-bold text-amber-200">🔒 STS Container Spreader</div>
                                 <div class="text-[9px] text-slate-400">Ngáng STS bung 20/40/45ft · twistlock</div>
                             </div>
-                            <div class="card-btn" data-beam="cascaded">
-                                <div class="text-[11px] font-bold text-orange-400">🟠 Cascaded Spreader System</div>
-                                <div class="text-[9px] text-slate-400">2-4-4 · dầm lớn→nhỏ = 2 cáp/đầu</div>
-                            </div>
-                            <div class="card-btn" data-beam="modular_truss">
-                                <div class="text-[11px] font-bold text-yellow-300">📐 Spreader Beam (Truss)</div>
-                                <div class="text-[9px] text-slate-400">2-4-4 · giàn nén, 2 hangers/dầm phụ</div>
-                            </div>
-                            <div class="card-btn" data-feature-gate="beam.equalizer" data-feature-coming-soon="true" tabindex="0" role="button" aria-label="Equalizer beam — Premium module">
-                                <div class="text-[11px] font-bold text-violet-200">⚖️ Equalizer Beam</div>
-                                <div class="text-[9px] text-slate-400">Load-equalizing beam · advanced module</div>
-                            </div>
                             <div class="card-btn" data-beam="none">
                                 <div class="text-[11px] font-bold text-slate-300">🔗 Bridle Sling (4-Leg)</div>
                                 <div class="text-[9px] text-slate-400">Chùm cáp 4 nhánh (Master Link)</div>
@@ -1227,6 +1215,32 @@
                                 Đồng bộ ngáng ↔ container (mặc định cùng cỡ ISO)
                             </label>
                             <div class="text-[8.5px] text-slate-500 leading-snug pl-6">Bật: đổi một bên thì bên kia theo. Tắt: chỉnh ngáng hoặc container <b class="text-sky-300/90">độc lập</b>, cái còn lại giữ nguyên.</div>
+                        </div>
+
+                        <!-- H-Style Lifting Beam: Top (Hook Link / 2 Slings) & Bottom (4 Slings / Twistlock) -->
+                        <div id="lifting-beam-mode-panel" class="hidden flex-col gap-2 bg-slate-950/70 p-2 rounded-lg border border-sky-500/40">
+                            <div class="text-[9px] text-sky-300 uppercase font-bold tracking-wide">Liên kết phía trên (Với Móc Cẩu)</div>
+                            <div class="grid grid-cols-2 gap-1.5">
+                                <button type="button" class="btn-lb-top rounded-md border border-slate-700 bg-slate-950/90 px-2 py-1.5 text-left transition" data-lb-top="direct_hook">
+                                    <div class="text-[10px] font-bold text-white">🔗 Bắt trực tiếp Hook Link</div>
+                                    <div class="text-[8px] text-slate-400">Tai giữa dầm móc vào link</div>
+                                </button>
+                                <button type="button" class="btn-lb-top rounded-md border border-amber-500/80 bg-amber-950/50 px-2 py-1.5 text-left transition" data-lb-top="bridle2">
+                                    <div class="text-[10px] font-bold text-amber-200">⛓️ Dùng 2 cáp / xích</div>
+                                    <div class="text-[8px] text-slate-400">2 nhánh lên link → hook</div>
+                                </button>
+                            </div>
+                            <div class="text-[9px] text-sky-300 uppercase font-bold tracking-wide mt-0.5">Liên kết phía dưới (4 góc chữ H)</div>
+                            <div class="grid grid-cols-2 gap-1.5">
+                                <button type="button" class="btn-lb-bot rounded-md border border-amber-500/80 bg-amber-950/50 px-2 py-1.5 text-left transition" data-lb-bot="cable">
+                                    <div class="text-[10px] font-bold text-amber-200">⛓️ Dùng 4 cáp / xích</div>
+                                    <div class="text-[8px] text-slate-400">4 sợi từ 4 góc thanh ngang</div>
+                                </button>
+                                <button type="button" class="btn-lb-bot rounded-md border border-slate-700 bg-slate-950/90 px-2 py-1.5 text-left transition" data-lb-bot="direct">
+                                    <div class="text-[10px] font-bold text-white">🔒 Gắp trực tiếp Container</div>
+                                    <div class="text-[8px] text-slate-400">4 chốt gù Twistlock tại 4 góc</div>
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Generic beam length controls (hidden for STS) -->
@@ -2895,11 +2909,11 @@
     <!-- FLOATING POPOVERS: ĐẶT Ở CẤP ROOT BODY ĐỂ KHÔNG BỊ #TOP-BAR CẮT (CLIP)  -->
     <!-- ======================================================================= -->
 
-    <!-- 1. POPOVER CAMERA — góc nhìn chuyên sâu (chế độ Auto/Giữ/Góc nằm ở dock dưới) -->
+    <!-- 1. POPOVER CAMERA — góc nhìn chuyên sâu (chế độ Follow/Giữ/Góc nằm ở dock dưới) -->
     <div id="dropdown-panel-camera" class="topbar-popover-panel hidden fixed bg-slate-950 border border-sky-500/50 rounded-xl shadow-2xl p-3 text-xs text-slate-200 select-none w-80 box-border pointer-events-auto">
         <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-700/80">
             <span class="font-extrabold text-[11px] uppercase tracking-wider text-sky-400">Camera · Góc nhìn</span>
-            <span id="cam-follow-label" class="text-[9px] font-semibold text-sky-300/90">Auto</span>
+            <span id="cam-follow-label" class="text-[9px] font-semibold text-sky-300/90">Follow</span>
         </div>
 
         <div class="mb-2">
@@ -2916,7 +2930,7 @@
         </div>
 
         <div class="pt-2 border-t border-slate-800">
-            <div class="text-[9px] font-bold uppercase tracking-wide text-slate-500 mb-1.5">2. Điểm focus (khi Auto / Góc)</div>
+            <div class="text-[9px] font-bold uppercase tracking-wide text-slate-500 mb-1.5">2. Điểm focus (khi Follow / Góc)</div>
             <select id="sel-cam-follow-mode" class="w-full bg-slate-800 text-sky-200 border border-slate-600 rounded px-2 py-1.5 text-[11px] outline-none focus:border-sky-400 cursor-pointer" title="Điểm camera bám theo">
                 <option value="auto" selected>Tự động (kiện + móc)</option>
                 <option value="cog">Trọng tâm CoG</option>
@@ -2930,7 +2944,7 @@
                 <option value="custom">Tọa độ tùy chỉnh…</option>
             </select>
             <p class="text-[9px] text-slate-500 mt-2 leading-snug">
-                <b class="text-slate-400">Auto</b> = cinematic tự xoay ·
+                <b class="text-slate-400">Follow</b> = bám theo kiện hàng (giữ nguyên góc &amp; zoom) ·
                 <b class="text-slate-400">Giữ</b> = đứng yên ·
                 <b class="text-slate-400">Góc</b> = mỗi lần nhấn sang góc tiếp theo (12 góc quanh kiện) ·
                 <b class="text-slate-400">Fly</b> = flycam chuyên nghiệp, xoay liên tục quanh kiện.
@@ -3017,6 +3031,13 @@
             </label>
             <label class="flex items-center justify-between p-1 rounded hover:bg-slate-800/60 cursor-pointer">
                 <span class="flex items-center gap-2">
+                    <span class="text-red-400">📏</span>
+                    <span>Thước đo cao độ 3D (Điểm đỏ)</span>
+                </span>
+                <input type="checkbox" id="chk-disp-ruler" class="accent-red-500 rounded w-3.5 h-3.5">
+            </label>
+            <label class="flex items-center justify-between p-1 rounded hover:bg-slate-800/60 cursor-pointer">
+                <span class="flex items-center gap-2">
                     <span class="text-slate-400">📐</span>
                     <span>Nét vẽ khung viền CAD</span>
                 </span>
@@ -3059,6 +3080,26 @@
                     <option value="studio">📐 Studio (Kỹ thuật CAD)</option>
                     <option value="performance">🔋 Performance (Máy yếu)</option>
                 </select>
+            </div>
+            <div class="pt-1.5 border-t border-slate-800 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-slate-400 text-[10px] uppercase font-bold">Cân chỉnh khung hình (Game):</span>
+                    <button id="btn-reset-gfx-tone" type="button" class="text-[10px] text-amber-400 hover:text-amber-300 font-bold" title="Đặt lại độ sáng tối và tương phản mặc định">↺ Đặt lại</button>
+                </div>
+                <div>
+                    <div class="flex justify-between text-[10px] text-slate-300 mb-0.5">
+                        <span>Độ sáng (Brightness):</span>
+                        <span id="v-gfx-brightness" class="font-mono font-bold text-amber-300">100%</span>
+                    </div>
+                    <input id="rng-gfx-brightness" type="range" min="50" max="180" step="5" value="100" class="w-full accent-amber-400 cursor-pointer">
+                </div>
+                <div>
+                    <div class="flex justify-between text-[10px] text-slate-300 mb-0.5">
+                        <span>Độ tương phản (Contrast):</span>
+                        <span id="v-gfx-contrast" class="font-mono font-bold text-amber-300">100%</span>
+                    </div>
+                    <input id="rng-gfx-contrast" type="range" min="60" max="180" step="5" value="100" class="w-full accent-amber-400 cursor-pointer">
+                </div>
             </div>
             <div class="pt-1.5 border-t border-slate-800 flex items-center justify-between">
                 <span class="text-slate-400 text-[10px]">Tải file HDRI ngoài:</span>

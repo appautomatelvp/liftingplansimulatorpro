@@ -16,6 +16,7 @@ import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass.js';
 import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
 import { EnvironmentManager } from './EnvironmentManager.js';
 import { PBRMaterialFactory } from './PBRMaterialFactory.js';
+import { applyToneSettingsToCanvas, loadSavedToneSettings } from './GraphicsToneHelper.js';
 
 export const QUALITY_TIERS = {
     ultra: {
@@ -95,9 +96,14 @@ export class SceneRenderer {
 
         const width = this.container.clientWidth || window.innerWidth;
         const height = this.container.clientHeight || window.innerHeight;
+        const isTabletTouch = typeof window !== 'undefined' && (
+            window.matchMedia?.('(pointer: coarse)')?.matches
+            || ((navigator?.maxTouchPoints || 0) > 0 && window.innerWidth <= 1366)
+        );
+        const maxDprCap = isTabletTouch ? Math.min(quality.maxDPR || 1.5, 1.5) : quality.maxDPR;
 
         this.renderer.setSize(width, height);
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, quality.maxDPR));
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxDprCap));
 
         // Color Management & Tone Mapping (Three.js r152+)
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -109,6 +115,7 @@ export class SceneRenderer {
         this.applyShadowType(quality.shadowType || 'pcf');
 
         this.container.appendChild(this.renderer.domElement);
+        this.toneSettings = applyToneSettingsToCanvas(this.renderer.domElement, loadSavedToneSettings());
     }
 
     applyShadowType(shadowType) {
@@ -197,6 +204,9 @@ export class SceneRenderer {
         if (!force && typeof document !== 'undefined' && (document.body?.classList?.contains('saas-locked') || document.getElementById('saas-workspace-backdrop'))) {
             return;
         }
+        if (this.envManager && typeof this.envManager.syncFrameAtmosphere === 'function') {
+            this.envManager.syncFrameAtmosphere(dt);
+        }
         const quality = QUALITY_TIERS[this.currentQuality] || QUALITY_TIERS.high;
         const useComposer = Boolean(this.composer && !quality.bypassComposer);
         const needGizmoMask = Boolean(useComposer && quality.aoEnabled);
@@ -271,6 +281,18 @@ export class SceneRenderer {
         // Rebuild composer pipeline with new passes
         this.initComposer();
         console.info(`[SceneRenderer] Graphics Quality Tier set to: ${q.name}`);
+    }
+
+    /**
+     * Applies game-style viewport Brightness & Contrast to the WebGL canvas.
+     */
+    setToneSettings(settings) {
+        this.toneSettings = applyToneSettingsToCanvas(this.renderer?.domElement, settings);
+        return this.toneSettings;
+    }
+
+    getToneSettings() {
+        return { ...(this.toneSettings || { brightness: 1.0, contrast: 1.0 }) };
     }
 
     /**

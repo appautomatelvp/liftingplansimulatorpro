@@ -51,8 +51,9 @@
                 return new THREE.Vector3(posX ? m.a : m.b, -0.22, posZ ? 0.065 : -0.065);
             }
             if (type === 'lifting_beam') {
-                const m = memberSpec('main');
-                return new THREE.Vector3(posX ? m.a : m.b, -0.24, posZ ? 0.065 : -0.065);
+                const { spanX, spanZ } = getLPBoundingSpan();
+                const yOff = state.liftingBeamBottomMode === 'direct' ? STS_TWISTLOCK_FOOT_Y : -0.22;
+                return new THREE.Vector3(posX ? spanX * 0.5 : -spanX * 0.5, yOff, posZ ? spanZ * 0.5 : -spanZ * 0.5);
             }
             if (type === 'cascaded' || type === 'modular_truss') {
                 const top = memberSpec(type === 'modular_truss' ? 'truss' : 'top');
@@ -281,8 +282,11 @@
                 ? (W / nLegs) / sinB
                 : (W / nLegs);
 
-            const wllLeg = evenTon((Tleg * margin) / hitch, 2);
-            const wllUpper = evenTon((Tupper * margin) / hitch, 2);
+            const minDefaultSwl = opts.allowSmallSwl ? 2 : 12;
+            const wllLegRaw = evenTon((Tleg * margin) / hitch, 2);
+            const wllUpperRaw = evenTon((Tupper * margin) / hitch, 2);
+            const wllLeg = Math.max(minDefaultSwl, wllLegRaw);
+            const wllUpper = Math.max(minDefaultSwl, wllUpperRaw);
             // Cascaded 2-4-4 hangers: 4 V-legs; each ~W/4 with cos from half-span
             const nHanger = (state.beamType === 'cascaded' || state.beamType === 'modular_truss') ? 4
                 : ((state.beamType === 'inline4' || state.beamType === 'inline8' || state.beamType === 'spatial8') ? 2 : 2);
@@ -290,7 +294,8 @@
             const hangerLM = Math.max(halfZH + 0.5, state.hangerSlingLength || 2);
             const cosHanger = Math.max(0.30, Math.sqrt(Math.max(0.05, 1 - Math.pow(halfZH / hangerLM, 2))));
             const Thanger = (W / Math.max(1, nHanger)) / cosHanger;
-            const wllHanger = evenTon((Thanger * margin) / hitch, 2);
+            const wllHangerRaw = evenTon((Thanger * margin) / hitch, 2);
+            const wllHanger = Math.max(minDefaultSwl, wllHangerRaw);
             const wllBeam = evenTon(W * margin, 4);
             const wllShackle = evenTon(Math.max(wllLeg, wllUpper, wllHanger), 4);
             const wllHook = evenTon(W * margin * 1.25, 8);
@@ -299,7 +304,7 @@
             const getSpec = (typeof CAE !== 'undefined' && CAE.getSlingPhysicalSpec)
                 || (typeof window !== 'undefined' && window.CAE && window.CAE.getSlingPhysicalSpec);
 
-            const paint = (rec, wllT, fallbackType) => {
+            const paint = (rec, wllT, sizeRefWllT, fallbackType) => {
                 if (!rec) return;
                 const type = (typeof effectiveSlingType === 'function')
                     ? (effectiveSlingType(rec) || fallbackType || globalType)
@@ -309,15 +314,15 @@
                 rec.sf = sf;
                 rec.mblT = evenTon(wllT * sf, wllT * sf);
                 if (getSpec) {
-                    const spec = getSpec(type, wllT, null, rec.grade || '');
+                    const spec = getSpec(type, sizeRefWllT, null, rec.grade || '');
                     if (spec && spec.diaMm) rec.diaMm = evenMm(spec.diaMm, type === 'web' ? 30 : 8);
                 }
             };
 
             if (state.gear) {
-                (state.gear.legs || []).forEach(l => paint(l, wllLeg, globalType));
-                (state.gear.uppers || []).forEach(u => paint(u, wllUpper, globalType));
-                (state.gear.hangers || []).forEach(h => paint(h, wllHanger, globalType));
+                (state.gear.legs || []).forEach(l => paint(l, wllLeg, wllLegRaw, globalType));
+                (state.gear.uppers || []).forEach(u => paint(u, wllUpper, wllUpperRaw, globalType));
+                (state.gear.hangers || []).forEach(h => paint(h, wllHanger, wllHangerRaw, globalType));
                 if (state.gear.beam) {
                     state.gear.beam.swlT = wllBeam;
                     state.gear.beam.sf = state.gear.beam.sf || 4;
@@ -378,6 +383,8 @@
             const trigger = opts.trigger != null ? opts.trigger : 0.035;
             (phy.cables || []).forEach(c => {
                 if (!c || (typeof cableIsBroken === 'function' && cableIsBroken(c))) return;
+                // Upper bridle lifts the beam off the cargo roof; paying it out while rising stalls the beam & catapults later
+                if (opts.rising && c.role === 'upper') return;
                 const span = attachWorld(c.a).distanceTo(attachWorld(c.b));
                 if (!(span > 0.05)) return;
                 const L0 = c.L0 || 0;
@@ -732,6 +739,10 @@
                     touching = true;
                     normal = correction.normalize();
                 }
+            }
+            if (previous && typeof RIG !== 'undefined' && RIG.applyBrokenTipCCD) {
+                const ccd = RIG.applyBrokenTipCCD(tip, vel, previous, radius, phy.cargoPos, phy.cargoQuat, state, supportY(tip.x, tip.z));
+                if (ccd.collided) { touching = true; normal = ccd.normal; }
             }
             if (!touching || !normal) return;
             const into = vel.dot(normal);
@@ -1482,29 +1493,21 @@
             return applyInertiaInverse(invM, local).applyQuaternion(quat);
         }
 
-        function winchSpeedForLoad() {
-            const massT = state.weight + (phy.gearWeight || 0);
-            const swl = Math.max(5, state.gear && state.gear.hook ? state.gear.hook.swlT : 50);
-            // Cargo hoist view-speed (not a winch-reel demo). Cap near mid of old scale.
-            const vMax = 0.55;
-            let v = vMax * Math.max(0.20, 1 - 0.70 * (massT / swl));
-            const takingUp = phy.groundClearance < 0.05 && (phy.cables || []).some(c => c.role === 'leg' && (c.tensionT || 0) > 0.2 && !cableIsBroken(c));
-            if (takingUp) v *= 0.40;
-            return v * hoistSpeedScaleFactor();
-        }
-
         function hoistSpeedScaleFactor() {
             return THREE.MathUtils.clamp(state.hoistSpeedScale != null ? state.hoistSpeedScale : 1, 0.25, 2.0);
         }
 
-        /**
-         * ONE hoist rate for hook and STS spreader (swap mode → same feel).
-         * Scale 1× → 0.85 m/s; slider-governed, perfectly symmetrical up & down.
-         */
         function cargoHoistRates() {
             const scale = hoistSpeedScaleFactor();
+            if (typeof RIG !== 'undefined' && RIG.computeUnifiedHoistRates) {
+                return RIG.computeUnifiedHoistRates(scale);
+            }
             const v = 0.85 * scale;
             return { up: v, down: v };
+        }
+
+        function winchSpeedForLoad() {
+            return cargoHoistRates().up;
         }
 
         /** Alias — identical to cargoHoistRates (no STS-only boost). */

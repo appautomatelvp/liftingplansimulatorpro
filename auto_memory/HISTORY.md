@@ -1,6 +1,110 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-16 22:23 [feat] Hoan tat V4: chong xuyen da go khi keo lech/xoay kien, ReplayRecorder 60s day du OOG/Lashing/cat cap, thuoc do ben phai so 2x, toi uu Tablet & STS Ha em
+- Nhánh: feat/horizon-clouds | Commit trước đó: cabbd24
+- File: src/graphics/JobsiteSiteVisuals.js,src/sim/physics/beams_seed.js,src/sim/physics/step_engine.js,src/rigging/ReplayRecorder.js,src/sim/library/reconstruction_export.js,src/sim/session/presets_events.js,src/graphics/ElevationRulerTool.js,src/styles/tablet.css,src/main.js,src/graphics/SceneRenderer.js
+
+## 2026-11-16 21:52 [feat] Hoan tat 6 buoc UX/Vat ly 3D & Ghi/Xem lai: bo cuc toi khi tat cau, keo dat thuoc & bat Diem Do cap/ma ni, dblclick Ha/Keo, mo khoa chinh thong so cap, het giat STS Direct, va ReplayRecorder ghi toan bo trang thai
+- Nhánh: feat/horizon-clouds | Commit trước đó: cde2199
+- File: src/sim/scene.js,src/sim/physics/beams_seed.js,src/sim/physics/hoist_contacts.js,src/sim/physics/step_engine.js,src/sim/gear/editor.js,src/sim/session/ui_units_bom.js,src/sim/session/prelift_reset.js,src/sim/session/presets_events.js,src/graphics/ElevationRulerMath.js,src/graphics/ElevationRulerTool.js,src/rigging/ReplayRecorder.js,src/sim/library/reconstruction_export.js
+
+## 2026-11-16 21:03 [feat] Nang cap 7 diem UX & Vat ly 3D: Ha/Ha dat em tai cho, Camera Goc xoay muot khi dang nang ha, day Lashing om khit khong toe vay, multi-select chinh dong thoi thiet bi cung loai, kien dung/nghieng that tren go ke 3D, mac dinh SWL >= 12 MT giu nguyen duong kinh, va bo sung Cay thuoc do cao do 3D (Hook/Ngang/Dinh/Day) + Diem do di chuot (ElevationRulerTool.js)
+- Nhánh: feat/horizon-clouds | Commit trước đó: b6fa36d
+- File: src/graphics/ElevationRulerTool.js,src/graphics/JobsiteSiteVisuals.js,src/rigging/FlatRackLashingPhysics.js,src/rigging/PretensionSolver.js,src/sim/gear/editor.js,src/sim/library/reconstruction_export.js,src/sim/physics/beams_seed.js,src/sim/physics/cables_break.js,src/sim/physics/hoist_contacts.js,src/sim/scene.js,src/sim/session/prelift_reset.js,src/sim/session/presets_events.js,src/sim/state.js,src/sim/telemetry.js,index.html,test/pretension_nhom_cap.test.js,test/optimize_horizon_cargo_perf.test.js,test/v2_ux_dunnage_ruler_regression.test.js
+
+## 2026-11-16 20:24 [feat] Dong bo 3D that cho Tab 6 Cong truong (JobsiteSiteVisuals.js: da ke go 2/3/4/Grid Mat, tiet dien, loai go/thep I, do doc va tam lot chan chong cau), sua day chang Flat Rack om khit & dut tuan tu tu nhien (FlatRackLashingPhysics.js) va doi nut Camera Auto thanh Follow bam tinh tien khong tu zoom-in
+- Nhánh: feat/horizon-clouds | Commit trước đó: c6cee28
+- File: src/graphics/JobsiteSiteVisuals.js,src/rigging/FlatRackLashingPhysics.js,src/sim/cargo/containers_iso.js,src/sim/scene.js,src/sim/physics/flatrack_payload.js,src/sim/library/reconstruction_export.js,src/sim/session/presets_events.js,src/sim/telemetry.js,index.html,test/jobsite_lashing_follow_regression.test.js
+
+## 2026-11-16 19:57 [feat] Chuan hoa toc do nang/ha dong nhat 0.85 m/s*scale cho moi phuong an (khong phu thuoc tai/ngang) va sua triet de loi STS Container Spreader ban tung kien hang len (UnifiedHoistProfile.js, tach xung XPBD cap STS Direct, khoa gioi han van toc buoc)
+- Nhánh: feat/horizon-clouds | Commit trước đó: cf04c60
+- File: src/rigging/UnifiedHoistProfile.js,src/rigging/index.js,src/sim/physics/step_engine.js,src/sim/physics/cables_break.js,src/sim/physics/hoist_contacts.js,src/sim/physics/beams_seed.js,test/optimize_horizon_cargo_perf.test.js,STATE.md
+
+## 2026-11-16 19:31 [feat] Thay cac thanh ke gio bang may troi bồng bềnh đa múi (multi-lobed cumulus mask destination-in khong vo hinh, doi mau theo bau troi) va nang cap texture nen be tong cang co khe co gian, van xoa, hat soi da cap
+- Nhánh: feat/horizon-clouds | Commit trước đó: c42dd89
+- File: src/sim/weather_fx.js,src/graphics/pbr/ProceduralTextures.js,src/graphics/PBRMaterialFactory.js,test/optimize_horizon_cargo_perf.test.js
+
+## 2026-11-16 19:00 [feat] Sua vo hinh may gio bay (loai bo gradient cham canh o vuong, thu gon hat suong va them luong gio windStreaks + khu bac mau troi dem bang dither) va bo sung thanh chinh Do sang (Brightness) / Tuong phan (Contrast) kieu game trong Graphics
+- Nhánh: feat/horizon-clouds | Commit trước đó: 365ac3b
+- File: src/graphics/GraphicsToneHelper.js,src/graphics/HorizonSkyDome.js,src/graphics/SceneRenderer.js,src/graphics/index.js,src/sim/weather_fx.js,index.html,src/sim/session/presets_events.js,test/optimize_horizon_cargo_perf.test.js
+
+## 2026-11-16 18:48 [fix] Bit kin loi/day rong va bat DoubleSide + kinh toi dac cho xe buyt 3D/container (SolidShellSealer.js) va dong bo he mau HorizonSkyDome khop tuyet doi voi suong mu fog_fragment de chan troi chuyen mau muot khong chia 2 mang
+- Nhánh: feat/horizon-clouds | Commit trước đó: e588b0f
+- File: src/graphics/SolidShellSealer.js,src/graphics/HorizonSkyDome.js,src/graphics/index.js,src/sim/scene.js,src/sim/library/parsers.js,src/sim/cargo/specialty_meshes.js,test/optimize_horizon_cargo_perf.test.js
+
+## 2026-11-16 18:30 [feat] Hoan tat 6 buoc toi uu tong the va sua loi: hoa muot chan troi, bo sung 3D Steel Pipe (OOG), dong nhat Vehicle xe buyt, toi uu tai CAD va vong lap 60Hz
+- Nhánh: feat/horizon-clouds | Commit trước đó: 0203cc3
+- File: src/graphics/GroundHorizonFade.js,src/graphics/HorizonSkyDome.js,src/graphics/SpecialtyCargoMeshes.js,src/graphics/index.js,src/rigging/SlingPerfHelper.js,src/rigging/index.js,src/core/AssetLoaders.js,src/sim/scene.js,src/sim/state.js,src/sim/cargo/specialty_meshes.js,src/sim/cargo/shell_rebuild.js,src/sim/library/parsers.js,src/sim/rigging/draw_update.js,src/sim/telemetry.js,test/optimize_horizon_cargo_perf.test.js
+
+## 2026-11-16 17:37 [fix] Sửa trạng thái khởi tạo/Reset cho Basket Spreader (footprint_rig.js, park_apply.js, prelift_reset.js, presets_events.js): giữ cáp dưới ngắn 2 m và 2 ngáng vàng gần hai đầu kiện, bỏ chia 58/42 và bỏ ghi đè giãn L0 khi Reset
+- Nhánh: feat/horizon-clouds | Commit trước đó: cb1e232
+- File: src/sim/physics/footprint_rig.js,src/sim/gear/park_apply.js,src/sim/session/prelift_reset.js,src/sim/session/presets_events.js,test/pretension_nhom_cap.test.js,test/rigging.test.js,auto_memory/CONTEXT.md
+
+## 2026-11-16 17:03 [fix] Mở khóa lực kéo nhấc kiện hàng thật cho Basket Spreader (beams_seed.js, hoist_contacts.js, RiggingPhysicsSolver.js), ngăn giãn cáp dưới và thêm test kiểm chứng nhấc tải Basket (pretension_nhom_cap.test.js)
+- Nhánh: feat/horizon-clouds | Commit trước đó: 8bf431e
+- File: src/sim/physics/beams_seed.js,src/sim/physics/hoist_contacts.js,src/rigging/RiggingPhysicsSolver.js,test/pretension_nhom_cap.test.js,test/rigging.test.js,auto_memory/CONTEXT.md
+
+## 2026-11-16 16:35 [fix] Sửa lỗi dLowAx trừ nhầm halfZ^2 khiến ngáng vàng Basket lơ lửng trên xích dưới chùng (hoist_contacts.js) và khóa test không cho xích dưới chùng giữa không trung (pretension_nhom_cap.test.js)
+- Nhánh: feat/horizon-clouds | Commit trước đó: 5c2f0fb
+- File: src/sim/physics/hoist_contacts.js,test/pretension_nhom_cap.test.js,auto_memory/CONTEXT.md
+
+## 2026-11-16 16:19 [fix] Giữ cố định chiều dài cáp dưới r2 cho 2 thanh ngáng Basket khi hạ móc (alignBasketBars), bỏ cơ chế trượt vào tâm làm giãn cáp và bổ sung test bảo toàn chiều dài cáp (test/pretension_nhom_cap.test.js)
+- Nhánh: feat/horizon-clouds | Commit trước đó: d4193a6
+- File: src/sim/physics/hoist_contacts.js,test/pretension_nhom_cap.test.js,auto_memory/CONTEXT.md
+
+## 2026-11-16 16:07 [fix] Sửa 2 thanh ngáng Basket tự rũ vào trong kéo trĩu cáp trên khi hạ móc (alignBasketBars) và tăng độ mềm mại tự nhiên cho xích/cáp chùng (draw_update.js, BrokenCableWhipXPBD.js)
+- Nhánh: feat/horizon-clouds | Commit trước đó: d7a91f7
+- File: src/sim/physics/hoist_contacts.js,src/sim/rigging/draw_update.js,src/rigging/BrokenCableWhipXPBD.js,test/pretension_nhom_cap.test.js,auto_memory/CONTEXT.md
+
+## 2026-11-16 15:53 [fix] Sửa vật lý trọng trường cho 2 thanh ngáng Basket (alignBasketBars): thanh thép nặng kéo căng thẳng cáp trên hoặc ngồi lên nóc hàng thay vì bay lơ lửng ra ngoài khi cáp chùng
+- Nhánh: feat/horizon-clouds | Commit trước đó: 41026f4
+- File: src/sim/physics/hoist_contacts.js,test/pretension_nhom_cap.test.js
+
+## 2026-11-16 15:44 [fix] Sửa nút Nhớm Cáp (pretensionRig -> PretensionSolver.js) để kéo móc cẩu & ngáng lên đúng cao độ căng toàn bộ cáp thực tế trong khi kiện hàng vẫn chạm đất 0.00 m trên đủ 11 cấu hình ngáng
+- Nhánh: feat/horizon-clouds | Commit trước đó: b1648c1
+- File: src/rigging/PretensionSolver.js,src/rigging/index.js,src/sim/session/prelift_reset.js,src/sim/physics/step_engine.js,src/sim/physics/beams_seed.js,src/sim/physics/hoist_contacts.js,src/sim/rigging/draw_update.js,test/pretension_nhom_cap.test.js
+
+## 2026-11-16 15:19 [feat] Hoàn tất 5/5 bước nâng cấp H-Style Lifting Beam (2 thanh ngang 4 góc) với tùy chọn liên kết Trên (Direct Hook Link / 2 cáp-xích) và Dưới (4 cáp-xích 4 góc / Gắp Container Twistlock)
+- Nhánh: feat/horizon-clouds | Commit trước đó: d55a201
+- File: src/rigging/HStyleLiftingBeam.js,src/sim/state.js,src/sim/cargo/specialty_meshes.js,src/sim/cargo/shell_rebuild.js,src/sim/physics/hoist_contacts.js,src/sim/physics/cables_break.js,src/sim/physics/footprint_rig.js,src/sim/physics/beams_seed.js,src/sim/telemetry.js,src/sim/session/prelift_reset.js,src/sim/session/ui_units_bom.js,src/sim/plan_wizard.js,index.html,test/h_style_lifting_beam.test.js,test/rigging.test.js
+
+## 2026-11-16 14:40 [docs] Lập kế hoạch 5 bước nâng cấp Lifting Beam sang cấu tạo H-Style Lifting Beam (2 thanh ngang 4 góc) với tùy chọn liên kết Trên (Direct Hook Link / 2 cáp-xích) và Dưới (Gắp trực tiếp Container / 4 cáp-xích 4 góc)
+- Nhánh: feat/horizon-clouds | Commit trước đó: 9a94f2a
+- File: auto_memory/PLAN.md,STATE.md,auto_memory/CONTEXT.md
+
+## 2026-11-16 14:27 [refactor] Loại bỏ 3 loại ngáng thừa khỏi giao diện chọn ngáng, Wizard và danh mục mặc định (Cascaded Spreader System, Spreader Beam Truss, Equalizer Beam) mà vẫn giữ tương thích nếu phương án cũ có lưu
+- Nhánh: feat/horizon-clouds | Commit trước đó: 7965757
+- File: index.html,src/sim/plan_wizard.js,src/sim/state.js,src/saas/feature_access_ui.js
+
+## 2026-11-16 14:01 [fix] Sửa lỗi hàm chiếu bề mặt 3D thật đẩy ngang các đoạn cáp ở trên cao (làm gãy khúc dây dưới ma-ní ngáng basket) và căn chiều dài đoạn cáp căng trong PhysicalCableSolver
+- Nhánh: feat/horizon-clouds | Commit trước đó: a937ce5
+- File: src/rigging/TrueMeshSurfaceContact.js,src/sim/rigging/draw_update.js,test/rigging_realism_sts_contact.test.js
+
+## 2026-11-16 13:42 [feat] Hoàn tất 6/6 bước nâng cấp tiếp xúc bề mặt 3D thực (0mm khe hở), dầm chữ H uốn đồng bộ không lòi gân đen, chuẩn hóa ngáng STS ISO 668/1161 và sửa vật lý đứt cáp không bắn tia đỏ
+- Nhánh: feat/horizon-clouds | Commit trước đó: 942f433
+- File: src/rigging/TrueMeshSurfaceContact.js,src/rigging/StsSpreaderRealism.js,src/rigging/BrokenCableWhipXPBD.js,src/rigging/RigidInertialDynamics.js,src/sim/cargo/shell_rebuild.js,src/sim/cargo/specialty_meshes.js,src/sim/rigging/hook_pool.js,src/sim/rigging/draw_update.js,src/sim/physics/beams_seed.js,test/rigging_realism_sts_contact.test.js
+
+## 2026-11-16 13:24 [docs] Lập kế hoạch 6 bước nâng cấp chuyên sâu tiếp xúc bề mặt 3D thực (0mm khe hở), sửa dầm chữ H lòi thanh đen, chuẩn hóa ngáng STS ISO 668/1161 và sửa lỗi cắt cáp bắn tia đỏ lên trời
+- Nhánh: feat/horizon-clouds | Commit trước đó: aa8244a
+- File: auto_memory/PLAN.md,STATE.md,auto_memory/CONTEXT.md
+
+## 2026-11-16 12:20 [feat] Hoàn tất 6/6 bước nâng cấp Hyper-Realistic Rigging Simulator: Va chạm CCD & ma sát/độ nảy vật liệu, chống xuyên cáp đa sợi, quật cáp XPBD khi đứt, quán tính lệch tâm Steiner & vật liệu PBR hiển thị ứng suất SWL (43/43 file, 326/326 test xanh)
+- Nhánh: feat/horizon-clouds | Commit trước đó: d5bce77
+- File: src/rigging/CollisionMaterialSolver.js,src/rigging/BrokenCableWhipXPBD.js,src/rigging/CableDynamicsXPBD.js,src/rigging/RigidInertialDynamics.js,src/graphics/pbr/StressPBRMaterials.js,src/graphics/PBRMaterialFactory.js,src/sim/physics/cables_break.js,src/sim/rigging/draw_update.js,test/hyper_realistic_physics_pbr.test.js
+
+## 2026-11-16 12:05 [docs] Lập kế hoạch 6 bước nâng cấp Hyper-Realistic Rigging Simulator (CCD, ma sát/độ nảy vật liệu, quật cáp XPBD, quán tính lệch tâm và PBR ứng suất căng) trong auto_memory/PLAN.md
+- Nhánh: feat/horizon-clouds | Commit trước đó: 00a0f18
+- File: auto_memory/PLAN.md,STATE.md,auto_memory/CONTEXT.md
+
+## 2026-11-16 11:56 [fix] Nâng cấp bộ tạo mây vòm trời sang 3D Quintic Gradient Noise trên mặt cầu liền mạch để xóa hoàn toàn hiện tượng mây vỡ thành khối chắp vá và tia kéo giãn ở góc trên
+- Nhánh: feat/horizon-clouds | Commit trước đó: db93241
+- File: src/graphics/HorizonSkyDome.js
+
+## 2026-11-16 11:47 [feat] Nang cap mau sac chan troi theo 5 anh tham khao (xanh bien ban ngay & cam vang hoang hon), bo sung shader may xa da tang (Cumulus + Cirrus) troi nhe va khoa chong weather_fx ghi de mau xam suong mu.
+- Nhánh: feat/horizon-clouds | Commit trước đó: bcde67b
+- File: src/graphics/HorizonSkyDome.js,src/graphics/EnvironmentManager.js,src/graphics/SceneRenderer.js,test/graphics.test.js
+
 ## 2026-11-16 11:10 [feat] Chuyen ngon ngu khoi dong mac dinh sang Tieng Anh (en), tu dong migrate safelift3d.lang cu va dong bo song ngu 2 chieu EN-VI giua Splash, Auth, CMS, Workspace, Contact Dialog va 3D Simulator.
 - Nhánh: feat/hide-dev-contact-antispam | Commit trước đó: de6e794
 - File: public/loading-screen-init.js,src/i18n/index.js,src/i18n/cargo_labels.js,src/saas/i18n.js,src/saas/feature_access_ui.js,src/saas/admin_panels.js,src/saas/workspace_dashboard.js,src/saas/contact_dialog.js,src/main.js,test/i18n_keys.test.js

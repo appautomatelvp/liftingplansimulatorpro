@@ -1627,6 +1627,12 @@
                 return q;
             }
 
+            const sf = activeCargoVisual && activeCargoVisual.userData && activeCargoVisual.userData.trueSurfaceField;
+            const plainBoxTypes = ['container', 'container_20ft_glb', 'iso20hc', 'iso40', 'container_40ft_glb', 'iso40hc', 'iso45hc', 'container10', 'iso53hc', 'reefer', 'reefer20', 'halfheight', 'drybulk', 'crate'];
+            if (sf && (sf.detectedSphere || !plainBoxTypes.includes(cargoType)) && typeof RIG !== 'undefined' && RIG.projectPointOntoTrueCargoSurface) {
+                return RIG.projectPointOntoTrueCargoSurface(q, pad || 0.015, cargoType, { L, W, H }, sf, up);
+            }
+
             // Default Rounded-Edge Industrial Box (Container, Crate, Skid, etc.)
             if (up) {
                 releaseLocalBox(q, 0, 0, 0, L * 0.5 + p, H * 0.5 + p, W * 0.5 + p, true);
@@ -1949,6 +1955,12 @@
                 return null;
             }
 
+            const sfRoof = activeCargoVisual && activeCargoVisual.userData && activeCargoVisual.userData.trueSurfaceField;
+            const plainRoofTypes = ['container', 'container_20ft_glb', 'iso20hc', 'iso40', 'container_40ft_glb', 'iso40hc', 'iso45hc', 'container10', 'iso53hc', 'reefer', 'reefer20', 'halfheight', 'drybulk', 'crate'];
+            if (sfRoof && (sfRoof.detectedSphere || !plainRoofTypes.includes(cargoType)) && typeof RIG !== 'undefined' && RIG.sampleTrueCargoRoofY) {
+                return RIG.sampleTrueCargoRoofY(lx, lz, pad, cargoType, { L, W, H }, sfRoof);
+            }
+
             // Closed containers & crates: solid top roof across full L x W footprint
             if (Math.abs(lx) <= L * 0.5 + p && Math.abs(lz) <= W * 0.5 + p) {
                 return H * 0.5 + p;
@@ -2165,6 +2177,12 @@
         // nearest exterior flank / roof-edge — never drag mid-span across the lid.
         function routeRopeAroundCargo(pts, pad) {
             if (!pts || pts.length < 2) return pts || [];
+            const sfRoute = activeCargoVisual && activeCargoVisual.userData && activeCargoVisual.userData.trueSurfaceField;
+            const plainBoxRoute = ['container', 'container_20ft_glb', 'iso20hc', 'iso40', 'container_40ft_glb', 'iso40hc', 'iso45hc', 'container10', 'iso53hc', 'reefer', 'reefer20', 'halfheight', 'drybulk', 'crate'];
+            if (sfRoute && (sfRoute.detectedSphere || !plainBoxRoute.includes(state.cargoType)) && typeof RIG !== 'undefined' && RIG.conformPathToTrueCargoSurface) {
+                const locOut = RIG.conformPathToTrueCargoSurface(pts.map(cargoLocalFromWorld), pad || 0.015, state.cargoType, state, sfRoute, false);
+                return locOut.map(cargoWorldFromLocal);
+            }
             const solid = cargoWrapSolid(pad);
             if (!solid) return pts.map(p => p.clone());
             const ropePad = Math.max(0.02, pad || 0.028);
@@ -2472,23 +2490,25 @@
             return pts;
         }
 
-        // Hard eject any sample still inside the cargo AABB (no tunneling)
+        // Hard eject any sample still inside the cargo shell (single-pad, no double-padding)
         function ejectFromCargoSolid(worldPt, pad, solid) {
             if (!solid) return worldPt.clone();
-            const p = Math.max(0.03, pad || 0.03);
             const loc = cargoLocalFromWorld(worldPt);
+            const sfEject = activeCargoVisual && activeCargoVisual.userData && activeCargoVisual.userData.trueSurfaceField;
+            const plainBoxEject = ['container', 'container_20ft_glb', 'iso20hc', 'iso40', 'container_40ft_glb', 'iso40hc', 'iso45hc', 'container10', 'iso53hc', 'reefer', 'reefer20', 'halfheight', 'drybulk', 'crate'];
+            if (sfEject && (sfEject.detectedSphere || !plainBoxEject.includes(state.cargoType)) && typeof RIG !== 'undefined' && RIG.projectPointOntoTrueCargoSurface) {
+                return cargoWorldFromLocal(RIG.projectPointOntoTrueCargoSurface(loc, pad || 0.015, state.cargoType, state, sfEject, false));
+            }
             const dx = Math.abs(loc.x - solid.ox) - solid.hx;
             const dy = Math.abs(loc.y - solid.oy) - solid.hy;
             const dz = Math.abs(loc.z - solid.oz) - solid.hz;
             if (dx >= 0 || dy >= 0 || dz >= 0) {
-                // Outside — still keep clear of lid if sitting in footprint below roof
                 if (dx <= 0 && dz <= 0 && loc.y < solid.roofY && (solid.roofY - loc.y) < 2.2) {
                     loc.y = solid.roofY;
                     return cargoWorldFromLocal(loc);
                 }
                 return worldPt.clone();
             }
-            // Inside: push out nearest face (prefer roof when in upper half)
             let depth = -dx;
             let nx = Math.sign(loc.x - solid.ox) || 1, ny = 0, nz = 0;
             if (-dy < depth) { depth = -dy; nx = 0; ny = Math.sign(loc.y - solid.oy) || 1; nz = 0; }
@@ -2496,9 +2516,9 @@
             if (loc.y >= solid.oy - solid.hy * 0.05 && -dy <= depth * 1.35 + 0.02) {
                 depth = -dy; nx = 0; ny = 1; nz = 0;
             }
-            loc.x += nx * (depth + p);
-            loc.y += ny * (depth + p);
-            loc.z += nz * (depth + p);
+            loc.x += nx * (depth + 0.002);
+            loc.y += ny * (depth + 0.002);
+            loc.z += nz * (depth + 0.002);
             return cargoWorldFromLocal(loc);
         }
 

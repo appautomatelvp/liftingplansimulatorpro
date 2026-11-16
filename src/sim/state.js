@@ -73,6 +73,8 @@
             stsTwinLift: false,     // true → 2×20ft twin-lift CAD spreader
             stsAttachMode: 'direct', // 'direct' = twistlock on container roof; 'cable' = shackles + sling/chain to cargo lugs (single cont only — never twin)
             stsSizeLinked: true,    // true = auto-match spreader ↔ container (direct only); cable mode always forces false
+            liftingBeamTopMode: 'bridle2',    // 'bridle2' (2 cáp/xích trên) | 'direct_hook' (bắt trực tiếp tai giữa vào Hook Link)
+            liftingBeamBottomMode: 'cable',   // 'cable' (4 cáp/xích từ 4 góc chữ H) | 'direct' (4 chốt gù Twistlock gắp container)
             hoistSpeedScale: 1.0,   // bottom-dock winch rate multiplier (0.25× … 2.0×)
             beamType: 'spreader',   // 'spreader' (Modular Spreader Beam), 'lifting_beam', 'cascaded', 'frame', 'modular_truss', 'basket', 'container_spreader', 'none'
             slingType: 'chain',             // 'wire', 'chain', 'web'
@@ -123,7 +125,8 @@
                 showCoG: true,             // Trọng tâm CoG & dây dọi (HIỂN THỊ)
                 showVectors: false,        // Mũi tên véc-tơ lực 3D (Tạm ẩn)
                 showCADEdges: true,        // Nét CAD kỹ thuật
-                showHUD: false             // Thanh số liệu HUD (Tạm ẩn)
+                showHUD: false,            // Thanh số liệu HUD (Tạm ẩn)
+                showRuler: true            // Thước đo cao độ 3D & Điểm đỏ di chuột
             },
 
             // Camera Tracking & Follow Mechanism
@@ -252,6 +255,7 @@
                 { id: 'excavator', meshName: 'Excavator_Heavy_Machinery', name: 'Excavator / Heavy Machinery — Máy xúc / Xe cơ giới nặng', sub: 'Máy xúc đào bánh xích công trường, cần gầu vươn', L: 6.4, W: 3.0, H: 3.1, weight: 30, cogX: -0.35, cogY: -0.1, cogZ: 0.0, badge: 'ISO 6016' },
                 { id: 'boat', meshName: 'Tugboat_Vessel_Hull', name: 'Tugboat / Vessel Hull — Tàu kéo / Vỏ tàu thủy', sub: 'Thân tàu chữ V có sống mũi, cabin lái & đệm chống va', L: 12.0, W: 3.4, H: 3.2, weight: 34, cogX: -0.55, cogY: -0.2, cogZ: 0, badge: 'DNV Marine' },
                 { id: 'offshore_skid', meshName: 'Heavy_Lift_OOG_Cargo', name: 'Offshore Process Skid (OOG) — Cụm bơm dầu khí siêu trọng', sub: 'Khung skid thép I-beam, đường ống mặt bích & cụm bơm đôi', L: 6.2, W: 3.2, H: 2.8, weight: 36, cogX: 0.30, cogY: -0.15, cogZ: -0.20, badge: 'DNV 2.7-3' },
+                { id: 'pipe', meshName: 'Steel_Pipe_OOG', name: 'Steel Pipe (OOG) — Ống thép siêu trường', sub: 'Đường ống thép đường kính lớn có gân bích, gối đỡ chống lăn & tai cẩu', L: 12.0, W: 2.2, H: 2.2, weight: 28, cogX: 0, cogY: -0.05, cogZ: 0, badge: 'OOG Pipe' },
                 { id: 'car', meshName: 'Vehicle', name: 'Vehicle — Xe bus / Xe cơ giới', sub: 'Mô hình 3D CAD 1:1 thân xe bus, trọng tâm thấp gần sàn', L: 9.0, W: 2.38, H: 2.80, weight: 10, cogX: 0.0, cogY: -0.35, cogZ: 0, badge: '3D CAD 1:1' },
                 { id: 'container_20ft_glb', meshName: 'ISO_Container_20ft', name: 'ISO Container 20ft (alias)', sub: 'Maps to Realistic V2 22G1 CAD', L: 6.058, W: 2.438, H: 2.591, weight: 22, cogX: 0, cogY: -0.1, cogZ: 0, badge: 'CAD V2', verified: true },
                 { id: 'container_40ft_glb', meshName: 'ISO_Container_40ft', name: 'ISO Container 40ft (alias)', sub: 'Maps to Realistic V2 42G1 CAD', L: 12.192, W: 2.438, H: 2.591, weight: 26, cogX: 0, cogY: -0.1, cogZ: 0, badge: 'CAD V2', verified: true }
@@ -267,8 +271,6 @@
                 { id: 'lifting_beam', meshName: 'Lifting_Beam', name: 'Lifting Beam — Dầm nâng (chịu lực uốn - Bending)', sub: 'Móc cẩu móc trực tiếp vào tai treo giữa dầm, tiết kiệm chiều cao', weight: 0.85, badge: 'ASME B30.20' },
                 { id: 'frame', meshName: 'H_Beam_Spreader', name: 'H-Beam Spreader — Dầm ngáng chữ H / Khung 4 điểm', sub: 'Phân tải 4 góc thẳng đứng, triệt tiêu lực ép ngang lên kiện hàng', weight: 1.80, badge: 'H-Spreader' },
                 { id: 'container_spreader', meshName: 'ISO_Container_Spreader', name: 'STS Container Spreader — Ngáng chụp cẩu STS/RTG', sub: 'Telescopic ISO 20/40/45ft · Headblock + twistlock · Không móc/cáp bridle', weight: 9.50, badge: 'STS ISO' },
-                { id: 'cascaded', meshName: 'Cascaded_Spreader_System', name: 'Cascaded Spreader System — Hệ dầm ngáng nhiều tầng', sub: 'Phương án 2-4-4: 2 cáp móc→dầm chính, 4 cáp (2×2) dầm chính→2 dầm phụ, 4 nhánh xuống hàng', weight: 1.40, badge: '2-4-4' },
-                { id: 'modular_truss', meshName: 'Spreader_Beam', name: 'Spreader Beam (Lattice Truss) — Dầm ngáng giàn không gian', sub: 'Giàn chịu nén · topology 2-4-4 (2 hangers/dầm phụ, không treo 1 điểm giữa)', weight: 1.60, badge: '2-4-4' },
                 { id: 'none', meshName: 'Bridle_Sling', name: 'Bridle Sling (Direct 4-Leg) — Chùm cáp đa nhánh trực tiếp', sub: 'Gom trực tiếp 4 nhánh cáp vào vòng khuyên chính (Master Link)', weight: 0.08, badge: 'ASME B30.9' },
                 { id: 'basket', meshName: 'Spreader_Beam', name: 'Basket Spreader Cradle — Hệ dầm ngáng cáp vòng ôm đáy', sub: '2 thanh ngang · mỗi thanh 2 cáp trên (không treo 1 điểm giữa) + 2 nhánh dưới ôm đáy', weight: 0.90, badge: '2×2 upper' },
                 { id: 'inline4', meshName: 'Cascaded_Spreader_System', name: 'Cascaded Spreader (4-Pt Inline) — Hệ dầm ngáng 4 điểm thẳng hàng', sub: '1 dầm chính + 2 dầm phụ dọc + 4 nhánh cáp phân bố đều tải', weight: 1.30, badge: '4-Line' },
@@ -285,7 +287,6 @@
                 { id: 'preset_direct_4leg', meshName: 'Bridle_Sling', name: 'Bridle Sling (2-Leg, 3-Leg, 4-Leg) — Chùm cáp / Xích đa nhánh', sub: 'Chùm 4 nhánh gom vào vòng khuyên chính (Master Link) trên đầu Hook', beam: 'none', sling: 'wire', hw: 'bow_shackle', slingL: 8.0, elev: 'top', badge: 'ASME B30.9', verified: true },
                 { id: 'sling_tagline', meshName: 'Tagline', name: 'Tagline — Dây mồi / Dây thừng neo chống xoay lắc', sub: 'Buộc ở góc kiện hàng, do công nhân cầm kéo dưới đất để định hướng', beam: 'spreader', sling: 'wire', hw: 'bow_shackle', slingL: 8.0, elev: 'top', badge: 'Field Control', verified: true },
                 { id: 'preset_modulift_iso', meshName: 'Modular_Spreader_Beam', name: 'Modular Spreader + Wire Rope + Bow Shackle — Bộ ngáng ống chuẩn', sub: 'Phương án tiêu chuẩn: Dầm ngáng Modulift + Cáp thép + Ma ní móng ngựa', beam: 'spreader', sling: 'wire', hw: 'bow_shackle', slingL: 8.0, elev: 'top', badge: 'ASME B30.20' },
-                { id: 'preset_cascaded_iso', meshName: 'Cascaded_Spreader_System', name: 'Cascaded Spreader System — Hệ dầm ngáng nhiều tầng 4 góc', sub: 'Ngáng ống 3 tầng + Cáp thép + Ma ní móng ngựa', beam: 'cascaded', sling: 'wire', hw: 'bow_shackle', slingL: 8.0, elev: 'top', badge: 'ASME B30.20' },
                 { id: 'preset_hbeam_low', meshName: 'Lifting_Beam', name: 'Lifting Beam + Turnbuckle — Dầm nâng trần thấp & Tăng đơ cân CoG', sub: 'Dầm nâng chịu uốn + Tăng đơ (Turnbuckle) tự động cân bằng trọng tâm', beam: 'lifting_beam', sling: 'wire', hw: 'bow_shackle', slingL: 8.0, elev: 'top', autoLevel: true, badge: 'Low Headroom' },
                 { id: 'preset_basket_cradle', meshName: 'Round_Sling', name: 'Basket Cradle + Web/Round Sling — Cáp vải ôm đáy bồn tròn', sub: 'Ngáng đôi + Cáp vải bản dẹt/tròn ôm đáy bảo vệ vỏ bồn áp lực', beam: 'basket', sling: 'web', hw: 'd_shackle', slingL: 8.0, elev: 'bottom', badge: 'Basket Rig' }
             ],

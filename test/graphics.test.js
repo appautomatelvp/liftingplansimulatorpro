@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import * as THREE from 'three';
 import { PBRMaterialFactory } from '../src/graphics/PBRMaterialFactory.js';
 import { EnvironmentManager, LIGHTING_PRESETS } from '../src/graphics/EnvironmentManager.js';
+import { createHorizonSkyDome, updateHorizonSkyDome } from '../src/graphics/HorizonSkyDome.js';
 import { QUALITY_TIERS } from '../src/graphics/SceneRenderer.js';
 
 describe('AAA Graphics Pipeline & PBR Material Engine', () => {
@@ -87,5 +88,26 @@ describe('AAA Graphics Pipeline & PBR Material Engine', () => {
 
         expect(QUALITY_TIERS.performance).toBeDefined();
         expect(QUALITY_TIERS.performance.bypassComposer).toBe(true);
+    });
+
+    it('creates HorizonSkyDome with distant cumulus/cirrus cloud shader uniforms and updates atmosphere colors', () => {
+        const scene = new THREE.Scene();
+        const dome = createHorizonSkyDome(scene);
+        expect(dome.material.uniforms.uCloudLightColor).toBeDefined();
+        expect(dome.material.uniforms.uCloudShadeColor).toBeDefined();
+        expect(dome.material.uniforms.uCloudOpacity.value).toBeGreaterThan(0.5);
+        expect(dome.material.fragmentShader).toContain('fbm4');
+
+        updateHorizonSkyDome(dome, scene, null, {
+            skyColor: 0x163b7a,
+            midSkyColor: 0xc26e52,
+            horizonColor: 0xf08c36,
+            cloudLightColor: 0xffc478,
+            cloudShadeColor: 0x48567d,
+            cloudOpacity: 0.86
+        });
+        expect(dome.material.uniforms.uSkyColor.value.getHex()).toBe(0x163b7a);
+        expect(dome.material.uniforms.uCloudLightColor.value.getHex()).toBe(0xffc478);
+        expect(dome.material.uniforms.uCloudOpacity.value).toBeCloseTo(0.86, 2);
     });
 });

@@ -880,46 +880,20 @@
         }
 
         function pushReplaySample() {
-            if (!replay.recording) return;
-            const now = performance.now() / 1000 - replay.t0;
-            const last = replay.frames[replay.frames.length - 1];
-            if (last && now - last.t < 0.1) return;
-            if (replay.frames.length > 360) {
-                replay.recording = false;
-                document.getElementById('lbl-replay').textContent = 'Đầy 36s';
-                return;
-            }
-            replay.frames.push({
-                t: now,
-                h: phy.hookPos.toArray(),
-                c: phy.cargoPos.toArray(),
-                q: phy.cargoQuat.toArray()
-            });
-            document.getElementById('lbl-replay').textContent = 'REC ' + now.toFixed(1) + 's';
+            if (!replay.recording || typeof RIG === 'undefined' || !RIG.captureReplayFrame) return;
+            const res = RIG.captureReplayFrame({ replay, state, phy, activeCargoVisual });
+            if (!res) return;
+            const lbl = document.getElementById('lbl-replay');
+            if (lbl) lbl.textContent = res.full ? 'Đầy 60s' : `REC ${res.t.toFixed(1)}s/60s`;
+            if (res.full) document.getElementById('btn-rec')?.classList.remove('ring-2', 'ring-rose-400', 'animate-pulse');
         }
 
         function stepReplay(dt) {
-            const frames = replay.frames;
-            if (!frames.length) { replay.playing = false; return; }
-            replay.cursor += dt;
-            const end = frames[frames.length - 1].t;
-            if (replay.cursor >= end) {
-                replay.playing = false;
-                document.getElementById('lbl-replay').textContent = 'Hết bản ghi';
-                return;
-            }
-            let i = 0;
-            while (i < frames.length - 1 && frames[i + 1].t < replay.cursor) i++;
-            const a = frames[i];
-            const b = frames[Math.min(i + 1, frames.length - 1)];
-            const u = THREE.MathUtils.clamp((replay.cursor - a.t) / Math.max(0.0001, b.t - a.t), 0, 1);
-            phy.hookPos.fromArray(a.h).lerp(new THREE.Vector3().fromArray(b.h), u);
-            phy.hookTarget.copy(phy.hookPos);
-            phy.cargoPos.fromArray(a.c).lerp(new THREE.Vector3().fromArray(b.c), u);
-            phy.cargoQuat.fromArray(a.q).slerp(new THREE.Quaternion().fromArray(b.q), u);
-            phy.cargoVel.set(0, 0, 0);
-            phy.cargoOmega.set(0, 0, 0);
-            document.getElementById('lbl-replay').textContent = 'PLAY ' + replay.cursor.toFixed(1) + 's';
+            if (typeof RIG === 'undefined' || !RIG.stepReplayPlayback) { replay.playing = false; return; }
+            const res = RIG.stepReplayPlayback({ THREE, replay, state, phy, activeCargoVisual, dt });
+            const lbl = document.getElementById('lbl-replay');
+            if (lbl) lbl.textContent = res.done ? 'Hết bản ghi' : ('PLAY ' + res.t.toFixed(1) + 's');
+            if (res.done) document.getElementById('btn-replay')?.classList.remove('ring-2', 'ring-sky-400');
         }
 
         let prevFollowWorldPos = null;
@@ -1114,8 +1088,8 @@
             const cf = ensureCameraFollowState();
             if (cf.orbiting || cf.userManual) return false;
             const behavior = cf.behavior || 'cinema';
-            // Manual / Giữ: never yank the user's angle
-            if (behavior === 'lock' || !cf.enabled) return false;
+            // Hold or pure Follow: never yank or auto-zoom the user's current lens when opening/closing tabs
+            if (behavior === 'lock' || behavior === 'cinema' || !cf.enabled) return false;
             invalidateUiSafeNdcCache();
 
             if (behavior === 'flycam') {
@@ -1453,34 +1427,15 @@
             if (opts && opts.apply === false) return offset;
             if (!camera || !controls) return offset;
 
-            const fromPos = camera.position.clone();
-            const fromTarget = controls.target.clone();
-            let toTarget = focus.clone();
-            let toPos = toTarget.clone().add(offset);
-
-            const savePos = camera.position.clone();
-            const saveTarget = controls.target.clone();
-            camera.position.copy(toPos);
-            controls.target.copy(toTarget);
-            camera.lookAt(toTarget);
-            camera.updateMatrixWorld(true);
-            const pan = panVectorToPlaceWorldAtNdc(focus, getUiSafeNdcCenter());
-            toPos.add(pan);
-            toTarget.add(pan);
-            camera.position.copy(savePos);
-            controls.target.copy(saveTarget);
-            camera.updateMatrixWorld(true);
-
-            camCinema = {
+            const curOff = camera.position.clone().sub(controls.target);
+            if (curOff.lengthSq() < 1e-6) curOff.copy(offset);
+            cf.angleBlend = {
+                fromOffset: curOff,
+                toOffset: offset.clone(),
                 t: 0,
-                dur: (opts && opts.duration != null) ? opts.duration : 0.65,
-                fromPos,
-                fromTarget,
-                toPos,
-                toTarget
+                dur: Math.max(0.25, (opts && opts.duration != null) ? opts.duration : 0.55)
             };
-            cf.paused = true;
-            prevFollowWorldPos = null;
+            cf.paused = false;
             return offset;
         }
 
@@ -1559,12 +1514,16 @@
                     startCinematicUiFrame({ duration: (opts && opts.duration) || 0.45, force: true });
                 }
             } else {
-                // Auto: hero cinematic angle + rule-of-thirds (photography framing)
-                frameCinematicHeroShot({
-                    duration: (opts && opts.duration) || 0.95,
-                    force: true,
-                    keepAngle: false
-                });
+                // Follow: track cargo translation seamlessly, preserving current zoom & angle (never force zoom-in)
+                cf.behavior = 'cinema';
+                cf.enabled = true;
+                cf.smart = false;
+                cf.suppressUiReframe = true;
+                cf.stableView = true;
+                centerCameraOnFollowTarget();
+                if (camera && controls) {
+                    cf.lockedOffset = camera.position.clone().sub(controls.target);
+                }
             }
             if (typeof window.syncCameraFollowUI === 'function') window.syncCameraFollowUI();
             return cf.behavior;
@@ -1923,17 +1882,28 @@
             // Framed look-at = subject + stable UI bias (bias only changes on explicit reframe)
             _camV2.copy(worldTarget).add(bias);
 
-            // --- Góc: track subject at locked cinematic angle ---
+            // --- Góc: smoothly rotate around LIVE moving subject without freezing/jerking during hoist ---
             if (cf.behavior === 'angleCycle' || cf.behavior === 'holdAngle') {
                 if (!cf.lockedOffset || cf.lockedOffset.lengthSq() < 1e-6) {
                     cycleCargoAngleShot({ apply: false, advance: false });
                 }
-                const kT = 1 - Math.exp(-(editing ? 4.2 : 2.6) * dtClamped);
-                const kP = 1 - Math.exp(-(editing ? 3.4 : 2.2) * dtClamped);
+                if (cf.angleBlend) {
+                    cf.angleBlend.t += dtClamped;
+                    const u = Math.min(1, cf.angleBlend.t / cf.angleBlend.dur);
+                    const e = u * u * u * (u * (u * 6 - 15) + 10);
+                    const lenA = Math.max(1e-4, cf.angleBlend.fromOffset.length());
+                    const lenB = Math.max(1e-4, cf.angleBlend.toOffset.length());
+                    _camOffset.copy(cf.angleBlend.fromOffset).normalize().lerp(
+                        _camV1.copy(cf.angleBlend.toOffset).normalize(), e
+                    ).normalize().multiplyScalar(THREE.MathUtils.lerp(lenA, lenB, e));
+                    cf.lockedOffset.copy(_camOffset);
+                    if (u >= 1) cf.angleBlend = null;
+                }
+                if (!prevFollowWorldPos) prevFollowWorldPos = worldTarget.clone();
+                // Track live moving worldTarget delta + smooth settle onto target
+                const kT = 1 - Math.exp(-8.5 * dtClamped);
                 controls.target.lerp(_camV2, kT);
-                _camDesPos.copy(controls.target).add(cf.lockedOffset);
-                camera.position.lerp(_camDesPos, kP);
-                if (!prevFollowWorldPos) prevFollowWorldPos = new THREE.Vector3();
+                camera.position.copy(controls.target).add(cf.lockedOffset);
                 prevFollowWorldPos.copy(worldTarget);
                 return;
             }
@@ -1997,33 +1967,17 @@
                 return;
             }
 
-            // --- Auto cinematic: fixed-angle subject track (no yaw spin, no dist whip) ---
-            if (!cf.lockedOffset) cf.lockedOffset = new THREE.Vector3();
-            if (cf.lockedOffset.lengthSq() < 1e-6) {
-                cf.lockedOffset.copy(camera.position).sub(controls.target);
+            // --- Follow: track cargo world displacement cleanly without changing user zoom or angle ---
+            if (!prevFollowWorldPos) {
+                prevFollowWorldPos = worldTarget.clone();
+                return;
             }
-            // Keep the baked boot/user angle — only very gentle distance breathe while hoisting
-            if (hoistActive && (_camFollowFrame & 3) === 0) {
-                _camOffset.copy(cf.lockedOffset);
-                const curLen = Math.max(1e-6, _camOffset.length());
-                let span = 8;
-                if (phy && phy.cargoPos && phy.hookPos) {
-                    span = phy.cargoPos.distanceTo(phy.hookPos);
-                }
-                const wantDist = THREE.MathUtils.clamp(span * 1.45 + 6, 10, 46);
-                const kDist = 1 - Math.exp(-0.55 * dtClamped * 4);
-                _camOffset.multiplyScalar(THREE.MathUtils.lerp(curLen, wantDist, kDist) / curLen);
-                cf.lockedOffset.copy(_camOffset);
+            _camV1.copy(worldTarget).sub(prevFollowWorldPos);
+            if (_camV1.lengthSq() > 1e-9) {
+                controls.target.add(_camV1);
+                camera.position.add(_camV1);
+                prevFollowWorldPos.copy(worldTarget);
             }
-
-            const kT = 1 - Math.exp(-(editing ? 3.6 : (hoistActive ? 2.2 : 1.6)) * dtClamped);
-            const kP = 1 - Math.exp(-(editing ? 2.8 : (hoistActive ? 1.8 : 1.35)) * dtClamped);
-            controls.target.lerp(_camV2, kT);
-            _camDesPos.copy(controls.target).add(cf.lockedOffset);
-            camera.position.lerp(_camDesPos, kP);
-
-            if (!prevFollowWorldPos) prevFollowWorldPos = new THREE.Vector3();
-            prevFollowWorldPos.copy(worldTarget);
         }
 
         const SIM_STEP = 1 / 60;
@@ -2112,6 +2066,28 @@
             });
             // Red force-flow pulses along cables that just went taut under hoist
             if (typeof updateCableForceFlows === 'function') updateCableForceFlows(dt);
+
+            if (!phy._elevationRuler && typeof GFX !== 'undefined' && GFX.createElevationRulerTool && scene && renderer?.domElement) {
+                phy._elevationRuler = GFX.createElevationRulerTool({ THREE, scene });
+                const onRulerMove = (ev) => {
+                    if (!phy._elevationRuler || !state.displayOptions?.showRuler) return;
+                    const hoverData = GFX.buildRulerHoverInputs
+                        ? GFX.buildRulerHoverInputs({
+                            THREE, phy, cargoRootGroup, spreaderRootGroup, craneVehicleGroup,
+                            dunnageGroup, hookAssemblyGroup, padEyeMeshes, hwMeshes, sling3DPool, attachWorld
+                        })
+                        : { targets: [cargoRootGroup, spreaderRootGroup, craneVehicleGroup, dunnageGroup], segments: [] };
+                    phy._elevationRuler.updateHover({
+                        clientX: ev.clientX, clientY: ev.clientY, domElement: renderer.domElement, camera,
+                        targets: hoverData.targets, segments: hoverData.segments
+                    });
+                };
+                renderer.domElement.addEventListener('pointermove', onRulerMove);
+                renderer.domElement.addEventListener('pointerleave', () => phy._elevationRuler?.clearHover());
+            }
+            if (phy._elevationRuler) {
+                phy._elevationRuler.update({ visible: Boolean(state.displayOptions?.showRuler), state, phy });
+            }
 
             // Shadow frustum: every ~4 frames is enough at 1080p
             if (!animate._shadowTick) animate._shadowTick = 0;
