@@ -1114,8 +1114,8 @@
             const cf = ensureCameraFollowState();
             if (cf.orbiting || cf.userManual) return false;
             const behavior = cf.behavior || 'cinema';
-            // Manual / Giữ: never yank the user's angle
-            if (behavior === 'lock' || !cf.enabled) return false;
+            // Hold or pure Follow: never yank or auto-zoom the user's current lens when opening/closing tabs
+            if (behavior === 'lock' || behavior === 'cinema' || !cf.enabled) return false;
             invalidateUiSafeNdcCache();
 
             if (behavior === 'flycam') {
@@ -1559,12 +1559,16 @@
                     startCinematicUiFrame({ duration: (opts && opts.duration) || 0.45, force: true });
                 }
             } else {
-                // Auto: hero cinematic angle + rule-of-thirds (photography framing)
-                frameCinematicHeroShot({
-                    duration: (opts && opts.duration) || 0.95,
-                    force: true,
-                    keepAngle: false
-                });
+                // Follow: track cargo translation seamlessly, preserving current zoom & angle (never force zoom-in)
+                cf.behavior = 'cinema';
+                cf.enabled = true;
+                cf.smart = false;
+                cf.suppressUiReframe = true;
+                cf.stableView = true;
+                centerCameraOnFollowTarget();
+                if (camera && controls) {
+                    cf.lockedOffset = camera.position.clone().sub(controls.target);
+                }
             }
             if (typeof window.syncCameraFollowUI === 'function') window.syncCameraFollowUI();
             return cf.behavior;
@@ -1997,33 +2001,17 @@
                 return;
             }
 
-            // --- Auto cinematic: fixed-angle subject track (no yaw spin, no dist whip) ---
-            if (!cf.lockedOffset) cf.lockedOffset = new THREE.Vector3();
-            if (cf.lockedOffset.lengthSq() < 1e-6) {
-                cf.lockedOffset.copy(camera.position).sub(controls.target);
+            // --- Follow: track cargo world displacement cleanly without changing user zoom or angle ---
+            if (!prevFollowWorldPos) {
+                prevFollowWorldPos = worldTarget.clone();
+                return;
             }
-            // Keep the baked boot/user angle — only very gentle distance breathe while hoisting
-            if (hoistActive && (_camFollowFrame & 3) === 0) {
-                _camOffset.copy(cf.lockedOffset);
-                const curLen = Math.max(1e-6, _camOffset.length());
-                let span = 8;
-                if (phy && phy.cargoPos && phy.hookPos) {
-                    span = phy.cargoPos.distanceTo(phy.hookPos);
-                }
-                const wantDist = THREE.MathUtils.clamp(span * 1.45 + 6, 10, 46);
-                const kDist = 1 - Math.exp(-0.55 * dtClamped * 4);
-                _camOffset.multiplyScalar(THREE.MathUtils.lerp(curLen, wantDist, kDist) / curLen);
-                cf.lockedOffset.copy(_camOffset);
+            _camV1.copy(worldTarget).sub(prevFollowWorldPos);
+            if (_camV1.lengthSq() > 1e-9) {
+                controls.target.add(_camV1);
+                camera.position.add(_camV1);
+                prevFollowWorldPos.copy(worldTarget);
             }
-
-            const kT = 1 - Math.exp(-(editing ? 3.6 : (hoistActive ? 2.2 : 1.6)) * dtClamped);
-            const kP = 1 - Math.exp(-(editing ? 2.8 : (hoistActive ? 1.8 : 1.35)) * dtClamped);
-            controls.target.lerp(_camV2, kT);
-            _camDesPos.copy(controls.target).add(cf.lockedOffset);
-            camera.position.lerp(_camDesPos, kP);
-
-            if (!prevFollowWorldPos) prevFollowWorldPos = new THREE.Vector3();
-            prevFollowWorldPos.copy(worldTarget);
         }
 
         const SIM_STEP = 1 / 60;

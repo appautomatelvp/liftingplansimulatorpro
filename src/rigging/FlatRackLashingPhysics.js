@@ -53,7 +53,7 @@ export function buildTightFlatRackLashingVisuals({ THREE, oogGroup, group, MATS,
   lashingGroup.name = 'flatRackLashingStraps';
   const brokenLashingGroup = new THREE.Group();
   brokenLashingGroup.name = 'flatRackBrokenStraps';
-  brokenLashingGroup.visible = true;
+  brokenLashingGroup.visible = false;
 
   const strapCount = Math.max(4, Math.min(8, Math.floor(cL * 0.85)));
   const seed = Math.abs((cL * 7.31 + cW * 3.17) % 97) + 1.37;
@@ -145,7 +145,7 @@ export function resetFlatRackLashingNodes(activeCargoVisual) {
   const lashingGroup = activeCargoVisual.getObjectByName('flatRackLashingStraps');
   const brokenGroup = activeCargoVisual.getObjectByName('flatRackBrokenStraps');
   if (lashingGroup) lashingGroup.visible = true;
-  if (brokenGroup) brokenGroup.visible = true;
+  if (brokenGroup) brokenGroup.visible = false;
   const nodes = oogGroup?.userData?.lashingNodes;
   if (!Array.isArray(nodes)) return;
   for (const n of nodes) {
@@ -180,16 +180,19 @@ export function stepStaggeredLashingBreakPhysics({
 
   let anySnappedNow = false;
   let snappedCount = 0;
+  const lashingGroup = oogGroup.getObjectByName('flatRackLashingStraps');
+  const brokenGroup = oogGroup.parent?.getObjectByName('flatRackBrokenStraps');
 
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
     const ord = order[i];
-    const staggeredThreshold = st.strapsBroken ? (ord.threshold - st.ruptureCascadeTimer * 2.4) : ord.threshold;
-    if (!node.snapped && (driveStress >= staggeredThreshold || (st.strapsBroken && st.ruptureCascadeTimer >= i * 0.055))) {
+    const staggeredThreshold = st.strapsBroken ? (ord.threshold - st.ruptureCascadeTimer * 3.8) : ord.threshold;
+    if (!node.snapped && (driveStress >= staggeredThreshold || (st.strapsBroken && st.ruptureCascadeTimer >= i * 0.045))) {
       node.snapped = true;
       node.whipAge = 0;
       anySnappedNow = true;
       if (node.intactNode) node.intactNode.visible = false;
+      if (brokenGroup) brokenGroup.visible = true;
       for (const tail of node.sideTails || []) {
         if (tail.botPivot) tail.botPivot.visible = true;
         if (tail.topPivot) tail.topPivot.visible = true;
@@ -213,6 +216,10 @@ export function stepStaggeredLashingBreakPhysics({
         }
       }
     }
+  }
+
+  if (lashingGroup && snappedCount >= nodes.length) {
+    lashingGroup.visible = false;
   }
 
   return { anySnappedNow, snappedCount, totalStraps: nodes.length };

@@ -47,7 +47,7 @@ Nhánh Git: feat/horizon-clouds
   3. Sửa `src/sim/cargo/containers_iso.js` (`<= 15` dòng thay đổi): thay khối dựng dây chằng cũ trong `addDeckOogCargoOverlay` bằng `RIG.buildTightFlatRackLashingVisuals(...)`.
 - **Kiểm tra:** `npm run architecture:gate` + `npm run build` + `./scripts/auto_check.ps1`.
 
-### [ ] Bước 4: Nối vật lý đứt dây chằng & sửa logic Camera Follow (bỏ tự zoom-in)
+### [x] Bước 4: Nối vật lý đứt dây chằng & sửa logic Camera Follow (bỏ tự zoom-in)
 - **File sửa (3 file):**
   1. `src/sim/physics/flatrack_payload.js` (`<= 20` dòng thay đổi): gọi `RIG.stepStaggeredLashingBreakPhysics(...)` trong `stepFlatRackPayloadPhysics` và reset trạng thái từng sợi trong `resetFlatRackPayloadState` (giữ nguyên toàn bộ trường `st.lashing` cho Golden Test).
   2. `src/sim/library/reconstruction_export.js` (`<= 22` dòng thay đổi):

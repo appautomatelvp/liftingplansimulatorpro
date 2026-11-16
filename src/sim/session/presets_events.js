@@ -1034,7 +1034,7 @@
             '1. Góc nhìn cố định': '1. Fixed viewpoints',
             'Chọn góc cố định sẽ chuyển sang chế độ': 'Selecting a fixed viewpoint switches to',
             'trên thanh Cam dưới.': 'the matching camera mode below.',
-            '2. Điểm focus (khi Auto / Góc)': '2. Focus target (Auto / Angle modes)',
+            '2. Điểm focus (khi Follow / Góc)': '2. Focus target (Follow / Angle modes)',
             'Tự động (kiện + móc)': 'Automatic (cargo + hook)',
             'Trọng tâm CoG': 'Centre of gravity (CoG)',
             'Tâm kiện': 'Cargo centre',
@@ -1122,7 +1122,8 @@
             'Đạt chuẩn': 'Within limits',
             'Bật âm thanh mô phỏng (M)': 'Enable simulation audio (M)',
             'Tắt âm thanh mô phỏng (M)': 'Mute simulation audio (M)',
-            'Auto — đưa kiện về góc cinematic rule-of-thirds (1/3), dễ nhìn nhất': 'Auto — frame the cargo using the cinematic rule of thirds',
+            'Auto — đưa kiện về góc cinematic rule-of-thirds (1/3), dễ nhìn nhất': 'Follow — track cargo motion smoothly (keeps current angle & zoom)',
+            'Follow — bám theo kiện hàng di chuyển (giữ nguyên góc & zoom)': 'Follow — track cargo motion smoothly (keeps current angle & zoom)',
             'Giữ — camera đứng yên tại góc hiện tại': 'Hold — keep the camera at its current angle',
             'Góc — mỗi lần nhấn chuyển 1/12 góc cinematic quanh kiện (chiều kim đồng hồ)': 'Angle — each click advances clockwise to the next of 12 cinematic views',
             'Flycam — giả lập góc quay bay chuyên nghiệp, xoay liên tục quanh kiện': 'Flycam — professional aerial view orbiting continuously around the cargo',
@@ -3271,7 +3272,7 @@
                     if (userManual) {
                         lblCamFollow.textContent = state.lang === 'en' ? 'Mode: Manual' : 'Chế độ: Thủ công';
                     } else if (behavior === 'cinema') {
-                        lblCamFollow.textContent = state.lang === 'en' ? 'Mode: Auto' : 'Chế độ: Auto';
+                        lblCamFollow.textContent = state.lang === 'en' ? 'Mode: Follow' : 'Chế độ: Follow';
                     } else if (behavior === 'angleCycle') {
                         lblCamFollow.textContent = state.lang === 'en'
                             ? `Mode: Angle ${angleN}/12`
@@ -3307,12 +3308,7 @@
 
             if (btnCamCinema) {
                 btnCamCinema.addEventListener('click', () => {
-                    // Always re-run hero cinematic framing (rule of thirds) — even if already on Auto
-                    if (typeof window.frameCinematicHeroShot === 'function') {
-                        window.frameCinematicHeroShot({ duration: 0.95, force: true });
-                    } else {
-                        applyCamBehavior('cinema');
-                    }
+                    applyCamBehavior('cinema');
                 });
             }
             if (btnCamLock) btnCamLock.addEventListener('click', () => applyCamBehavior('lock'));
