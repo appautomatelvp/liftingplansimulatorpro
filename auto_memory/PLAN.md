@@ -19,7 +19,7 @@ Nâng cấp toàn diện **SafeLift3D** từ trình mô phỏng 3D cơ bản lê
 
 ## Các bước (Model thực thi chạy tuần tự một mạch từ Bước 1 đến Bước cuối — tự kiểm tra + commit sau mỗi bước, KHÔNG dừng hỏi giữa chừng)
 
-- [ ] Bước 1: Xây dựng bộ giải Va chạm Liên tục (CCD), Ma sát cặp vật liệu ($\mu_s, \mu_d$), Độ nảy theo khối lượng ($e$) và Chống xuyên giữa các sợi cáp (`src/rigging/CollisionMaterialSolver.js`)
+- [x] Bước 1: Xây dựng bộ giải Va chạm Liên tục (CCD), Ma sát cặp vật liệu ($\mu_s, \mu_d$), Độ nảy theo khối lượng ($e$) và Chống xuyên giữa các sợi cáp (`src/rigging/CollisionMaterialSolver.js`)
   - Sửa: `src/rigging/CollisionMaterialSolver.js` (tạo mới `< 240` dòng, mở đầu bằng `// @purpose:`), `src/rigging/index.js`
   - CẤM đụng: `src/core/physics-world/*`, `src/core/standards/*`, `src/sim/manifest.js`
   - Chi tiết:

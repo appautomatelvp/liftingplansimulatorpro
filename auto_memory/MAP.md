@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 12:06 | Nhánh: feat/horizon-clouds | Commit cuối: 00a0f18 Snapshot 120416112026 (test): truoc khi lam hyper-realistic-physics-pbr (2 minutes ago)
-Tổng: 241 file, 72022 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 12:08 | Nhánh: feat/horizon-clouds | Commit cuối: 944502b docs(plan): create 6-step master upgrade plan for hyper-realistic physics & PBR (2 minutes ago)
+Tổng: 242 file, 72272 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -171,10 +171,11 @@ Tổng: 241 file, 72022 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/i18n/keys.js` | 598 |  ⚠️>300 |
 | `src/main.js` | 66 |  |
 | `src/rigging/CableDynamicsXPBD.js` | 310 |  ⚠️>300 |
+| `src/rigging/CollisionMaterialSolver.js` | 247 | Bộ giải va chạm liên tục (CCD), ma sát cặp vật liệu, độ nảy theo khối lượng và chống xuyên giữa các sợi cáp/xích |
 | `src/rigging/constraints/CornerProtectorModel.js` | 51 |  |
 | `src/rigging/constraints/HardwareConstraint.js` | 236 |  |
 | `src/rigging/constraints/UnilateralCableConstraint.js` | 151 |  |
-| `src/rigging/index.js` | 10 | src/rigging/index.js |
+| `src/rigging/index.js` | 13 | src/rigging/index.js |
 | `src/rigging/riggingConstants.js` | 69 | src/rigging/riggingConstants.js |
 | `src/rigging/RiggingPhysicsSolver.js` | 682 | src/rigging/RiggingPhysicsSolver.js ⚠️>300 |
 | `src/rigging/riggingUIStore.js` | 100 | src/rigging/riggingUIStore.js |
