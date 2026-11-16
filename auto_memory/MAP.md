@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 12:08 | Nhánh: feat/horizon-clouds | Commit cuối: 944502b docs(plan): create 6-step master upgrade plan for hyper-realistic physics & PBR (2 minutes ago)
-Tổng: 242 file, 72272 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 12:11 | Nhánh: feat/horizon-clouds | Commit cuối: 3035aee step 1: add CollisionMaterialSolver for CCD, material friction/restitution, and inter-cable capsule collision (3 minutes ago)
+Tổng: 243 file, 72482 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -17,7 +17,6 @@ Tổng: 242 file, 72272 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/core/RiggingDictionary.js (434 dòng)
 - src/core/SimulationEngine.js (560 dòng)
 - src/i18n/keys.js (598 dòng)
-- src/rigging/CableDynamicsXPBD.js (310 dòng)
 - src/rigging/RiggingPhysicsSolver.js (682 dòng)
 - src/sim/audio.js (725 dòng)
 - src/sim/cargo/containers_iso.js (1490 dòng)
@@ -170,12 +169,13 @@ Tổng: 242 file, 72272 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/i18n/index.js` | 131 |  |
 | `src/i18n/keys.js` | 598 |  ⚠️>300 |
 | `src/main.js` | 66 |  |
-| `src/rigging/CableDynamicsXPBD.js` | 310 |  ⚠️>300 |
+| `src/rigging/BrokenCableWhipXPBD.js` | 212 | Mô phỏng XPBD sóng quật, thu hồi năng lượng đàn hồi và va chạm CCD cho hai nửa cáp đứt hoặc cáp tháo chốt |
+| `src/rigging/CableDynamicsXPBD.js` | 264 | Bộ giải động lực học cáp/xích XPBD chịu kéo, tự va chạm và đứt thu hồi đàn hồi ⚠️>250 |
 | `src/rigging/CollisionMaterialSolver.js` | 247 | Bộ giải va chạm liên tục (CCD), ma sát cặp vật liệu, độ nảy theo khối lượng và chống xuyên giữa các sợi cáp/xích |
 | `src/rigging/constraints/CornerProtectorModel.js` | 51 |  |
 | `src/rigging/constraints/HardwareConstraint.js` | 236 |  |
 | `src/rigging/constraints/UnilateralCableConstraint.js` | 151 |  |
-| `src/rigging/index.js` | 13 | src/rigging/index.js |
+| `src/rigging/index.js` | 14 | src/rigging/index.js |
 | `src/rigging/riggingConstants.js` | 69 | src/rigging/riggingConstants.js |
 | `src/rigging/RiggingPhysicsSolver.js` | 682 | src/rigging/RiggingPhysicsSolver.js ⚠️>300 |
 | `src/rigging/riggingUIStore.js` | 100 | src/rigging/riggingUIStore.js |
@@ -266,7 +266,7 @@ Tổng: 242 file, 72272 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/assembly.test.js` | 172 |  |
 | `test/audio.test.js` | 265 |  ⚠️>250 |
 | `test/auth_screen.test.js` | 56 |  |
-| `test/cable_dynamics_xpbd.test.js` | 64 |  |
+| `test/cable_dynamics_xpbd.test.js` | 107 |  |
 | `test/cable_morphology_and_deformation.test.js` | 426 |  ⚠️>300 |
 | `test/cargo_labels.test.js` | 63 |  |
 | `test/catalog_client.test.js` | 94 |  |

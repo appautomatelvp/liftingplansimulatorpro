@@ -1,31 +1,10 @@
+// @purpose: Bộ giải động lực học cáp/xích XPBD chịu kéo, tự va chạm và đứt thu hồi đàn hồi
 import * as THREE from 'three';
+import { CABLE_MATERIAL_PROFILES, computeElasticSnapRecoil, normalizeCableMaterial } from './BrokenCableWhipXPBD.js';
+
+export { CABLE_MATERIAL_PROFILES };
 
 const GRAVITY = 9.81;
-const MAX_RECOIL_SPEED = 35;
-
-export const CABLE_MATERIAL_PROFILES = Object.freeze({
-  wire: Object.freeze({
-    youngsModulusPa: 100e9,
-    densityFactor: 0.62,
-    bendRadiusDiameters: 30,
-    bendCompliance: 0.001,
-    airDamping: 0.45
-  }),
-  chain: Object.freeze({
-    youngsModulusPa: 200e9,
-    densityFactor: 0.9,
-    bendRadiusDiameters: 0,
-    bendCompliance: 0.08,
-    airDamping: 0.32
-  }),
-  web: Object.freeze({
-    youngsModulusPa: 5e9,
-    densityFactor: 0.08,
-    bendRadiusDiameters: 2,
-    bendCompliance: 0.05,
-    airDamping: 1.8
-  })
-});
 
 function finiteVector(value) {
   return value && Number.isFinite(value.x) && Number.isFinite(value.y) && Number.isFinite(value.z);
@@ -35,8 +14,10 @@ function finiteVector(value) {
 export class CableDynamicsXPBD {
   constructor({ lengthM, diameterMm = 16, material = 'wire', segments = 40, youngsModulusPa } = {}) {
     if (!(Number.isFinite(lengthM) && lengthM > 0)) throw new RangeError('lengthM must be positive');
-    const key = material === 'round_sling' || material === 'synthetic' ? 'web' : material;
-    if (!CABLE_MATERIAL_PROFILES[key]) throw new RangeError(`Unsupported cable material: ${material}`);
+    const key = material === 'round_sling' || material === 'synthetic' ? 'web' : (CABLE_MATERIAL_PROFILES[material] ? material : normalizeCableMaterial(material));
+    if (!CABLE_MATERIAL_PROFILES[key] || (material !== 'wire' && material !== 'chain' && material !== 'web' && material !== 'round_sling' && material !== 'synthetic')) {
+      throw new RangeError(`Unsupported cable material: ${material}`);
+    }
     this.profile = CABLE_MATERIAL_PROFILES[key];
     this.material = key;
     this.lengthM = lengthM;
@@ -83,8 +64,16 @@ export class CableDynamicsXPBD {
   }
 
   _setEndpointInverseMasses() {
-    if (this.pinnedA) this.inverseMasses[0] = 0;
-    if (this.pinnedB) this.inverseMasses[this.segments] = 0;
+    const nodeInvM = 1 / Math.max(1e-5, this.linearMassKgM * this.segmentLength);
+    this.inverseMasses[0] = this.pinnedA ? 0 : nodeInvM;
+    this.inverseMasses[this.segments] = this.pinnedB ? 0 : nodeInvM;
+  }
+
+  setPins(pinnedA, pinnedB) {
+    this.pinnedA = !!pinnedA;
+    this.pinnedB = !!pinnedB;
+    if (this.inverseMasses.length === this.segments + 1) this._setEndpointInverseMasses();
+    return this;
   }
 
   _projectDistance(index, dt, hard = false) {
@@ -109,102 +98,84 @@ export class CableDynamicsXPBD {
 
   _projectBending(index, dt) {
     if (!(this.profile.bendRadiusDiameters > 0) || index < 1 || index >= this.segments) return;
-    const first = this.positions[index - 1];
-    const center = this.positions[index];
-    const third = this.positions[index + 1];
-
-    // XPBD curvature spring: penalize center-node distance from the neighbor midpoint.
-    // A chain has zero curvature restraint; wire and textile profiles carry compliance.
-    const midpoint = first.clone().add(third).multiplyScalar(0.5);
-    const curveDelta = center.clone().sub(midpoint);
+    const first = this.positions[index - 1], center = this.positions[index], third = this.positions[index + 1];
+    const wa = this.inverseMasses[index - 1], wb = this.inverseMasses[index], wc = this.inverseMasses[index + 1];
+    const curveDelta = center.clone().sub(first.clone().add(third).multiplyScalar(0.5));
     const curveDistance = curveDelta.length();
     if (curveDistance > 1e-9 && this.profile.bendCompliance > 0) {
-      const wa = this.inverseMasses[index - 1];
-      const wb = this.inverseMasses[index];
-      const wc = this.inverseMasses[index + 1];
-      const weight = wb + 0.25 * (wa + wc);
-      const alpha = this.profile.bendCompliance / (dt * dt);
-      const oldLambda = this._curvatureLambda[index];
-      const change = (-curveDistance - alpha * oldLambda) / (weight + alpha);
+      const weight = wb + 0.25 * (wa + wc), alpha = this.profile.bendCompliance / (dt * dt);
+      const change = (-curveDistance - alpha * this._curvatureLambda[index]) / (weight + alpha);
       this._curvatureLambda[index] += change;
       curveDelta.multiplyScalar(1 / curveDistance);
       first.addScaledVector(curveDelta, -0.5 * wa * change);
       center.addScaledVector(curveDelta, wb * change);
       third.addScaledVector(curveDelta, -0.5 * wc * change);
     }
-
-    const span = third.clone().sub(first);
-    const distance = span.length();
+    const span = third.clone().sub(first), distance = span.length();
     if (distance < 1e-9) return;
     const radius = Math.max(this.profile.bendRadiusDiameters * this.diameterM, this.segmentLength * 0.45);
-      const maxTurn = THREE.MathUtils.clamp(this.segmentLength / radius, 0.06, 0.5);
-    const minimumSpan = 2 * this.segmentLength * Math.cos(maxTurn / 2);
-    const constraint = distance - minimumSpan;
-    if (constraint >= 0) {
-      this._bendLambda[index] = 0;
-      return;
-    }
-    const wa = this.inverseMasses[index - 1];
-    const wb = this.inverseMasses[index + 1];
-    const weight = wa + wb;
-    if (weight <= 0) return;
-    const compliance = this.profile.bendCompliance / Math.max(1e-5, this.segmentLength);
-    const alpha = compliance / (dt * dt);
+    const maxTurn = THREE.MathUtils.clamp(this.segmentLength / radius, 0.06, 0.5);
+    const constraint = distance - 2 * this.segmentLength * Math.cos(maxTurn / 2);
+    if (constraint >= 0) { this._bendLambda[index] = 0; return; }
+    const endWeight = wa + wc;
+    if (endWeight <= 0) return;
+    const alpha = (this.profile.bendCompliance / Math.max(1e-5, this.segmentLength)) / (dt * dt);
     const oldLambda = this._bendLambda[index];
-    const nextLambda = Math.max(0, oldLambda + (-constraint - alpha * oldLambda) / (weight + alpha));
+    const nextLambda = Math.max(0, oldLambda + (-constraint - alpha * oldLambda) / (endWeight + alpha));
     const change = nextLambda - oldLambda;
     this._bendLambda[index] = nextLambda;
     span.multiplyScalar(1 / distance);
     first.addScaledVector(span, -wa * change);
-    third.addScaledVector(span, wb * change);
+    third.addScaledVector(span, wc * change);
+  }
+
+  _separateNodePair(i, j, minDistance, minDistanceSq) {
+    if (i - j < 3 || (this.brokenSegment != null && j <= this.brokenSegment && i === this.brokenSegment + 1)) return;
+    const a = this.positions[i], b = this.positions[j];
+    const delta = a.clone().sub(b);
+    const d2 = delta.lengthSq();
+    if (d2 >= minDistanceSq) return;
+    const weight = this.inverseMasses[i] + this.inverseMasses[j];
+    if (weight <= 0) return;
+    const distance = Math.sqrt(d2);
+    if (distance < 1e-9) {
+      const axis = (i + j) % 3;
+      delta.set(axis === 0 ? 1 : 0, axis === 1 ? 1 : 0, axis === 2 ? 1 : 0);
+    } else delta.multiplyScalar(1 / distance);
+    const correction = minDistance - distance;
+    a.addScaledVector(delta, correction * (this.inverseMasses[i] / weight));
+    b.addScaledVector(delta, -correction * (this.inverseMasses[j] / weight));
   }
 
   _projectSelfCollision() {
-    const minDistance = this.radiusM * 2;
-    const minDistanceSq = minDistance * minDistance;
-    const cellSize = Math.max(1e-4, minDistance);
+    const minDist = this.radiusM * 2, minDistSq = minDist * minDist, cellSize = Math.max(1e-4, minDist);
     const buckets = new Map();
-    const cellKey = (x, y, z) => `${x},${y},${z}`;
     for (let i = 0; i < this.positions.length; i++) {
       const a = this.positions[i];
-      const cx = Math.floor(a.x / cellSize);
-      const cy = Math.floor(a.y / cellSize);
-      const cz = Math.floor(a.z / cellSize);
+      const cx = Math.floor(a.x / cellSize), cy = Math.floor(a.y / cellSize), cz = Math.floor(a.z / cellSize);
       for (let ox = -1; ox <= 1; ox++) {
         for (let oy = -1; oy <= 1; oy++) {
           for (let oz = -1; oz <= 1; oz++) {
-            const candidates = buckets.get(cellKey(cx + ox, cy + oy, cz + oz));
-            if (!candidates) continue;
-            for (const j of candidates) {
-              if (i - j < 3) continue;
-              if (this.brokenSegment != null && j <= this.brokenSegment && i === this.brokenSegment + 1) continue;
-              const b = this.positions[j];
-              const delta = a.clone().sub(b);
-              const d2 = delta.lengthSq();
-              if (d2 >= minDistanceSq) continue;
-              const distance = Math.sqrt(d2);
-              const weight = this.inverseMasses[i] + this.inverseMasses[j];
-              if (weight <= 0) continue;
-              if (distance < 1e-9) {
-                // Coincident particles have no geometric normal; choose a stable axis
-                // so self-contact still produces a separating correction.
-                delta.set(((i + j) % 3) === 0 ? 1 : 0, ((i + j) % 3) === 1 ? 1 : 0, ((i + j) % 3) === 2 ? 1 : 0);
-              } else {
-                delta.multiplyScalar(1 / distance);
-              }
-              const correction = minDistance - distance;
-              const wi = this.inverseMasses[i] / weight;
-              const wj = this.inverseMasses[j] / weight;
-              a.addScaledVector(delta, correction * wi);
-              b.addScaledVector(delta, -correction * wj);
-            }
+            const cands = buckets.get(`${cx + ox},${cy + oy},${cz + oz}`);
+            if (cands) cands.forEach((j) => this._separateNodePair(i, j, minDist, minDistSq));
           }
         }
       }
-      const key = cellKey(cx, cy, cz);
+      const key = `${cx},${cy},${cz}`;
       if (!buckets.has(key)) buckets.set(key, []);
       buckets.get(key).push(i);
     }
+  }
+
+  _shiftEndpoint(endIdx, targetPoint, fromStart) {
+    const delta = targetPoint.clone().sub(this.positions[endIdx]);
+    for (let i = 1; i < this.segments; i++) {
+      const w = fromStart ? (1 - i / this.segments) : (i / this.segments);
+      this.positions[i].addScaledVector(delta, w);
+      this.previous[i].addScaledVector(delta, w);
+    }
+    this.positions[endIdx].copy(targetPoint);
+    this.previous[endIdx].copy(targetPoint);
   }
 
   step(dt, pointA, pointB, { gravityY = -GRAVITY, collide, iterations = 10 } = {}) {
@@ -213,29 +184,12 @@ export class CableDynamicsXPBD {
     const steps = Math.max(1, Math.min(8, Math.ceil(dt / (1 / 60))));
     const subDt = Math.min(1 / 60, dt / steps);
     for (let stepIndex = 0; stepIndex < steps; stepIndex++) {
-      const deltaA = pointA.clone().sub(this.positions[0]);
-      const deltaB = pointB.clone().sub(this.positions[this.segments]);
-      if (this.pinnedA) {
-        for (let i = 1; i < this.segments; i++) {
-          this.positions[i].addScaledVector(deltaA, 1 - i / this.segments);
-          this.previous[i].addScaledVector(deltaA, 1 - i / this.segments);
-        }
-        this.positions[0].copy(pointA);
-        this.previous[0].copy(pointA);
-      }
-      if (this.pinnedB) {
-        for (let i = 1; i < this.segments; i++) {
-          this.positions[i].addScaledVector(deltaB, i / this.segments);
-          this.previous[i].addScaledVector(deltaB, i / this.segments);
-        }
-        this.positions[this.segments].copy(pointB);
-        this.previous[this.segments].copy(pointB);
-      }
+      if (this.pinnedA) this._shiftEndpoint(0, pointA, true);
+      if (this.pinnedB) this._shiftEndpoint(this.segments, pointB, false);
       const drag = Math.exp(-this.profile.airDamping * subDt);
       for (let i = 0; i <= this.segments; i++) {
         if (this.inverseMasses[i] === 0) continue;
-        const position = this.positions[i];
-        const old = position.clone();
+        const position = this.positions[i], old = position.clone();
         const velocity = position.clone().sub(this.previous[i]).multiplyScalar(drag);
         position.add(velocity).add(new THREE.Vector3(0, gravityY * subDt * subDt, 0));
         this.previous[i].copy(old);
@@ -252,16 +206,13 @@ export class CableDynamicsXPBD {
             if (this.inverseMasses[i] === 0) continue;
             const before = this.positions[i].clone();
             collide(this.positions[i], i, this.radiusM);
-            const correction = this.positions[i].clone().sub(before);
-            this.previous[i].add(correction);
+            this.previous[i].add(this.positions[i].clone().sub(before));
           }
         }
         this._projectSelfCollision();
         if (this.pinnedA) this.positions[0].copy(pointA);
         if (this.pinnedB) this.positions[this.segments].copy(pointB);
       }
-      // Contact and self-collision corrections can slightly lengthen adjacent spans.
-      // Finish with a short distance pass so the discretized arc stays near L0.
       for (let pass = 0; pass < 20; pass++) {
         for (let i = 0; i < this.segments; i++) this._projectDistance(i, subDt, true);
         for (let i = this.segments - 1; i >= 0; i--) this._projectDistance(i, subDt, true);
@@ -282,10 +233,13 @@ export class CableDynamicsXPBD {
     const tangent = this.positions[index + 1].clone().sub(this.positions[index]);
     if (tangent.lengthSq() < 1e-9) tangent.set(1, 0, 0);
     tangent.normalize();
-    const extensionM = tensionN * this.lengthM / (this.youngsModulusPa * this.areaM2);
-    const energyJ = 0.5 * tensionN * extensionM;
-    const cableMassKg = this.linearMassKgM * this.lengthM;
-    const recoilSpeedMps = Math.min(MAX_RECOIL_SPEED, Math.sqrt((2 * energyJ) / Math.max(0.01, cableMassKg)));
+    const { storedElasticEnergyJ: energyJ, recoilSpeedMps } = computeElasticSnapRecoil({
+      tensionN,
+      lengthM: this.lengthM,
+      youngsModulusPa: this.youngsModulusPa,
+      areaM2: this.areaM2,
+      linearMassKgM: this.linearMassKgM
+    });
     const directions = [[index, -1], [index + 1, 1]];
     directions.forEach(([node, sign]) => {
       this.inverseMasses[node] = Math.max(this.inverseMasses[node], 1 / Math.max(0.01, this.linearMassKgM * this.segmentLength));

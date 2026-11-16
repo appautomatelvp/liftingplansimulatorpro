@@ -29,7 +29,7 @@ Nâng cấp toàn diện **SafeLift3D** từ trình mô phỏng 3D cơ bản lê
     4. Viết hàm `resolveInterCableCapsuleCollisions(cablePointArrays, radiiArray, iterations = 2)` để các sợi cáp/xích khác nhau khi va đập phải bật/trượt khỏi nhau, không bao giờ cắt xuyên qua nhau.
   - Kiểm tra xong: `npm run architecture:gate && npm run build` xanh, `src/rigging/CollisionMaterialSolver.js` `< 240` dòng.
 
-- [ ] Bước 2: Nâng cấp Cơ học Cáp/Xích XPBD Liên tục & Hiệu ứng Quật/Thu hồi năng lượng đàn hồi khi đứt cáp (`src/rigging/BrokenCableWhipXPBD.js` & thu gọn `src/rigging/CableDynamicsXPBD.js`)
+- [x] Bước 2: Nâng cấp Cơ học Cáp/Xích XPBD Liên tục & Hiệu ứng Quật/Thu hồi năng lượng đàn hồi khi đứt cáp (`src/rigging/BrokenCableWhipXPBD.js` & thu gọn `src/rigging/CableDynamicsXPBD.js`)
   - Sửa: `src/rigging/BrokenCableWhipXPBD.js` (tạo mới `< 230` dòng, mở đầu bằng `// @purpose:`), `src/rigging/CableDynamicsXPBD.js` (rút gọn từ 310 dòng xuống `< 275` dòng), `test/cable_dynamics_xpbd.test.js`
   - CẤM đụng: `src/core/PhysicalCableSolver.js`, `src/core/standards/*`
   - Chi tiết:
