@@ -174,6 +174,8 @@
                     // Cable physics = H-beam bridle (visual 8-fall headblock is cosmetic only).
                     horizU = Math.max(0.35, Math.hypot(spanX / 2, spanZ / 2));
                 }
+            } else if (beamType === 'lifting_beam' && state.liftingBeamTopMode === 'direct_hook') {
+                horizU = 0.04;
             } else if (beamType === 'frame' || (typeof customBeamMeshes !== 'undefined' && customBeamMeshes[beamType])) {
                 horizU = Math.max(0.35, Math.hypot(spanX / 2, spanZ / 2));
             }
@@ -204,7 +206,10 @@
                     recUpper = 0.28;
                     maxUpper = 1.20;
                 }
-                // Cable: keep H-beam-style minUpper/recUpper from horizU above.
+            } else if (beamType === 'lifting_beam' && state.liftingBeamTopMode === 'direct_hook') {
+                minUpper = 0.06;
+                recUpper = 0.14;
+                maxUpper = 0.60;
             }
 
             // Compute required vertical drop from beam underside to lowest lug
@@ -241,7 +246,8 @@
                 && (typeof isStsDirectAttach === 'function'
                     ? isStsDirectAttach()
                     : (state.stsAttachMode || 'direct') !== 'cable');
-            if (stsDirect) {
+            const lbDirect = beamType === 'lifting_beam' && state.liftingBeamBottomMode === 'direct';
+            if (stsDirect || lbDirect) {
                 // Twistlock pin protrusion only — spreader flush on container roof.
                 minLower = 0.04;
                 recLower = 0.06;
@@ -309,17 +315,15 @@
                         lowerDrop = Math.sqrt(Math.max(0.04, lower * lower - horizL * horizL));
                     }
                 } else {
-                    const requested = state.slingUserSet
-                        ? Math.max(minUpper + minLower, state.slingLength)
-                        : Math.max(recUpper, minUpper + minLower);
-                    const total = chordAt(horizU, requested);
-                    const totalPlane = Math.sqrt(Math.max(0.64, total.len * total.len - halfZ * halfZ));
-                    const upperAx = Math.max(0.55, (totalPlane - 0.28) * 0.58);
-                    topLeg = Math.max(minUpper, Math.hypot(upperAx, halfZ));
-                    lower = Math.max(minLower, totalPlane - 0.28 - upperAx);
-                    topDrop = total.drop * 0.58;
-                    lowerDrop = total.drop * 0.42;
-                    betaDeg = total.beta * 180 / Math.PI;
+                    const reqTotal = state.slingUserSet
+                        ? Math.max(recUpper, state.slingLength || recUpper)
+                        : recUpper;
+                    const upper = chordAt(horizU, reqTotal);
+                    topLeg = Math.max(minUpper, reqTotal);
+                    topDrop = upper.drop;
+                    betaDeg = upper.beta * 180 / Math.PI;
+                    lower = recLower;
+                    lowerDrop = Math.sqrt(Math.max(0.04, lower * lower - horizL * horizL));
                 }
                 return {
                     spanX, spanZ, topDrop, lower, lowerDrop, topLeg, mast: 0, betaDeg,

@@ -1,0 +1,238 @@
+// @purpose: Kiểm thử vàng nút Nhớm Cáp (pretensionRig): kiện chạm đất 0.00m và toàn bộ hệ cáp căng đúng chiều dài thực
+import { describe, expect, it } from 'vitest';
+import { createHeadlessSim } from './sim_test_harness.js';
+
+function assertAllCablesTautGrounded(sim, s, phy, expectedCargoBaseY, label = '') {
+  expect(phy.groundClearance).toBe(0);
+  expect(s.poseLock).toBe(true);
+  expect(phy.cargoPos.y).toBeCloseTo(expectedCargoBaseY, 3);
+  expect(phy.cables.length).toBeGreaterThan(0);
+
+  for (const c of phy.cables) {
+    if (c.role === 'extra') continue;
+    const span = sim.attachWorld(c.a).distanceTo(sim.attachWorld(c.b));
+    const pA = sim.attachWorld(c.a);
+    const pB = sim.attachWorld(c.b);
+    expect(c.slack, `${label} role=${c.role}#${c.index} span=${span.toFixed(3)} L0=${c.L0.toFixed(3)} pA=(${pA.x.toFixed(2)},${pA.y.toFixed(2)},${pA.z.toFixed(2)}) pB=(${pB.x.toFixed(2)},${pB.y.toFixed(2)},${pB.z.toFixed(2)}) bY=${phy.beams[0]?.x.y.toFixed(2)}`).toBe(false);
+    expect(span, `${label} role=${c.role}#${c.index}`).toBeGreaterThanOrEqual(c.L0 - 0.025);
+    expect(span, `${label} role=${c.role}#${c.index}`).toBeLessThanOrEqual(c.L0 + 0.025);
+    expect(c.tensionT).toBeGreaterThan(0.05);
+  }
+}
+
+describe('Nhớm Cáp (pretensionRig) — Grounded Cargo + Full Real-Length Taut Rigging', () => {
+  it('1. Pulls hook and spreader up from Hạ đất slack pose until all cables are taut while cargo remains on ground', () => {
+    const sim = createHeadlessSim();
+    const s = sim.getState();
+    const phy = sim.getPhy();
+
+    const topologies = [
+      { beamType: 'none' },
+      { beamType: 'spreader' },
+      { beamType: 'frame' },
+      { beamType: 'lifting_beam', topMode: 'bridle2', bottomMode: 'cable' },
+      { beamType: 'lifting_beam', topMode: 'direct_hook', bottomMode: 'cable' },
+      { beamType: 'lifting_beam', topMode: 'bridle2', bottomMode: 'direct' },
+      { beamType: 'lifting_beam', topMode: 'direct_hook', bottomMode: 'direct' },
+      { beamType: 'basket' },
+      { beamType: 'inline4' },
+      { beamType: 'container_spreader', stsAttachMode: 'cable' },
+      { beamType: 'container_spreader', stsAttachMode: 'direct' }
+    ];
+
+    for (const tc of topologies) {
+      s.cargoType = 'iso40';
+      s.L = 12.192;
+      s.W = 2.438;
+      s.H = 2.591;
+      s.weight = 24;
+      s.beamType = tc.beamType;
+      if (tc.topMode) s.liftingBeamTopMode = tc.topMode;
+      if (tc.bottomMode) s.liftingBeamBottomMode = tc.bottomMode;
+      if (tc.stsAttachMode) s.stsAttachMode = tc.stsAttachMode;
+      s.upperSlingLength = 8.0;
+      s.lowerSlingLength = 2.0;
+      s.slingLength = 8.0;
+      s.slingUserSet = false;
+      sim.rebuildCargoAndRig(true);
+
+      // Simulate pressing Hạ đất while seated (makes ropes slack & drops hook/beam down)
+      globalThis.finishSmoothSetDown();
+      sim.stepSim(10);
+      const slackHookY = phy.hookPos.y;
+
+      // Press Nhớm Cáp!
+      globalThis.pretensionRig();
+      sim.stepSim(30);
+
+      const supportBaseY = Math.max(sim.getSupportY(0, 0), sim.getSupportY(0.39 * s.L, 0));
+      assertAllCablesTautGrounded(sim, s, phy, supportBaseY + s.H * 0.5, JSON.stringify(tc));
+
+      if (tc.beamType !== 'container_spreader' && tc.bottomMode !== 'direct') {
+        if (tc.beamType !== 'none' && phy.beams[0]) {
+          expect(phy.beams[0].x.y).toBeGreaterThan(s.H + 0.5);
+        }
+      }
+
+      // Repeat click must be strictly idempotent (never drift or launch upward)
+      const firstHookY = phy.hookPos.y;
+      globalThis.pretensionRig();
+      sim.stepSim(15);
+      expect(Math.abs(phy.hookPos.y - firstHookY)).toBeLessThan(0.01);
+    }
+  });
+
+  it('2. Recovers from manual hook-down slack and transitions smoothly into a clean lift', () => {
+    const sim = createHeadlessSim();
+    const s = sim.getState();
+    const phy = sim.getPhy();
+
+    s.cargoType = 'iso40';
+    s.L = 12.192;
+    s.W = 2.438;
+    s.H = 2.591;
+    s.weight = 24;
+    s.beamType = 'lifting_beam';
+    s.liftingBeamTopMode = 'bridle2';
+    s.liftingBeamBottomMode = 'cable';
+    s.slingUserSet = true;
+    s.upperSlingLength = 8.0;
+    s.lowerSlingLength = 2.0;
+    sim.rebuildCargoAndRig(true);
+
+    // Manually drop hook low so cables go visibly slack
+    phy.hookPos.y = 4.2;
+    phy.hookTarget.y = 4.2;
+    sim.stepSim(20);
+    expect(phy.cables.some((c) => c.slack)).toBe(true);
+
+    // Press Nhớm Cáp -> must raise hook & H-beam up to real 8m + 2m taut pose (not shrink L0!)
+    globalThis.pretensionRig();
+    sim.stepSim(20);
+
+    const supportBaseY = Math.max(sim.getSupportY(0, 0), sim.getSupportY(0.39 * s.L, 0));
+    assertAllCablesTautGrounded(sim, s, phy, supportBaseY + s.H * 0.5);
+    const upper = phy.cables.find((c) => c.role === 'upper');
+    const leg = phy.cables.find((c) => c.role === 'leg');
+    expect(upper.L0).toBeGreaterThan(6.5);
+    expect(leg.L0).toBeGreaterThan(1.5);
+    expect(phy.hookPos.y).toBeGreaterThan(9.0);
+
+    // Subsequent trial lift climbs smoothly without snapping
+    s.poseLock = false;
+    sim.testLift(1.0, 900);
+    sim.stepSim(30);
+    expect(phy.cargoPos.y).toBeGreaterThan(s.H * 0.5 + 0.5);
+    expect(phy.cables.every((c) => !s.gear?.legs?.[c.index]?.broken)).toBe(true);
+  });
+
+  it('3. Gravity keeps Basket steel bars pulling upper cables taut or resting on roof (never floating mid-air with slack uppers)', () => {
+    const sim = createHeadlessSim();
+    const s = sim.getState();
+    const phy = sim.getPhy();
+
+    s.cargoType = 'iso40';
+    s.L = 12.192;
+    s.W = 2.438;
+    s.H = 2.591;
+    s.weight = 24;
+    s.beamType = 'basket';
+    s.upperSlingLength = 8.0;
+    s.lowerSlingLength = 2.0;
+    s.slingUserSet = true;
+    sim.rebuildCargoAndRig(true);
+
+    for (const testHookY of [6.0, 8.5, 9.6, 10.6]) {
+      s.poseLock = true;
+      phy._nhomFreezeSpreader = false;
+      phy.hoistSpeed = -0.3;
+      phy.hookPos.y = testHookY;
+      phy.hookTarget.y = testHookY;
+      sim.stepSim(20);
+
+      for (const b of phy.beams) {
+        const resting = b.isRestingOnCargo || b.x.y <= s.H + 0.36;
+        if (!resting) {
+          const ups = phy.cables.filter((c) => c.role === 'upper' && c.b.body === b);
+          for (const u of ups) {
+            const span = sim.attachWorld(u.a).distanceTo(sim.attachWorld(u.b));
+            expect(span, `hookY=${testHookY} bar=${b.id} upper taut`).toBeGreaterThanOrEqual(u.L0 - 0.04);
+          }
+          const legs = phy.cables.filter((c) => c.role === 'leg' && c.a.body === b);
+          for (const l of legs) {
+            const span = sim.attachWorld(l.a).distanceTo(sim.attachWorld(l.b));
+            expect(span, `hookY=${testHookY} bar=${b.id} lower taut (no mid-air slack)`).toBeGreaterThanOrEqual(l.L0 - 0.06);
+          }
+        }
+        // Conservation of cable length: lower & upper slings must NEVER stretch past L0
+        // and bars stay tethered near container ends rather than sliding to the middle.
+        const barCables = phy.cables.filter((c) => c.a.body === b || c.b.body === b);
+        for (const c of barCables) {
+          const span = sim.attachWorld(c.a).distanceTo(sim.attachWorld(c.b));
+          expect(span, `hookY=${testHookY} ${c.role}[${c.index}] no stretch`).toBeLessThanOrEqual(c.L0 + 0.03);
+        }
+        expect(Math.abs(b.x.x), `hookY=${testHookY} bar=${b.id} held by lower sling near cargo end`).toBeGreaterThan(3.5);
+      }
+    }
+  });
+
+  it('4. Basket Spreader Cradle actually lifts 40ft Flat Rack cargo off ground without stretching lower cables', () => {
+    const sim = createHeadlessSim();
+    const s = sim.getState();
+    const phy = sim.getPhy();
+
+    s.cargoType = 'flatrack';
+    s.L = 12.192;
+    s.W = 2.438;
+    s.H = 2.591;
+    s.oogCargoH = 2.591;
+    s.weight = 24;
+    s.beamType = 'basket';
+    s.upperSlingLength = 10.0;
+    s.lowerSlingLength = 2.0;
+    s.slingUserSet = true;
+    sim.rebuildCargoAndRig(true);
+
+    s.poseLock = false;
+    phy.hookPos.y = 15.1;
+    phy.hookTarget.y = 15.1;
+    sim.stepSim(40);
+
+    expect(phy.groundClearance).toBeGreaterThan(0.5);
+    for (const c of phy.cables) {
+      const span = sim.attachWorld(c.a).distanceTo(sim.attachWorld(c.b));
+      expect(span, `${c.role}[${c.index}] no stretch`).toBeLessThanOrEqual(c.L0 + 0.03);
+    }
+    expect(phy.legTensions[0]).toBeGreaterThan(1.0);
+  });
+
+  it('5. Auto-sized & Reset Basket keeps short 2m lower slings and bars near ends (never collapsed to center)', () => {
+    const sim = createHeadlessSim();
+    const s = sim.getState();
+    const phy = sim.getPhy();
+
+    s.cargoType = 'flatrack';
+    s.L = 12.192;
+    s.W = 2.438;
+    s.H = 2.591;
+    s.oogCargoH = 2.78;
+    s.oogOh = 0.30;
+    s.beamType = 'basket';
+    s.slingUserSet = false;
+    s.upperSlingLength = null;
+    s.lowerSlingLength = null;
+    sim.rebuildCargoAndRig(true);
+
+    for (let i = 0; i < 2; i++) {
+      globalThis.finishSmoothSetDown();
+      sim.stepSim(10);
+      const leg = phy.cables.find((c) => c.role === 'leg');
+      const up = phy.cables.find((c) => c.role === 'upper');
+      expect(leg.L0).toBeCloseTo(2.0, 1);
+      expect(up.L0).toBeGreaterThanOrEqual(9.5);
+      for (const b of phy.beams) {
+        expect(Math.abs(b.x.x)).toBeGreaterThan(3.5);
+      }
+    }
+  });
+});

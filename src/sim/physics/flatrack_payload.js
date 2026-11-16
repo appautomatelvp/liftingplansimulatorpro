@@ -30,7 +30,8 @@
                 },
                 endWalls: { negativeXIntact: true, positiveXIntact: true },
                 deckNormalOffset: 0,
-                lastCompoundPenetration: 0
+                lastCompoundPenetration: 0,
+                ruptureCascadeTimer: 0
             };
             if (!activeCargoVisual) return;
             const oogGroup = activeCargoVisual.getObjectByName('flatRackOogCargo');
@@ -43,6 +44,9 @@
             }
             if (lashingGroup) lashingGroup.visible = true;
             if (brokenGroup) brokenGroup.visible = false;
+            if (typeof RIG !== 'undefined' && RIG.resetFlatRackLashingNodes) {
+                RIG.resetFlatRackLashingNodes(activeCargoVisual);
+            }
         }
 
         function stepFlatRackPayloadPhysics(dt) {
@@ -111,28 +115,43 @@
                     st.strapStress = Math.max(0, st.strapStress - 0.8 * dt);
                 }
 
+                const sparkSnap = (node) => {
+                    [-1, 1].forEach(sz => {
+                        const pLocal = new THREE.Vector3(node.sx, meta.cargoBottomY + meta.cH * 0.35, sz * meta.cW * 0.5);
+                        spawnSnapSparks(pLocal.applyQuaternion(phy.cargoQuat).add(phy.cargoPos));
+                    });
+                };
+                if (typeof RIG !== 'undefined' && RIG.stepStaggeredLashingBreakPhysics) {
+                    const res = RIG.stepStaggeredLashingBreakPhysics({
+                        st, oogGroup, gLocal, dt, lashingDemandN, lashingCapacityN, onStrapSnap: sparkSnap
+                    });
+                    if (res.anySnappedNow && typeof simAudio !== 'undefined') simAudio.playCableSnap({ role: 'strap', type: 'web' });
+                }
+
                 if (lashingDemandN >= lashingCapacityN || st.strapStress >= 1.0) {
                     st.status = 'sliding';
                     st.strapsBroken = true;
                     lashing.isIntact = false;
-                    // Quasi-static slide accel available immediately on rupture frame
                     st.aSlide = G_EARTH * (Math.sin(tiltRad) - lashing.kineticFriction * Math.cos(tiltRad));
                     st.deckTiltRad = tiltRad;
                     if (typeof simAudio !== 'undefined') {
                         simAudio.playCableSnap({ role: 'strap', type: 'web' });
                     }
-                    // Starts sliding smoothly from rest relative to the deck
                     st.localVel.set(0, 0, 0);
-                    const lashingGroup = activeCargoVisual.getObjectByName('flatRackLashingStraps');
                     const brokenGroup = activeCargoVisual.getObjectByName('flatRackBrokenStraps');
-                    if (lashingGroup) lashingGroup.visible = false;
                     if (brokenGroup) brokenGroup.visible = true;
-
-                    // Spawn lashing snap sparks along both sides of the Flat Rack
-                    [-0.32, 0.32].forEach(xf => [-1, 1].forEach(zf => {
-                        const pLocal = new THREE.Vector3(xf * meta.cL, meta.cargoBottomY + meta.cH * 0.35, zf * meta.cW * 0.5);
-                        spawnSnapSparks(pLocal.applyQuaternion(phy.cargoQuat).add(phy.cargoPos));
-                    }));
+                    if (typeof RIG !== 'undefined' && RIG.stepStaggeredLashingBreakPhysics) {
+                        RIG.stepStaggeredLashingBreakPhysics({
+                            st, oogGroup, gLocal, dt: Math.max(dt, 0.02), lashingDemandN, lashingCapacityN, onStrapSnap: sparkSnap
+                        });
+                    } else {
+                        const lashingGroup = activeCargoVisual.getObjectByName('flatRackLashingStraps');
+                        if (lashingGroup) lashingGroup.visible = false;
+                        [-0.32, 0.32].forEach(xf => [-1, 1].forEach(zf => {
+                            const pLocal = new THREE.Vector3(xf * meta.cL, meta.cargoBottomY + meta.cH * 0.35, zf * meta.cW * 0.5);
+                            spawnSnapSparks(pLocal.applyQuaternion(phy.cargoQuat).add(phy.cargoPos));
+                        }));
+                    }
                     const statusEl = document.getElementById('sim-status-text');
                     if (statusEl) {
                         statusEl.textContent = `CẢNH BÁO SỰ CỐ: Độ nghiêng sàn (${tiltDeg.toFixed(1)}°) vượt giới hạn giữ tải! DÂY CHẰNG BUỘC ĐÃ ĐỨT! Kiện hàng đang trượt theo độ dốc sàn Flat Rack!`;
@@ -142,6 +161,15 @@
             }
 
             if (st.status === 'sliding') {
+                if (typeof RIG !== 'undefined' && RIG.stepStaggeredLashingBreakPhysics) {
+                    RIG.stepStaggeredLashingBreakPhysics({
+                        st, oogGroup, gLocal, dt, lashingDemandN, lashingCapacityN,
+                        onStrapSnap: (node) => [-1, 1].forEach(sz => {
+                            const pLocal = new THREE.Vector3(node.sx, meta.cargoBottomY + meta.cH * 0.35, sz * meta.cW * 0.5);
+                            spawnSnapSparks(pLocal.applyQuaternion(phy.cargoQuat).add(phy.cargoPos));
+                        })
+                    });
+                }
                 if ((phy.groundClearance || 0) <= 0.05 && tiltDeg < 2.5) {
                     st.localVel.multiplyScalar(Math.exp(-dt * 14.0));
                     return;

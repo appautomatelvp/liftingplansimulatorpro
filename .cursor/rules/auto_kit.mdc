@@ -153,22 +153,23 @@ Founder KHÔNG biết code, ra lệnh mù mờ, và dùng NHIỀU loại AI luâ
 4. Báo founder: (a) đã đổi gì, (b) file nào, (c) founder cần bấm thử gì. Tiếng Việt thường.
 Không chạy được script → tự ghi tay vào `auto_memory/HISTORY.md` đúng mẫu và nói thẳng với founder.
 
-### D. HAI CHẾ ĐỘ: LẬP KẾ HOẠCH ↔ THỰC THI (không cần founder nhớ lệnh)
+### D. HAI CHẾ ĐỘ: MODEL CAO NHẤT LÊN PLAN ↔ MODEL THỰC THI CHẠY MỘT MẠCH ĐẾN HẾT PLAN
 Tự phân loại việc theo Mục 1.2 (NHỎ / LỚN).
 
-**VIỆC NHỎ** → làm thẳng, 1 dòng báo cáo đầu việc, vẫn làm Mục 9.C.
-
-**VIỆC LỚN và `auto_memory/PLAN.md` chưa có kế hoạch ACTIVE → CHẾ ĐỘ LẬP KẾ HOẠCH:**
-1. Đọc kỹ theo Mục 9.B. KHÔNG viết code.
-2. Viết `auto_memory/PLAN.md` đúng mẫu: mục tiêu, giả định đã chọn, rủi ro, rồi các BƯỚC NHỎ. Mỗi bước phải: ≤ 1 buổi làm / ≤ 3 file; ghi rõ file được sửa, file CẤM đụng, cách kiểm tra xong (lệnh hoặc "mở màn hình X thấy Y"); đủ rõ để model yếu làm đúng mà không phải đoán.
-3. Chạy `./scripts/auto_backup.ps1 -FeatureName "<tên>"`.
-4. DỪNG và nói với founder đúng câu: **"Kế hoạch xong ở `auto_memory/PLAN.md`. Mày chuyển sang model thực thi (Auto/Flash/Hydro…) và gõ: `làm tiếp`."** Không tự thực thi tiếp.
-
-**`auto_memory/PLAN.md` có kế hoạch ACTIVE và founder nói "làm tiếp"/ra lệnh mù mờ liên quan → CHẾ ĐỘ THỰC THI:**
-1. Làm ĐÚNG 1 bước chưa tick đầu tiên. Không làm trước bước sau, không "tiện tay" sửa thêm, không đổi kế hoạch.
-2. Chỉ sửa file bước đó cho phép. Cần sửa file khác / kế hoạch sai / mơ hồ → ghi `BLOCKED: <lý do + câu hỏi>` dưới bước đó, dừng, báo founder (founder có thể nhờ model mạnh sửa kế hoạch).
-3. Chạy cách kiểm tra của bước. Đạt → tick `[x]`, làm Mục 9.C, báo "Bước N xong. Gõ `làm tiếp` để sang bước N+1". Hết bước → đặt `Trạng thái: DONE`.
-4. Yêu cầu của founder KHÔNG liên quan kế hoạch: nếu nhỏ → làm thẳng rồi quay lại kế hoạch; nếu lớn → hỏi 1 câu "bỏ kế hoạch cũ hay làm sau?".
+1. **VIỆC NHỎ:** Làm thẳng trong 1 lượt, kiểm tra nhanh, vẫn làm Mục 9.C cuối phiên.
+2. **VIỆC LỚN và `auto_memory/PLAN.md` chưa có kế hoạch `ACTIVE` → CHẾ ĐỘ LẬP KẾ HOẠCH (Dành cho Model cao nhất):**
+   - Đọc kỹ theo Mục 9.B. **KHÔNG viết code lúc này** (để tiết kiệm quota Model cao nhất cho founder).
+   - Chạy `./scripts/auto_backup.ps1 -FeatureName "<tên>"`.
+   - Viết `auto_memory/PLAN.md` (`Trạng thái: ACTIVE`): mục tiêu, giả định đã chọn, rủi ro, rồi chia thành các **BƯỚC NHỎ** rõ ràng (mỗi bước ≤ 3 file, ghi rõ file được sửa, file CẤM đụng, cách kiểm tra `npm run build` / `npm test`).
+   - **DỪNG LẠI** và báo founder: **"Kế hoạch đã lập xong trong `auto_memory/PLAN.md`. Mày chuyển sang model thực thi (Auto/Flash/Hydro…) và gõ `làm tiếp` 1 lần để nó chạy một mạch từ đầu đến hết kế hoạch!"**
+3. **Khi `auto_memory/PLAN.md` đang `ACTIVE` và founder chuyển sang Model thực thi gõ `làm tiếp` (hoặc bảo thực hiện) → CHẾ ĐỘ THỰC THI MỘT MẠCH ĐẾN KẾT THÚC (`Run All Steps to Completion`):**
+   - Founder **CHỈ GÕ 1 LẦN DUY NHẤT**. Bạn BẮT BUỘC phải **chạy liên tục từ Bước đầu tiên chưa tick cho đến khi HOÀN TẤT BƯỚC CUỐI CÙNG trong `PLAN.md`** — tuyệt đối **CẤM dừng lại sau Bước 1, Bước 2 để bắt founder gõ `làm tiếp` lặp đi lặp lại!**
+   - **Kỷ luật xử lý từng bước bên trong vòng chạy liên hoàn (Chốt an toàn ngầm & Cầu chì tự ngắt):**
+     - Dù chạy một mạch trong 1 lần gọi, bạn CẤM sửa gộp tất cả các bước thành 1 cục hỗn độn, mà phải làm **tuần tự từng bước `1 → 2 → 3 → ... → Cuối`**:
+     - **Xong mỗi bước `N`:** Tự chạy kiểm tra ngay (`npm run build` / `npm test` nếu có + `./scripts/auto_check.ps1`).
+       - **Nếu XANH (Đạt):** Tự đánh dấu `[x]` bước `N` trong `PLAN.md`, tự chạy `git commit -m "step N: ..."` để khóa mốc an toàn của bước đó lại, rồi **TỰ ĐỘNG LÀM TIẾP BƯỚC `N+1` NGAY LẬP TỨC (không dừng hỏi founder!)**.
+       - **Nếu ĐỎ (Lỗi — Cầu chì tự ngắt):** Tự tìm nguyên nhân sửa tối đa **2 lần**. Nếu sau 2 lần vẫn lỗi → **NGẮT CẦU CHÌ NGAY**: chạy `git checkout -- .` để hoàn tác riêng bước `N` bị lỗi (nhờ các bước `1..N-1` đã commit riêng nên hệ thống vẫn sống khỏe 100%, không bị hỏng dây chuyền!), ghi `BLOCKED: <lý do>` vào `PLAN.md` và chỉ lúc đó mới dừng lại báo founder.
+   - **Khi xong hết bước cuối cùng:** Đặt `Trạng thái: DONE` trong `PLAN.md`, chạy Mục 9.C (`auto_check.ps1` + `auto_log.ps1`) và báo cáo tổng kết toàn bộ kế hoạch cho founder!
 
 ### E. QUY TRÌNH DEBUG (đặc biệt khi dùng model khác / Codex để sửa lỗi)
 1. Đọc Mục 9.B + 10 mục HISTORY gần nhất (lỗi thường do thay đổi gần đây).
@@ -190,8 +191,8 @@ Tự phân loại việc theo Mục 1.2 (NHỎ / LỚN).
 | `@3d` | 3D, mô phỏng, vật lý, game | `auto_kit/3d_saas.md` (phần 3D) | Theo luật Module 3D |
 | `@saas` | Bán cho khách, nhiều người dùng, gói cước, thanh toán, hết hạn | `auto_kit/3d_saas.md` (phần SaaS) | Theo luật Module SaaS |
 | `@insight` | Lượng người dùng (DAU/MAU), thói quen khách hàng, tính năng nào hay dùng, góp ý/feedback/báo lỗi của khách | `auto_kit/insight.md` | Gắn `telemetryAndFeedback.js` (1 write/người/ngày + Clarity + nút Feedback + bảng Admin) |
-| `@plan` | Việc LỚN, "làm cả hệ thống/phần …" | `auto_kit/plan.md` | Viết `PLAN.md` rồi dừng (Mục 9.D) |
-| `@upgrade` | "Nâng cấp/tái cấu trúc dự án cũ", "chuẩn hóa code cũ", "tách các file lớn" | `auto_kit/upgrade.md` | Khám bệnh dự án cũ → backup → lập `PLAN.md` tách từng file một mà không làm hỏng tính năng đang chạy |
+| `@plan` | Việc LỚN, "làm cả hệ thống/phần …" | `auto_kit/plan.md` | Model cao nhất viết `PLAN.md` + backup rồi dừng để đổi sang Model thực thi (Mục 9.D) |
+| `@upgrade` | "Nâng cấp/tái cấu trúc dự án cũ", "chuẩn hóa code cũ", "tách các file lớn" | `auto_kit/upgrade.md` | Model cao nhất khám bệnh + backup + lập `PLAN.md` → đổi sang Model thực thi gõ `làm tiếp` 1 lần là chạy từ đầu đến hết kế hoạch |
 | `@debug` | Lỗi, treo, trắng màn hình, tính sai, "sai rồi" | `auto_kit/debug.md` | Quy trình debug (Mục 9.E) |
 | `@secure` | Đăng nhập, phân quyền, admin, ai được xem gì, lộ key | `auto_kit/secure.md` | Bảng ✅/❌ + cách sửa |
 | `@ship` | Cho khách dùng, ra mắt, lên mạng, deploy | `auto_kit/ship.md` | Checklist PRODUCTION |
@@ -200,13 +201,15 @@ Tự phân loại việc theo Mục 1.2 (NHỎ / LỚN).
 - `@map` — chạy `./scripts/auto_map.ps1`, đọc lại dự án, cập nhật `auto_memory/CONTEXT.md` (dùng cho dự án cũ chưa có bộ nhớ).
 - `@backup` — chạy `./scripts/auto_backup.ps1 -FeatureName "<tên>"`.
 - `@chot` — kiểm tra `auto_check` sạch rồi chạy `./scripts/manual_chot_ban.ps1 -Message "<mô tả>"`.
-- `@tiep` hoặc "làm tiếp" — chế độ THỰC THI (Mục 9.D): làm đúng 1 bước kế hoạch kế tiếp.
+- `@tiep` hoặc "làm tiếp" — **Gõ ĐÚNG 1 LẦN ở Model thực thi:** chạy một mạch tuần tự từ Bước 1 đến hết Bước cuối cùng trong `auto_memory/PLAN.md` (tự kiểm tra + tự commit ngầm sau mỗi bước theo Mục 9.D, không dừng hỏi ở từng bước).
 - `@help` — đọc `LENH_AT.md` rồi in lại bảng lệnh bằng tiếng Việt thường, 1 dòng/lệnh, kèm ví dụ.
 - Không rơi vào lệnh nào → làm theo luật Lõi.
 
 ### G. TÁI CẤU TRÚC FILE NHÁP CANVAS & NÂNG CẤP DỰ ÁN CŨ (`@upgrade`)
-1. **Nếu là file HTML nháp từ Canvas:** Lập kế hoạch (Mục 9.D) với các bước: dựng Vite → tách logic tính toán → tách giao diện → nối Firebase → kiểm tra. Giữ nguyên 100% giao diện, màu, kết quả tính; mỗi file ≤300 dòng, có `@purpose`.
-2. **Nếu là Dự án cũ đang chạy cần tái cấu trúc về chuẩn mới (`@upgrade`):** Đọc `auto_kit/upgrade.md`. Tuyệt đối KHÔNG đập đi xây lại cả dự án trong 1 lần! Phải: (a) Khám tổng quát từ `auto_memory/MAP.md` + `auto_check.ps1`, (b) Chạy `auto_backup.ps1` lưu bản gốc, (c) Lập `auto_memory/PLAN.md` để lắp bộ giáp dữ liệu (`auto_kit/templates_src/`) và bóc tách **từng file >300 dòng một** (mỗi bước 1 file, `npm run build` xanh rồi mới sang file kế tiếp, giữ nguyên 100% đường dẫn Firestore/LocalStorage và hành vi cũ).
+1. **Nếu là file HTML nháp từ Canvas (Việc LỚN):** Model cao nhất lập `PLAN.md` (dựng Vite → tách logic tính toán → tách giao diện → nối Firebase → kiểm tra) + backup rồi dừng. Khi chuyển sang Model thực thi gõ `làm tiếp` 1 lần: chạy một mạch từ bước đầu đến bước cuối, giữ nguyên 100% giao diện, màu, kết quả tính; mỗi file ≤300 dòng, có `@purpose`.
+2. **Nếu là Dự án cũ đang chạy cần tái cấu trúc về chuẩn mới (`@upgrade`):** Đọc `auto_kit/upgrade.md`.
+   - **Ở Model cao nhất:** Khám tổng quát từ `auto_memory/MAP.md` + `auto_check.ps1`, chạy `auto_backup.ps1` lưu bản gốc, lập `auto_memory/PLAN.md` chia thành từng bước nhỏ (mỗi bước tách 1 file >300 dòng hoặc lắp 1 bộ giáp dữ liệu) rồi dừng.
+   - **Khi chuyển sang Model thực thi và gõ `làm tiếp` 1 lần:** Model thực thi **chạy một mạch từ Bước 1 đến hết Bước cuối cùng** (xong mỗi bước tự chạy `npm run build` xanh → tự `git commit` khóa mốc bước đó → tự làm luôn bước tiếp theo; nếu bước nào lỗi 2 lần thì cầu chì tự ngắt hoàn tác riêng bước lỗi đó).
 
 ### H. NHÓM "DỪNG HỎI" (chỉ những việc này mới chờ founder gõ "ĐỒNG Ý")
 Xóa dữ liệu/file hàng loạt · đổi cấu trúc dữ liệu Firestore đã có khách · chuyển PRODUCTION · `git push`/deploy · sửa file `[LOCKED]` · thư viện trả phí. Còn lại: tự quyết, ghi vào CONTEXT/HISTORY.

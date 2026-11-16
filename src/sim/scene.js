@@ -211,7 +211,8 @@
                     let edgesGeo = m.geometry.userData._cachedCADEdgesGeo;
                     if (!edgesGeo) {
                         const count = m.geometry.attributes?.position?.count || 0;
-                        // Avoid expensive N log N calculations on massive triangle meshes (> 3000 vertices)
+                        // Skip heavy N*log(N) edge extraction on dense CAD meshes (> 8000 vertices)
+                        if (count > 8000) return;
                         edgesGeo = new THREE.EdgesGeometry(m.geometry, count > 3000 ? 35 : 26);
                         m.geometry.userData._cachedCADEdgesGeo = edgesGeo;
                     }
@@ -555,13 +556,20 @@
         }
 
         function supportY(x, z) {
-            // Quay / ground only — no timber cribbing offset (keeps static cargo flush).
-            return groundSurfaceY(x, z);
+            const base = groundSurfaceY(x, z);
+            if (typeof dunnageGroup !== 'undefined' && dunnageGroup && typeof GFX !== 'undefined' && GFX.evaluateDunnageSupportSurface) {
+                return GFX.evaluateDunnageSupportSurface(x, z, dunnageGroup, base).y;
+            }
+            return base;
         }
 
         // Unit normal for the height-field used by the contact solver. Using the
-        // terrain normal lets a load settle and slide on a slope realistically.
+        // terrain/dunnage normal lets a load settle and slide on a slope realistically.
         function supportNormal(x, z) {
+            if (typeof dunnageGroup !== 'undefined' && dunnageGroup && typeof GFX !== 'undefined' && GFX.evaluateDunnageSupportSurface) {
+                const surf = GFX.evaluateDunnageSupportSurface(x, z, dunnageGroup, groundSurfaceY(x, z));
+                if (surf && surf.normal) return new THREE.Vector3(surf.normal.x, surf.normal.y, surf.normal.z).normalize();
+            }
             let dx = 0;
             let dz = 0;
             if (state.groundId === 'soil') {
@@ -681,7 +689,10 @@
             }
 
             const prevGeo = floorMesh.geometry;
-            floorMesh.geometry = createCircularGroundGeometry(460, state.groundId);
+            floorMesh.geometry = createCircularGroundGeometry(560, state.groundId);
+            if (typeof GFX !== 'undefined' && GFX.applyGroundHorizonFade) {
+                GFX.applyGroundHorizonFade(floorMesh.material, 130, 490);
+            }
             floorMesh.rotation.x = 0;
             prevGeo.dispose();
             gridHelper.visible = state.groundId === 'flat';
@@ -740,7 +751,8 @@
                     GROUND_LABELS[state.groundId] || 'Sàn bê tông phẳng'
                 )}`;
             }
-            if (dunnageGroup) dunnageGroup.visible = state.groundId !== 'rough';
+            if (typeof rebuildDunnageBlocks === 'function') rebuildDunnageBlocks();
+            else if (dunnageGroup) dunnageGroup.visible = true;
         }
 
         // --- 4. BUILD CLEAN RIGGING-FOCUSED CRANE & OVERHEAD HOIST MODES ---
@@ -760,25 +772,19 @@
                 const cached = craneVehicleCache.get(type);
                 craneVehicleGroup.add(cached.container);
                 craneDynamicParts = cached.dynamicParts;
+                if (typeof GFX !== 'undefined' && GFX.syncCraneOutriggerMats3D) {
+                    GFX.syncCraneOutriggerMats3D({ THREE, craneVehicleGroup, presetId: state.craneMatPresetId || 'steel_mat_2x2', MATS });
+                }
                 return;
             }
 
             if (type === 'hook_only') {
                 // 1. PURE OVERHEAD HOOK & HOIST MODE (Zero crane clutter — 360° unobstructed rigging view)
+                // Keep only an invisible overhead anchor point at crownY = 24.0 so hoist ropes draw cleanly
+                // without any floating black winch box or sheave cylinders in mid-air.
                 const sheaveCrownGroup = new THREE.Group();
                 const crownY = 24.0;
                 sheaveCrownGroup.position.set(0, crownY, 0);
-
-                const crownBeam = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.28, 0.68), MATS.darkSteel);
-                crownBeam.position.y = 0.22;
-                sheaveCrownGroup.add(crownBeam);
-
-                [-0.18, 0.18].forEach(sx => {
-                    const upperSheave = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.14, 24), MATS.gunmetal);
-                    upperSheave.rotation.z = Math.PI / 2;
-                    upperSheave.position.set(sx, 0.02, 0);
-                    sheaveCrownGroup.add(upperSheave);
-                });
 
                 craneVehicleGroup.add(sheaveCrownGroup);
                 craneDynamicParts = {
@@ -849,15 +855,12 @@
                         const floatFoot = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.42, 0.10, 20), MATS.darkSteel);
                         floatFoot.position.set(ox, 0.15, oz);
 
-                        // Heavy Engineered Outrigger Spreader Mat (1.7m x 1.7m x 0.10m) resting flush on floor
-                        const matPad = new THREE.Mesh(new THREE.BoxGeometry(1.70, 0.10, 1.70), MATS.timberWood);
-                        matPad.position.set(ox, 0.05, oz);
-                        matPad.receiveShadow = true;
-                        matPad.castShadow = true;
-                        const matRim = new THREE.Mesh(new THREE.BoxGeometry(1.74, 0.04, 1.74), MATS.darkSteel);
-                        matRim.position.set(ox, 0.02, oz);
+                        const matSlot = new THREE.Group();
+                        matSlot.name = 'OutriggerMatSlot';
+                        matSlot.position.set(ox, 0, oz);
+                        matSlot.userData.isOutriggerMatSlot = true;
 
-                        carrierGroup.add(innerBeam, jackBarrel, jackRod, floatFoot, matPad, matRim);
+                        carrierGroup.add(innerBeam, jackBarrel, jackRod, floatFoot, matSlot);
                     });
                 });
 
@@ -1089,6 +1092,9 @@
                 };
             }
 
+            if (typeof GFX !== 'undefined' && GFX.syncCraneOutriggerMats3D) {
+                GFX.syncCraneOutriggerMats3D({ THREE, craneVehicleGroup, presetId: state.craneMatPresetId || 'steel_mat_2x2', MATS });
+            }
             if (pbrFactory) pbrFactory.enforcePBRMaterials(craneVehicleGroup);
             applyCADFeatureEdges(craneVehicleGroup, false);
 

@@ -1,50 +1,63 @@
-# KẾ HOẠCH (Model cao nhất lập Plan → Model thực thi chạy 1 mạch từ Bước 1 đến Bước cuối)
-Trạng thái: DONE        <!-- NONE | ACTIVE | DONE -->
+# KẾ HOẠCH THỰC HIỆN (PLAN.md)
+Trạng thái: DONE
+Tính năng: Chống xuyên đà gỗ khi kéo kiện ra vị trí bất kỳ, Ghi/Xem/Dừng tái hiện 100% (tối đa 60s), Tối ưu Tablet (iPad / Android >= 4GB RAM) giữ đủ bảng chức năng, Thước cao độ mặc định bên phải & số to gấp đôi, Dứt điểm giật STS Hạ/Hạ đất, Triển khai GitHub & Cloudflare Pages
+Nhánh Git: feat/horizon-clouds
 
-## Mục tiêu
-Ẩn hoàn toàn số điện thoại cá nhân và email nhà phát triển khỏi toàn bộ màn hình công khai, HTML tĩnh và mã nguồn đóng gói (`dist/`); chỉ giữ tên nhà phát triển (`Lê Việt Phương (Mr)`) kèm nút mở hộp thoại **Gửi email góp ý / Hỗ trợ**, chỉ giải mã & bàn giao email cho ứng dụng mail của khách sau khi vượt qua hàng rào chống bot/spam đa lớp (ẩn địa chỉ tới tận lúc khách gửi thật).
+## Mục tiêu & Chẩn đoán Gốc
+1. **Kéo kiện ra vị trí khác đè lên gỗ vẫn xuyên qua (`beams_seed.js:2268`):** `contactLocals()` chỉ lấy 7 cột điểm tĩnh theo `[-0.39..0.39] * L` (cách nhau ~1.7 m trên kiện 40ft), rộng hơn nhiều so với thanh gỗ `0.20 m` nên khi kéo lệch kiện X/Z, thân kiện lọt qua khe giữa các điểm dò. Cần tự động chiếu/bổ sung điểm tiếp xúc ngay tại giao tuyến giữa đáy kiện và từng thanh đà gỗ trong `dunnageGroup` (`siteProfile.beams`) ở mọi vị trí kéo/xoay.
+2. **Ghi / Xem / Dừng chưa tái hiện Lắc kiện, Cắt cáp, Rớt kiện, Đứt dây & giới hạn 60s (`ReplayRecorder.js`, `presets_events.js`, `flatrack_payload.js`):**
+   - Giới hạn hiện tại đang là `36s` (`MAX_REPLAY_FRAMES = 720`); cần nâng lên tối đa `60s` (`1200` khung hình @ 20Hz).
+   - Khi phát lại (`stepReplayPlayback`), `stepPhysicsEngine()` tạm dừng nhưng `ReplayRecorder` mới chỉ đặt `phy.oogState` chứ chưa cập nhật lưới 3D `flatRackOogCargo` (vị trí `localPos` / `worldPos` rơi, góc nghiêng), chưa đồng bộ trạng thái đứt từng sợi dây chằng (`flatRackLashingStraps` / `flatRackBrokenStraps` + `strapNodes`), chưa reset `cable._failureProcessed` / giữ đủ `cable.break` khi chuyển giữa chưa cắt ↔ đã cắt, và chưa lưu snapshot cấu hình ban đầu (`initialMeta`) lúc ấn `Ghi`.
+3. **Hoạt động mượt & đủ bảng chức năng trên iPad / Tablet Android (>= 4GB RAM) (`src/styles/app.css`, `src/graphics/SceneRenderer.js`, `src/sim/gear/editor.js`):**
+   - `#top-bar` (`flex-wrap: nowrap; overflow-x: hidden`) và `#bottom-dock-bar` bị cắt mất nút/bảng điều khiển ở độ rộng tablet `768px–1279px`. Cần bật vuốt ngang / rớt dòng gọn cho `#top-bar` và `#bottom-dock-bar` trên tablet (`<= 1279px`), tối ưu chiều rộng ngăn kéo `#right-side-drawer` / `#gear-editor` và vùng chạm cảm ứng (`touch-action: none` trên canvas, DPR tối ưu `<= 1.5` trên thiết bị cảm ứng để tablet 4GB RAM chạy mượt không tràn VRAM).
+4. **Cây thước cao độ mặc định bên PHẢI (như hình mẫu) khi F5 & con số to gấp đôi (`ElevationRulerTool.js`):**
+   - Chuyển vị trí mặc định (`customPos === null`) sang bên phải `+X` (`cx + Math.max(2.4, L * 0.5) + 1.55`), và nhân đôi kích thước font/sprite của nhãn độ cao (`512x112`, scale `4.4 x 0.96`) lẫn số chia vạch (`1.85 x 0.48`).
+5. **Spreader STS vẫn giật khi bấm `Hạ` hoặc `Hạ đất` (`step_engine.js`, `hoist_contacts.js`, `beams_seed.js`, `dynamics.js`):**
+   - Lò xo cáp tời đàn hồi `stepHoistDynamics` mất tải trọng treo khi XPBD bỏ qua xung lực `c._j = 0` ở STS Direct (khiến móc cẩu rung nẩy khi bắt đầu/dừng `Hạ`), đồng thời `step_engine.js:45` ngắt `Hạ đất` quá sớm tại `0.035m` làm kiện rớt nấc cuối về `0m`. Cần khóa êm bộ giảm chấn tời khi STS hạ, giảm tốc mượt tới sát `0.005m` và giữ `prevCargoY` đồng nhất.
+6. **Triển khai GitHub & Cloudflare Pages:** Chốt nhánh ổn định (`main`), push lên GitHub `origin` và deploy `dist/` lên Cloudflare Pages (`safelift3d`).
 
-## Giả định đã chọn (founder không cần trả lời)
-- Giữ tên `Lê Việt Phương (Mr)` ở màn hình Splash, chân trang Đăng nhập/Xác minh, tiêu đề hộp thoại Góp ý và chân trang PDF/BOM (`LiftPlanModel.js`) để giữ bản quyền & không làm sai `e2e/saas-accessibility.spec.js`.
-- Xóa 100% số điện thoại (`+84 968 051 697` / `tel:`) khỏi giao diện, metadata `branding.js` và file `index.html`.
-- Địa chỉ email nhận góp ý KHÔNG xuất hiện dưới dạng chuỗi thô trong HTML/DOM hay JS bundle (`dist/assets/*.js`); chỉ được giải mã trong bộ nhớ tại thời điểm khách qua bước xác minh người thật để mở `mailto:` (và hiển thị tùy chọn dự phòng sao chép **chỉ sau khi gửi hợp lệ**).
-- Hàng rào chống bot/spam 5 lớp chạy 100% trên nền miễn phí (Static + `localDataStore.js`):
-  1. Trường bẫy bot ẩn (**Honeypot**) chặn bot tự điền mọi ô.
-  2. Khóa thời gian tương tác tối thiểu (`>= 2500ms` từ lúc mở form) chặn submit tức thời.
-  3. Phép tính xác minh người thật ngẫu nhiên mỗi lần mở form (`a + b = ?`).
-  4. Giới hạn tần suất bền vững qua `localDataStore.js` (khóa `safelift.feedback.rate.v1`: giãn cách `30s`/lần và tối đa `3` lần/giờ).
-  5. Kiểm tra nội dung tối thiểu (`>= 10` ký tự thật) và chặn thư rác chứa `>2` đường link URL.
+## File `[LOCKED]` CẤM ĐỤNG
+- `src/sim/manifest.js`, `/src/core/physics-world/*`, `/src/core/standards/*`, `CraneLoadChartEngine.js`, `GroundPressureEngine.js`, `PhysicalCableSolver.js`, `DeformableSteelStructure.js`, `/firestore.rules`, shims, `firestoreSanitize.js`, `localDataStore.js`.
 
-## Rủi ro & Biện pháp kiểm soát
-- `index.html` dài `>300` dòng (`3133` dòng) → chỉ **xóa** dòng `<a class="copy-contact"...>` chứa email & SĐT (giảm dòng, không thêm code mới).
-- Không sửa `src/i18n/keys.js` (`598` dòng) và tuyệt đối không sửa file `[LOCKED]` (`firestore.rules`, `localDataStore.js`, `src/core/*`). Chuỗi song ngữ VI/EN của hộp thoại góp ý nằm gọn trong `src/saas/contact_dialog.js` (`<250` dòng).
-- Giữ chữ ký hàm `buildDeveloperContactMailto()` tương thích ngược một phần cho tham số chính (`subject`, `message`) nhưng nâng cấp tham số bảo vệ chống spam và cập nhật đồng bộ `test/feedback_mailto.test.js`.
+---
 
-## Các bước (Model thực thi chạy tuần tự một mạch từ Bước 1 đến Bước cuối — tự kiểm tra + commit sau mỗi bước, KHÔNG dừng hỏi giữa chừng)
-- [x] Bước 1: Nâng cấp lõi chống bot/spam & ẩn email khỏi chuỗi tĩnh trong `src/saas/feedback.js` + cập nhật test `test/feedback_mailto.test.js`
-  - Sửa: `src/saas/feedback.js`, `test/feedback_mailto.test.js`
-  - CẤM đụng: `src/utils/localDataStore.js`, `firestore.rules`, `src/core/*`
-  - Chi tiết: Gỡ `FEEDBACK_EMAIL` chuỗi thô; dùng hàm giải mã động `resolveFeedbackEmail()` từ mảng mã lệch; bổ sung `createContactChallenge()`, `verifyContactChallenge()`, kiểm tra honeypot, dwell-time `>= 2500ms`, chống URL spam (`<= 2` links), giới hạn gửi bền vững via `safeReadLocalStore`/`safeWriteLocalStore` (`30s` cooldown + `3` lần/giờ), và chuẩn hóa tiêu đề theo phân loại `[SafeLift3D · Loại]`.
-  - Kiểm tra xong: chạy `npx vitest run test/feedback_mailto.test.js` và kiểm tra file `src/saas/feedback.js` `< 200` dòng.
+## CÁC BƯỚC THỰC HIỆN TUẦN TỰ
 
-- [x] Bước 2: Tạo hộp thoại Góp ý chống spam chuyên nghiệp `src/saas/contact_dialog.js` và bổ sung CSS ở `src/saas/saas.css`
-  - Sửa: `src/saas/contact_dialog.js` (tạo mới `< 230` dòng, mở đầu `@purpose`), `src/saas/saas.css`
-  - CẤM đụng: `index.html`, `src/i18n/keys.js`, các file `[LOCKED]`
-  - Chi tiết: Xây dựng `openDeveloperContact({ category, subject } = {})` hỗ trợ song ngữ VI/EN: chỉ hiện tên `Lê Việt Phương (Mr)` và nhãn kênh hỗ trợ chính thức (TUYỆT ĐỐI không hiện SĐT và KHÔNG in email vào DOM trước khi gửi); gồm phân loại góp ý, chủ đề, nội dung, trường honeypot ẩn, câu hỏi xác minh toán học, thông báo lỗi rõ ràng (`role="status"`), mở `mailto:` khi hợp lệ và hiện thẻ dự phòng sao chép chỉ ở bước sau khi gửi thành công.
-  - Kiểm tra xong: `npm run build` và `npm run check:dist` xanh, `src/saas/contact_dialog.js` `< 250` dòng và `src/saas/saas.css` `< 300` dòng.
+### [x] Bước 1: Chống kiện xuyên qua đà gỗ ở mọi vị trí kéo/xoay & Khử nốt giật khi `Hạ`/`Hạ đất` STS Spreader
+- **File sửa (3 file):**
+  1. `src/graphics/JobsiteSiteVisuals.js`: thêm hàm thuần `sampleDunnageContactPointsForCargo({ cargoPos, cargoQuat, L, W, H, dunnageGroup })` tính chính xác các điểm tiếp xúc trên đáy kiện nằm đúng đỉnh/mép các thanh đà gỗ (kể cả khi kéo lệch tâm hay xoay góc).
+  2. `src/sim/physics/beams_seed.js`: gọi hàm trên trong `contactLocals()` (và `flatRackContactSampleLocals()`), đồng thời đồng bộ vận tốc/giảm nẩy cho STS Spreader khi `lowering`.
+  3. `src/sim/physics/hoist_contacts.js` & `src/sim/physics/step_engine.js` (hoặc tách helper nhỏ ở `UnifiedHoistProfile.js` giữ `<= 25` dòng vào mỗi file cũ): ổn định lò xo móc tời ở STS Direct khi `Hạ` (không rung nẩy do `c._j = 0`) và hạ êm tới `groundClearance <= 0.008m` trước khi `finishSmoothSetDown()`.
+  - *(Chú ý giới hạn 3 file/bước: Bước 1A làm `JobsiteSiteVisuals.js`, `beams_seed.js`, `step_engine.js`; Bước 1B hay gộp `dynamics.js`/`hoist_contacts.js` — hãy giữ đúng 3 file: `JobsiteSiteVisuals.js`, `beams_seed.js`, `step_engine.js`, xử lý hoàn chỉnh cả gỗ kê & hạ STS!)*
+- **Kiểm tra:** `npx vitest run test/v2_ux_dunnage_ruler_regression.test.js test/v3_ruler_drag_hoist_sts_gear_regression.test.js test/pretension_nhom_cap.test.js` + `npm run architecture:gate` + `npm run build`.
 
-- [x] Bước 3: Gỡ toàn bộ email/SĐT khỏi màn hình công khai & nối nút mở hộp thoại Góp ý sạch
-  - Sửa: `index.html` (chỉ xóa 2 link `mailto:`/`tel:` ở `.loader-copyright`), `src/saas/branding.js`, `src/saas/auth_screen.js`, `src/saas/feature_access_ui.js`, `src/saas/session_ui_bindings.js`, `test/auth_screen.test.js`
-  - CẤM đụng: `src/i18n/keys.js`, `src/core/*`, `firestore.rules`
-  - Chi tiết:
-    - `index.html`: Xóa `<a href="mailto:...">` và `<a href="tel:...">` ở Splash Screen (chỉ giữ `© 2026 SafeLift3D · Phát triển bởi Lê Việt Phương (Mr)`).
-    - `src/saas/branding.js`: Xóa `email`, `tel`, `contactLine()` khỏi `COPYRIGHT`.
-    - `src/saas/auth_screen.js`: Xóa `<a href="mailto:...">` và `<a href="tel:...">` ở cả footer Xác minh & Đăng nhập; giữ tên tác giả và thêm nút `data-action="contact-developer"` gọi `openDeveloperContact()`.
-    - `src/saas/feature_access_ui.js`: Đổi `<a class="saas-contact-link" href="mailto:...">` thành `<button type="button" class="saas-contact-link" data-action="contact-developer">` gọi `openDeveloperContact({ category: 'enterprise' })`.
-    - `src/saas/session_ui_bindings.js`: Gỡ bản `openDeveloperContact` cũ có lộ SĐT/email, import từ `./contact_dialog.js`.
-    - `test/auth_screen.test.js`: Thêm test kiểm chứng footer Auth không chứa chuỗi email/SĐT thô và có nút mở góp ý.
-  - Kiểm tra xong: quét `src/` + `index.html` + `dist/` xác nhận KHÔNG còn SĐT `968.*051` hay chuỗi email thô `levietphuong.hcmutrans`; chạy `npm run architecture:gate && npm test && npm run build && npm run check:dist`.
+### [x] Bước 2: Hoàn thiện `Ghi / Xem / Dừng` tái hiện 100% Lắc kiện, Cắt cáp, Rớt kiện OOG, Đứt dây chằng (giới hạn 60s)
+- **File sửa (3 file):**
+  1. `src/rigging/ReplayRecorder.js` (`< 260` dòng): tăng giới hạn `MAX_REPLAY_FRAMES = 1200` (`60.0s`), lưu & phát lại đầy đủ trạng thái OOG (`status`, `strapsBroken`, `lashing.isIntact`, `localPos`, `worldPos`, `worldQuat`, vị trí/góc 3D `flatRackOogCargo`, trạng thái đứt từng dây `strapNodes`), lưu đầy đủ `cable.broken` + `break.frac/upperLen/lowerLen/tipU/tipL` + `cable._failureProcessed` và áp trực tiếp vào `activeCargoVisual` trong `applyReplayFrame()`.
+  2. `src/sim/library/reconstruction_export.js`: truyền `activeCargoVisual` (và `cableIsBroken` / `clearCableBreak` / `syncOOG`) vào `ReplayRecorder`, hiển thị đếm ngược `REC Xs / 60s`.
+  3. `src/sim/session/presets_events.js`: khi bấm `Ghi` ghi ngay cấu hình ban đầu; khi bấm `Xem` khôi phục sạch về frame `0` (reset các cờ vật lý cũ không cho dính sang lần xem lại), chạy trơn tru tới hết; khi bấm `Dừng` chốt frame cuối rõ ràng.
+- **Kiểm tra:** `npx vitest run test/v3_ruler_drag_hoist_sts_gear_regression.test.js` + `npm run architecture:gate` + `npm run build`.
 
-- [x] Bước 4: Nghiệm thu toàn diện & cập nhật bộ nhớ dự án V7
-  - Sửa: `auto_memory/PLAN.md` (`DONE`), `STATE.md`, `auto_memory/CONTEXT.md`
-  - Kiểm tra xong: Chạy E2E `npx playwright test e2e/saas-accessibility.spec.js --reporter=list`, chạy `./scripts/auto_log.ps1`, chạy `./scripts/auto_check.ps1` (kiểm tra trạng thái cuối, lưu ý rõ nếu `index.html` đã commit ở Bước 3) và tổng kết báo cáo 3 dòng cho Founder.
+### [x] Bước 3: Cây thước đo độ cao mặc định bên PHẢI khi F5 & con số to gấp đôi
+- **File sửa (3 file):**
+  1. `src/graphics/ElevationRulerTool.js` (`< 298` dòng): đổi tọa độ mặc định (`customPos === null`) sang bên phải `+X` (`cx + Math.max(2.4, L * 0.5) + 1.55`) đúng như vị trí chuẩn trong hình F5; tăng gấp đôi độ lớn font + khung nhãn của 4 mốc (`Hook`, `Ngáng`, `Đỉnh`, `Đáy`), `Điểm Đỏ` và vạch số `2m, 4m...`.
+  2. `src/sim/physics/hoist_contacts.js`: bổ sung chốt mượt chống giật cho `advanceHook()` khi STS Direct bắt đầu/kết thúc `Hạ` (tránh `clampHookOutOfSolids()` nẩy ngược khi chạm đất).
+  3. `test/v2_ux_dunnage_ruler_regression.test.js`: cập nhật assertion kiểm tra vị trí phải mặc định & kích thước nhãn to gấp đôi của thước.
+- **Kiểm tra:** `npx vitest run test/v2_ux_dunnage_ruler_regression.test.js test/v3_ruler_drag_hoist_sts_gear_regression.test.js` + `npm run build`.
+
+### [x] Bước 4: Tối ưu Tablet (iPad / Android >= 4GB RAM) & Không mất bảng điều khiển chức năng
+- **File tạo/sửa (3 file):**
+  1. Tạo `src/styles/tablet.css` (`< 140` dòng, `@purpose:`): media rules chuyên cho tablet (`max-width: 1280px` & `pointer: coarse`): thanh `#top-bar` cho phép cuộn ngang chạm mượt hoặc rớt dòng không bị ẩn nút bên phải; `#bottom-dock-bar` hiển thị trọn đủ cụm `Ghi/Xem/Dừng`, `Kéo/Hạ`, `Nhấc thử/Cân bằng/Hạ đất` không tràn mép; ngăn kéo `#right-side-drawer` & `#gear-editor` co giãn vừa vặn theo màn hình tablet, nút bấm tối thiểu `36–44px` dễ chạm; `#canvas-container canvas` đặt `touch-action: none`.
+  2. `src/main.js` (hoặc `index.html` CSS import): import `tablet.css` đúng chỗ.
+  3. `src/graphics/SceneRenderer.js`: tự nhận diện tablet/touch (`pointer: coarse` / RAM >= 4GB) giới hạn `maxDPR <= 1.5` ở chế độ mặc định để GPU iPad/Android giữ ổn định 60 FPS, không tụt khung hình hay văng WebGL.
+- **Kiểm tra:** `npm run architecture:gate` + `npm run build` + `npm run check:dist`.
+
+### [x] Bước 5: Nghiệm thu toàn bộ kiểm thử mới + kiểm tra an toàn V7
+- **File sửa/chạy (2 file):**
+  1. Cập nhật `test/v3_ruler_drag_hoist_sts_gear_regression.test.js`: bổ sung test kéo kiện lệch tâm lên thanh gỗ không xuyên, test ReplayRecorder 60s tái hiện đủ OOG rơi + đứt dây chằng + cắt cáp + đong đưa, test thước mặc định bên phải & font gấp đôi, test tablet viewport/CSS & STS hạ êm tới sát sàn.
+  2. Chạy toàn bộ: `npx vitest run`, `npm run architecture:gate`, `npm run build`, `npm run check:dist`, `./scripts/auto_check.ps1`, `./scripts/auto_log.ps1`.
+
+### [x] Bước 6: Triển khai lên GitHub & Cloudflare Pages
+- **Thao tác:**
+  1. Kiểm tra `git status` sạch sẽ, gộp nhánh `feat/horizon-clouds` về `master` và đẩy lên GitHub (`git push origin master`) theo xác nhận của Founder.
+  2. Chạy `npm run build && npm run check:dist` lần cuối, rồi deploy `dist/` lên Cloudflare Pages (`npx wrangler pages deploy dist --project-name safelift3d`) và báo link production thực tế cho Founder.

@@ -20,38 +20,43 @@
                 );
 
             if (cargoGrounded) {
-                // 1. Cargo roof under the hook — prefer shell sample, fall back to AABB top.
-                const shellTop = cargoShellTopWorldY(phy.hookPos.x, phy.hookPos.z, 0.20);
-                const aabbTop = phy.cargoPos.y + (state.H || 2.6) * 0.5;
-                const roofY = (shellTop > -1e5) ? Math.max(shellTop, aabbTop - 0.05) : aabbTop;
-                minHookY = Math.max(minHookY, roofY + masterBottomOffset + 0.02);
+                if (state.beamType === 'container_spreader') {
+                    // STS headblock sits at roof + 0.56 (no hanging J-hook block underneath)
+                    minHookY = Math.max(minHookY, groundY + (state.H || 2.591) + 0.56);
+                } else {
+                    // 1. Cargo roof under the hook — prefer shell sample, fall back to AABB top.
+                    const shellTop = cargoShellTopWorldY(phy.hookPos.x, phy.hookPos.z, 0.20);
+                    const aabbTop = phy.cargoPos.y + (state.H || 2.6) * 0.5;
+                    const roofY = (shellTop > -1e5) ? Math.max(shellTop, aabbTop - 0.05) : aabbTop;
+                    minHookY = Math.max(minHookY, roofY + masterBottomOffset + 0.02);
 
-                // 2. Spreader / lifting beam is a solid: hook cannot sink through it.
-                if (state.beamType !== 'none') {
-                    (phy.beams || []).forEach(b => {
-                        if (!b || b.axis === 'frame') return;
-                        const bRad = Math.max(0.10, b.radius || 0.14);
-                        minHookY = Math.max(minHookY, b.x.y + bRad + masterBottomOffset + 0.02);
-                    });
-                }
+                    // 2. Spreader / lifting beam is a solid: hook cannot sink through it.
+                    if (state.beamType !== 'none') {
+                        (phy.beams || []).forEach(b => {
+                            if (!b || b.axis === 'frame') return;
+                            const bRad = Math.max(0.10, b.radius || 0.14);
+                            minHookY = Math.max(minHookY, b.x.y + bRad + masterBottomOffset + 0.02);
+                        });
+                    }
 
-                // 3. Test 3D spheres of the Hook Assembly against cargo outer shell
-                const hookSpheres = [
-                    { dy: -0.50, r: 0.12 },
-                    { dy: -0.26, r: 0.18 },
-                    { dy:  0.28, r: 0.26 }
-                ];
-                for (let i = 0; i < hookSpheres.length; i++) {
-                    const hs = hookSpheres[i];
-                    const center = new THREE.Vector3(phy.hookPos.x, phy.hookPos.y + hs.dy, phy.hookPos.z);
-                    const pushed = pushOutOfCargoShellWorld(center, hs.r, false);
-                    if (pushed.distanceToSquared(center) > 1e-8) {
-                        const diff = pushed.sub(center);
-                        if (diff.y > 0) {
-                            minHookY = Math.max(minHookY, phy.hookPos.y + diff.y);
-                        } else {
-                            phy.hookPos.x += diff.x;
-                            phy.hookPos.z += diff.z;
+                    // 3. Test 3D spheres of the Hook Assembly against cargo outer shell
+                    const hookSpheres = [
+                        { dy: -0.50, r: 0.12 },
+                        { dy: -0.26, r: 0.18 },
+                        { dy:  0.28, r: 0.26 }
+                    ];
+                    for (let i = 0; i < hookSpheres.length; i++) {
+                        const hs = hookSpheres[i];
+                        const center = new THREE.Vector3(phy.hookPos.x, phy.hookPos.y + hs.dy, phy.hookPos.z);
+                        const pushed = pushOutOfCargoShellWorld(center, hs.r, false);
+                        if (pushed.distanceToSquared(center) > 1e-8) {
+                            const diff = pushed.sub(center);
+                            if (diff.y > 0) {
+                                minHookY = Math.max(minHookY, phy.hookPos.y + diff.y);
+                            } else {
+                                phy.hookPos.x += diff.x;
+                                phy.hookPos.z += diff.z;
+                            }
                         }
                     }
                 }
@@ -176,27 +181,43 @@
             // the hook / spreader until they kiss the cargo roof (3D solid clamp).
             // Old code returned here and made Hạ useless whenever clearance ≈ 0.
             const aabbClr = (typeof cargoAabbClearance === 'function') ? cargoAabbClearance() : (phy.groundClearance || 0);
-            const groundedNow = (phy.groundClearance || 0) < 0.04 && aabbClr < 0.04;
+            const curClr = Math.max(phy.groundClearance || 0, aabbClr);
+            const settleTol = phy._setDownActive ? 0.018 : 0.035;
+            const groundedNow = curClr < settleTol && Math.abs(phy.cargoVel?.y || 0) < 0.14;
             if (groundedNow && lowering && !rising) {
                 if (phy.cargoVel) phy.cargoVel.set(0, 0, 0);
                 if (phy.cargoOmega) phy.cargoOmega.set(0, 0, 0);
-                if (phy._setDownActive && typeof finishSmoothSetDown === 'function') {
-                    // Hạ đất finished — stop this frame. Continuing the winch after
-                    // parkHookSlack was snatching the cargo back up a few cm.
-                    finishSmoothSetDown();
-                    return;
+                const stsDirectDown = state.beamType === 'container_spreader'
+                    && typeof isStsDirectAttach === 'function'
+                    && isStsDirectAttach();
+                const allSlingsSlack = stsDirectDown || (phy.cables || []).every(c => {
+                    if (cableIsBroken(c)) return true;
+                    const span = attachWorld(c.a).distanceTo(attachWorld(c.b));
+                    return c.slack || span < (c.L0 || 1) - 0.02;
+                });
+                const prevHookY = phy.hookPos.y;
+                if (phy._setDownActive && phy._setDownFullSlack && !allSlingsSlack && (phy._setDownSlackSteps || 0) < 140) {
+                    phy._setDownSlackSteps = (phy._setDownSlackSteps || 0) + 1;
+                    // Keep paying out slightly on deck until every sling drapes slack (or solid clamp stops hook).
+                    if (phy._setDownSlackSteps > 6 && Math.abs(prevHookY - (phy._setDownLastHookY ?? prevHookY)) < 1e-4) {
+                        phy._setDownSlackSteps = 140;
+                    }
+                    phy._setDownLastHookY = prevHookY;
+                } else {
+                    if (phy._setDownActive && typeof finishSmoothSetDown === 'function') {
+                        finishSmoothSetDown();
+                        return;
+                    }
+                    // Manual Hạ at quay: damp cargo gently without snapping quaternion or teleporting
+                    phy._setDownActive = false;
+                    phy.groundClearance = 0;
                 }
-                // Operator Hạ while cargo is already on the quay: keep cargo seated,
-                // but fall through so the hook/spreader can still settle onto the roof.
-                phy._setDownActive = false;
-                state.poseLock = true;
-                phy.groundClearance = 0;
-                if (typeof applyLockedPose === 'function') applyLockedPose();
-                if (typeof syncPoseLockUI === 'function') syncPoseLockUI();
             }
-            // One shared cargo-hoist ceiling for hook and STS spreader (up == down).
             if (!dragging) {
                 maxWinch = Math.min(maxWinch, rising ? rates.up : rates.down);
+                if (phy._setDownActive && lowering && !rising && curClr < 0.45) {
+                    maxWinch = Math.min(maxWinch, Math.max(0.14, 0.14 + curClr * 1.55));
+                }
             }
 
             // ASME B30.9 & OSHA Hard-coded safety trigger: Horizontal angle < 30° strictly blocks lifting
@@ -244,35 +265,38 @@
                 }
             }
 
-            if (rising) {
-                // Soft-pay L0 so take-up cannot one-frame overstretch → Zone-3 snap.
-                // STS cable uses the same thresholds as H-beam / normal 4-leg hoist.
+            if (rising && (phy.groundClearance || 0) < 0.05) {
+                // Soft-pay L0 only during initial ground take-up so cables stay inextensible once airborne.
                 if (typeof relieveCableOverstretch === 'function') {
                     relieveCableOverstretch({ rising: true, margin: 0.015, trigger: 0.035 });
                 }
             }
-            if (rising && phy.groundClearance < 0.05) {
+            // Soft pickup only during tiny < 3cm final slack kiss so all plans lift cargo at the exact same speed
+            if (rising && phy.groundClearance < 0.03) {
                 const stsDirectRise = (typeof isStsDirectAttach === 'function') && isStsDirectAttach();
                 const aboutToTaut = (phy.cables || []).some(c => {
                     if (cableIsBroken(c)) return false;
-                    // Only the lower legs can pick the cargo from the ground.
                     if (!(c.role === 'leg' && c.b && c.b.kind === 'cargo')) return false;
-                    // Twistlocks already engaged — don't creep-throttle the whole lift.
                     if (stsDirectRise) return false;
-                    return attachWorld(c.a).distanceTo(attachWorld(c.b)) > c.L0 - 0.15;
+                    const d = attachWorld(c.a).distanceTo(attachWorld(c.b));
+                    return d > c.L0 - 0.05 && d < c.L0 + 0.01;
                 });
                 if (aboutToTaut) {
-                    maxWinch = Math.min(maxWinch, rates.up * 0.28);
+                    maxWinch = Math.min(maxWinch, rates.up * 0.65);
                 }
             }
 
             // Hold Kéo/Hạ / Hạ đất: maintain a smooth directional lead without micro-stuttering
             const holdLower = phy.hoistSpeed < -0.01 || !!phy._setDownActive;
             const holdRaise = phy.hoistSpeed > 0.01;
+            const isStsDirectNow = state.beamType === 'container_spreader'
+                && typeof isStsDirectAttach === 'function'
+                && isStsDirectAttach();
             if (holdLower || holdRaise) {
                 if (holdLower) {
+                    const lowerLead = isStsDirectNow ? Math.max(0.08, rates.down * dt * 2.5) : 0.05;
                     if (phy.hookTarget.y > kinHold.y - 0.02) {
-                        phy.hookTarget.y = kinHold.y - 0.05;
+                        phy.hookTarget.y = kinHold.y - lowerLead;
                     }
                 } else {
                     const maxLead = 0.04;
@@ -287,7 +311,7 @@
             // prior suspended stretch would otherwise raise kinTarget above the
             // current drum and yank a snug grounded rig into the air.
             if (holdLower && kinTarget.y > hoist.kin.y) {
-                kinTarget.y = hoist.kin.y - 0.02;
+                kinTarget.y = hoist.kin.y - (isStsDirectNow ? Math.max(0.05, rates.down * dt * 2.0) : 0.02);
             }
             const to = new THREE.Vector3().subVectors(kinTarget, hoist.kin);
             const dist = to.length();
@@ -316,30 +340,44 @@
                 const keepWinching = manual || !!phy._setDownActive;
                 hoist.winchSpeed = keepWinching ? lineSpeed : dist / Math.max(dt, 1e-4);
                 if (!keepWinching) {
-                    phy.autoHoistActive = false;
-                    // Nhấc thử arrived: freeze suspended pose (do not drop).
-                    if (phy._trialLiftActive && !lowering) {
-                        phy._trialLiftActive = false;
-                        if (typeof freezeSuspendedHoist === 'function') freezeSuspendedHoist();
+                    const targetClr = phy._trialLiftActive ? 3.0 : (phy._autoTargetClearanceM || 0);
+                    if (targetClr > 0 && (phy.groundClearance || 0) < targetClr - 0.04) {
+                        phy.hookTarget.y = Math.min(48.0, phy.hookPos.y + Math.max(0.25, targetClr - (phy.groundClearance || 0)));
+                    } else {
+                        phy.autoHoistActive = false;
+                        // Nhấc thử / 10m auto arrived: freeze suspended pose (do not drop).
+                        if ((phy._trialLiftActive || phy._autoTargetClearanceM > 0) && !lowering) {
+                            phy._trialLiftActive = false;
+                            phy._autoTargetClearanceM = 0;
+                            if (typeof freezeSuspendedHoist === 'function') freezeSuspendedHoist();
+                        }
                     }
                 }
             } else {
                 hoist.kin.addScaledVector(to.multiplyScalar(1 / dist), maxStep);
                 hoist.winchSpeed = lineSpeed;
             }
-            // Trial lift stops at exactly 3.0 m clearance (with ease-out settling)
-            if (phy._trialLiftActive && (phy.groundClearance || 0) >= 2.98 && rising) {
+            // Trial lift stops at 3.0 m, or double-click Kéo stops at configured _autoTargetClearanceM (10.0 m)
+            const autoClearanceGoal = phy._trialLiftActive ? 3.0 : (phy._autoTargetClearanceM || 0);
+            if (autoClearanceGoal > 0 && (phy.groundClearance || 0) >= autoClearanceGoal - 0.02 && rising) {
+                const wasTrial = !!phy._trialLiftActive;
                 phy.autoHoistActive = false;
                 phy.hoistSpeed = 0;
                 phy.hookTarget.y = phy.hookPos.y;
                 phy._trialLiftActive = false;
+                phy._autoTargetClearanceM = 0;
                 if (typeof freezeSuspendedHoist === 'function') freezeSuspendedHoist();
                 const st = document.getElementById('sim-status-text');
                 if (st) {
-                    st.textContent = (typeof L === 'function')
-                        ? L('Trial lift complete — Cargo hovering steadily at 3.0 m above ground.',
-                            'Đã hoàn thành nhấc thử — Kiện hàng cách đất 3.0 m và đang giữ treo ổn định.')
-                        : 'Đã hoàn thành nhấc thử — Kiện hàng cách đất 3.0 m và đang giữ treo ổn định.';
+                    st.textContent = wasTrial
+                        ? ((typeof L === 'function')
+                            ? L('Trial lift complete — Cargo hovering steadily at 3.0 m above ground.',
+                                'Đã hoàn thành nhấc thử — Kiện hàng cách đất 3.0 m và đang giữ treo ổn định.')
+                            : 'Đã hoàn thành nhấc thử — Kiện hàng cách đất 3.0 m và đang giữ treo ổn định.')
+                        : ((typeof L === 'function')
+                            ? L(`Auto-hoist complete — Cargo hovering steadily at ${autoClearanceGoal.toFixed(1)} m.`,
+                                `Đã tự động nâng xong — Kiện hàng đạt độ cao ${autoClearanceGoal.toFixed(1)} m và đang giữ treo ổn định.`)
+                            : `Đã tự động nâng xong — Kiện hàng đạt độ cao ${autoClearanceGoal.toFixed(1)} m và đang giữ treo ổn định.`);
                 }
             }
 
@@ -633,9 +671,9 @@
                 }
                 return { bodies: bodies, cables: cables, lugs: null };
             }
-            if (type === 'spreader' || type === 'lifting_beam') {
+            if (type === 'spreader') {
                 const m = memberSpec('main');
-                const yLug = type === 'lifting_beam' ? 0.24 : 0.22;
+                const yLug = 0.22;
                 const selfKg = userBeamKg != null ? userBeamKg : estimateMemberStructuralMassKg('main');
                 add('main', Math.max(45, selfKg + hwShareKg), m.length, 'x', new THREE.Vector3(), ['main']);
                 const dual = (state.hookCount || 1) >= 2;
@@ -643,6 +681,28 @@
                 cables.push({ role: 'upper', index: 0, a: endOf('hook'), b: endOf('body', 'main', m.b, yLug, 0) });
                 [[0, m.a, 0.065], [3, m.a, -0.065], [1, m.b, 0.065], [2, m.b, -0.065]].forEach(pair => {
                     cables.push({ role: 'leg', index: pair[0], a: endOf('body', 'main', pair[1], -yLug, pair[2]), b: endOf('cargo', null, 0, 0, 0, pair[0]) });
+                });
+                return { bodies: bodies, cables: cables, lugs: null };
+            }
+            if (type === 'lifting_beam') {
+                const topMode = state.liftingBeamTopMode || 'bridle2';
+                const bottomMode = state.liftingBeamBottomMode || 'cable';
+                const sp = spanBase();
+                const hb = (typeof RIG !== 'undefined' && RIG.resolveHBeamCorners)
+                    ? RIG.resolveHBeamCorners(sp.spanX, sp.spanZ, state, bottomMode)
+                    : { halfX: sp.spanX * 0.5, halfZ: sp.spanZ * 0.5, outerX: sp.spanX + 0.28, corners: [[sp.spanX * 0.5, sp.spanZ * 0.5, 0], [-sp.spanX * 0.5, sp.spanZ * 0.5, 1], [-sp.spanX * 0.5, -sp.spanZ * 0.5, 2], [sp.spanX * 0.5, -sp.spanZ * 0.5, 3]] };
+                const selfKg = userBeamKg != null ? userBeamKg : estimateMemberStructuralMassKg('main');
+                add('main', Math.max(120, selfKg + hwShareKg), hb.outerX, 'x', new THREE.Vector3(), ['main']);
+                const dual = (state.hookCount || 1) >= 2;
+                if (topMode === 'direct_hook') {
+                    cables.push({ role: 'upper', index: 0, a: endOf('hook'), b: endOf('body', 'main', 0, 0.30, 0) });
+                } else {
+                    cables.push({ role: 'upper', index: 1, a: dual ? endOf('hook2') : endOf('hook'), b: endOf('body', 'main', hb.halfX, 0.24, 0) });
+                    cables.push({ role: 'upper', index: 0, a: endOf('hook'), b: endOf('body', 'main', -hb.halfX, 0.24, 0) });
+                }
+                const yLow = bottomMode === 'direct' ? STS_TWISTLOCK_FOOT_Y : -0.22;
+                hb.corners.forEach(([cx, cz, idx]) => {
+                    cables.push({ role: 'leg', index: idx, a: endOf('body', 'main', cx, yLow, cz), b: endOf('cargo', null, 0, 0, 0, idx) });
                 });
                 return { bodies: bodies, cables: cables, lugs: null };
             }
@@ -852,7 +912,13 @@
             const legLoad = (phy.cables || []).some(c =>
                 c.role === 'leg' && !cableIsBroken(c) && ((c.tensionT || 0) > 0.12 || (!c.slack && (c._j || 0) > 1e-4))
             );
-            const takingUp = isGrounded && (
+            const loweringNow = !!(
+                (phy.hoistSpeed || 0) < -0.01
+                || phy._setDownActive
+                || (phy.hookTarget && phy.hookPos && phy.hookTarget.y < phy.hookPos.y - 0.02)
+            );
+            const nhomTaut = !!(phy && phy._nhomFreezeSpreader && state.poseLock);
+            const takingUp = !loweringNow && isGrounded && (
                 (phy.hoistSpeed || 0) > 0.015
                 || !!phy.autoHoistActive
                 || legLoad
@@ -910,15 +976,16 @@
                 if (sideXZ.lengthSq() < 1e-6) sideXZ.set(pair.side || 1, 0, 0);
                 sideXZ.normalize();
 
-                // --- Free hang (self-weight only): nearly vertical under the hook ---
-                // Two bars only need a small X separation so they don't occupy one point.
-                // They must NOT be forced out to the cargo end span (that looked like "kênh lên").
+                // --- Free hang (self-weight under gravity): straight down under the hook ---
+                // Upper cables carry the ~450 kg steel bar vertically taut until it touches cargo roof.
                 const freeSep = Math.max(barRad * 2.2, 0.14);
-                const freeHang = master.clone();
-                freeHang.y -= dUpAx;
-                freeHang.addScaledVector(sideXZ, freeSep);
+                const dropUpFree = Math.sqrt(Math.max(0.09, dUpAx * dUpAx - freeSep * freeSep));
+                const freeHang = master.clone().addScaledVector(sideXZ, freeSep);
+                freeHang.y -= (dropUpFree + 0.14);
+                const floorFree = cargoCeilingUnderBeam(freeHang.x, freeHang.z, spec, b);
+                if (!cargoAirborne && freeHang.y < floorFree) freeHang.y = floorFree;
 
-                // --- Load geometry: along hook→lug mid, for when lowers take the cargo ---
+                // --- True 2-link equilibrium under gravity: strictly conserve both upper (r1) and lower (r2) lengths ---
                 const toMid = eMid.clone().sub(master);
                 const dist = Math.max(1e-4, toMid.length());
                 const u = toMid.clone().multiplyScalar(1 / dist);
@@ -927,34 +994,72 @@
                 const L_low = (cLowA && cLowB && cLowA.L0 > 0.25)
                     ? 0.5 * (cLowA.L0 + cLowB.L0)
                     : (spec.lower || 1.5);
-                const dLowAx = Math.sqrt(Math.max(0.04, L_low * L_low - halfZ * halfZ));
-                const fSeries = THREE.MathUtils.clamp((dUpAx + 0.14) / Math.max(0.5, dUpAx + 0.28 + dLowAx), 0.32, 0.72);
-                const maxReach = (legABroken || legBBroken) ? (dUpAx + 0.55) : (dUpAx + 0.14);
-                const dBarLoad = Math.min(maxReach, dist * fSeries);
-                const loadHang = master.clone().addScaledVector(u, dBarLoad);
+                // Lower slings run along the end of the cargo between bar ends and corner lugs (dz ≈ 0.04 m),
+                // NOT across halfZ to the hook centerline (subtracting halfZ² shrank r2 by ~0.35 m and left
+                // lower slings visibly slack in mid-air beneath floating bars).
+                const halfLugZ = lugA.distanceTo(lugB) * 0.5;
+                const dzLow = Math.abs(halfLugZ - halfZ);
+                const dLowAx = Math.sqrt(Math.max(0.04, L_low * L_low - dzLow * dzLow));
+                const r1 = (legABroken || legBBroken) ? (dUpAx + 0.55) : (dUpAx + 0.14);
+                let r2 = dLowAx + 0.14;
+                const distFree = freeHang.distanceTo(eMid);
+                const floorAtLugSide = cargoCeilingUnderBeam(eMid.x, eMid.z, spec, b);
+                const dyRoof = floorAtLugSide - eMid.y;
+                const r2Roof = dLowAx + 0.06;
+                const dxLowRoof = (r2Roof > Math.abs(dyRoof))
+                    ? Math.sqrt(Math.max(0.01, r2Roof * r2Roof - dyRoof * dyRoof))
+                    : 0.05;
+                const distXZ = Math.hypot(eMid.x - master.x, eMid.z - master.z);
+                const roofTethered = eMid.clone().addScaledVector(sideXZ, -Math.min(dxLowRoof, Math.max(0, distXZ - 0.14)));
+                roofTethered.y = cargoCeilingUnderBeam(roofTethered.x, roofTethered.z, spec, b);
+                // Cargo cannot be lifted at a shallow kink before full r1 + r2 length is taken up.
+                b._basketPathReady = !state.poseLock && ((phy.groundClearance || 0) > 0.015 || dist >= r1 + r2 - 0.03);
 
-                let blend = loadBlend;
-                if (cargoAirborne || takingUp || dist >= (dUpAx + dLowAx) * 0.72) {
-                    blend = 1.0;
-                } else if (isGrounded && loadBlend < 0.35) {
-                    const pinApprox = freeHang.clone().addScaledVector(sideXZ, 0);
-                    const reachA = pinApprox.distanceTo(lugA);
-                    const reachB = pinApprox.distanceTo(lugB);
-                    const over = Math.max(0, reachA - L_low, reachB - L_low);
-                    if (over > 0.03) {
-                        blend = Math.max(blend, THREE.MathUtils.clamp(over / Math.max(0.35, L_low), 0, 0.85));
+                if (!cargoAirborne && distFree <= r2 + 0.02) {
+                    // Lower sling is long enough to remain slack at plumb hang → gravity holds bar vertically under hook.
+                    b.x.copy(freeHang);
+                } else if (cargoAirborne || dist >= r1 + r2 - 1e-4) {
+                    const maxReach = (legABroken || legBBroken) ? (dUpAx + 0.55) : r1;
+                    b.x.copy(master).addScaledVector(u, Math.min(maxReach, dist));
+                } else if (dist > Math.abs(r1 - r2) + 1e-4) {
+                    // Gravity pulls steel bar to lower circle intersection so upper (r1) & lower (r2) NEVER stretch.
+                    const down = new THREE.Vector3(0, -1, 0);
+                    const vDown = down.clone().addScaledVector(u, -down.dot(u));
+                    if (vDown.lengthSq() > 1e-6) vDown.normalize();
+                    else vDown.copy(sideXZ);
+                    const solveLowerCircle = (r2Val) => {
+                        const a = (r1 * r1 - r2Val * r2Val + dist * dist) / (2 * dist);
+                        const h = Math.sqrt(Math.max(0, r1 * r1 - a * a));
+                        return master.clone().addScaledVector(u, a).addScaledVector(vDown, h);
+                    };
+                    let pInt = solveLowerCircle(r2);
+                    // Refine padeye projection cos between upper axis (master - pInt) and lower leg (pInt - eMid)
+                    const upDir = master.clone().sub(pInt);
+                    const lowDir = pInt.clone().sub(eMid);
+                    if (upDir.lengthSq() > 1e-6 && lowDir.lengthSq() > 1e-6) {
+                        const alignCos = THREE.MathUtils.clamp(upDir.normalize().dot(lowDir.normalize()), 0.25, 1.0);
+                        r2 = dLowAx + 0.14 * alignCos;
+                        if (dist > Math.abs(r1 - r2) + 1e-4 && dist < r1 + r2 - 1e-4) {
+                            pInt = solveLowerCircle(r2);
+                        }
                     }
+                    const floorInt = cargoCeilingUnderBeam(pInt.x, pInt.z, spec, b);
+                    if (!cargoAirborne && pInt.y < floorInt) {
+                        // Bar has landed on cargo roof: lower cable tethers bar at roofTethered (≤ r2 from lug),
+                        // so bar never slides to cargo center or off cargo ends, and upper cable drapes slack under gravity.
+                        b.x.copy(roofTethered.distanceTo(master) <= r1 + 0.02 ? roofTethered : pInt);
+                    } else {
+                        b.x.copy(pInt);
+                    }
+                } else {
+                    // Very low hook (dist <= |r1 - r2|): keep bar on roof within lower cable radius r2 of lug.
+                    b.x.copy(roofTethered);
                 }
-                b.x.copy(freeHang).lerp(loadHang, blend);
 
-                // Seat on TRUE cargo roof ONLY when grounded/unloaded; when airborne on intact legs,
-                // keep the bar strictly collinear on the master -> eMid tension line!
+                // Seat on TRUE cargo roof when grounded so steel bar rests heavily on cargo lid.
                 const floorY = cargoCeilingUnderBeam(b.x.x, b.x.z, spec, b);
                 if (!cargoAirborne || (legABroken && legBBroken)) {
                     if (b.x.y < floorY) b.x.y = floorY;
-                    if (blend < 0.25 && freeHang.y <= floorY + 0.05) {
-                        b.x.y = floorY;
-                    }
                 }
                 const shell = cargoShellTopRaw(b.x.x, b.x.z, spec);
                 b.isRestingOnCargo = !cargoAirborne && ((b.x.y - beamCargoContactPad(b)) <= shell + 0.04);

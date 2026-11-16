@@ -117,9 +117,11 @@
                     const stsDirect = stsMode && (typeof isStsDirectAttach === 'function'
                         ? isStsDirectAttach()
                         : (state.stsAttachMode || 'direct') !== 'cable');
-                    // STS headblock: no visible upper bridle from a hook — falls are inside the trolley
-                    if (stsMode && c.role === 'upper') return;
-                    if (stsDirect && c.role === 'leg') return;
+                    // STS headblock / H-Beam direct modes hide virtual link segments
+                    const lbDirectTop = state.beamType === 'lifting_beam' && state.liftingBeamTopMode === 'direct_hook';
+                    const lbDirectBot = state.beamType === 'lifting_beam' && state.liftingBeamBottomMode === 'direct';
+                    if ((stsMode || lbDirectTop) && c.role === 'upper') return;
+                    if ((stsDirect || lbDirectBot) && c.role === 'leg') return;
                     const A = attachWorld(c.a);
                     const B = attachWorld(c.b);
                     const role = c.role === 'leg' ? 'leg' : (c.role === 'upper' ? 'upper' : (c.role === 'extra' ? 'extra' : 'hanger'));
@@ -232,11 +234,7 @@
                 updateCargoGroundAngleIndicator3D();
             }
 
-            // Sync timber dunnage blocks orientation under cargo
-            if (dunnageGroup && phy.cargoPos) {
-                dunnageGroup.position.set(phy.cargoPos.x, 0, phy.cargoPos.z);
-                dunnageGroup.rotation.y = THREE.MathUtils.degToRad(state.cargoYawDeg || 0);
-            }
+            // Dunnage stays fixed at its quay staging datum so shifted cargo interacts / tilts off it naturally
 
             hwWorldPos.forEach((wPos, i) => {
                 const arrow = forceArrows[i];
@@ -558,8 +556,7 @@
                         const midPt = hwWorldPos[i].clone().lerp(anchor, 0.42);
                         projectToScreen(midPt, lbl);
                         if (state.gear.legs[i].broken) {
-                            lbl.textContent = `LP${i + 1}: ĐỨT`;
-                            lbl.className = 'label-3d text-red-400 border-red-500/60 font-bold';
+                            _setElemTextCached(lbl, `LP${i + 1}: ĐỨT`, 'label-3d text-red-400 border-red-500/60 font-bold');
                         } else {
                             const parts = [`LP${i + 1}`];
                             if (dOpt.showForces) {
@@ -576,12 +573,10 @@
                                 const turnStr = Math.abs(turn) > 0.01 ? ` (${turn > 0 ? '+' : ''}${turn.toFixed(2)}m)` : '';
                                 parts.push(`L: ${state.slingLength.toFixed(1)}m${turnStr}`);
                             }
-                            lbl.textContent = parts.join(' · ');
-                            lbl.className = `label-3d ${colorClass}`;
+                            _setElemTextCached(lbl, parts.join(' · '), `label-3d ${colorClass}`);
                         }
-                        lbl.style.opacity = '1';
                     } else {
-                        lbl.style.opacity = '0';
+                        _setElemPosCached(lbl, 0, 0, '0');
                     }
                 }
             }
@@ -605,10 +600,9 @@
                         parts.push(`α: ${vertAng.toFixed(0)}°`);
                     }
                     parts.push(`Y: ${phy.hookPos.y.toFixed(1)}m`);
-                    lblHook.textContent = parts.join(' | ');
-                    lblHook.style.opacity = '1';
+                    _setElemTextCached(lblHook, parts.join(' | '), null);
                 } else {
-                    lblHook.style.opacity = '0';
+                    _setElemPosCached(lblHook, 0, 0, '0');
                 }
             }
 
@@ -627,10 +621,9 @@
                     );
                     projectToScreen(groundPos, lblGround);
                     const sign = (yawDeg > 0.05) ? '+' : (yawDeg < -0.05 ? '' : '');
-                    lblGround.textContent = `${sign}${yawDeg.toFixed(1)}°`;
-                    lblGround.style.opacity = '1';
+                    _setElemTextCached(lblGround, `${sign}${yawDeg.toFixed(1)}°`, null);
                 } else {
-                    lblGround.style.opacity = '0';
+                    _setElemPosCached(lblGround, 0, 0, '0');
                 }
             }
 
@@ -978,6 +971,9 @@
                 selMat.addEventListener('change', e => {
                     state.craneMatPresetId = e.target.value;
                     if (groundPressureEngine) groundPressureEngine.setMatPreset(e.target.value);
+                    if (typeof GFX !== 'undefined' && GFX.syncCraneOutriggerMats3D) {
+                        GFX.syncCraneOutriggerMats3D({ THREE, craneVehicleGroup, presetId: state.craneMatPresetId, MATS });
+                    }
                     if (typeof updateSceneAndTelemetry === 'function') updateSceneAndTelemetry();
                 });
             }
@@ -1014,23 +1010,39 @@
             }
         }
 
+        const _projTmpVec = new THREE.Vector3();
+        function _setElemPosCached(domElem, xPx, yPx, opacityStr) {
+            if (!domElem) return;
+            if (domElem._cOpacity !== opacityStr) {
+                domElem.style.opacity = opacityStr;
+                domElem._cOpacity = opacityStr;
+            }
+            if (opacityStr === '0') return;
+            const lx = `${Math.round(xPx * 2) * 0.5}px`;
+            const ty = `${Math.round(yPx * 2) * 0.5}px`;
+            if (domElem._cLeft !== lx) { domElem.style.left = lx; domElem._cLeft = lx; }
+            if (domElem._cTop !== ty) { domElem.style.top = ty; domElem._cTop = ty; }
+        }
+        function _setElemTextCached(domElem, text, className) {
+            if (!domElem) return;
+            if (text != null && domElem._cText !== text) { domElem.textContent = text; domElem._cText = text; }
+            if (className != null && domElem._cClass !== className) { domElem.className = className; domElem._cClass = className; }
+        }
         function projectToScreen(worldPos, domElem) {
-            const v = worldPos.clone().project(camera);
+            const v = _projTmpVec.copy(worldPos).project(camera);
             if (v.z > 1) {
-                domElem.style.opacity = '0';
+                _setElemPosCached(domElem, 0, 0, '0');
                 return;
             }
             const x = (v.x * 0.5 + 0.5) * window.innerWidth;
             const y = (-(v.y * 0.5) + 0.5) * window.innerHeight;
-            domElem.style.left = `${x}px`;
-            domElem.style.top = `${y}px`;
-            domElem.style.opacity = '1';
+            _setElemPosCached(domElem, x, y, '1');
         }
 
         function projectToScreenClamped(worldPos, domElem, topMin = 50, bottomMargin = 85) {
-            const v = worldPos.clone().project(camera);
+            const v = _projTmpVec.copy(worldPos).project(camera);
             if (v.z > 1) {
-                domElem.style.opacity = '0';
+                _setElemPosCached(domElem, 0, 0, '0');
                 return false;
             }
             let x = (v.x * 0.5 + 0.5) * window.innerWidth;
@@ -1049,9 +1061,7 @@
                 isClamped = true;
             }
 
-            domElem.style.left = `${x}px`;
-            domElem.style.top = `${y}px`;
-            domElem.style.opacity = '1';
+            _setElemPosCached(domElem, x, y, '1');
             return isClamped;
         }
 

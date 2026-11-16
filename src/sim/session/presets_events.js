@@ -564,6 +564,9 @@
         // language switch never relies on browser auto-translation.
         Object.assign(UI_EN, {
             '📌 Đã lưu mốc ban đầu': '📌 Initial baseline saved',
+            '📌 Đã lưu mốc lơ lửng': '📌 Saved suspended pose',
+            '🔄 Đã khôi phục mốc ban đầu': '🔄 Restored initial baseline',
+            '🔄 Đã khôi phục mốc lơ lửng': '🔄 Restored suspended pose',
             '👁️ Hiển Thị': '👁️ Display',
             '✨ Đồ Họa': '✨ Graphics',
             '📋 Hồ Sơ & Chuẩn': '📋 Plans & Standards',
@@ -1034,7 +1037,7 @@
             '1. Góc nhìn cố định': '1. Fixed viewpoints',
             'Chọn góc cố định sẽ chuyển sang chế độ': 'Selecting a fixed viewpoint switches to',
             'trên thanh Cam dưới.': 'the matching camera mode below.',
-            '2. Điểm focus (khi Auto / Góc)': '2. Focus target (Auto / Angle modes)',
+            '2. Điểm focus (khi Follow / Góc)': '2. Focus target (Follow / Angle modes)',
             'Tự động (kiện + móc)': 'Automatic (cargo + hook)',
             'Trọng tâm CoG': 'Centre of gravity (CoG)',
             'Tâm kiện': 'Cargo centre',
@@ -1046,6 +1049,7 @@
             'Tai cẩu LP4': 'Pad-eye LP4',
             'Tọa độ tùy chỉnh…': 'Custom coordinates…',
             '= cinematic tự xoay ·': '= cinematic auto-rotation ·',
+            '= bám theo kiện hàng (giữ nguyên góc & zoom) ·': '= track cargo motion (keep angle & zoom) ·',
             '= đứng yên ·': '= stationary ·',
             '= mỗi lần nhấn sang góc tiếp theo (12 góc quanh kiện) ·': '= each click advances to the next of 12 views around the cargo ·',
             '= flycam chuyên nghiệp, xoay liên tục quanh kiện.\n                Điều khiển nhanh ở hàng': '= professional flycam, continuously orbiting the cargo.\n                Quick controls are in the row',
@@ -1077,6 +1081,10 @@
             '🔋 Performance (Máy yếu)': '🔋 Performance (low-end device)',
             'Tải file HDRI ngoài:': 'Load external HDRI:',
             '🌆 Chọn File HDRI': '🌆 Choose HDRI file',
+            'Cân chỉnh khung hình (Game):': 'Display tone (Game):',
+            '↺ Đặt lại': '↺ Reset',
+            'Độ sáng (Brightness):': 'Brightness:',
+            'Độ tương phản (Contrast):': 'Contrast:',
             '📋 Hồ Sơ Kỹ Thuật & Thư Viện': '📋 Engineering documents and library',
             'Kiểm Định An Toàn (ASME/ISO)': 'Safety checks (ASME / ISO)',
             'Hồ Sơ Lift Plan ASME P30.1': 'ASME P30.1 lift plan',
@@ -1118,7 +1126,8 @@
             'Đạt chuẩn': 'Within limits',
             'Bật âm thanh mô phỏng (M)': 'Enable simulation audio (M)',
             'Tắt âm thanh mô phỏng (M)': 'Mute simulation audio (M)',
-            'Auto — đưa kiện về góc cinematic rule-of-thirds (1/3), dễ nhìn nhất': 'Auto — frame the cargo using the cinematic rule of thirds',
+            'Auto — đưa kiện về góc cinematic rule-of-thirds (1/3), dễ nhìn nhất': 'Follow — track cargo motion smoothly (keeps current angle & zoom)',
+            'Follow — bám theo kiện hàng di chuyển (giữ nguyên góc & zoom)': 'Follow — track cargo motion smoothly (keeps current angle & zoom)',
             'Giữ — camera đứng yên tại góc hiện tại': 'Hold — keep the camera at its current angle',
             'Góc — mỗi lần nhấn chuyển 1/12 góc cinematic quanh kiện (chiều kim đồng hồ)': 'Angle — each click advances clockwise to the next of 12 cinematic views',
             'Flycam — giả lập góc quay bay chuyên nghiệp, xoay liên tục quanh kiện': 'Flycam — professional aerial view orbiting continuously around the cargo',
@@ -1449,6 +1458,9 @@
                     const sr = window.sceneRenderer || sceneRenderer;
                     if (sr) sr.setQuality(e.target.value);
                 });
+            }
+            if (typeof GFX !== 'undefined' && GFX.bindGraphicsToneControls) {
+                GFX.bindGraphicsToneControls(() => window.sceneRenderer || sceneRenderer);
             }
             const btnUploadHdri = document.getElementById('btn-upload-hdri');
             const inpHdri = document.getElementById('inp-custom-hdri');
@@ -2145,6 +2157,16 @@
                     }
                     // Prefer default β=50° lengths for the new topology (even metres)
                     if (typeof applyPullAnglePreset === 'function') applyPullAnglePreset(50);
+                    if (state.beamType !== 'none' && state.lowerSlingLength == null) {
+                        const specNew = (typeof getRigSpec === 'function') ? getRigSpec() : null;
+                        const recL = (specNew && specNew.recLower) || 2.0;
+                        state.lowerSlingLength = recL;
+                        if (state.gear && state.gear.legs) {
+                            state.gear.legs.forEach(l => {
+                                if (l) { l.lengthM = recL; l.userSet = true; }
+                            });
+                        }
+                    }
 
                     rebuildSpreaderVisuals();
                     // Always re-seat level — inheriting a mid-air tilt into a new cable graph
@@ -2332,19 +2354,28 @@
                         : phy.hoistSpeed;
                     return;
                 }
-                if (phy._trialLiftActive) {
+                if (phy._trialLiftActive || phy._autoTargetClearanceM > 0) {
                     phy.hoistSpeed = 0;
                     return;
                 }
                 // Hold position — do NOT unload / drop a suspended load.
                 freezeSuspendedHoist();
             };
+            btnUp.addEventListener('dblclick', e => {
+                e.preventDefault();
+                hoistHoldArmed = false;
+                if (typeof beginAutoHoistToClearance === 'function') {
+                    beginAutoHoistToClearance(10.0);
+                }
+            });
             btnUp.addEventListener('pointerdown', e => {
                 e.preventDefault();
                 try { btnUp.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
                 hoistHoldArmed = true;
                 phy._setDownActive = false;
+                phy._setDownFullSlack = false;
                 phy._trialLiftActive = false;
+                phy._autoTargetClearanceM = 0;
                 phy._nhomFreezeSpreader = false;
                 // Keep Nhớm snug L0 into the lift, but immediately relieve any pin span
                 // that already exceeds L0 (otherwise the first winch frame snaps Zone-3).
@@ -2431,9 +2462,11 @@
                 try { btnDown.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
                 hoistHoldArmed = true;
                 phy._trialLiftActive = false;
+                phy._autoTargetClearanceM = 0;
                 phy._nhomFreezeSpreader = false;
                 // Operator Hạ cancels an in-progress Hạ đất auto sequence
                 phy._setDownActive = false;
+                phy._setDownFullSlack = false;
                 const clearance = Math.max(
                     phy.groundClearance || 0,
                     (typeof cargoAabbClearance === 'function') ? cargoAabbClearance() : 0
@@ -2453,10 +2486,7 @@
                     phy._nhomFreezeSpreader = false;
                     state.holdCableLength = false;
                     state.heldCableL0 = null;
-                    state.poseLock = true;
                     phy.groundClearance = 0;
-                    if (typeof applyLockedPose === 'function') applyLockedPose();
-                    if (typeof syncPoseLockUI === 'function') syncPoseLockUI();
                     phy.autoHoistActive = false;
                     phy.hookTarget.x = phy.hookPos.x;
                     phy.hookTarget.z = phy.hookPos.z;
@@ -2497,6 +2527,15 @@
                 phy.hoistSpeed = (typeof hoistHoldSpeed === 'function')
                     ? hoistHoldSpeed(-1)
                     : -0.22 * (typeof hoistSpeedScaleFactor === 'function' ? hoistSpeedScaleFactor() : (state.hoistSpeedScale || 1));
+            });
+            btnDown.addEventListener('dblclick', e => {
+                e.preventDefault();
+                hoistHoldArmed = false;
+                phy._setDownFullSlack = true;
+                phy._setDownSlackSteps = 0;
+                if (typeof beginSmoothSetDown === 'function') {
+                    beginSmoothSetDown();
+                }
             });
             btnDown.addEventListener('pointerup', stopHoistHold);
             btnDown.addEventListener('pointercancel', stopHoistHold);
@@ -2591,11 +2630,10 @@
                 }
                 state.holdCableLength = false;
                 state.heldCableL0 = null;
-                // Drop per-cable Nhớm userSet locks — otherwise L0 stays glued to the
-                // seated span and the first centimetre of hoist overstretches to MBL.
+                // Drop only Nhớm auto-snug locks — preserve manual user-entered cable lengths!
                 if (state.gear) {
                     const unlock = (rec) => {
-                        if (!rec || !rec.userSet) return;
+                        if (!rec || !rec.userSet || rec._manualLengthOverride) return;
                         rec.userSet = false;
                         rec.lengthM = null;
                     };
@@ -2672,14 +2710,18 @@
             holdBtn('btn-slew-right', () => { phy.slewRate = 32; }, () => { if (phy.slewRate > 0) phy.slewRate = 0; });
 
             document.getElementById('btn-rec').addEventListener('click', () => {
-                replay.recording = true;
-                replay.playing = false;
-                replay.frames = [];
-                replay.t0 = performance.now() / 1000;
-                document.getElementById('lbl-replay').textContent = 'REC 0.0s';
+                if (typeof RIG !== 'undefined' && RIG.startReplayRecording) {
+                    RIG.startReplayRecording({ replay, state, phy, activeCargoVisual });
+                } else {
+                    replay.recording = true;
+                    replay.playing = false;
+                    replay.frames = [];
+                    replay.t0 = performance.now() / 1000;
+                }
+                document.getElementById('lbl-replay').textContent = 'REC 0.0s/60s';
                 document.getElementById('btn-rec')?.classList.add('ring-2', 'ring-rose-400', 'animate-pulse');
                 document.getElementById('btn-replay')?.classList.remove('ring-2', 'ring-sky-400');
-                document.getElementById('sim-status-text').textContent = '⏺ Đang ghi lại...';
+                document.getElementById('sim-status-text').textContent = '⏺ Đang ghi toàn bộ trạng thái (tối đa 60 giây)...';
             });
             document.getElementById('btn-replay').addEventListener('click', () => {
                 document.getElementById('btn-rec')?.classList.remove('ring-2', 'ring-rose-400', 'animate-pulse');
@@ -2692,15 +2734,26 @@
                 replay.cursor = 0;
                 phy.slewRate = 0;
                 phy.hoistSpeed = 0;
+                phy.autoHoistActive = false;
+                phy._setDownActive = false;
+                phy._trialLiftActive = false;
+                phy._autoTargetClearanceM = 0;
+                if (typeof RIG !== 'undefined' && RIG.applyReplayFrame) {
+                    RIG.applyReplayFrame({ THREE, replay, state, phy, activeCargoVisual, a: replay.frames[0], b: replay.frames[0], u: 0 });
+                }
                 document.getElementById('btn-replay')?.classList.add('ring-2', 'ring-sky-400');
-                document.getElementById('sim-status-text').textContent = '▶ Đang xem lại...';
+                document.getElementById('sim-status-text').textContent = '▶ Đang quay lại quá khứ toàn bộ tình huống đã ghi...';
             });
             document.getElementById('btn-replay-stop').addEventListener('click', () => {
+                if (replay.recording && typeof RIG !== 'undefined' && RIG.captureReplayFrame) {
+                    RIG.captureReplayFrame({ replay, state, phy, activeCargoVisual, force: true });
+                }
                 replay.recording = false;
                 replay.playing = false;
+                if (phy?.hookPos && phy?.hookTarget) phy.hookTarget.copy(phy.hookPos);
                 document.getElementById('btn-rec')?.classList.remove('ring-2', 'ring-rose-400', 'animate-pulse');
                 document.getElementById('btn-replay')?.classList.remove('ring-2', 'ring-sky-400');
-                document.getElementById('lbl-replay').textContent = 'Đã dừng';
+                document.getElementById('lbl-replay').textContent = replay.frames.length ? `Đã dừng (${replay.frames[replay.frames.length - 1].t.toFixed(1)}s)` : 'Đã dừng';
             });
 
             document.querySelectorAll('#left-tabs button').forEach(btn => {
@@ -2770,6 +2823,7 @@
                 setChk('chk-disp-vectors', dOpt.showVectors);
                 setChk('chk-disp-cad', dOpt.showCADEdges);
                 setChk('chk-disp-hud', dOpt.showHUD);
+                setChk('chk-disp-ruler', dOpt.showRuler);
 
                 // Backward-compatibility state sync
                 state.showVectors = Boolean(dOpt.showVectors);
@@ -2957,6 +3011,7 @@
             bindChk('chk-disp-vectors', 'showVectors');
             bindChk('chk-disp-cad', 'showCADEdges');
             bindChk('chk-disp-hud', 'showHUD');
+            bindChk('chk-disp-ruler', 'showRuler');
 
             // Top toolbar buttons
             document.getElementById('btn-toggle-cad-edges')?.addEventListener('click', () => {
@@ -3254,7 +3309,7 @@
                     if (userManual) {
                         lblCamFollow.textContent = state.lang === 'en' ? 'Mode: Manual' : 'Chế độ: Thủ công';
                     } else if (behavior === 'cinema') {
-                        lblCamFollow.textContent = state.lang === 'en' ? 'Mode: Auto' : 'Chế độ: Auto';
+                        lblCamFollow.textContent = state.lang === 'en' ? 'Mode: Follow' : 'Chế độ: Follow';
                     } else if (behavior === 'angleCycle') {
                         lblCamFollow.textContent = state.lang === 'en'
                             ? `Mode: Angle ${angleN}/12`
@@ -3290,12 +3345,7 @@
 
             if (btnCamCinema) {
                 btnCamCinema.addEventListener('click', () => {
-                    // Always re-run hero cinematic framing (rule of thirds) — even if already on Auto
-                    if (typeof window.frameCinematicHeroShot === 'function') {
-                        window.frameCinematicHeroShot({ duration: 0.95, force: true });
-                    } else {
-                        applyCamBehavior('cinema');
-                    }
+                    applyCamBehavior('cinema');
                 });
             }
             if (btnCamLock) btnCamLock.addEventListener('click', () => applyCamBehavior('lock'));
@@ -3357,6 +3407,7 @@
             // ENGINEERING CONTROLS: TIMBER DUNNAGE, CARGO SOIL, WIND & BOOM
             // -------------------------------------------------------------
             function updateSiteEngineeringCalculations() {
+                if (typeof rebuildDunnageBlocks === 'function') rebuildDunnageBlocks();
                 const grossTon = (state.W_cargo || 22.0) + (state.W_rig || 1.23);
                 const dunnageQty = parseInt(document.getElementById('sel-dunnage-qty')?.value || '2', 10) || 2;
                 const sectionStr = document.getElementById('sel-dunnage-section')?.value || '200x200';

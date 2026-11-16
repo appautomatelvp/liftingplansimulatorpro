@@ -3,35 +3,57 @@
  * Physics loads live in dynamics.js; this is visual only.
  */
         const WEATHER_RAIN_MAX = 3200;
-        const WEATHER_WIND_MAX = 22; // sparse smoke wisps — keep cargo readable
-        const WEATHER_BOLT_MAX = 48; // segments per flash bolt
-        const WEATHER_FX_VERSION = 4; // bump to force rebuild when FX design changes
+        const WEATHER_WIND_MAX = 26; // volumetric drifting cumulus puffs near wind zone
+        const WEATHER_FX_VERSION = 6; // bump to force rebuild when FX design changes
 
         function makeWindSmokeTexture() {
-            const size = 128;
+            const size = 256;
             const c = document.createElement('canvas');
             c.width = size;
             c.height = size;
             const g = c.getContext('2d');
-            const grd = g.createRadialGradient(size * 0.5, size * 0.5, 0, size * 0.5, size * 0.5, size * 0.5);
-            // Soft elongated puff: bright core → transparent edge (smoke / cloud)
-            grd.addColorStop(0.0, 'rgba(186, 230, 253, 0.55)');
-            grd.addColorStop(0.25, 'rgba(125, 211, 252, 0.28)');
-            grd.addColorStop(0.55, 'rgba(56, 189, 248, 0.10)');
-            grd.addColorStop(1.0, 'rgba(14, 165, 233, 0)');
-            g.fillStyle = grd;
+            const half = size * 0.5;
+            g.clearRect(0, 0, size, size);
+
+            // Multi-lobed organic cumulus cluster drawn at full opacity (no 8-bit banding!)
+            // Keep all lobes well inside 0.34*size so outer circular fade hits exact zero before border.
+            const lobes = [
+                [0.0, 0.0, 0.25, 0.95],
+                [-0.14, 0.03, 0.18, 0.85],
+                [0.14, 0.02, 0.19, 0.85],
+                [-0.06, -0.10, 0.16, 0.82],
+                [0.07, -0.09, 0.17, 0.82],
+                [-0.19, 0.06, 0.12, 0.65],
+                [0.19, 0.05, 0.13, 0.65]
+            ];
+            for (const [ox, oy, rad, alpha] of lobes) {
+                const cx = half + ox * size;
+                const cy = half + oy * size;
+                const r = rad * size;
+                const grd = g.createRadialGradient(cx, cy, r * 0.08, cx, cy, r);
+                grd.addColorStop(0.0, `rgba(255, 255, 255, ${alpha})`);
+                grd.addColorStop(0.45, `rgba(248, 250, 252, ${alpha * 0.55})`);
+                grd.addColorStop(1.0, 'rgba(241, 245, 249, 0.0)');
+                g.fillStyle = grd;
+                g.beginPath();
+                g.arc(cx, cy, r, 0, Math.PI * 2);
+                g.fill();
+            }
+            // Enforce smooth radial zero-edge boundary strictly inside 0.43 * size (zero square border!)
+            g.globalCompositeOperation = 'destination-in';
+            const mask = g.createRadialGradient(half, half, size * 0.14, half, half, size * 0.43);
+            mask.addColorStop(0.0, 'rgba(255, 255, 255, 1.0)');
+            mask.addColorStop(0.65, 'rgba(255, 255, 255, 0.65)');
+            mask.addColorStop(1.0, 'rgba(255, 255, 255, 0.0)');
+            g.fillStyle = mask;
             g.fillRect(0, 0, size, size);
-            // Second softer blob offset for cloudy irregularity
-            const grd2 = g.createRadialGradient(size * 0.38, size * 0.42, 0, size * 0.38, size * 0.42, size * 0.42);
-            grd2.addColorStop(0.0, 'rgba(224, 242, 254, 0.22)');
-            grd2.addColorStop(1.0, 'rgba(224, 242, 254, 0)');
-            g.fillStyle = grd2;
-            g.fillRect(0, 0, size, size);
+            g.globalCompositeOperation = 'source-over';
             const tex = new THREE.CanvasTexture(c);
             tex.needsUpdate = true;
             return tex;
         }
 
+        const WEATHER_BOLT_MAX = 48; // segments per flash bolt
         function ensureWeatherFx() {
             if (phy._weatherFx && phy._weatherFx.root && phy._weatherFx.root.parent
                 && phy._weatherFx.version === WEATHER_FX_VERSION && phy._weatherFx.windSmoke) {
@@ -74,25 +96,28 @@
             for (let i = 0; i < WEATHER_WIND_MAX; i++) {
                 const mat = new THREE.SpriteMaterial({
                     map: smokeTex,
-                    color: 0xbae6fd,
+                    color: 0xffffff,
                     transparent: true,
                     opacity: 0,
                     depthWrite: false,
-                    fog: false,
+                    alphaTest: 0.003,
+                    fog: true,
+                    toneMapped: true,
                     blending: THREE.NormalBlending
                 });
                 const spr = new THREE.Sprite(mat);
                 spr.visible = false;
-                spr.scale.set(4, 2.2, 1);
+                spr.scale.set(2.4, 1.3, 1);
                 windSmoke.add(spr);
                 windWisps.push({
                     spr,
                     x: 0, y: 0, z: 0,
                     vx: 0, vy: 0, vz: 0,
                     age: 0,
-                    life: 4,
-                    scale: 3,
-                    stretch: 1.6,
+                    life: 3.4,
+                    scale: 2.2,
+                    stretch: 1.8,
+                    rot: (Math.random() - 0.5) * 0.25,
                     phase: Math.random() * Math.PI * 2
                 });
             }
@@ -249,9 +274,10 @@
             w.vy = 0.2 + Math.random() * 0.4;
             w.vz = dz * spd + (Math.random() - 0.5) * 0.25;
             w.age = 0;
-            w.life = 2.8 + Math.random() * 3.2;
-            w.scale = 1.8 + Math.random() * 2.0; // smaller puffs
-            w.stretch = 1.5 + Math.random() * 0.9;
+            w.life = 3.2 + Math.random() * 2.8;
+            w.scale = 1.6 + Math.random() * 1.6; // organic drifting clouds around wind corridor
+            w.stretch = 1.65 + Math.random() * 0.7;
+            w.rot = (Math.random() - 0.5) * 0.25;
             w.phase = Math.random() * Math.PI * 2;
             w.spr.visible = true;
             w.spr.material.opacity = 0;
@@ -442,9 +468,7 @@
                     if (phy._weatherFx.flashLight) phy._weatherFx.flashLight.intensity = 0;
                     if (phy._weatherFx.boltMat) phy._weatherFx.boltMat.opacity = 0;
                     if (phy._weatherFx.windWisps) {
-                        for (const w of phy._weatherFx.windWisps) {
-                            if (w.spr) w.spr.visible = false;
-                        }
+                        for (const w of phy._weatherFx.windWisps) if (w.spr) w.spr.visible = false;
                     }
                 }
                 return;
@@ -516,35 +540,35 @@
                 if (w && w.spr) w.spr.visible = false;
             }
             fx.windCount = wantWind;
-            const peakOp = THREE.MathUtils.clamp(0.10 + windSpd / 50, 0.10, 0.22);
-            const minSmokeY = windAnchor.y - 1.2; // don't drift down over the cargo face
+            const peakOp = THREE.MathUtils.clamp(0.18 + windSpd / 75, 0.18, 0.34);
+            const minSmokeY = windAnchor.y - 0.9;
+            const cloudTint = (scene && scene.fog && scene.fog.color)
+                ? scene.fog.color.clone().lerp(new THREE.Color(0xffffff), 0.58)
+                : new THREE.Color(0xf8fafc);
             for (let i = 0; i < fx.windCount; i++) {
                 const w = fx.windWisps[i];
                 if (!w) continue;
                 w.age += step;
-                // Slow swirl / bob so clouds feel alive, not rigid
-                const bob = Math.sin(w.age * 0.7 + w.phase) * 0.2;
-                const sway = Math.sin(w.age * 0.45 + w.phase * 1.3) * 0.3;
+                const bob = Math.sin(w.age * 0.8 + w.phase) * 0.16;
+                const sway = Math.sin(w.age * 0.5 + w.phase * 1.3) * 0.22;
                 w.x += w.vx * step + sway * step;
                 w.y += (w.vy + bob * 0.12) * step;
                 w.z += w.vz * step;
                 if (w.y < minSmokeY) w.y = minSmokeY + Math.random() * 0.4;
-                // Billow: grow while fading out
                 const t = w.age / Math.max(1e-3, w.life);
-                const grow = 1 + t * 1.1;
-                const fade = t < 0.12
-                    ? (t / 0.12)
-                    : (t > 0.55 ? Math.max(0, 1 - (t - 0.55) / 0.45) : 1);
+                const grow = 1 + t * 0.55;
+                const fade = Math.pow(Math.sin(Math.min(1, t) * Math.PI), 1.15);
                 w.spr.position.set(w.x, w.y, w.z);
-                w.spr.scale.set(w.scale * w.stretch * grow, w.scale * grow * 0.72, 1);
+                w.spr.scale.set(w.scale * w.stretch * grow, w.scale * grow * 0.68, 1);
+                w.spr.material.rotation = w.rot + bob * 0.12;
+                w.spr.material.color.copy(cloudTint);
                 w.spr.material.opacity = peakOp * fade;
-                w.spr.material.color.setHex(0xbae6fd);
-                w.spr.visible = fade > 0.02;
+                w.spr.visible = fade > 0.03;
 
                 if (t >= 1
-                    || Math.abs(w.x - windAnchor.x) > 16
-                    || Math.abs(w.z - windAnchor.z) > 16
-                    || w.y > windAnchor.y + 8) {
+                    || Math.abs(w.x - windAnchor.x) > 18
+                    || Math.abs(w.z - windAnchor.z) > 18
+                    || w.y > windAnchor.y + 8.5) {
                     seedWindWisp(fx, i, windAnchor, windLive);
                 }
             }

@@ -114,24 +114,43 @@
                 }
             };
 
+            const CableDynClass = (typeof XPBDCableDynamics !== 'undefined')
+                ? XPBDCableDynamics
+                : ((typeof RIG !== 'undefined' && RIG.CableDynamicsXPBD) ? RIG.CableDynamicsXPBD : null);
+            if (!CableDynClass) {
+                return (typeof fitPathToLength === 'function')
+                    ? fitPathToLength(A, B, L, 20, pathMeta)
+                    : [A.clone(), B.clone()];
+            }
             const solver = slingObj.ropeSim;
-            if (!(solver instanceof XPBDCableDynamics)
+            if (!(solver instanceof CableDynClass)
                 || solver.segments !== N
                 || solver.material !== normalizedMaterial
                 || slingObj._ropeSimCargoKey !== cargoKey
                 || Math.abs(solver.lengthM - L) > 0.25 * L + 0.1
                 || solver.positions[0]?.distanceTo(A) > 1.2
                 || solver.positions[N]?.distanceTo(B) > 1.2) {
-                slingObj.ropeSim = new XPBDCableDynamics({ lengthM: L, diameterMm: diameterMm || 16, material: normalizedMaterial, segments: N });
+                slingObj.ropeSim = new CableDynClass({ lengthM: L, diameterMm: diameterMm || 16, material: normalizedMaterial, segments: N });
                 slingObj.ropeSim.reset(A, B);
                 slingObj._ropeSimCargoKey = cargoKey;
+                slingObj._settledFrames = 0;
+            }
+            const isIdleState = !!(state.poseLock && Math.abs(phy.cargoVel?.y || 0) < 0.01 && Math.abs(phy.cargoVel?.x || 0) < 0.01);
+            const settledCached = (typeof RIG !== 'undefined' && RIG.tryReuseSettledSlackRope)
+                ? RIG.tryReuseSettledSlackRope(slingObj, A, B, L, cargoKey, isIdleState)
+                : null;
+            if (settledCached) {
+                return settledCached;
             }
             const result = slingObj.ropeSim.step(1 / 60, A, B, {
-                iterations: 6,
+                iterations: 14,
                 collide: (point, index, radius) => collide(point, slingObj.ropeSim.previous[index], radius)
             });
             result[0].copy(A);
             result[result.length - 1].copy(B);
+            if (typeof RIG !== 'undefined' && RIG.recordSolvedSlackRope) {
+                return RIG.recordSolvedSlackRope(slingObj, A, B, L, cargoKey, result, isIdleState);
+            }
             return result;
         }
 
@@ -174,9 +193,9 @@
             const isChainNow = look === 'chain';
             const isFlatNow = look === 'web' || look === 'round_sling';
             const diaNowM = Math.max(6, meta.diaMm || (isFlatNow ? 50 : (isChainNow ? 16 : 20))) / 1000;
-            // Collision radius = real half-thickness of what is drawn (chain link outer width / rope radius / strap)
-            const simPad = isChainNow ? 1.1 * diaNowM
-                : (isFlatNow ? 0.008 : diaNowM * 0.5 + 0.003);
+            // Collision radius = real half-thickness of what is drawn (single contact radius, zero gap)
+            const simPad = isChainNow ? 0.85 * diaNowM
+                : (isFlatNow ? 0.006 : diaNowM * 0.5 + 0.001);
             // Bending stiffness: steel wire rope resists tight folds (~8x dia); chain and straps fold freely
             const simStiffR = (isChainNow || isFlatNow) ? 0 : Math.max(0.12, 8 * diaNowM);
             const actualTension = (cable && cable.tensionT) || 0;
@@ -299,10 +318,20 @@
                     : 0;
                 const ageSettle = br ? THREE.MathUtils.clamp(((br.age || 0) - (br.wasTaut ? 0.45 : 0.12)) / 0.7, 0, 1) : 1;
                 const settle = Math.max(settleAmt, ageSettle);
-                rawPts = buildBrokenStubHangPath(pointA, end, renderLen, slingObj.numSegments, settle);
+                rawPts = (typeof RIG !== 'undefined' && RIG.stepBrokenWhipPath)
+                    ? RIG.stepBrokenWhipPath(slingObj, br, meta, pointA, end, workLen, look, state, phy.cargoPos, phy.cargoQuat, supportY(pointA.x, pointA.z))
+                    : null;
+                if (!rawPts) rawPts = buildBrokenStubHangPath(pointA, end, renderLen, slingObj.numSegments, settle);
+                else if (settle > 0.05) {
+                    const hangPts = buildBrokenStubHangPath(pointA, end, renderLen, rawPts.length - 1, settle);
+                    const blend = THREE.MathUtils.clamp((settle - 0.05) / 0.95, 0, 1);
+                    for (let i = 1; i < rawPts.length && i < hangPts.length; i++) {
+                        rawPts[i].lerp(hangPts[i], blend);
+                    }
+                }
                 for (let i = 1; i < rawPts.length - 1; i++) {
                     if (typeof pushPointClear === 'function') {
-                        const cleared = pushPointClear(rawPts[i], 0.028, new Set());
+                        const cleared = pushPointClear(rawPts[i], simPad, new Set());
                         if (cleared.y <= rawPts[i].y + 0.01) rawPts[i].copy(cleared);
                     }
                 }
@@ -313,7 +342,7 @@
                 const PCS = (typeof CAE !== 'undefined' && CAE.PhysicalCableSolver) || null;
                 if (PCS && tensionN > 5000) {
                     try {
-                        const solver = new PCS(workLen, Math.max(8, diaNowM * 1000), isChainNow ? 200 : 110, 24);
+                        const solver = new PCS(Math.max(workLen, chord), Math.max(8, diaNowM * 1000), isChainNow ? 200 : 110, 24);
                         const floorY = (typeof supportY === 'function')
                             ? Math.min(supportY(pointA.x, pointA.z), supportY(end.x, end.z)) - 0.02
                             : -1e3;
@@ -334,6 +363,11 @@
                     rawPts = [pointA.clone(), end.clone()];
                 }
                 if (!rawPts || rawPts.length < 2) rawPts = [pointA.clone(), end.clone()];
+                const sfTaut = activeCargoVisual && activeCargoVisual.userData && activeCargoVisual.userData.trueSurfaceField;
+                const plainBoxTaut = ['container', 'container_20ft_glb', 'iso20hc', 'iso40', 'container_40ft_glb', 'iso40hc', 'iso45hc', 'container10', 'iso53hc', 'reefer', 'reefer20', 'halfheight', 'drybulk', 'crate'].includes(state.cargoType);
+                if (sfTaut && (sfTaut.detectedSphere || !plainBoxTaut) && typeof RIG !== 'undefined' && RIG.conformPathToTrueCargoSurface && meta.role !== 'upper') {
+                    rawPts = RIG.conformPathToTrueCargoSurface(rawPts.map(cargoLocalFromWorld), simPad, state.cargoType, state, sfTaut, true).map(cargoWorldFromLocal);
+                }
             } else if (!meta.broken && renderLen > chord + 0.005) {
                 // Every slack live cable uses the same persistent physical solver,
                 // including pose-locked startup scenes; there is no static spline fallback.
@@ -379,12 +413,11 @@
                 }
             }
             pts[0].copy(pointA);
-            if (isBrokenStub) {
-                end.copy(pts[pts.length - 1]);
-                if (end.y > pointA.y - 0.02) end.y = pointA.y - 0.06;
+            if (!isBrokenStub) {
                 pts[pts.length - 1].copy(end);
-            } else {
-                pts[pts.length - 1].copy(end);
+            }
+            if (!physicallyTaut && typeof RIG !== 'undefined' && RIG.applySlingPoolCapsuleSeparation) {
+                RIG.applySlingPoolCapsuleSeparation(slingObj, sling3DPool, pts, simPad);
             }
             const reached = !meta.broken;
 
@@ -420,6 +453,9 @@
             if (meta.broken || isOverloaded) mat = MATS.redMaster;
             else if (meta.selected) mat = MATS.lpSelected;
             else if (meta.ctrlHover) mat = MATS.lpCtrlHover || MATS.lpSelected;
+            else if (actualTension > 0 && typeof GFX !== 'undefined' && GFX.resolveStressTintedMaterial) {
+                mat = GFX.resolveStressTintedMaterial(mat, actualTension, wllNow, phy._stressMatCache || (phy._stressMatCache = new Map()));
+            }
 
             // International Sling Angle Warning / cut-hover enter: red pulse
             if (cable && cable._isFlashing && cable._flashStartTime) {
@@ -486,42 +522,18 @@
                 const hideTipForEye = false;
                 // Chain: hide tube body, show articulated oval links; others: continuous body
                 seg.visible = !chain && !hideTipForEye;
-                const segVec = new THREE.Vector3().subVectors(pts[i + 1], pts[i]);
-                const segLen = Math.max(0.001, segVec.length());
-                const mid = pts[i].clone().lerp(pts[i + 1], 0.5);
-                seg.position.copy(mid);
-                const dir = segVec.clone().normalize();
-                // Overlap segment ends; tip segments dig into ferrule/stub so the join is solid
+                const segLen = Math.max(0.001, pts[i].distanceTo(pts[i + 1]));
                 const tipDig = (!chain && (i === 0 || i === N - 1) && (showWireEye || showGrommetEye))
                     ? 0.022 * Math.max(1, bodyK) : 0;
                 const overlapLen = segLen + tipDig + (i > 0 && i < N - 1 ? 0.018 * bodyK : 0.004);
-
-                if (look === 'web') {
-                    // Flat polyester webbing (EN 1492-1): wide × thin fabric — not a rigid plank
-                    const widthM = Math.max(0.045, Math.min(0.30, dia / 1000));
-                    const thickM = Math.max(0.0022, Math.min(0.008, widthM * 0.045));
-                    seg.scale.set(widthM, overlapLen, thickM);
-                    // Flat face lies in the vertical plane of the leg
-                    const side = new THREE.Vector3().crossVectors(dir, upY);
-                    if (side.lengthSq() < 1e-8) side.set(1, 0, 0);
-                    side.normalize();
-                    const nrm = new THREE.Vector3().crossVectors(dir, side).normalize();
-                    seg.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(side, dir, nrm));
+                if (typeof RIG !== 'undefined' && RIG.applySlingSegmentTransform) {
+                    RIG.applySlingSegmentTransform(THREE, seg, pts[i], pts[i + 1], upY, look, overlapLen, dia, actualTension, wllNow, i, N, bodyK);
                 } else {
-                    seg.quaternion.setFromUnitVectors(upY, dir);
-                    if (look === 'round_sling') {
-                        // Dynamic cross-sectional flattening under load & pin contact
-                        const tensionRatio = THREE.MathUtils.clamp(actualTension / Math.max(1, wllNow), 0, 1);
-                        const pinSquash = (i === 0 || i === N - 1) ? 0.35 : ((i === 1 || i === N - 2) ? 0.18 : 0);
-                        const flatFactor = THREE.MathUtils.clamp(tensionRatio * 0.28 + pinSquash, 0, 0.48);
-                        const sx = bodyK * 0.72 * (1 + flatFactor * 0.65);
-                        const sz = bodyK * 0.72 * (1 - flatFactor * 0.55);
-                        seg.scale.set(sx, overlapLen, sz);
-                    } else if (look === 'grommet') {
-                        seg.scale.set(bodyK * 0.85, overlapLen, bodyK * 0.85);
-                    } else {
-                        seg.scale.set(bodyK, overlapLen, bodyK);
-                    }
+                    const segVec = new THREE.Vector3().subVectors(pts[i + 1], pts[i]);
+                    seg.position.copy(pts[i]).lerp(pts[i + 1], 0.5);
+                    segVec.normalize();
+                    seg.quaternion.setFromUnitVectors(upY, segVec);
+                    seg.scale.set(bodyK, overlapLen, bodyK);
                 }
                 if (slingObj.links && slingObj.links[i]) {
                     const link = slingObj.links[i];
@@ -585,42 +597,17 @@
                 zLink0.normalize();
 
                 let kCursor = 1;
-                const instanceMatrix = new THREE.Matrix4();
-                const instanceScale = new THREE.Vector3();
-                const instanceQuaternion = new THREE.Quaternion();
+                const writeLink = (typeof RIG !== 'undefined' && RIG.writeChainLinkInstanceMatrix)
+                    ? RIG.writeChainLinkInstanceMatrix
+                    : null;
                 for (let i = 0; i < linkCount; i++) {
-                    // Distance along path to link center:
-                    // Link 0 center is at 0.5 * step (so its bottom inner crown sits at d = 0, kissing red end-link A).
-                    // Link i and link i+1 meet at d = (i + 1) * step (zero gap, metal-on-metal).
-                    // Link (linkCount - 1) top inner crown reaches d = total, kissing red end-link B.
                     const d = Math.min(total - 1e-4, Math.max(0, step * (i + 0.5)));
                     while (kCursor < acc.length - 1 && acc[kCursor] < d) kCursor++;
                     const span = Math.max(1e-6, acc[kCursor] - acc[kCursor - 1]);
                     const t = THREE.MathUtils.clamp((d - acc[kCursor - 1]) / span, 0, 1);
-                    const p0 = pts[kCursor - 1];
-                    const p1 = pts[kCursor];
-                    const mid = p0.clone().lerp(p1, t);
-                    const dir = new THREE.Vector3().subVectors(p1, p0);
-                    if (dir.lengthSq() < 1e-8) dir.copy(upY);
-                    else dir.normalize();
-                    // Build basis: Y = chain dir, Z = link plane normal (alternating weave)
-                    const yAxis = dir.clone();
-                    let zAxis = (i % 2 === 0) ? zLink0.clone() : zEnd.clone();
-                    // Re-orthogonalize along the local tangent so curves stay nested
-                    let xAxis = new THREE.Vector3().crossVectors(yAxis, zAxis);
-                    if (xAxis.lengthSq() < 1e-8) {
-                        zAxis = Math.abs(yAxis.y) < 0.92
-                            ? new THREE.Vector3(0, 1, 0).cross(yAxis)
-                            : new THREE.Vector3(1, 0, 0).cross(yAxis);
-                        zAxis.normalize();
-                        xAxis = new THREE.Vector3().crossVectors(yAxis, zAxis);
+                    if (writeLink) {
+                        writeLink(THREE, instances, i, pts[kCursor - 1], pts[kCursor], t, (i % 2 === 0) ? zLink0 : zEnd, sx, sy, upY);
                     }
-                    xAxis.normalize();
-                    zAxis.crossVectors(xAxis, yAxis).normalize();
-                    instanceQuaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis));
-                    instanceScale.set(sx, sy, sx);
-                    instanceMatrix.compose(mid, instanceQuaternion, instanceScale);
-                    instances.setMatrixAt(i, instanceMatrix);
                 }
                 instances.count = linkCount;
                 instances.instanceMatrix.needsUpdate = true;

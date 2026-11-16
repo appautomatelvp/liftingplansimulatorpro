@@ -10,6 +10,11 @@ import {
   drawWireRopeMaps,
   makeCanvas
 } from './pbr/ProceduralTextures.js';
+import {
+  drawForgedSteelMaps,
+  drawPaintedSteelMaps,
+  resolveStressTintedMaterial
+} from './pbr/StressPBRMaterials.js';
 
 export class PBRMaterialFactory {
   constructor(renderer = null) {
@@ -71,15 +76,15 @@ export class PBRMaterialFactory {
     const cacheKey = 'quay_concrete_pbr';
     if (this.cachedMaterials.has(cacheKey)) return this.cachedMaterials.get(cacheKey);
 
-    const { cvsBase, cvsNorm, cvsRough, cvsAO } = drawQuayConcreteMaps(1024, Boolean(options.includeJoints));
-    const rx = options.repeatX || 30;
-    const ry = options.repeatY || 30;
+    const { cvsBase, cvsNorm, cvsRough, cvsAO } = drawQuayConcreteMaps(1024, options.includeJoints !== false);
+    const rx = options.repeatX || 18;
+    const ry = options.repeatY || 18;
     const material = new THREE.MeshStandardMaterial({
       map: this._buildRepeatTexture(cvsBase, true, rx, ry, true),
       normalMap: this._buildRepeatTexture(cvsNorm, false, rx, ry, true),
-      normalScale: new THREE.Vector2(0.85, 0.85),
+      normalScale: new THREE.Vector2(1.15, 1.15),
       roughnessMap: this._buildRepeatTexture(cvsRough, false, rx, ry, false),
-      roughness: 0.92,
+      roughness: 0.90,
       metalness: 0.08,
       aoMap: this._buildRepeatTexture(cvsAO, false, rx, ry, false),
       aoMapIntensity: 0.95
@@ -195,5 +200,45 @@ export class PBRMaterialFactory {
 
   createCanvas(width, height) {
     return makeCanvas(width, height);
+  }
+
+  createPaintedSteelBeamMaterial(paintHex = '#d97706') {
+    const cacheKey = `painted_steel_beam_${paintHex}`;
+    if (this.cachedMaterials.has(cacheKey)) return this.cachedMaterials.get(cacheKey);
+    const { cvsBase, cvsNorm, cvsRough, cvsMetal } = drawPaintedSteelMaps(256, paintHex);
+    const material = new THREE.MeshPhysicalMaterial({
+      map: this._buildRepeatTexture(cvsBase, true, 2, 1, true),
+      normalMap: this._buildRepeatTexture(cvsNorm, false, 2, 1, true),
+      roughnessMap: this._buildRepeatTexture(cvsRough, false, 2, 1, false),
+      metalnessMap: this._buildRepeatTexture(cvsMetal, false, 2, 1, false),
+      roughness: 1.0,
+      metalness: 1.0,
+      clearcoat: 0.14,
+      clearcoatRoughness: 0.36
+    });
+    this.cachedMaterials.set(cacheKey, material);
+    return material;
+  }
+
+  createForgedShackleMaterial() {
+    const cacheKey = 'forged_shackle_pbr';
+    if (this.cachedMaterials.has(cacheKey)) return this.cachedMaterials.get(cacheKey);
+    const { cvsBase, cvsNorm, cvsRough, cvsMetal } = drawForgedSteelMaps(256);
+    const material = new THREE.MeshPhysicalMaterial({
+      map: this._buildRepeatTexture(cvsBase, true, 1, 1, true),
+      normalMap: this._buildRepeatTexture(cvsNorm, false, 1, 1, true),
+      roughnessMap: this._buildRepeatTexture(cvsRough, false, 1, 1, false),
+      metalnessMap: this._buildRepeatTexture(cvsMetal, false, 1, 1, false),
+      roughness: 1.0,
+      metalness: 1.0,
+      clearcoat: 0.24,
+      clearcoatRoughness: 0.26
+    });
+    this.cachedMaterials.set(cacheKey, material);
+    return material;
+  }
+
+  getStressVisualMaterial(baseMat, tensionT = 0, swlT = 15) {
+    return resolveStressTintedMaterial(baseMat, tensionT, swlT, this.cachedMaterials);
   }
 }

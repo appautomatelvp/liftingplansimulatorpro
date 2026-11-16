@@ -7,9 +7,13 @@
  * These files are assembled into one module so they share state, physics and the scene.
  */
         // --- 6. BUILD 3D CARGO, TIMBER DUNNAGE & SPREADER BEAMS ---
-        /** Floor cribbing intentionally omitted — propped blocks made static cargo sit proud of the ground. */
+        /** Rebuild 3D timber dunnage cribbing, soil pad & slope synced with Tab 6 Site controls. */
         function rebuildDunnageBlocks() {
             if (!dunnageGroup) return;
+            if (typeof GFX !== 'undefined' && GFX.rebuildDunnageVisual3D) {
+                GFX.rebuildDunnageVisual3D({ THREE, dunnageGroup, state, MATS });
+                return;
+            }
             while (dunnageGroup.children.length > 0) dunnageGroup.remove(dunnageGroup.children[0]);
             dunnageGroup.name = 'Timber_Dunnage';
             dunnageGroup.visible = false;
@@ -978,54 +982,13 @@
                 oogGroup.add(band);
             });
 
-            // Over-the-top ratchet lashing: top across cargo, sides outside faces, anchor at deck rail
-            const lashingGroup = new THREE.Group();
-            lashingGroup.name = 'flatRackLashingStraps';
-            const brokenLashingGroup = new THREE.Group();
-            brokenLashingGroup.name = 'flatRackBrokenStraps';
-            brokenLashingGroup.visible = false;
-
-            const lashingStrapMat = strapMat.clone();
-            lashingStrapMat.polygonOffset = true;
-            lashingStrapMat.polygonOffsetFactor = -2.0;
-            lashingStrapMat.polygonOffsetUnits = -4.0;
-
-            const strapCount = Math.max(4, Math.min(8, Math.floor(cL * 0.85)));
-            const railZ = Math.max(W * 0.5 + 0.02, Math.abs(offsetZ) + cW * 0.5 + 0.08);
-            for (let k = 0; k < strapCount; k++) {
-                const sx = offsetX + (strapCount <= 1 ? 0 : (-cL * 0.42 + (k / (strapCount - 1)) * (cL * 0.84)));
-                const topStrap = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.018, cW + 0.12), lashingStrapMat);
-                topStrap.position.set(sx, cargoTopY + 0.04, offsetZ);
-                topStrap.castShadow = true;
-                lashingGroup.add(topStrap);
-
-                [-1, 1].forEach(sz => {
-                    const sideH = Math.max(0.4, cargoTopY - deckTopY);
-                    const sideStrap = new THREE.Mesh(new THREE.BoxGeometry(0.065, sideH, 0.018), lashingStrapMat);
-                    sideStrap.position.set(sx, deckTopY + sideH * 0.5, offsetZ + sz * (cW * 0.5 + 0.04));
-                    sideStrap.castShadow = true;
-                    lashingGroup.add(sideStrap);
-
-                    // Short pull-down from cargo side to FR side rail (outside cargo)
-                    const pullLen = Math.max(0.18, railZ - (Math.abs(offsetZ) + cW * 0.5));
-                    const pull = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.016, pullLen), lashingStrapMat);
-                    pull.position.set(sx, deckTopY + 0.04, offsetZ + sz * (cW * 0.5 + pullLen * 0.5 + 0.02));
-                    lashingGroup.add(pull);
-
-                    const ratchet = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.16, 0.06), MATS.galvSteel);
-                    ratchet.position.set(sx, cargoBottomY + cH * 0.22, offsetZ + sz * (cW * 0.5 + 0.055));
-                    lashingGroup.add(ratchet);
-
-                    const tailLen = 0.45 + (k % 2) * 0.14;
-                    const brokenTail = new THREE.Mesh(new THREE.BoxGeometry(0.065, tailLen, 0.018), MATS.redMaster);
-                    brokenTail.position.set(sx, deckTopY + 0.08, sz * (railZ + 0.02));
-                    brokenTail.rotation.x = sz * 0.35;
-                    brokenLashingGroup.add(brokenTail);
+            // Over-the-top ratchet lashing: hugs OOG crate flush & anchors inside FR deck rails
+            if (typeof RIG !== 'undefined' && RIG.buildTightFlatRackLashingVisuals) {
+                RIG.buildTightFlatRackLashingVisuals({
+                    THREE, oogGroup, group, MATS,
+                    dims: { cL, cW, cH, offsetX, offsetZ, cargoBottomY, cargoTopY, deckTopY, W }
                 });
             }
-            oogGroup.add(lashingGroup);
-            brokenLashingGroup.traverse(o => { o.userData.noLugWeld = true; });
-            group.add(brokenLashingGroup);
 
             oogGroup.position.set(0, 0, 0);
             oogGroup.userData.oogMeta = {

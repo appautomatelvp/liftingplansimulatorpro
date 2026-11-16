@@ -1,18 +1,18 @@
-// @purpose: Dựng vòm bầu trời HorizonSkyDome, preset ánh sáng và cấu hình khí quyển theo giờ Việt Nam
+// @purpose: Dựng vòm bầu trời HorizonSkyDome với mây chân trời 3D Gradient Quintic mềm mại và màu khí quyển thực tế
 import * as THREE from 'three';
 
 export const LIGHTING_PRESETS = {
   liebherr_studio: {
     id: 'liebherr_studio', name: 'Engineering Studio (Thời Gian Thực Việt Nam)',
-    skyColor: 0x6299cb, horizonColor: 0xe4e2d8, sunColor: 0xfff6dc, sunIntensity: 2.75, sunPosition: [28, 44, 24],
-    fillColor: 0x9ec8f5, fillIntensity: 0.85, fogNear: 68, fogFar: 205, fogDensity: 0.0001,
-    exposure: 1.18, envIntensity: 1.18, backgroundBlur: 0.25, solidBackground: 0xe4e2d8
+    skyColor: 0x0d65b8, horizonColor: 0xcfe7f7, sunColor: 0xfff8e6, sunIntensity: 2.8, sunPosition: [28, 44, 24],
+    fillColor: 0x8ec5f8, fillIntensity: 0.88, fogNear: 72, fogFar: 215, fogDensity: 0.0001,
+    exposure: 1.18, envIntensity: 1.2, backgroundBlur: 0.25, solidBackground: 0xcfe7f7
   },
   overcast: {
     id: 'overcast', name: 'Daylight Test Pad (Sân Bê Tông Ban Ngày)',
-    skyColor: 0x8395aa, horizonColor: 0xdde3ea, sunColor: 0xfffbeb, sunIntensity: 2.5, sunPosition: [24, 46, 28],
-    fillColor: 0x93c5fd, fillIntensity: 0.8, fogNear: 68, fogFar: 205, fogDensity: 0.0001,
-    exposure: 1.16, envIntensity: 1.1, backgroundBlur: 0.15, solidBackground: 0xdde3ea
+    skyColor: 0x2b6cb0, horizonColor: 0xd6e8f5, sunColor: 0xfffbeb, sunIntensity: 2.55, sunPosition: [24, 46, 28],
+    fillColor: 0x93c5fd, fillIntensity: 0.82, fogNear: 70, fogFar: 210, fogDensity: 0.0001,
+    exposure: 1.16, envIntensity: 1.12, backgroundBlur: 0.15, solidBackground: 0xd6e8f5
   },
   print_plan: {
     id: 'print_plan', name: 'Lift Plan CAD Sheet (Bản Vẽ ASME Nền Sáng)',
@@ -22,15 +22,15 @@ export const LIGHTING_PRESETS = {
   },
   sunset: {
     id: 'sunset', name: 'Warm Industrial Bay (Ánh Sáng Xưởng Ấm / Hoàng Hôn)',
-    skyColor: 0x3b486e, horizonColor: 0xd49258, sunColor: 0xff9e44, sunIntensity: 2.8, sunPosition: [34, 20, 26],
-    fillColor: 0x38bdf8, fillIntensity: 0.6, fogNear: 65, fogFar: 198, fogDensity: 0.0001,
-    exposure: 1.2, envIntensity: 1.15, backgroundBlur: 0.2, solidBackground: 0x2d1f18
+    skyColor: 0x163b7a, horizonColor: 0xf08c36, sunColor: 0xff9436, sunIntensity: 2.85, sunPosition: [36, 16, 26],
+    fillColor: 0x4aa3df, fillIntensity: 0.62, fogNear: 66, fogFar: 202, fogDensity: 0.0001,
+    exposure: 1.2, envIntensity: 1.18, backgroundBlur: 0.2, solidBackground: 0xf08c36
   },
   night: {
     id: 'night', name: 'High-Contrast Inspection (Xưởng Đêm Chiếu Sáng)',
-    skyColor: 0x050811, horizonColor: 0x0c121e, sunColor: 0xdbe8fa, sunIntensity: 2.1, sunPosition: [-20, 38, 22],
+    skyColor: 0x040812, horizonColor: 0x0b1526, sunColor: 0xdbe8fa, sunIntensity: 2.1, sunPosition: [-20, 38, 22],
     fillColor: 0x38bdf8, fillIntensity: 0.52, fogNear: 60, fogFar: 185, fogDensity: 0.0001,
-    exposure: 1.22, envIntensity: 0.95, backgroundBlur: 0.2, solidBackground: 0x0c121e
+    exposure: 1.22, envIntensity: 0.95, backgroundBlur: 0.2, solidBackground: 0x0b1526
   }
 };
 
@@ -60,28 +60,34 @@ export const getVietnamHorizonBand = (date = new Date()) => getVietnamTimeInfo(d
 
 const ATMOSPHERE_BANDS = {
   night: {
-    fog: 0x0c121e, mid: 0x090f1a, sky: 0x050811, glow: 0.06, haze: 0.30, near: 60, far: 185,
+    fog: 0x0b1526, mid: 0x08101f, sky: 0x040812, glow: 0.08, haze: 0.28, near: 60, far: 185,
+    cloudLight: 0x243b5e, cloudShade: 0x0d182b, cloudOpacity: 0.24,
     sun: [0xdbe8fa, 2.05, [-20, 38, 22]], fill: [0x38bdf8, 0.52], amb: [0x182236, 0.36], exposure: 1.22
   },
   sunset: {
-    fog: 0xd49258, mid: 0x8f6b70, sky: 0x3b486e, glow: 0.65, haze: 0.38, near: 65, far: 198,
-    sun: [0xff9e44, 2.8, [34, 20, 26]], fill: [0x38bdf8, 0.60], amb: [0xfdecd2, 0.58], exposure: 1.20
+    fog: 0xf08c36, mid: 0xc26e52, sky: 0x163b7a, glow: 0.78, haze: 0.36, near: 66, far: 202,
+    cloudLight: 0xffcfa0, cloudShade: 0x5c6991, cloudOpacity: 0.78,
+    sun: [0xff9436, 2.85, [36, 16, 26]], fill: [0x4aa3df, 0.62], amb: [0xfdecd2, 0.60], exposure: 1.20
   },
   overcast: {
-    fog: 0xdde3ea, mid: 0xbec9d6, sky: 0x8395aa, glow: 0.18, haze: 0.42, near: 68, far: 205,
-    sun: [0xfffbeb, 2.5, [24, 46, 28]], fill: [0x93c5fd, 0.8], amb: [0xffffff, 0.65], exposure: 1.16
+    fog: 0xd6e8f5, mid: 0x7cb2df, sky: 0x2b6cb0, glow: 0.28, haze: 0.38, near: 70, far: 210,
+    cloudLight: 0xf8fbff, cloudShade: 0x9abde0, cloudOpacity: 0.68,
+    sun: [0xfffbeb, 2.55, [24, 46, 28]], fill: [0x93c5fd, 0.82], amb: [0xffffff, 0.66], exposure: 1.16
   },
   dawn: {
-    fog: 0xc8a296, mid: 0x8c87a6, sky: 0x465278, glow: 0.55, haze: 0.38, near: 65, far: 198,
-    sun: [0xffd4a8, 2.2, [-28, 18, 24]], fill: [0x60a5fa, 0.65], amb: [0xf5e4dc, 0.52], exposure: 1.15
+    fog: 0xe8a586, mid: 0x6b8ec2, sky: 0x1f4378, glow: 0.62, haze: 0.36, near: 66, far: 200,
+    cloudLight: 0xffe2cc, cloudShade: 0x7084ab, cloudOpacity: 0.72,
+    sun: [0xffcfa0, 2.25, [-30, 17, 24]], fill: [0x60a5fa, 0.66], amb: [0xf5e4dc, 0.54], exposure: 1.16
   },
   dusk: {
-    fog: 0x1e2438, mid: 0x171f33, sky: 0x0d1322, glow: 0.20, haze: 0.32, near: 60, far: 185,
-    sun: [0xa07c6f, 1.1], fill: [0x334155, 0.45], amb: [0x1f293d, 0.42], exposure: 1.16
+    fog: 0x283655, mid: 0x1a2642, sky: 0x0b1224, glow: 0.26, haze: 0.30, near: 60, far: 185,
+    cloudLight: 0x6e5b7a, cloudShade: 0x1d2740, cloudOpacity: 0.40,
+    sun: [0xc47d5e, 1.15], fill: [0x334155, 0.45], amb: [0x1f293d, 0.42], exposure: 1.16
   },
   day: {
-    fog: 0xe4e2d8, mid: 0xbcd0e2, sky: 0x6c9ece, glow: 0.38, haze: 0.34, near: 68, far: 205,
-    sun: [0xfff6dc, 2.75], fill: [0x9ec8f5, 0.85, [-24, 22, -18]], amb: [0xfffcf2, 0.70], exposure: 1.18
+    fog: 0xcfe7f7, mid: 0x4ea0e6, sky: 0x0c63b8, glow: 0.44, haze: 0.30, near: 72, far: 215,
+    cloudLight: 0xffffff, cloudShade: 0x9ec5e8, cloudOpacity: 0.72,
+    sun: [0xfff8e6, 2.80], fill: [0x8ec5f8, 0.88, [-24, 22, -18]], amb: [0xfffcf5, 0.72], exposure: 1.18
   }
 };
 
@@ -110,30 +116,121 @@ const SKY_FRAGMENT_SHADER = `
   uniform vec3 uSkyColor;
   uniform vec3 uSunDir;
   uniform vec3 uSunColor;
+  uniform vec3 uCloudLightColor;
+  uniform vec3 uCloudShadeColor;
   uniform float uSunGlow;
   uniform float uHorizonHaze;
+  uniform float uCloudOpacity;
+  uniform float uTime;
   varying vec3 vSkyDir;
+
+  // Sin-free integer/fract hash is 4-5x faster on software WebGL (SwiftShader) & tablet GPUs
+  vec3 hash33(vec3 p) {
+    p = fract(p * vec3(0.1031, 0.1030, 0.0973));
+    p += dot(p, p.yxz + 33.33);
+    return -1.0 + 2.0 * fract((p.xxy + p.yxx) * p.zyx);
+  }
+
+  // C2-continuous 3D Quintic Gradient Noise (zero grid creases or boxy facets)
+  float gnoise3(vec3 p) {
+    vec3 i = floor(p);
+    vec3 f = fract(p);
+    vec3 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+    return mix(
+      mix(
+        mix(dot(hash33(i + vec3(0,0,0)), f - vec3(0,0,0)), dot(hash33(i + vec3(1,0,0)), f - vec3(1,0,0)), u.x),
+        mix(dot(hash33(i + vec3(0,1,0)), f - vec3(0,1,0)), dot(hash33(i + vec3(1,1,0)), f - vec3(1,1,0)), u.x),
+        u.y
+      ),
+      mix(
+        mix(dot(hash33(i + vec3(0,0,1)), f - vec3(0,0,1)), dot(hash33(i + vec3(1,0,1)), f - vec3(1,0,1)), u.x),
+        mix(dot(hash33(i + vec3(0,1,1)), f - vec3(0,1,1)), dot(hash33(i + vec3(1,1,1)), f - vec3(1,1,1)), u.x),
+        u.y
+      ),
+      u.z
+    );
+  }
+
+  const mat3 OCT_ROT = mat3(
+     0.00,  0.80,  0.60,
+    -0.80,  0.36, -0.48,
+    -0.60, -0.48,  0.64
+  );
+
+  float fbm2(vec3 p) {
+    float v = 0.56 * gnoise3(p);
+    p = OCT_ROT * p * 2.04 + vec3(11.3, 5.9, 17.7);
+    return v + 0.28 * gnoise3(p);
+  }
+
+  float fbm4(vec3 p) {
+    float v = 0.0;
+    float amp = 0.52;
+    for (int i = 0; i < 4; i++) {
+      v += amp * gnoise3(p);
+      p = OCT_ROT * p * 2.02 + vec3(13.7, 7.3, 19.1);
+      amp *= 0.5;
+    }
+    return v;
+  }
+
   void main() {
     vec3 dir = normalize(vSkyDir);
     float y = dir.y;
-    float up = clamp(y, 0.0, 1.0);
-    float horizonToMid = 1.0 - smoothstep(0.0, max(0.08, uHorizonHaze), up);
-    float midToZenith = smoothstep(0.06, 0.72, up);
-    vec3 skyGrad = mix(uMidSkyColor, uSkyColor, midToZenith);
-    vec3 col = mix(skyGrad, uHorizonColor, pow(horizonToMid, 1.35));
-    float sunCos = max(dot(dir, normalize(uSunDir)), 0.0);
-    float sunAtmosphere = pow(sunCos, 6.0) * 0.20 + pow(sunCos, 48.0) * 0.28;
-    col += uSunColor * (sunAtmosphere * uSunGlow * smoothstep(0.0, 0.18, y));
-    if (y < 0.0) {
-      col = mix(uHorizonColor, uHorizonColor * 0.92, clamp(-y * 2.5, 0.0, 1.0));
+    // y <= 0 stays pure uHorizonColor so sky matches Three.js fog_fragment bit-for-bit
+    float elev = clamp(y, 0.0, 1.0);
+    vec3 sunD = normalize(uSunDir);
+
+    // Wide C2-smooth atmospheric gradient from horizon -> warm/cool mid sky -> deep zenith
+    float hazeCurve = smoothstep(0.0, max(0.34, uHorizonHaze * 1.15), elev);
+    float upperCurve = smoothstep(0.06, 0.68, elev);
+    vec3 lowerGrad = mix(uHorizonColor, mix(uHorizonColor, uMidSkyColor, 0.72), pow(hazeCurve, 1.25));
+    vec3 upperGrad = mix(uMidSkyColor, uSkyColor, smoothstep(0.14, 0.85, elev));
+    vec3 col = mix(lowerGrad, upperGrad, pow(upperCurve, 1.35));
+
+    float sunCos = max(dot(dir, sunD), 0.0);
+    float mieBand = pow(sunCos, 4.0) * 0.22 * (1.0 - smoothstep(0.05, 0.48, elev));
+    float sunDisc = pow(sunCos, 12.0) * 0.16 + pow(sunCos, 140.0) * 0.38;
+    col += uSunColor * ((mieBand + sunDisc) * uSunGlow * smoothstep(0.015, 0.16, elev));
+
+    if (elev > 0.02 && elev < 0.42 && uCloudOpacity > 0.01) {
+      vec3 drift = vec3(uTime * 0.0035, 0.0, uTime * 0.0018);
+      vec3 pCum = vec3(dir.x * 2.6, elev * 10.5, dir.z * 2.6) + drift;
+      float warp = gnoise3(pCum * 0.65 + vec3(4.2, 1.5, -3.1));
+
+      float nCum = fbm4(pCum + vec3(warp * 0.45, warp * 0.2, -warp * 0.45));
+      float cumRaw = smoothstep(-0.06, 0.46, nCum);
+      float cumShape = pow(cumRaw, 1.45);
+      float cumEnvelope = smoothstep(0.025, 0.08, elev) * (1.0 - smoothstep(0.08, 0.20, elev));
+      float cumAlpha = cumShape * cumEnvelope;
+
+      vec3 pCir = vec3(dir.x * 1.85, elev * 14.0, dir.z * 1.85) + drift * 0.6 + vec3(warp * 0.7, 0.0, warp * 0.5);
+      float nCir = fbm2(pCir);
+      float cirShape = pow(smoothstep(0.02, 0.48, nCir), 1.65);
+      float cirEnvelope = smoothstep(0.05, 0.13, elev) * (1.0 - smoothstep(0.18, 0.38, elev));
+      float cirAlpha = cirShape * cirEnvelope * 0.36;
+
+      float totalCloud = clamp(cumAlpha + cirAlpha * (1.0 - cumAlpha * 0.65), 0.0, 1.0);
+      float lightGrad = smoothstep(-0.18, 0.38, nCum) * 0.55 + smoothstep(0.02, 0.14, elev) * 0.45;
+      vec3 cloudCol = mix(uCloudShadeColor, uCloudLightColor, clamp(lightGrad, 0.0, 1.0));
+      float silverLining = pow(sunCos, 5.0) * uSunGlow * (1.0 - cumShape * 0.35);
+      cloudCol += uSunColor * silverLining * 0.28;
+
+      float mistBlend = smoothstep(0.02, 0.11, elev);
+      cloudCol = mix(uHorizonColor, cloudCol, 0.25 + 0.75 * mistBlend);
+      col = mix(col, cloudCol, totalCloud * uCloudOpacity * mistBlend);
     }
+
     gl_FragColor = vec4(col, 1.0);
     #include <colorspace_fragment>
+    // Subtle triangular filmic dither prevents 8-bit banding in dark night skies
+    float dither = (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) * (1.25 / 255.0);
+    gl_FragColor.rgb = clamp(gl_FragColor.rgb + vec3(dither), 0.0, 1.0);
   }
 `;
 
 export function createHorizonSkyDome(scene) {
-  const geo = new THREE.SphereGeometry(900, 48, 24);
+  const geo = new THREE.SphereGeometry(900, 64, 32);
   const mat = new THREE.ShaderMaterial({
     name: 'AtmosphericHorizonSkyDome',
     side: THREE.BackSide,
@@ -142,13 +239,17 @@ export function createHorizonSkyDome(scene) {
     fog: false,
     toneMapped: false,
     uniforms: {
-      uHorizonColor: { value: new THREE.Color(0xe4e2d8) },
-      uMidSkyColor: { value: new THREE.Color(0xbcd0e2) },
-      uSkyColor: { value: new THREE.Color(0x6c9ece) },
+      uHorizonColor: { value: new THREE.Color(0xcfe7f7) },
+      uMidSkyColor: { value: new THREE.Color(0x4ea0e6) },
+      uSkyColor: { value: new THREE.Color(0x0c63b8) },
       uSunDir: { value: new THREE.Vector3(28, 44, 24).normalize() },
-      uSunColor: { value: new THREE.Color(0xfff6dc) },
-      uSunGlow: { value: 0.38 },
-      uHorizonHaze: { value: 0.34 }
+      uSunColor: { value: new THREE.Color(0xfff8e6) },
+      uCloudLightColor: { value: new THREE.Color(0xffffff) },
+      uCloudShadeColor: { value: new THREE.Color(0x9ec5e8) },
+      uSunGlow: { value: 0.44 },
+      uHorizonHaze: { value: 0.30 },
+      uCloudOpacity: { value: 0.72 },
+      uTime: { value: 0.0 }
     },
     vertexShader: SKY_VERTEX_SHADER,
     fragmentShader: SKY_FRAGMENT_SHADER
@@ -163,17 +264,23 @@ export function createHorizonSkyDome(scene) {
   return mesh;
 }
 
-export function updateHorizonSkyDome(dome, scene, sunLight, { skyColor, midSkyColor, horizonColor, sunGlow = 0.35, horizonHaze = 0.34, visible = true }) {
+export function updateHorizonSkyDome(dome, scene, sunLight, {
+  skyColor, midSkyColor, horizonColor, cloudLightColor, cloudShadeColor,
+  sunGlow = 0.44, horizonHaze = 0.30, cloudOpacity = 0.72, visible = true
+}) {
   dome.visible = visible;
   const u = dome.material.uniforms;
-  if (scene.fog && scene.fog.isFog) u.uHorizonColor.value = scene.fog.color;
+  if (scene.fog && scene.fog.isFog) u.uHorizonColor.value.copy(scene.fog.color);
   else if (horizonColor != null) u.uHorizonColor.value.set(horizonColor);
   if (skyColor != null) u.uSkyColor.value.set(skyColor);
   if (midSkyColor != null) u.uMidSkyColor.value.set(midSkyColor);
+  if (cloudLightColor != null) u.uCloudLightColor.value.set(cloudLightColor);
+  if (cloudShadeColor != null) u.uCloudShadeColor.value.set(cloudShadeColor);
   if (sunLight) {
     u.uSunDir.value.copy(sunLight.position).normalize();
     u.uSunColor.value.copy(sunLight.color);
   }
   u.uSunGlow.value = sunGlow;
   u.uHorizonHaze.value = horizonHaze;
+  u.uCloudOpacity.value = cloudOpacity;
 }

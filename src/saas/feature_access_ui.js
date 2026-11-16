@@ -13,9 +13,7 @@ const LOCKED_SELECTOR_FEATURES = [
   ['#cargo-library [data-cargo="boat"]', 'cargo.specialized'],
   ['#cargo-library [data-cargo="pipe"]', 'cargo.specialized'],
   ['#beam-store [data-beam="frame"]', 'beam.frame'],
-  ['#beam-store [data-beam="container_spreader"]', 'beam.container'],
-  ['#beam-store [data-beam="cascaded"]', 'beam.cascaded'],
-  ['#beam-store [data-beam="modular_truss"]', 'beam.truss']
+  ['#beam-store [data-beam="container_spreader"]', 'beam.container']
 ];
 
 export function installFeatureAccessUI() {

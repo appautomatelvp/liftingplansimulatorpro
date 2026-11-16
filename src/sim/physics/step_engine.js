@@ -42,9 +42,21 @@
                 const aabbClr = (typeof cargoAabbClearance === 'function')
                     ? cargoAabbClearance()
                     : (phy.groundClearance || 0);
-                const seated = (phy.groundClearance || 0) < 0.035 && aabbClr < 0.04;
-                if (seated) {
+                const seated = (phy.groundClearance || 0) < 0.008 && aabbClr < 0.012;
+                if (seated && !phy._setDownFullSlack) {
                     if (typeof finishSmoothSetDown === 'function') finishSmoothSetDown();
+                } else if (seated && phy._setDownFullSlack) {
+                    const stsDirectDown = state.beamType === 'container_spreader'
+                        && typeof isStsDirectAttach === 'function' && isStsDirectAttach();
+                    const allSlackNow = stsDirectDown || (typeof attachWorld === 'function' && (phy.cables || []).every(c => {
+                        if (typeof cableIsBroken === 'function' && cableIsBroken(c)) return true;
+                        return c.slack || attachWorld(c.a).distanceTo(attachWorld(c.b)) < (c.L0 || 1) - 0.02;
+                    }));
+                    if (allSlackNow && typeof finishSmoothSetDown === 'function') {
+                        finishSmoothSetDown();
+                    } else {
+                        phy.hoistSpeed = (typeof hoistHoldSpeed === 'function') ? hoistHoldSpeed(-1) : -0.35;
+                    }
                 } else {
                     state.poseLock = false;
                     phy.autoHoistActive = false;
@@ -55,7 +67,7 @@
                     const clr = Math.max(phy.groundClearance || 0, aabbClr);
                     let vDown = baseDown;
                     if (clr < 0.35) {
-                        const ratio = Math.max(0.18, clr / 0.35);
+                        const ratio = Math.max(0.08, clr / 0.35);
                         vDown = baseDown * Math.pow(ratio, 0.65);
                     }
                     phy.hoistSpeed = vDown;
@@ -64,11 +76,8 @@
 
             if (phy.hoistSpeed !== 0) {
                 phy.autoHoistActive = false;
-                const grossLoadT = phy.massBreakdown ? phy.massBreakdown.grossCraneLoadT : (state.weight + phy.gearWeight);
-                const totalMassKg = Math.max(100, grossLoadT * 1000);
-                const loadRatio = Math.min(0.92, (totalMassKg * 9.81) / 650000); // 65T winch capacity
-                const speedMult = Math.max(0.15, 1.0 - loadRatio);
-                const actualSpeed = phy.hoistSpeed * speedMult;
+                // Standardized constant cargo hoist speed regardless of cargo weight or spreader type
+                const actualSpeed = phy.hoistSpeed;
                 // Cargo ground clearance hard cap = 50 m AGL (hook ceiling leaves headroom for sling/spreader).
                 const MAX_CARGO_AGL_M = 50;
                 const MAX_HOOK_Y_M = 56;
@@ -113,6 +122,7 @@
                 }
                 resetFlatRackPayloadState();
                 applyLockedPose();
+                if (typeof syncCableRest === 'function') syncCableRest(false);
                 // Paying out onto the cargo roof: drop Nhớm freeze so the beam can
                 // follow the hook down and seat on the lid (never tunnel through).
                 if ((phy.hoistSpeed || 0) < -0.01 || (phy.hookTarget && phy.hookPos && phy.hookTarget.y < phy.hookPos.y - 0.04)) {
@@ -130,6 +140,14 @@
                 // Hard roof clamp every pose-lock frame (safety net).
                 if (Array.isArray(phy.beams)) phy.beams.forEach(clampBeamAboveCargoRoof);
                 advanceHook(frameDt);
+                if (phy._nhomFreezeSpreader && !phy.autoHoistActive
+                    && Math.abs(phy.hoistSpeed || 0) < 0.01 && !(dragTarget && dragTarget.type === 'hook')
+                    && phy.hookPos && phy.hookTarget && phy.hookPos.y < phy.hookTarget.y - 0.001) {
+                    phy.hookPos.y = phy.hookTarget.y;
+                    if (phy.hoist && phy.hoist.kin && phy.hoist.off) {
+                        phy.hoist.kin.y = phy.hookTarget.y - phy.hoist.off.y;
+                    }
+                }
                 stepCornerYield(frameDt);
                 // Nhớm cáp: keep light pretension + non-slack flags so ropes DRAW taut
                 // while cargo stays on the quay. Blanking tensions forced a gravity belly.
@@ -261,8 +279,8 @@
                 if (typeof applyStsTwinCableFlareVisual === 'function') applyStsTwinCableFlareVisual();
                 if (typeof syncTwinCableLugsFromFlare === 'function') syncTwinCableLugsFromFlare();
             }
-            // After set-down, STS direct must re-seat twistlocks flush on the roof.
-            if (state.beamType === 'container_spreader' && typeof seatStsSpreaderToCargo === 'function') {
+            // After set-down, STS must re-seat on the roof — but never clobber an active Nhớm Cáp pose.
+            if (!phy._nhomFreezeSpreader && state.beamType === 'container_spreader' && typeof seatStsSpreaderToCargo === 'function') {
                 seatStsSpreaderToCargo();
             }
         }

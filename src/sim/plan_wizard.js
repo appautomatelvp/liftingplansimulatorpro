@@ -65,6 +65,8 @@
                 draft.stsSizeFt = state.stsSizeFt || 40;
                 draft.stsTwinLift = !!state.stsTwinLift;
                 draft.stsAttachMode = state.stsAttachMode === 'cable' ? 'cable' : 'direct';
+                draft.lbTopMode = state.liftingBeamTopMode || 'bridle2';
+                draft.lbBotMode = state.liftingBeamBottomMode || 'cable';
                 draft.slingType = state.slingType || 'wire';
                 draft.lugCount = state.planLugCount || (state.lugs && state.lugs.length) || 4;
                 draft.upperLen = state.upperSlingLength != null ? state.upperSlingLength : (state.slingLength || 8);
@@ -133,6 +135,8 @@
                 state.stsSizeFt = draft.stsSizeFt || 40;
                 state.stsTwinLift = !!draft.stsTwinLift;
                 state.stsAttachMode = draft.stsAttachMode === 'cable' ? 'cable' : 'direct';
+                if (draft.lbTopMode) state.liftingBeamTopMode = draft.lbTopMode;
+                if (draft.lbBotMode) state.liftingBeamBottomMode = draft.lbBotMode;
                 state.slingType = beam === 'container_spreader' ? 'wire' : draft.slingType;
                 state.craneType = draft.craneType || 'hook_only';
                 state.lugElevPreset = draft.lugElev || 'top';
@@ -376,15 +380,25 @@
                     ['spreader', T('Spreader beam', 'Dầm ngáng'), T('Compression + upper/lower', 'Chịu nén + cáp trên/dưới')],
                     ['lifting_beam', T('Lifting beam', 'Dầm nâng'), T('Bending, low headroom', 'Chịu uốn')],
                     ['frame', T('H-frame', 'Khung H'), T('Rigid 4-corner', 'Cứng 4 góc')],
-                    ['cascaded', T('Cascaded', 'Nhiều tầng'), T('Beam + hangers + sub', 'Dầm + treo + phụ')],
-                    ['modular_truss', T('Lattice truss', 'Giàn'), T('Heavy compression', 'Chịu nén lớn')],
                     ['basket', T('Basket', 'Ôm đáy'), T('Under-slings', 'Cáp dưới đáy')]
                 ];
+                const lbExtra = draft.structure === 'lifting_beam' ? `
+                    <div class="text-[9.5px] text-sky-300 font-bold uppercase mt-2 mb-1">${T('Top Hook Connection', 'Liên kết trên với Hook')}</div>
+                    <div class="grid grid-cols-2 gap-1.5 mb-1.5">
+                        ${optionRow('lbTopMode', 'direct_hook', T('Direct Hook Link', 'Bắt thẳng Hook Link'), T('Central bail eye', 'Tai giữa dầm'), draft.lbTopMode === 'direct_hook')}
+                        ${optionRow('lbTopMode', 'bridle2', T('2 Upper Slings', '2 cáp/xích trên'), T('2 legs to link', '2 nhánh lên hook'), draft.lbTopMode !== 'direct_hook')}
+                    </div>
+                    <div class="text-[9.5px] text-sky-300 font-bold uppercase mb-1">${T('Bottom 4-Corner Connection', 'Liên kết 4 góc dưới')}</div>
+                    <div class="grid grid-cols-2 gap-1.5">
+                        ${optionRow('lbBotMode', 'cable', T('4 Slings / Chains', '4 cáp / xích'), T('4 corner shackles', '4 góc thanh ngang'), draft.lbBotMode !== 'direct')}
+                        ${optionRow('lbBotMode', 'direct', T('Direct Twistlock', 'Gắp Container'), T('4 ISO corner pins', '4 chốt gù ISO'), draft.lbBotMode === 'direct')}
+                    </div>` : '';
                 return `<div class="wiz-layer-body">
                     <div class="text-[10px] text-slate-400 mb-2">${T('Structure under the hook — next block down', 'Kết cấu dưới móc — khối nối tiếp')}</div>
                     <div class="grid grid-cols-1 gap-1.5">
                         ${items.map(([v, t, s]) => optionRow('structure', v, t, s, draft.structure === v)).join('')}
                     </div>
+                    ${lbExtra}
                 </div>`;
             }
 
@@ -568,6 +582,10 @@
                                 draft.lowerLen = 2;
                             }
                             if (draft.stsAttachMode === 'direct') draft.lowerLen = 0.06;
+                        } else if (g === 'lbTopMode') {
+                            draft.upperLen = v === 'direct_hook' ? 0.14 : 4;
+                        } else if (g === 'lbBotMode') {
+                            draft.lowerLen = v === 'direct' ? 0.06 : 2;
                         } else if (g === 'lugCount') {
                             if (v === 2) draft.structure = 'none';
                             if (v === 8 && draft.structure === 'none') draft.structure = 'cascaded';

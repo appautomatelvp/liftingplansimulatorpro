@@ -402,7 +402,7 @@
 
         // Visual cache for instant model switching (0ms stutter, eliminates geometry churn)
         const cargoMeshCache = new Map();
-        const MAX_CARGO_CACHE_SIZE = 24;
+        const MAX_CARGO_CACHE_SIZE = 6;
 
         function rebuildCargoAndRig(resetSymmetricLugs = false) {
             const { cargoType, L, W, H, hwType, cogX, cogY, cogZ } = state;
@@ -461,7 +461,13 @@
 
                     if (cargoMeshCache.size >= MAX_CARGO_CACHE_SIZE) {
                         const oldestKey = cargoMeshCache.keys().next().value;
+                        const evicted = cargoMeshCache.get(oldestKey);
                         cargoMeshCache.delete(oldestKey);
+                        if (evicted && String(oldestKey).includes('|proc')) {
+                            evicted.traverse(obj => {
+                                if (obj.geometry && !obj.geometry.userData?._cachedCADEdgesGeo) obj.geometry.dispose?.();
+                            });
+                        }
                     }
                     cargoMeshCache.set(meshKey, activeCargoVisual);
                 }
@@ -479,6 +485,9 @@
             }
             if (typeof resetFlatRackPayloadState === 'function') resetFlatRackPayloadState();
             cargoRootGroup.updateMatrixWorld(true);
+            if (activeCargoVisual && !activeCargoVisual.userData.trueSurfaceField && typeof RIG !== 'undefined' && RIG.bakeCargoSurfaceField) {
+                activeCargoVisual.userData.trueSurfaceField = RIG.bakeCargoSurfaceField(activeCargoVisual, { L, W, H }, cargoType);
+            }
 
             const hasExactMountPreset = [
                 'opentop', 'opentop40', 'flatrack', 'flatrack20', 'isotank',
@@ -546,10 +555,11 @@
                     if (padEyeMeshes[i]) hwMeshes[i].quaternion.copy(padEyeMeshes[i].quaternion);
                 }
             });
-            // STS direct twistlock: no pad-eyes / shackles on container corners — pins lock into ISO castings.
-            const stsDirectHideLp = typeof isStsDirectAttach === 'function' && isStsDirectAttach();
+            // Direct twistlock (STS or H-Style Lifting Beam): no pad-eyes / shackles on container corners.
+            const directHideLp = (typeof isStsDirectAttach === 'function' && isStsDirectAttach())
+                || (state.beamType === 'lifting_beam' && state.liftingBeamBottomMode === 'direct');
             for (let i = 0; i < padEyeMeshes.length; i++) {
-                const on = i < state.lugs.length && !stsDirectHideLp;
+                const on = i < state.lugs.length && !directHideLp;
                 padEyeMeshes[i].visible = on;
                 if (hwMeshes[i]) hwMeshes[i].visible = on;
                 if (!on && forceArrows[i]) forceArrows[i].visible = false;

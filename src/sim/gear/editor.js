@@ -1755,6 +1755,33 @@
             const lenDisplayVal = isImp ? (activeL0 * 3.28084) : activeL0;
             const lenUnit = isImp ? 'ft' : 'm';
             const lenStep = isImp ? 0.5 : 0.1;
+            const applyInspectorCableLengths = (meters, refreshPanel) => {
+                sel.forEach(s => {
+                    const r = gearRecord(s);
+                    if (r) {
+                        r.lengthM = meters;
+                        r.userSet = true;
+                        r._nhomAutoLen = false;
+                        r._manualLengthOverride = true;
+                    }
+                    if (state.heldCableL0 && s.role && state.heldCableL0[s.role]) {
+                        state.heldCableL0[s.role][s.index] = null;
+                    }
+                });
+                state.slingUserSet = true;
+                if (sel.every(s => s.role === 'upper')) state.upperSlingLength = meters;
+                else if (sel.every(s => s.role === 'leg')) state.lowerSlingLength = meters;
+                else if (sel.every(s => s.role === 'hanger')) state.hangerSlingLength = meters;
+                syncCableRest(false);
+                if (state.poseLock && typeof syncHookToRigTaut === 'function') syncHookToRigTaut();
+                if (typeof applyBeamVisuals === 'function') applyBeamVisuals();
+                if (typeof syncCableControlsSelection === 'function') syncCableControlsSelection();
+                if (typeof syncSlingSlidersFromState === 'function') syncSlingSlidersFromState();
+                if (refreshPanel) {
+                    computeRiggingMassBreakdown();
+                    renderGearFields();
+                }
+            };
             const lenRow = createSliderRow({
                 label: `Chiều dài làm việc${!isManualLen ? ' · Auto' : ''}`,
                 value: lenDisplayVal,
@@ -1766,23 +1793,11 @@
                 accent: isManualLen ? 'amber' : 'sky',
                 onInput: (newVal) => {
                     const meters = isImp ? (newVal / 3.28084) : newVal;
-                    sel.forEach(s => {
-                        const r = gearRecord(s);
-                        if (r) { r.lengthM = meters; r.userSet = true; }
-                    });
-                    syncCableRest(false);
-                    if (typeof syncCableControlsSelection === 'function') syncCableControlsSelection();
+                    applyInspectorCableLengths(meters, false);
                 },
                 onChange: (newVal) => {
                     const meters = isImp ? (newVal / 3.28084) : newVal;
-                    sel.forEach(s => {
-                        const r = gearRecord(s);
-                        if (r) { r.lengthM = meters; r.userSet = true; }
-                    });
-                    syncCableRest(false);
-                    if (typeof syncCableControlsSelection === 'function') syncCableControlsSelection();
-                    computeRiggingMassBreakdown();
-                    renderGearFields();
+                    applyInspectorCableLengths(meters, true);
                 }
             });
             grid2.appendChild(lenRow.wrap);
@@ -1888,12 +1903,27 @@
                     unit: ' m',
                     accent: 'sky',
                     onInput: (newTurn) => {
-                        while (state.legDeltaL.length <= primary.index) state.legDeltaL.push(0);
-                        state.legDeltaL[primary.index] = THREE.MathUtils.clamp(newTurn, -1.5, 2.5);
+                        const clamped = THREE.MathUtils.clamp(newTurn, -1.5, 2.5);
+                        sel.forEach(s => {
+                            if (s.role !== 'leg') return;
+                            while (state.legDeltaL.length <= s.index) state.legDeltaL.push(0);
+                            state.legDeltaL[s.index] = clamped;
+                            if (state.heldCableL0 && state.heldCableL0.leg) state.heldCableL0.leg[s.index] = null;
+                        });
+                        syncCableRest(false);
+                        if (typeof applyBeamVisuals === 'function') applyBeamVisuals();
                     },
                     onChange: (newTurn) => {
-                        while (state.legDeltaL.length <= primary.index) state.legDeltaL.push(0);
-                        state.legDeltaL[primary.index] = THREE.MathUtils.clamp(newTurn, -1.5, 2.5);
+                        const clamped = THREE.MathUtils.clamp(newTurn, -1.5, 2.5);
+                        sel.forEach(s => {
+                            if (s.role !== 'leg') return;
+                            while (state.legDeltaL.length <= s.index) state.legDeltaL.push(0);
+                            state.legDeltaL[s.index] = clamped;
+                            if (state.heldCableL0 && state.heldCableL0.leg) state.heldCableL0.leg[s.index] = null;
+                        });
+                        syncCableRest(false);
+                        if (typeof applyBeamVisuals === 'function') applyBeamVisuals();
+                        if (typeof syncCableControlsSelection === 'function') syncCableControlsSelection();
                     }
                 });
                 grid2.appendChild(turnRow.wrap);
@@ -2103,31 +2133,46 @@
             box.innerHTML = '';
             if (!sel || !sel.length) return;
 
-            // Multi-select: stack one scrollable card per object (left panel)
+            // Multi-select: group similar kinds together so editing any spec updates all selected peers at once
             if (sel.length > 1) {
+                const groups = [];
+                const groupMap = new Map();
+                sel.forEach(item => {
+                    const gk = item.kind || 'other';
+                    if (!groupMap.has(gk)) {
+                        const bucket = [];
+                        groupMap.set(gk, bucket);
+                        groups.push({ kind: gk, items: bucket });
+                    }
+                    groupMap.get(gk).push(item);
+                });
+
                 const hint = document.createElement('div');
-                hint.className = 'text-[10px] text-slate-400 mb-1.5 px-0.5';
+                hint.className = 'text-[10px] text-emerald-300/90 mb-1.5 px-1 py-1 rounded bg-emerald-950/40 border border-emerald-500/30';
                 hint.textContent = L(
-                    'Ctrl+drag a box to multi-select. Scroll to edit each part below.',
-                    'Giữ Ctrl + kéo khung để chọn nhiều. Cuộn xuống để chỉnh từng thiết bị.'
+                    `Selected ${sel.length} items — changing a setting updates all matching items simultaneously.`,
+                    `Đang chọn ${sel.length} thiết bị — chỉnh thông số sẽ tự động áp dụng đồng thời cho các thiết bị cùng loại.`
                 );
                 box.appendChild(hint);
 
-                sel.forEach((item) => {
+                groups.forEach(({ kind, items }) => {
                     const card = document.createElement('section');
                     card.className = 'gear-item-card mb-2.5';
                     const head = document.createElement('div');
                     head.className = 'gear-item-card-head';
                     const title = document.createElement('div');
                     title.className = 'text-[11px] font-bold text-sky-300 uppercase tracking-wide';
-                    title.textContent = gearItemLabel(item);
+                    title.textContent = items.length > 1
+                        ? `${gearItemLabel(items[0]).replace(/\s*#?\d+$/, '')} (×${items.length} đồng bộ)`
+                        : gearItemLabel(items[0]);
                     const rm = document.createElement('button');
                     rm.type = 'button';
                     rm.className = 'text-slate-400 hover:text-rose-300 text-[11px] px-1';
-                    rm.title = L('Remove from selection', 'Bỏ khỏi lựa chọn');
+                    rm.title = L('Remove group from selection', 'Bỏ nhóm khỏi lựa chọn');
                     rm.textContent = '✕';
                     rm.addEventListener('click', () => {
-                        state.gear.selection = state.gear.selection.filter(s => gearItemKey(s) !== gearItemKey(item));
+                        const rmKeys = new Set(items.map(gearItemKey));
+                        state.gear.selection = state.gear.selection.filter(s => !rmKeys.has(gearItemKey(s)));
                         if (!state.gear.selection.length) closeGearEditor();
                         else {
                             openGearEditor();
@@ -2139,8 +2184,8 @@
                     card.appendChild(head);
                     const body = document.createElement('div');
                     body.className = 'gear-item-card-body';
-                    if (item.kind === 'sling') renderSlingInspector(body, [item]);
-                    else renderGenericGearFields(body, [item]);
+                    if (kind === 'sling') renderSlingInspector(body, items);
+                    else renderGenericGearFields(body, items);
                     card.appendChild(body);
                     box.appendChild(card);
                 });
@@ -2190,8 +2235,12 @@
                 const rec = gearRecord(sel);
                 if (!rec) return;
                 rec[key] = value;
-                if (key === 'lengthM' && (sel.role === 'extra' || sel.kind === 'sling')) rec.userSet = value != null;
-                if (key === 'lengthM' && value == null && state.heldCableL0 && state.heldCableL0[sel.role]) {
+                if (key === 'lengthM' && (sel.role === 'extra' || sel.kind === 'sling')) {
+                    rec.userSet = value != null;
+                    rec._nhomAutoLen = false;
+                    rec._manualLengthOverride = value != null;
+                }
+                if (key === 'lengthM' && sel.role && state.heldCableL0 && state.heldCableL0[sel.role]) {
                     state.heldCableL0[sel.role][sel.index] = null;
                 }
             });
@@ -3147,6 +3196,9 @@
             if (cargoGroundAngleGroup && (phy.groundClearance || 0) <= 0.08) {
                 cargoGroundAngleGroup.traverse(o => { if (o.userData?.dragType) list.push(o); });
             }
+            if (phy._elevationRuler && phy._elevationRuler.dragHandle && phy._elevationRuler.group?.visible) {
+                list.push(phy._elevationRuler.dragHandle);
+            }
             return list;
         }
 
@@ -3348,6 +3400,20 @@
                     document.getElementById('sim-status-text').textContent = (state.lang === 'en')
                         ? '🧭 Rotating cargo ground orientation (yaw)...'
                         : '🧭 Đang kéo xoay hướng kiện hàng trên nền đất...';
+
+                } else if (dragType === 'ruler') {
+                    dragTarget = { type: 'ruler', offsetX: 0, offsetZ: 0 };
+                    const gy = (typeof groundSurfaceY === 'function') ? groundSurfaceY(0, 0) : 0;
+                    dragPlane.setFromNormalAndCoplanarPoint(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, gy, 0));
+                    const hitPt = new THREE.Vector3();
+                    if (raycaster.ray.intersectPlane(dragPlane, hitPt) && phy._elevationRuler?.group) {
+                        dragTarget.offsetX = phy._elevationRuler.group.position.x - hitPt.x;
+                        dragTarget.offsetZ = phy._elevationRuler.group.position.z - hitPt.z;
+                    }
+                    e.preventDefault();
+                    document.getElementById('sim-status-text').textContent = (state.lang === 'en')
+                        ? '📏 Dragging 3D Elevation Ruler position on deck...'
+                        : '📏 Đang kéo đặt vị trí Cây thước đo độ cao 3D...';
                 }
             }
         }
@@ -3410,6 +3476,15 @@
 
             const intersectPt = new THREE.Vector3();
             if (!raycaster.ray.intersectPlane(dragPlane, intersectPt)) return;
+
+            if (dragTarget.type === 'ruler') {
+                const rx = THREE.MathUtils.clamp(intersectPt.x + (dragTarget.offsetX || 0), -25, 25);
+                const rz = THREE.MathUtils.clamp(intersectPt.z + (dragTarget.offsetZ || 0), -25, 25);
+                if (phy._elevationRuler && phy._elevationRuler.setCustomPosition) {
+                    phy._elevationRuler.setCustomPosition(rx, rz);
+                }
+                return;
+            }
 
             if (dragTarget.type === 'cargoYaw') {
                 const dx = intersectPt.x - phy.cargoPos.x;
