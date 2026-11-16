@@ -733,6 +733,10 @@
                     normal = correction.normalize();
                 }
             }
+            if (previous && typeof RIG !== 'undefined' && RIG.applyBrokenTipCCD) {
+                const ccd = RIG.applyBrokenTipCCD(tip, vel, previous, radius, phy.cargoPos, phy.cargoQuat, state, supportY(tip.x, tip.z));
+                if (ccd.collided) { touching = true; normal = ccd.normal; }
+            }
             if (!touching || !normal) return;
             const into = vel.dot(normal);
             if (into < 0) vel.addScaledVector(normal, -into);

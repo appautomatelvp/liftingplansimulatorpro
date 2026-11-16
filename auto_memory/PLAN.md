@@ -38,7 +38,7 @@ Nâng cấp toàn diện **SafeLift3D** từ trình mô phỏng 3D cơ bản lê
     3. Bổ sung bài test trong `test/cable_dynamics_xpbd.test.js` kiểm chứng: (a) đoạn cáp tháo cả 2 chốt rơi tự do theo đúng $-9.81\text{ m/s}^2$, (b) sóng quật `BrokenCableWhipSimulator` khi cáp đứt ở tải lớn và (c) 2 sợi xích va nhau được đẩy tách không xuyên thủng.
   - Kiểm tra xong: `npx vitest run test/cable_dynamics_xpbd.test.js` xanh, `CableDynamicsXPBD.js` `< 275` dòng và `BrokenCableWhipXPBD.js` `< 230` dòng.
 
-- [ ] Bước 3: Xây dựng module Động lực học Quán tính Lệch tâm (`src/rigging/RigidInertialDynamics.js`) & Đấu nối CCD + Whip vào Vòng lặp Mô phỏng
+- [x] Bước 3: Xây dựng module Động lực học Quán tính Lệch tâm (`src/rigging/RigidInertialDynamics.js`) & Đấu nối CCD + Whip vào Vòng lặp Mô phỏng
   - Sửa: `src/rigging/RigidInertialDynamics.js` (tạo mới `< 220` dòng, mở đầu bằng `// @purpose:`), `src/sim/physics/cables_break.js` (thêm `<= 15` dòng gọi hàm), `src/sim/rigging/draw_update.js` (thêm `<= 18` dòng gọi hàm)
   - CẤM đụng: `src/sim/manifest.js`, `src/core/physics-world/*`
   - Chi tiết:

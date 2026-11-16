@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 12:11 | Nhánh: feat/horizon-clouds | Commit cuối: 3035aee step 1: add CollisionMaterialSolver for CCD, material friction/restitution, and inter-cable capsule collision (3 minutes ago)
-Tổng: 243 file, 72482 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 12:14 | Nhánh: feat/horizon-clouds | Commit cuối: b502740 step 2: add BrokenCableWhipXPBD and trim CableDynamicsXPBD under 270 lines (3 minutes ago)
+Tổng: 244 file, 72700 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -29,13 +29,13 @@ Tổng: 243 file, 72482 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/library/parsers.js (652 dòng)
 - src/sim/library/reconstruction_export.js (2136 dòng)
 - src/sim/physics/beams_seed.js (2884 dòng)
-- src/sim/physics/cables_break.js (1552 dòng)
+- src/sim/physics/cables_break.js (1556 dòng)
 - src/sim/physics/flatrack_payload.js (629 dòng)
 - src/sim/physics/footprint_rig.js (834 dòng)
 - src/sim/physics/hoist_contacts.js (1003 dòng)
 - src/sim/physics/step_engine.js (774 dòng)
 - src/sim/plan_wizard.js (632 dòng)
-- src/sim/rigging/draw_update.js (850 dòng)
+- src/sim/rigging/draw_update.js (856 dòng)
 - src/sim/rigging/hook_pool.js (3098 dòng)
 - src/sim/scene.js (1974 dòng)
 - src/sim/session/prelift_reset.js (1144 dòng)
@@ -175,10 +175,11 @@ Tổng: 243 file, 72482 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/constraints/CornerProtectorModel.js` | 51 |  |
 | `src/rigging/constraints/HardwareConstraint.js` | 236 |  |
 | `src/rigging/constraints/UnilateralCableConstraint.js` | 151 |  |
-| `src/rigging/index.js` | 14 | src/rigging/index.js |
+| `src/rigging/index.js` | 15 | src/rigging/index.js |
 | `src/rigging/riggingConstants.js` | 69 | src/rigging/riggingConstants.js |
 | `src/rigging/RiggingPhysicsSolver.js` | 682 | src/rigging/RiggingPhysicsSolver.js ⚠️>300 |
 | `src/rigging/riggingUIStore.js` | 100 | src/rigging/riggingUIStore.js |
+| `src/rigging/RigidInertialDynamics.js` | 207 | Động lực học vật rắn lệch tâm (Steiner-Huygens Inertia Tensor), mô-men xoắn/nghiêng khi cẩu và rơi tự do 9.81 m/s² |
 | `src/saas/access.js` | 48 |  |
 | `src/saas/admin_catalog_audit_panels.js` | 89 | Dựng giao diện phân hệ Catalog thiết bị 3 cột, Nhật ký Kiểm toán Diff và Modal chi tiết người dùng |
 | `src/saas/admin_cms.css` | 170 | Giao diện CSS chuẩn Enterprise Command Center cho CMS Quản trị (/admin) |
@@ -227,7 +228,7 @@ Tổng: 243 file, 72482 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/manifest.js` | 39 |  |
 | `src/sim/physics.js` | 6 |  |
 | `src/sim/physics/beams_seed.js` | 2884 |  ⚠️>300 |
-| `src/sim/physics/cables_break.js` | 1552 |  ⚠️>300 |
+| `src/sim/physics/cables_break.js` | 1556 |  ⚠️>300 |
 | `src/sim/physics/flatrack_payload.js` | 629 | --- FLAT RACK LASHING RUPTURE, DECK SLIDING & FALLING PAYLOAD PHYSICS --- ⚠️>300 |
 | `src/sim/physics/footprint_rig.js` | 834 |  ⚠️>300 |
 | `src/sim/physics/hoist_contacts.js` | 1003 |  ⚠️>300 |
@@ -236,7 +237,7 @@ Tổng: 243 file, 72482 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/physics/step_engine.js` | 774 |  ⚠️>300 |
 | `src/sim/plan_wizard.js` | 632 |  ⚠️>300 |
 | `src/sim/rigging.js` | 6 |  |
-| `src/sim/rigging/draw_update.js` | 850 | Slack cable morphology is solved by a persistent material-aware XPBD chain. ⚠️>300 |
+| `src/sim/rigging/draw_update.js` | 856 | Slack cable morphology is solved by a persistent material-aware XPBD chain. ⚠️>300 |
 | `src/sim/rigging/hook_pool.js` | 3098 |  ⚠️>300 |
 | `src/sim/scene.js` | 1974 |  ⚠️>300 |
 | `src/sim/session.js` | 6 |  |

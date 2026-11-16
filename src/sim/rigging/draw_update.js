@@ -299,7 +299,10 @@
                     : 0;
                 const ageSettle = br ? THREE.MathUtils.clamp(((br.age || 0) - (br.wasTaut ? 0.45 : 0.12)) / 0.7, 0, 1) : 1;
                 const settle = Math.max(settleAmt, ageSettle);
-                rawPts = buildBrokenStubHangPath(pointA, end, renderLen, slingObj.numSegments, settle);
+                rawPts = (typeof RIG !== 'undefined' && RIG.stepBrokenWhipPath)
+                    ? RIG.stepBrokenWhipPath(slingObj, br, meta, pointA, end, workLen, look, state, phy.cargoPos, phy.cargoQuat, supportY(pointA.x, pointA.z))
+                    : null;
+                if (!rawPts) rawPts = buildBrokenStubHangPath(pointA, end, renderLen, slingObj.numSegments, settle);
                 for (let i = 1; i < rawPts.length - 1; i++) {
                     if (typeof pushPointClear === 'function') {
                         const cleared = pushPointClear(rawPts[i], 0.028, new Set());
@@ -385,6 +388,9 @@
                 pts[pts.length - 1].copy(end);
             } else {
                 pts[pts.length - 1].copy(end);
+            }
+            if (!physicallyTaut && typeof RIG !== 'undefined' && RIG.applySlingPoolCapsuleSeparation) {
+                RIG.applySlingPoolCapsuleSeparation(slingObj, sling3DPool, pts, simPad);
             }
             const reached = !meta.broken;
 
