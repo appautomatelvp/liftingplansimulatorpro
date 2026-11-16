@@ -14,6 +14,9 @@ import { AssetPipeline } from './AssetPipeline.js';
 import { AssemblyEngine } from './AssemblyEngine.js';
 
 export class AssetLoaders {
+    static urlCache = new Map();
+    static inflightUrls = new Map();
+
     constructor() {
         this.gltfLoader = new GLTFLoader();
         this.stlLoader = new STLLoader();
@@ -104,48 +107,89 @@ export class AssetLoaders {
     }
 
     /**
-     * Loads a 3D model from a URL.
+     * Loads a 3D model from a URL with in-flight deduplication and parsed-tree cloning.
      */
     async loadFromUrl(url, pipelineOptions = {}) {
         const cleanUrl = url.split('?')[0];
-        const ext = cleanUrl.split('.').pop().toLowerCase();
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`Failed to load asset from ${url}: HTTP ${res.status}`);
-
-        // OBJ + companion MTL (e.g. ISO Realistic V2 material library)
-        if (ext === 'obj') {
-            const text = await res.text();
-            const basePath = cleanUrl.slice(0, cleanUrl.lastIndexOf('/') + 1);
-            const materials = await this._loadObjMaterials(text, basePath);
-            if (materials) this.objLoader.setMaterials(materials);
-            else this.objLoader.setMaterials(null);
-            let rawObject;
-            try {
-                rawObject = this.objLoader.parse(text);
-            } finally {
-                this.objLoader.setMaterials(null);
-            }
-            const caeHeader = AssemblyEngine.parseCAEHeader(text);
-            const opts = { ...pipelineOptions };
-            if (caeHeader) {
-                if (!opts.targetDimensions && caeHeader.dimensions) {
-                    opts.targetDimensions = {
-                        x: caeHeader.dimensions.L,
-                        y: caeHeader.dimensions.H,
-                        z: caeHeader.dimensions.W
-                    };
-                }
-                opts.caeHeader = caeHeader;
-            }
-            const result = AssetPipeline.normalizeAsset(rawObject, opts);
-            result.report.sourceUrl = url;
-            result.report.hasMtl = !!materials;
-            return result;
+        const cacheKey = `${cleanUrl}|${JSON.stringify({
+            td: pipelineOptions.targetDimensions || null,
+            fe: !!pipelineOptions.forceExactDimensions,
+            m: pipelineOptions.mode || ''
+        })}`;
+        const cached = AssetLoaders.urlCache.get(cacheKey);
+        if (cached) {
+            return {
+                root: cached.root.clone(true),
+                report: { ...cached.report, fromCache: true }
+            };
+        }
+        if (AssetLoaders.inflightUrls.has(cacheKey)) {
+            const shared = await AssetLoaders.inflightUrls.get(cacheKey);
+            return {
+                root: shared.root.clone(true),
+                report: { ...shared.report, fromCache: true }
+            };
         }
 
-        const buffer = await res.arrayBuffer();
-        const result = await this.parseData(buffer, ext, pipelineOptions);
-        result.report.sourceUrl = url;
-        return result;
+        const yieldFrame = () => new Promise(r => setTimeout(r, 0));
+        const taskPromise = (async () => {
+            const ext = cleanUrl.split('.').pop().toLowerCase();
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`Failed to load asset from ${url}: HTTP ${res.status}`);
+
+            let result;
+            if (ext === 'obj') {
+                const text = await res.text();
+                const basePath = cleanUrl.slice(0, cleanUrl.lastIndexOf('/') + 1);
+                const materials = await this._loadObjMaterials(text, basePath);
+                await yieldFrame();
+                if (materials) this.objLoader.setMaterials(materials);
+                else this.objLoader.setMaterials(null);
+                let rawObject;
+                try {
+                    rawObject = this.objLoader.parse(text);
+                } finally {
+                    this.objLoader.setMaterials(null);
+                }
+                await yieldFrame();
+                const caeHeader = AssemblyEngine.parseCAEHeader(text);
+                const opts = { ...pipelineOptions };
+                if (caeHeader) {
+                    if (!opts.targetDimensions && caeHeader.dimensions) {
+                        opts.targetDimensions = {
+                            x: caeHeader.dimensions.L,
+                            y: caeHeader.dimensions.H,
+                            z: caeHeader.dimensions.W
+                        };
+                    }
+                    opts.caeHeader = caeHeader;
+                }
+                result = AssetPipeline.normalizeAsset(rawObject, opts);
+                result.report.sourceUrl = url;
+                result.report.hasMtl = !!materials;
+            } else {
+                const buffer = await res.arrayBuffer();
+                result = await this.parseData(buffer, ext, pipelineOptions);
+                result.report.sourceUrl = url;
+            }
+
+            if (AssetLoaders.urlCache.size >= 12) {
+                const oldestKey = AssetLoaders.urlCache.keys().next().value;
+                AssetLoaders.urlCache.delete(oldestKey);
+            }
+            AssetLoaders.urlCache.set(cacheKey, result);
+            return result;
+        })();
+
+        AssetLoaders.inflightUrls.set(cacheKey, taskPromise);
+        try {
+            const finalRes = await taskPromise;
+            return {
+                root: finalRes.root.clone(true),
+                report: { ...finalRes.report }
+            };
+        } finally {
+            AssetLoaders.inflightUrls.delete(cacheKey);
+        }
     }
 }

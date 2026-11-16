@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 18:19 | Nhánh: feat/horizon-clouds | Commit cuối: ef1fad0 step 1: seamless horizon sky dome and ground fade (77 seconds ago)
-Tổng: 255 file, 74942 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 18:20 | Nhánh: feat/horizon-clouds | Commit cuối: a4e68d7 step 2: add Steel Pipe OOG 3D mesh and align Vehicle proxy to teal coach bus (88 seconds ago)
+Tổng: 255 file, 74989 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -26,7 +26,7 @@ Tổng: 255 file, 74942 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/dynamics.js (848 dòng)
 - src/sim/gear/editor.js (3539 dòng)
 - src/sim/library/core.js (641 dòng)
-- src/sim/library/parsers.js (652 dòng)
+- src/sim/library/parsers.js (654 dòng)
 - src/sim/library/reconstruction_export.js (2136 dòng)
 - src/sim/physics/beams_seed.js (2951 dòng)
 - src/sim/physics/cables_break.js (1557 dòng)
@@ -37,7 +37,7 @@ Tổng: 255 file, 74942 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/plan_wizard.js (650 dòng)
 - src/sim/rigging/draw_update.js (875 dòng)
 - src/sim/rigging/hook_pool.js (3118 dòng)
-- src/sim/scene.js (1977 dòng)
+- src/sim/scene.js (1978 dòng)
 - src/sim/session/prelift_reset.js (1030 dòng)
 - src/sim/session/presets_events.js (3573 dòng)
 - src/sim/session/ui_units_bom.js (1953 dòng)
@@ -115,7 +115,7 @@ Tổng: 255 file, 74942 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/content/scenarios/sts_container_lift.json` | 35 |  |
 | `src/core/AnalysisHUD.js` | 106 |  |
 | `src/core/AssemblyEngine.js` | 433 |  ⚠️>300 |
-| `src/core/AssetLoaders.js` | 151 |  |
+| `src/core/AssetLoaders.js` | 195 |  |
 | `src/core/AssetManager.js` | 325 |  ⚠️>300 |
 | `src/core/AssetPipeline.js` | 333 |  ⚠️>300 |
 | `src/core/AssetSpecs.js` | 446 |  ⚠️>300 |
@@ -230,7 +230,7 @@ Tổng: 255 file, 74942 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/gear/park_apply.js` | 81 |  |
 | `src/sim/library.js` | 6 |  |
 | `src/sim/library/core.js` | 641 |  ⚠️>300 |
-| `src/sim/library/parsers.js` | 652 | --- HIGH-SPEED BINARY & ASCII .STL / .OBJ / .GLB PARSERS --- ⚠️>300 |
+| `src/sim/library/parsers.js` | 654 | --- HIGH-SPEED BINARY & ASCII .STL / .OBJ / .GLB PARSERS --- ⚠️>300 |
 | `src/sim/library/reconstruction_export.js` | 2136 | --- 2D IMAGE TO 3D CONTOUR & RELIEF RECONSTRUCTION ENGINE --- ⚠️>300 |
 | `src/sim/manifest.js` | 39 |  |
 | `src/sim/physics.js` | 6 |  |
@@ -246,7 +246,7 @@ Tổng: 255 file, 74942 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/rigging.js` | 6 |  |
 | `src/sim/rigging/draw_update.js` | 875 | Slack cable morphology is solved by a persistent material-aware XPBD chain. ⚠️>300 |
 | `src/sim/rigging/hook_pool.js` | 3118 |  ⚠️>300 |
-| `src/sim/scene.js` | 1977 |  ⚠️>300 |
+| `src/sim/scene.js` | 1978 |  ⚠️>300 |
 | `src/sim/session.js` | 6 |  |
 | `src/sim/session/prelift_reset.js` | 1030 |  ⚠️>300 |
 | `src/sim/session/presets_events.js` | 3573 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |

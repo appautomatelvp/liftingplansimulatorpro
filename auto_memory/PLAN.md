@@ -38,7 +38,7 @@ Nhánh thực hiện: feat/horizon-clouds (đã sao lưu an toàn vào `_BACKUPS
 - **File CẤM đụng:** Toàn bộ `[LOCKED]`, `HorizonSkyDome.js`, `draw_update.js`.
 - **Kiểm tra:** `npm run architecture:gate; npm run build`
 
-### [ ] Bước 3: Tối ưu tải mô hình CAD & khử giật lag lúc load (3 files)
+### [x] Bước 3: Tối ưu tải mô hình CAD & khử giật lag lúc load (3 files)
 - **File được sửa / tạo:**
   1. `src/core/AssetLoaders.js` *(sửa `≤ 25` dòng trong `loadFromUrl`)*: Thêm cache `urlCache` (`Map`) lưu bản gốc đã parse/normalize (trả về `root.clone(true)` khi mở lại URL cũ thay vì fetch + parse lại `9.16 MB` text), kèm `await new Promise(r => setTimeout(r, 0))` nhường luồng chính giữa lúc tải text, parse OBJ và normalize.
   2. `src/sim/library/parsers.js` *(sửa `≤ 20` dòng ở `ensureCargoPortAsset` dòng `520–585`)*: Thêm `_inflightCargoLoads` `Map` chống fetch trùng khi click liên tiếp; với `car` khi `bus.obj` tải xong chỉ gọi `rebuildCargoAndRig(false)` (không reset lugs/tư thế `true`).

@@ -211,7 +211,8 @@
                     let edgesGeo = m.geometry.userData._cachedCADEdgesGeo;
                     if (!edgesGeo) {
                         const count = m.geometry.attributes?.position?.count || 0;
-                        // Avoid expensive N log N calculations on massive triangle meshes (> 3000 vertices)
+                        // Skip heavy N*log(N) edge extraction on dense CAD meshes (> 8000 vertices)
+                        if (count > 8000) return;
                         edgesGeo = new THREE.EdgesGeometry(m.geometry, count > 3000 ? 35 : 26);
                         m.geometry.userData._cachedCADEdgesGeo = edgesGeo;
                     }
