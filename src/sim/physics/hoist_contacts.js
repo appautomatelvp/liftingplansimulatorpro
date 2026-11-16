@@ -956,14 +956,20 @@
                 const L_low = (cLowA && cLowB && cLowA.L0 > 0.25)
                     ? 0.5 * (cLowA.L0 + cLowB.L0)
                     : (spec.lower || 1.5);
-                const dLowAx = Math.sqrt(Math.max(0.04, L_low * L_low - halfZ * halfZ));
+                // Lower slings run along the end of the cargo between bar ends and corner lugs (dz ≈ 0.04 m),
+                // NOT across halfZ to the hook centerline (subtracting halfZ² shrank r2 by ~0.35 m and left
+                // lower slings visibly slack in mid-air beneath floating bars).
+                const halfLugZ = lugA.distanceTo(lugB) * 0.5;
+                const dzLow = Math.abs(halfLugZ - halfZ);
+                const dLowAx = Math.sqrt(Math.max(0.04, L_low * L_low - dzLow * dzLow));
                 const r1 = (legABroken || legBBroken) ? (dUpAx + 0.55) : (dUpAx + 0.14);
-                const r2 = dLowAx + 0.14;
+                let r2 = dLowAx + 0.14;
                 const distFree = freeHang.distanceTo(eMid);
                 const floorAtLugSide = cargoCeilingUnderBeam(eMid.x, eMid.z, spec, b);
                 const dyRoof = floorAtLugSide - eMid.y;
-                const dxLowRoof = (r2 > Math.abs(dyRoof))
-                    ? Math.sqrt(Math.max(0.01, r2 * r2 - dyRoof * dyRoof))
+                const r2Roof = dLowAx + 0.06;
+                const dxLowRoof = (r2Roof > Math.abs(dyRoof))
+                    ? Math.sqrt(Math.max(0.01, r2Roof * r2Roof - dyRoof * dyRoof))
                     : 0.05;
                 const distXZ = Math.hypot(eMid.x - master.x, eMid.z - master.z);
                 const roofTethered = eMid.clone().addScaledVector(sideXZ, -Math.min(dxLowRoof, Math.max(0, distXZ - 0.14)));
@@ -981,9 +987,22 @@
                     const vDown = down.clone().addScaledVector(u, -down.dot(u));
                     if (vDown.lengthSq() > 1e-6) vDown.normalize();
                     else vDown.copy(sideXZ);
-                    const a = (r1 * r1 - r2 * r2 + dist * dist) / (2 * dist);
-                    const h = Math.sqrt(Math.max(0, r1 * r1 - a * a));
-                    const pInt = master.clone().addScaledVector(u, a).addScaledVector(vDown, h);
+                    const solveLowerCircle = (r2Val) => {
+                        const a = (r1 * r1 - r2Val * r2Val + dist * dist) / (2 * dist);
+                        const h = Math.sqrt(Math.max(0, r1 * r1 - a * a));
+                        return master.clone().addScaledVector(u, a).addScaledVector(vDown, h);
+                    };
+                    let pInt = solveLowerCircle(r2);
+                    // Refine padeye projection cos between upper axis (master - pInt) and lower leg (pInt - eMid)
+                    const upDir = master.clone().sub(pInt);
+                    const lowDir = pInt.clone().sub(eMid);
+                    if (upDir.lengthSq() > 1e-6 && lowDir.lengthSq() > 1e-6) {
+                        const alignCos = THREE.MathUtils.clamp(upDir.normalize().dot(lowDir.normalize()), 0.25, 1.0);
+                        r2 = dLowAx + 0.14 * alignCos;
+                        if (dist > Math.abs(r1 - r2) + 1e-4 && dist < r1 + r2 - 1e-4) {
+                            pInt = solveLowerCircle(r2);
+                        }
+                    }
                     const floorInt = cargoCeilingUnderBeam(pInt.x, pInt.z, spec, b);
                     if (!cargoAirborne && pInt.y < floorInt) {
                         // Bar has landed on cargo roof: lower cable tethers bar at roofTethered (≤ r2 from lug),

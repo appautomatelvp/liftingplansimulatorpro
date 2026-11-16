@@ -156,13 +156,18 @@ describe('Nhớm Cáp (pretensionRig) — Grounded Cargo + Full Real-Length Taut
             const span = sim.attachWorld(u.a).distanceTo(sim.attachWorld(u.b));
             expect(span, `hookY=${testHookY} bar=${b.id} upper taut`).toBeGreaterThanOrEqual(u.L0 - 0.04);
           }
+          const legs = phy.cables.filter((c) => c.role === 'leg' && c.a.body === b);
+          for (const l of legs) {
+            const span = sim.attachWorld(l.a).distanceTo(sim.attachWorld(l.b));
+            expect(span, `hookY=${testHookY} bar=${b.id} lower taut (no mid-air slack)`).toBeGreaterThanOrEqual(l.L0 - 0.06);
+          }
         }
         // Conservation of cable length: lower & upper slings must NEVER stretch past L0
         // and bars stay tethered near container ends rather than sliding to the middle.
         const barCables = phy.cables.filter((c) => c.a.body === b || c.b.body === b);
         for (const c of barCables) {
           const span = sim.attachWorld(c.a).distanceTo(sim.attachWorld(c.b));
-          expect(span, `hookY=${testHookY} ${c.role}[${c.index}] no stretch`).toBeLessThanOrEqual(c.L0 + 0.06);
+          expect(span, `hookY=${testHookY} ${c.role}[${c.index}] no stretch`).toBeLessThanOrEqual(c.L0 + 0.03);
         }
         expect(Math.abs(b.x.x), `hookY=${testHookY} bar=${b.id} held by lower sling near cargo end`).toBeGreaterThan(3.5);
       }

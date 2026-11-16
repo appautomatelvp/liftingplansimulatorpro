@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-16 16:35 [fix] Sửa lỗi dLowAx trừ nhầm halfZ^2 khiến ngáng vàng Basket lơ lửng trên xích dưới chùng (hoist_contacts.js) và khóa test không cho xích dưới chùng giữa không trung (pretension_nhom_cap.test.js)
+- Nhánh: feat/horizon-clouds | Commit trước đó: 5c2f0fb
+- File: src/sim/physics/hoist_contacts.js,test/pretension_nhom_cap.test.js,auto_memory/CONTEXT.md
+
 ## 2026-11-16 16:19 [fix] Giữ cố định chiều dài cáp dưới r2 cho 2 thanh ngáng Basket khi hạ móc (alignBasketBars), bỏ cơ chế trượt vào tâm làm giãn cáp và bổ sung test bảo toàn chiều dài cáp (test/pretension_nhom_cap.test.js)
 - Nhánh: feat/horizon-clouds | Commit trước đó: d4193a6
 - File: src/sim/physics/hoist_contacts.js,test/pretension_nhom_cap.test.js,auto_memory/CONTEXT.md
