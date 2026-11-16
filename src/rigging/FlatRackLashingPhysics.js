@@ -175,7 +175,7 @@ export function stepStaggeredLashingBreakPhysics({
 
   if (!st.ruptureCascadeTimer) st.ruptureCascadeTimer = 0;
   const overloadRatio = lashingCapacityN > 0 ? (lashingDemandN / lashingCapacityN) : 0;
-  const driveStress = st.strapsBroken ? 2.0 : Math.max(st.strapStress || 0, overloadRatio * 0.72);
+  const driveStress = Math.max(st.strapStress || 0, overloadRatio * 0.72);
   if (st.strapsBroken) st.ruptureCascadeTimer += dt;
 
   let anySnappedNow = false;
@@ -186,8 +186,10 @@ export function stepStaggeredLashingBreakPhysics({
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
     const ord = order[i];
-    const staggeredThreshold = st.strapsBroken ? (ord.threshold - st.ruptureCascadeTimer * 3.8) : ord.threshold;
-    if (!node.snapped && (driveStress >= staggeredThreshold || (st.strapsBroken && st.ruptureCascadeTimer >= i * 0.045))) {
+    // Immediate snap for highest-loaded straps; lower-stress straps follow naturally within ~0.24s
+    const cascadeReady = st.strapsBroken && (st.ruptureCascadeTimer >= Math.max(0, (ord.threshold - 0.55) * 0.55));
+    const overThreshold = driveStress >= ord.threshold;
+    if (!node.snapped && ((overThreshold && (!st.strapsBroken || st.ruptureCascadeTimer > 0.02 || i === 0 || ord.threshold < 0.78)) || cascadeReady)) {
       node.snapped = true;
       node.whipAge = 0;
       anySnappedNow = true;
