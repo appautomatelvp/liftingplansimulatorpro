@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-16 22:49 [fix] Bo sung 4 chuoi dich tieng Anh con thieu cho moc lo lung va chu thich Follow, toi uu ham hash bau troi khong dung sin() de pass CI GitHub.
+- Nhánh: feat/horizon-clouds | Commit trước đó: 913a7f0
+- File: src/sim/session/presets_events.js,src/graphics/HorizonSkyDome.js,e2e/saas-accessibility.spec.js
+
 ## 2026-11-16 22:23 [feat] Hoan tat V4: chong xuyen da go khi keo lech/xoay kien, ReplayRecorder 60s day du OOG/Lashing/cat cap, thuoc do ben phai so 2x, toi uu Tablet & STS Ha em
 - Nhánh: feat/horizon-clouds | Commit trước đó: cabbd24
 - File: src/graphics/JobsiteSiteVisuals.js,src/sim/physics/beams_seed.js,src/sim/physics/step_engine.js,src/rigging/ReplayRecorder.js,src/sim/library/reconstruction_export.js,src/sim/session/presets_events.js,src/graphics/ElevationRulerTool.js,src/styles/tablet.css,src/main.js,src/graphics/SceneRenderer.js

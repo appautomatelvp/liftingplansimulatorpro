@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 22:49 | Nhánh: feat/horizon-clouds | Commit cuối: ebdf2a0 step 6: mark V4 plan DONE (25 minutes ago)
+Cập nhật: 2026-11-16 22:49 | Nhánh: feat/horizon-clouds | Commit cuối: 913a7f0 fix: complete English translations for baseline/Follow hint and optimize sky shader hash (4 seconds ago)
 Tổng: 269 file, 78034 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
