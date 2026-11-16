@@ -402,7 +402,7 @@
 
         // Visual cache for instant model switching (0ms stutter, eliminates geometry churn)
         const cargoMeshCache = new Map();
-        const MAX_CARGO_CACHE_SIZE = 24;
+        const MAX_CARGO_CACHE_SIZE = 6;
 
         function rebuildCargoAndRig(resetSymmetricLugs = false) {
             const { cargoType, L, W, H, hwType, cogX, cogY, cogZ } = state;
@@ -461,7 +461,13 @@
 
                     if (cargoMeshCache.size >= MAX_CARGO_CACHE_SIZE) {
                         const oldestKey = cargoMeshCache.keys().next().value;
+                        const evicted = cargoMeshCache.get(oldestKey);
                         cargoMeshCache.delete(oldestKey);
+                        if (evicted && String(oldestKey).includes('|proc')) {
+                            evicted.traverse(obj => {
+                                if (obj.geometry && !obj.geometry.userData?._cachedCADEdgesGeo) obj.geometry.dispose?.();
+                            });
+                        }
                     }
                     cargoMeshCache.set(meshKey, activeCargoVisual);
                 }

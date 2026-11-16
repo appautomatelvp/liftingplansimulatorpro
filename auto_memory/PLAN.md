@@ -46,7 +46,7 @@ Nhánh thực hiện: feat/horizon-clouds (đã sao lưu an toàn vào `_BACKUPS
 - **File CẤM đụng:** Toàn bộ `[LOCKED]`.
 - **Kiểm tra:** `npm run architecture:gate; npm run build`
 
-### [ ] Bước 4: Tối ưu hiệu năng vòng lặp 3D & dọn bộ nhớ `cargoMeshCache` (3 files)
+### [x] Bước 4: Tối ưu hiệu năng vòng lặp 3D & dọn bộ nhớ `cargoMeshCache` (3 files)
 - **File được sửa / tạo:**
   1. `src/rigging/SlingPerfHelper.js` *(FILE MỚI, `< 180` dòng, `@purpose:`)*: Chứa bộ scratch (`Vector3`, `Matrix4`, `Quaternion`, `Euler`) tái sử dụng không cấp phát rác cho vòng lặp vẽ mắt xích & đoạn dây, và `canReuseSettledSlackRope(slingObj, A, B, L, cargoKey, isIdle)` cho phép dây chùng tái sử dụng kết quả XPBD khi 2 đầu dây + cargo đứng yên (`Δ < 1e-4m`).
   2. `src/rigging/index.js` *(+2 dòng)* & `src/sim/rigging/draw_update.js` *(sửa `≤ 22` dòng tại `simulateSlackRope` `135–145` và vòng lặp `514–652`)*: Re-export `SlingPerfHelper` qua `RIG`, bỏ cấp phát `new THREE.Vector3/Matrix4()` trong vòng lặp link/segment và bỏ qua bước giải XPBD khi dây đã ổn định.

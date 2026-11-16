@@ -133,6 +133,14 @@
                 slingObj.ropeSim = new CableDynClass({ lengthM: L, diameterMm: diameterMm || 16, material: normalizedMaterial, segments: N });
                 slingObj.ropeSim.reset(A, B);
                 slingObj._ropeSimCargoKey = cargoKey;
+                slingObj._settledFrames = 0;
+            }
+            const isIdleState = !!(state.poseLock && Math.abs(phy.cargoVel?.y || 0) < 0.01 && Math.abs(phy.cargoVel?.x || 0) < 0.01);
+            const settledCached = (typeof RIG !== 'undefined' && RIG.tryReuseSettledSlackRope)
+                ? RIG.tryReuseSettledSlackRope(slingObj, A, B, L, cargoKey, isIdleState)
+                : null;
+            if (settledCached) {
+                return settledCached;
             }
             const result = slingObj.ropeSim.step(1 / 60, A, B, {
                 iterations: 14,
@@ -140,6 +148,9 @@
             });
             result[0].copy(A);
             result[result.length - 1].copy(B);
+            if (typeof RIG !== 'undefined' && RIG.recordSolvedSlackRope) {
+                return RIG.recordSolvedSlackRope(slingObj, A, B, L, cargoKey, result, isIdleState);
+            }
             return result;
         }
 
@@ -511,42 +522,18 @@
                 const hideTipForEye = false;
                 // Chain: hide tube body, show articulated oval links; others: continuous body
                 seg.visible = !chain && !hideTipForEye;
-                const segVec = new THREE.Vector3().subVectors(pts[i + 1], pts[i]);
-                const segLen = Math.max(0.001, segVec.length());
-                const mid = pts[i].clone().lerp(pts[i + 1], 0.5);
-                seg.position.copy(mid);
-                const dir = segVec.clone().normalize();
-                // Overlap segment ends; tip segments dig into ferrule/stub so the join is solid
+                const segLen = Math.max(0.001, pts[i].distanceTo(pts[i + 1]));
                 const tipDig = (!chain && (i === 0 || i === N - 1) && (showWireEye || showGrommetEye))
                     ? 0.022 * Math.max(1, bodyK) : 0;
                 const overlapLen = segLen + tipDig + (i > 0 && i < N - 1 ? 0.018 * bodyK : 0.004);
-
-                if (look === 'web') {
-                    // Flat polyester webbing (EN 1492-1): wide × thin fabric — not a rigid plank
-                    const widthM = Math.max(0.045, Math.min(0.30, dia / 1000));
-                    const thickM = Math.max(0.0022, Math.min(0.008, widthM * 0.045));
-                    seg.scale.set(widthM, overlapLen, thickM);
-                    // Flat face lies in the vertical plane of the leg
-                    const side = new THREE.Vector3().crossVectors(dir, upY);
-                    if (side.lengthSq() < 1e-8) side.set(1, 0, 0);
-                    side.normalize();
-                    const nrm = new THREE.Vector3().crossVectors(dir, side).normalize();
-                    seg.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(side, dir, nrm));
+                if (typeof RIG !== 'undefined' && RIG.applySlingSegmentTransform) {
+                    RIG.applySlingSegmentTransform(THREE, seg, pts[i], pts[i + 1], upY, look, overlapLen, dia, actualTension, wllNow, i, N, bodyK);
                 } else {
-                    seg.quaternion.setFromUnitVectors(upY, dir);
-                    if (look === 'round_sling') {
-                        // Dynamic cross-sectional flattening under load & pin contact
-                        const tensionRatio = THREE.MathUtils.clamp(actualTension / Math.max(1, wllNow), 0, 1);
-                        const pinSquash = (i === 0 || i === N - 1) ? 0.35 : ((i === 1 || i === N - 2) ? 0.18 : 0);
-                        const flatFactor = THREE.MathUtils.clamp(tensionRatio * 0.28 + pinSquash, 0, 0.48);
-                        const sx = bodyK * 0.72 * (1 + flatFactor * 0.65);
-                        const sz = bodyK * 0.72 * (1 - flatFactor * 0.55);
-                        seg.scale.set(sx, overlapLen, sz);
-                    } else if (look === 'grommet') {
-                        seg.scale.set(bodyK * 0.85, overlapLen, bodyK * 0.85);
-                    } else {
-                        seg.scale.set(bodyK, overlapLen, bodyK);
-                    }
+                    const segVec = new THREE.Vector3().subVectors(pts[i + 1], pts[i]);
+                    seg.position.copy(pts[i]).lerp(pts[i + 1], 0.5);
+                    segVec.normalize();
+                    seg.quaternion.setFromUnitVectors(upY, segVec);
+                    seg.scale.set(bodyK, overlapLen, bodyK);
                 }
                 if (slingObj.links && slingObj.links[i]) {
                     const link = slingObj.links[i];
@@ -610,42 +597,17 @@
                 zLink0.normalize();
 
                 let kCursor = 1;
-                const instanceMatrix = new THREE.Matrix4();
-                const instanceScale = new THREE.Vector3();
-                const instanceQuaternion = new THREE.Quaternion();
+                const writeLink = (typeof RIG !== 'undefined' && RIG.writeChainLinkInstanceMatrix)
+                    ? RIG.writeChainLinkInstanceMatrix
+                    : null;
                 for (let i = 0; i < linkCount; i++) {
-                    // Distance along path to link center:
-                    // Link 0 center is at 0.5 * step (so its bottom inner crown sits at d = 0, kissing red end-link A).
-                    // Link i and link i+1 meet at d = (i + 1) * step (zero gap, metal-on-metal).
-                    // Link (linkCount - 1) top inner crown reaches d = total, kissing red end-link B.
                     const d = Math.min(total - 1e-4, Math.max(0, step * (i + 0.5)));
                     while (kCursor < acc.length - 1 && acc[kCursor] < d) kCursor++;
                     const span = Math.max(1e-6, acc[kCursor] - acc[kCursor - 1]);
                     const t = THREE.MathUtils.clamp((d - acc[kCursor - 1]) / span, 0, 1);
-                    const p0 = pts[kCursor - 1];
-                    const p1 = pts[kCursor];
-                    const mid = p0.clone().lerp(p1, t);
-                    const dir = new THREE.Vector3().subVectors(p1, p0);
-                    if (dir.lengthSq() < 1e-8) dir.copy(upY);
-                    else dir.normalize();
-                    // Build basis: Y = chain dir, Z = link plane normal (alternating weave)
-                    const yAxis = dir.clone();
-                    let zAxis = (i % 2 === 0) ? zLink0.clone() : zEnd.clone();
-                    // Re-orthogonalize along the local tangent so curves stay nested
-                    let xAxis = new THREE.Vector3().crossVectors(yAxis, zAxis);
-                    if (xAxis.lengthSq() < 1e-8) {
-                        zAxis = Math.abs(yAxis.y) < 0.92
-                            ? new THREE.Vector3(0, 1, 0).cross(yAxis)
-                            : new THREE.Vector3(1, 0, 0).cross(yAxis);
-                        zAxis.normalize();
-                        xAxis = new THREE.Vector3().crossVectors(yAxis, zAxis);
+                    if (writeLink) {
+                        writeLink(THREE, instances, i, pts[kCursor - 1], pts[kCursor], t, (i % 2 === 0) ? zLink0 : zEnd, sx, sy, upY);
                     }
-                    xAxis.normalize();
-                    zAxis.crossVectors(xAxis, yAxis).normalize();
-                    instanceQuaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis));
-                    instanceScale.set(sx, sy, sx);
-                    instanceMatrix.compose(mid, instanceQuaternion, instanceScale);
-                    instances.setMatrixAt(i, instanceMatrix);
                 }
                 instances.count = linkCount;
                 instances.instanceMatrix.needsUpdate = true;
