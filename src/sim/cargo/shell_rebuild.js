@@ -479,6 +479,9 @@
             }
             if (typeof resetFlatRackPayloadState === 'function') resetFlatRackPayloadState();
             cargoRootGroup.updateMatrixWorld(true);
+            if (activeCargoVisual && !activeCargoVisual.userData.trueSurfaceField && typeof RIG !== 'undefined' && RIG.bakeCargoSurfaceField) {
+                activeCargoVisual.userData.trueSurfaceField = RIG.bakeCargoSurfaceField(activeCargoVisual, { L, W, H }, cargoType);
+            }
 
             const hasExactMountPreset = [
                 'opentop', 'opentop40', 'flatrack', 'flatrack20', 'isotank',

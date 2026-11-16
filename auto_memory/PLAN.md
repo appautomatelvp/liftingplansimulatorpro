@@ -67,7 +67,7 @@
 ---
 
 ### Bước 2: Đấu nối Tiếp xúc Ôm sát Bề mặt 3D vào Hệ thống Dựng Kiện & Vẽ Cáp/Xích (`shell_rebuild.js`, `hook_pool.js`, `draw_update.js`)
-- [ ] **Trạng thái:** Chưa làm
+- [x] **Trạng thái:** Hoàn tất (326/326 test & `vite build` xanh)
 - **Mục tiêu:** Xóa bỏ hoàn toàn khoảng mờ vô hình và lỗi cộng đúp `pad` khi xích/cáp ôm vào bồn cầu, bồn trụ, container và các kiện 3D.
 - **File được phép sửa (tối đa 3 file):**
   1. `src/sim/cargo/shell_rebuild.js` *(sửa $\le 12$ dòng)*:

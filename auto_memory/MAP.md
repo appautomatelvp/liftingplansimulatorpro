@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 13:30 | Nhánh: feat/horizon-clouds | Commit cuối: aa8244a step 6: complete hyper-realistic physics & PBR upgrade plan and update V7 memory (70 minutes ago)
-Tổng: 247 file, 73300 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 13:34 | Nhánh: feat/horizon-clouds | Commit cuối: ea0e2a7 step 1: add TrueMeshSurfaceContact 3D skin solver (4 minutes ago)
+Tổng: 247 file, 73327 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -20,7 +20,7 @@ Tổng: 247 file, 73300 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/rigging/RiggingPhysicsSolver.js (682 dòng)
 - src/sim/audio.js (725 dòng)
 - src/sim/cargo/containers_iso.js (1490 dòng)
-- src/sim/cargo/shell_rebuild.js (563 dòng)
+- src/sim/cargo/shell_rebuild.js (566 dòng)
 - src/sim/cargo/specialty_meshes.js (2560 dòng)
 - src/sim/compliance.js (625 dòng)
 - src/sim/dynamics.js (848 dòng)
@@ -35,8 +35,8 @@ Tổng: 247 file, 73300 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/physics/hoist_contacts.js (1003 dòng)
 - src/sim/physics/step_engine.js (774 dòng)
 - src/sim/plan_wizard.js (632 dòng)
-- src/sim/rigging/draw_update.js (859 dòng)
-- src/sim/rigging/hook_pool.js (3098 dòng)
+- src/sim/rigging/draw_update.js (863 dòng)
+- src/sim/rigging/hook_pool.js (3118 dòng)
 - src/sim/scene.js (1974 dòng)
 - src/sim/session/prelift_reset.js (1144 dòng)
 - src/sim/session/presets_events.js (3563 dòng)
@@ -216,7 +216,7 @@ Tổng: 247 file, 73300 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/audio.js` | 725 |  ⚠️>300 |
 | `src/sim/cargo.js` | 6 |  |
 | `src/sim/cargo/containers_iso.js` | 1490 |  ⚠️>300 |
-| `src/sim/cargo/shell_rebuild.js` | 563 | --- 6B. SHELL CONTACT — pad-eyes weld to the real mesh, not the bounding box --- ⚠️>300 |
+| `src/sim/cargo/shell_rebuild.js` | 566 | --- 6B. SHELL CONTACT — pad-eyes weld to the real mesh, not the bounding box --- ⚠️>300 |
 | `src/sim/cargo/specialty_meshes.js` | 2560 | --- HIGH-FIDELITY 3D REFRIGERATION MACHINERY UNIT (CARRIER TRANSICOLD / THERMO KING) --- ⚠️>300 |
 | `src/sim/compliance.js` | 625 |  ⚠️>300 |
 | `src/sim/dynamics.js` | 848 |  ⚠️>300 |
@@ -239,8 +239,8 @@ Tổng: 247 file, 73300 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/physics/step_engine.js` | 774 |  ⚠️>300 |
 | `src/sim/plan_wizard.js` | 632 |  ⚠️>300 |
 | `src/sim/rigging.js` | 6 |  |
-| `src/sim/rigging/draw_update.js` | 859 | Slack cable morphology is solved by a persistent material-aware XPBD chain. ⚠️>300 |
-| `src/sim/rigging/hook_pool.js` | 3098 |  ⚠️>300 |
+| `src/sim/rigging/draw_update.js` | 863 | Slack cable morphology is solved by a persistent material-aware XPBD chain. ⚠️>300 |
+| `src/sim/rigging/hook_pool.js` | 3118 |  ⚠️>300 |
 | `src/sim/scene.js` | 1974 |  ⚠️>300 |
 | `src/sim/session.js` | 6 |  |
 | `src/sim/session/prelift_reset.js` | 1144 |  ⚠️>300 |

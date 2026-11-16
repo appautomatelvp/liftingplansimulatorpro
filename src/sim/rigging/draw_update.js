@@ -174,9 +174,9 @@
             const isChainNow = look === 'chain';
             const isFlatNow = look === 'web' || look === 'round_sling';
             const diaNowM = Math.max(6, meta.diaMm || (isFlatNow ? 50 : (isChainNow ? 16 : 20))) / 1000;
-            // Collision radius = real half-thickness of what is drawn (chain link outer width / rope radius / strap)
-            const simPad = isChainNow ? 1.1 * diaNowM
-                : (isFlatNow ? 0.008 : diaNowM * 0.5 + 0.003);
+            // Collision radius = real half-thickness of what is drawn (single contact radius, zero gap)
+            const simPad = isChainNow ? 0.85 * diaNowM
+                : (isFlatNow ? 0.006 : diaNowM * 0.5 + 0.001);
             // Bending stiffness: steel wire rope resists tight folds (~8x dia); chain and straps fold freely
             const simStiffR = (isChainNow || isFlatNow) ? 0 : Math.max(0.12, 8 * diaNowM);
             const actualTension = (cable && cable.tensionT) || 0;
@@ -337,6 +337,10 @@
                     rawPts = [pointA.clone(), end.clone()];
                 }
                 if (!rawPts || rawPts.length < 2) rawPts = [pointA.clone(), end.clone()];
+                const sfTaut = activeCargoVisual && activeCargoVisual.userData && activeCargoVisual.userData.trueSurfaceField;
+                if (sfTaut && typeof RIG !== 'undefined' && RIG.conformPathToTrueCargoSurface && meta.role !== 'upper') {
+                    rawPts = RIG.conformPathToTrueCargoSurface(rawPts.map(cargoLocalFromWorld), simPad, state.cargoType, state, sfTaut, true).map(cargoWorldFromLocal);
+                }
             } else if (!meta.broken && renderLen > chord + 0.005) {
                 // Every slack live cable uses the same persistent physical solver,
                 // including pose-locked startup scenes; there is no static spline fallback.
