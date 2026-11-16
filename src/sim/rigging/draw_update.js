@@ -323,7 +323,7 @@
                 const PCS = (typeof CAE !== 'undefined' && CAE.PhysicalCableSolver) || null;
                 if (PCS && tensionN > 5000) {
                     try {
-                        const solver = new PCS(workLen, Math.max(8, diaNowM * 1000), isChainNow ? 200 : 110, 24);
+                        const solver = new PCS(Math.max(workLen, chord), Math.max(8, diaNowM * 1000), isChainNow ? 200 : 110, 24);
                         const floorY = (typeof supportY === 'function')
                             ? Math.min(supportY(pointA.x, pointA.z), supportY(end.x, end.z)) - 0.02
                             : -1e3;
@@ -345,7 +345,8 @@
                 }
                 if (!rawPts || rawPts.length < 2) rawPts = [pointA.clone(), end.clone()];
                 const sfTaut = activeCargoVisual && activeCargoVisual.userData && activeCargoVisual.userData.trueSurfaceField;
-                if (sfTaut && typeof RIG !== 'undefined' && RIG.conformPathToTrueCargoSurface && meta.role !== 'upper') {
+                const plainBoxTaut = ['container', 'container_20ft_glb', 'iso20hc', 'iso40', 'container_40ft_glb', 'iso40hc', 'iso45hc', 'container10', 'iso53hc', 'reefer', 'reefer20', 'halfheight', 'drybulk', 'crate'].includes(state.cargoType);
+                if (sfTaut && (sfTaut.detectedSphere || !plainBoxTaut) && typeof RIG !== 'undefined' && RIG.conformPathToTrueCargoSurface && meta.role !== 'upper') {
                     rawPts = RIG.conformPathToTrueCargoSurface(rawPts.map(cargoLocalFromWorld), simPad, state.cargoType, state, sfTaut, true).map(cargoWorldFromLocal);
                 }
             } else if (!meta.broken && renderLen > chord + 0.005) {

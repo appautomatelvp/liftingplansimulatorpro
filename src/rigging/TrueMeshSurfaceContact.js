@@ -80,16 +80,20 @@ export function bakeCargoSurfaceField(cargoVisual, dims, cargoType) {
     return hits.length ? hits[0].point.clone().applyMatrix4(invRootM) : null;
   };
 
+  let maxSkinY = -Infinity;
+  let minSkinY = Infinity;
   for (let iz = 0; iz < nz; iz++) {
     const lz = -halfZ + (iz / (nz - 1)) * (halfZ * 2);
     for (let ix = 0; ix < nx; ix++) {
       const lx = -halfX + (ix / (nx - 1)) * (halfX * 2);
       const tHit = castLocalRay(lx, H * 0.65 + 1.0, lz, 0, -1, 0, H * 1.4 + 2.0);
-      if (tHit) topGrid[iz * nx + ix] = tHit.y;
+      if (tHit) { topGrid[iz * nx + ix] = tHit.y; maxSkinY = Math.max(maxSkinY, tHit.y); }
       const bHit = castLocalRay(lx, -H * 0.65 - 1.0, lz, 0, 1, 0, H * 1.4 + 2.0);
-      if (bHit) botGrid[iz * nx + ix] = bHit.y;
+      if (bHit) { botGrid[iz * nx + ix] = bHit.y; minSkinY = Math.min(minSkinY, bHit.y); }
     }
   }
+  if (!Number.isFinite(maxSkinY)) maxSkinY = H * 0.5;
+  if (!Number.isFinite(minSkinY)) minSkinY = -H * 0.5;
 
   const ny = 11, na = 24, radialGrid = new Float32Array(ny * na).fill(0);
   const outerR = Math.hypot(halfX, halfZ) + 1.0;
@@ -116,12 +120,13 @@ export function bakeCargoSurfaceField(cargoVisual, dims, cargoType) {
       }
     }
   }
-  return { cargoType, L, W, H, nx, nz, halfX, halfZ, ny, na, topGrid, botGrid, radialGrid, detectedSphere };
+  return { cargoType, L, W, H, nx, nz, halfX, halfZ, ny, na, topGrid, botGrid, radialGrid, detectedSphere, maxSkinY, minSkinY };
 }
 
 function sampleRadialContour(field, ly, angle) {
   if (!field?.radialGrid) return 0;
-  const { ny, na, H, radialGrid } = field;
+  const { ny, na, H, radialGrid, minSkinY, maxSkinY } = field;
+  if (ly > (maxSkinY ?? H * 0.5) + 0.05 || ly < (minSkinY ?? -H * 0.5) - 0.05) return 0;
   const ty = THREE.MathUtils.clamp((ly + H * 0.48) / Math.max(1e-4, H * 0.96), 0, 1) * (ny - 1);
   const iy0 = Math.max(0, Math.min(ny - 2, Math.floor(ty))), fy = ty - iy0;
   const normAng = ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
@@ -168,9 +173,14 @@ export function projectPointOntoTrueCargoSurface(localPt, pad, cargoType, dims, 
     }
   }
   if (!surfaceField) return q;
+  const topBound = (surfaceField.maxSkinY ?? surfaceField.H * 0.5) + rPad;
+  const botBound = (surfaceField.minSkinY ?? -surfaceField.H * 0.5) - rPad;
+  if (q.y > topBound || q.y < botBound) return q;
 
   const skinTop = sampleGridBilinear(surfaceField.topGrid, surfaceField.nx, surfaceField.nz, surfaceField.halfX, surfaceField.halfZ, q.x, q.z);
   const skinBot = sampleGridBilinear(surfaceField.botGrid, surfaceField.nx, surfaceField.nz, surfaceField.halfX, surfaceField.halfZ, q.x, q.z);
+  if (skinTop != null && q.y > skinTop + rPad) return q;
+  if (skinBot != null && q.y < skinBot - rPad) return q;
   const rShell = sampleRadialContour(surfaceField, q.y, Math.atan2(q.z, q.x));
   const rHoriz = Math.hypot(q.x, q.z);
   if (skinTop == null && skinBot == null && rShell <= 1e-4) return q;

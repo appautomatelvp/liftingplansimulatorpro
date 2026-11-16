@@ -51,6 +51,14 @@ describe('REALISM UPGRADE — 6 Industrial 3D Physics & Rigging Acceptance Tests
 
     const pushed = projectPointOntoTrueCargoSurface(new THREE.Vector3(0, 0.6, 0), chainPad, 'custom_sphere_tank', dims, field, true);
     expect(pushed.length()).toBeGreaterThanOrEqual(R + chainPad - 0.002);
+
+    // Points 2m ABOVE any 3D cargo skin must NEVER be kicked radially outward (fixes dogleg kink below shackles)
+    const boxGroup = new THREE.Group();
+    boxGroup.add(new THREE.Mesh(new THREE.BoxGeometry(12.192, 2.591, 2.438), new THREE.MeshStandardMaterial()));
+    const boxField = bakeCargoSurfaceField(boxGroup, { L: 12.192, W: 2.438, H: 2.591 }, 'iso40');
+    const skyPt = new THREE.Vector3(4.5, 3.4, 1.09);
+    const untouched = projectPointOntoTrueCargoSurface(skyPt, 0.02, 'iso40', { L: 12.192, W: 2.438, H: 2.591 }, boxField, true);
+    expect(untouched.distanceTo(skyPt)).toBeLessThan(1e-6);
   });
 
   it('2. Bends 32-segment H-beam flanges and internal dark ribs together so ribs never protrude below bottom flange', () => {

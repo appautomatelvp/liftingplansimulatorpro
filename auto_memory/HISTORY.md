@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-16 14:01 [fix] Sửa lỗi hàm chiếu bề mặt 3D thật đẩy ngang các đoạn cáp ở trên cao (làm gãy khúc dây dưới ma-ní ngáng basket) và căn chiều dài đoạn cáp căng trong PhysicalCableSolver
+- Nhánh: feat/horizon-clouds | Commit trước đó: a937ce5
+- File: src/rigging/TrueMeshSurfaceContact.js,src/sim/rigging/draw_update.js,test/rigging_realism_sts_contact.test.js
+
 ## 2026-11-16 13:42 [feat] Hoàn tất 6/6 bước nâng cấp tiếp xúc bề mặt 3D thực (0mm khe hở), dầm chữ H uốn đồng bộ không lòi gân đen, chuẩn hóa ngáng STS ISO 668/1161 và sửa vật lý đứt cáp không bắn tia đỏ
 - Nhánh: feat/horizon-clouds | Commit trước đó: 942f433
 - File: src/rigging/TrueMeshSurfaceContact.js,src/rigging/StsSpreaderRealism.js,src/rigging/BrokenCableWhipXPBD.js,src/rigging/RigidInertialDynamics.js,src/sim/cargo/shell_rebuild.js,src/sim/cargo/specialty_meshes.js,src/sim/rigging/hook_pool.js,src/sim/rigging/draw_update.js,src/sim/physics/beams_seed.js,test/rigging_realism_sts_contact.test.js

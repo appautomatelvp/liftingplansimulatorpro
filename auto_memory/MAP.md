@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 13:43 | Nhánh: feat/horizon-clouds | Commit cuối: 942f433 step 5: calibrate STS ISO 668/1161 spreader dimensions and hoisting dynamics (3 minutes ago)
-Tổng: 249 file, 73700 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 14:01 | Nhánh: feat/horizon-clouds | Commit cuối: a937ce5 step 6: add Golden Tests and complete 3D realism & STS ISO upgrade (18 minutes ago)
+Tổng: 249 file, 73719 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -35,7 +35,7 @@ Tổng: 249 file, 73700 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/physics/hoist_contacts.js (1003 dòng)
 - src/sim/physics/step_engine.js (774 dòng)
 - src/sim/plan_wizard.js (632 dòng)
-- src/sim/rigging/draw_update.js (866 dòng)
+- src/sim/rigging/draw_update.js (867 dòng)
 - src/sim/rigging/hook_pool.js (3118 dòng)
 - src/sim/scene.js (1974 dòng)
 - src/sim/session/prelift_reset.js (1144 dòng)
@@ -182,7 +182,7 @@ Tổng: 249 file, 73700 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/riggingUIStore.js` | 100 | src/rigging/riggingUIStore.js |
 | `src/rigging/RigidInertialDynamics.js` | 212 | Động lực học vật rắn lệch tâm (Steiner-Huygens Inertia Tensor), mô-men xoắn/nghiêng khi cẩu và rơi tự do 9.81 m/s² |
 | `src/rigging/StsSpreaderRealism.js` | 174 | Chuẩn hóa kích thước ISO 668/1161, hệ cáp tời 8 nhánh và cơ học nâng hạ thực tế cho Ngáng cẩu Container STS |
-| `src/rigging/TrueMeshSurfaceContact.js` | 220 | Bộ giải tiếp xúc bề mặt 3D thực (0mm khe hở, không xuyên thủng) cho cáp và xích ôm sát kiện hàng 3D |
+| `src/rigging/TrueMeshSurfaceContact.js` | 230 | Bộ giải tiếp xúc bề mặt 3D thực (0mm khe hở, không xuyên thủng) cho cáp và xích ôm sát kiện hàng 3D |
 | `src/saas/access.js` | 48 |  |
 | `src/saas/admin_catalog_audit_panels.js` | 89 | Dựng giao diện phân hệ Catalog thiết bị 3 cột, Nhật ký Kiểm toán Diff và Modal chi tiết người dùng |
 | `src/saas/admin_cms.css` | 170 | Giao diện CSS chuẩn Enterprise Command Center cho CMS Quản trị (/admin) |
@@ -240,7 +240,7 @@ Tổng: 249 file, 73700 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/physics/step_engine.js` | 774 |  ⚠️>300 |
 | `src/sim/plan_wizard.js` | 632 |  ⚠️>300 |
 | `src/sim/rigging.js` | 6 |  |
-| `src/sim/rigging/draw_update.js` | 866 | Slack cable morphology is solved by a persistent material-aware XPBD chain. ⚠️>300 |
+| `src/sim/rigging/draw_update.js` | 867 | Slack cable morphology is solved by a persistent material-aware XPBD chain. ⚠️>300 |
 | `src/sim/rigging/hook_pool.js` | 3118 |  ⚠️>300 |
 | `src/sim/scene.js` | 1974 |  ⚠️>300 |
 | `src/sim/session.js` | 6 |  |
@@ -294,7 +294,7 @@ Tổng: 249 file, 73700 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/rigging_alarms_and_tolerances.test.js` | 216 |  |
 | `test/rigging_groups_and_dynamics.test.js` | 84 |  |
 | `test/rigging_physics_and_alarms.test.js` | 306 | test/rigging_physics_and_alarms.test.js ⚠️>300 |
-| `test/rigging_realism_sts_contact.test.js` | 178 | Bộ kiểm thử vàng xác minh tiếp xúc bề mặt 3D thực (0mm khe hở), dầm chữ H, kích thước STS ISO 668/1161 và vật lý đứt cáp |
+| `test/rigging_realism_sts_contact.test.js` | 186 | Bộ kiểm thử vàng xác minh tiếp xúc bề mặt 3D thực (0mm khe hở), dầm chữ H, kích thước STS ISO 668/1161 và vật lý đứt cáp |
 | `test/runtime_flags.test.js` | 96 |  |
 | `test/saas_access.test.js` | 55 |  |
 | `test/security_headers.test.js` | 44 |  |
