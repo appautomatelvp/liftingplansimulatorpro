@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 14:57 | Nhánh: feat/horizon-clouds | Commit cuối: 01e7573 step 3: wire H-Style Lifting Beam 4-corner physics, direct hook and twistlock coupling (4 minutes ago)
-Tổng: 250 file, 74042 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 15:19 | Nhánh: feat/horizon-clouds | Commit cuối: d55a201 step 4: add H-Style Lifting Beam top and bottom mode UI controls (22 minutes ago)
+Tổng: 251 file, 74237 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -28,7 +28,7 @@ Tổng: 250 file, 74042 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/library/core.js (641 dòng)
 - src/sim/library/parsers.js (652 dòng)
 - src/sim/library/reconstruction_export.js (2136 dòng)
-- src/sim/physics/beams_seed.js (2935 dòng)
+- src/sim/physics/beams_seed.js (2939 dòng)
 - src/sim/physics/cables_break.js (1557 dòng)
 - src/sim/physics/flatrack_payload.js (629 dòng)
 - src/sim/physics/footprint_rig.js (840 dòng)
@@ -231,7 +231,7 @@ Tổng: 250 file, 74042 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/library/reconstruction_export.js` | 2136 | --- 2D IMAGE TO 3D CONTOUR & RELIEF RECONSTRUCTION ENGINE --- ⚠️>300 |
 | `src/sim/manifest.js` | 39 |  |
 | `src/sim/physics.js` | 6 |  |
-| `src/sim/physics/beams_seed.js` | 2935 |  ⚠️>300 |
+| `src/sim/physics/beams_seed.js` | 2939 |  ⚠️>300 |
 | `src/sim/physics/cables_break.js` | 1557 |  ⚠️>300 |
 | `src/sim/physics/flatrack_payload.js` | 629 | --- FLAT RACK LASHING RUPTURE, DECK SLIDING & FALLING PAYLOAD PHYSICS --- ⚠️>300 |
 | `src/sim/physics/footprint_rig.js` | 840 |  ⚠️>300 |
@@ -283,6 +283,7 @@ Tổng: 250 file, 74042 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/feedback_mailto.test.js` | 144 |  |
 | `test/firestore-rules-emulator.mjs` | 351 |  |
 | `test/graphics.test.js` | 113 |  |
+| `test/h_style_lifting_beam.test.js` | 191 | Kiểm thử vàng cấu tạo H-Style Lifting Beam 4 góc và 4 tổ hợp liên kết Trên/Dưới |
 | `test/hyper_realistic_physics_pbr.test.js` | 184 | Kiểm thử Vàng 3 trụ cột: Va chạm CCD & Ma sát, Cẩu 20 tấn lệch tâm + Cắt cáp quật XPBD, và Vật liệu PBR Ứng suất |
 | `test/i18n_keys.test.js` | 56 |  |
 | `test/inclined_lashing_slide.test.js` | 67 |  |

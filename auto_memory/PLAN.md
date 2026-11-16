@@ -1,6 +1,6 @@
-# KẾ HOẠCH NÂNG CẤP CHUYÊN SÂU: CẤU TẠO H-STYLE LIFTING BEAM (2 THANH NGANG 4 GÓC) & TÙY CHỌN LIÊN KẾT TRÊN / DƯỚI (ACTIVE)
+# KẾ HOẠCH NÂNG CẤP CHUYÊN SÂU: CẤU TẠO H-STYLE LIFTING BEAM (2 THANH NGANG 4 GÓC) & TÙY CHỌN LIÊN KẾT TRÊN / DƯỚI (DONE)
 
-- **Trạng thái:** `ACTIVE`
+- **Trạng thái:** `DONE`
 - **Ngày lập:** 2026-11-16
 - **Phân loại:** **VIỆC LỚN** (nâng cấp toàn bộ hình học 3D, khớp vật lý `beamRecipe`, cơ chế nâng hạ và giao diện chọn liên kết Trên/Dưới cho `Lifting Beam` theo 4 hình mẫu công nghiệp của Founder).
 - **Nhánh thực thi:** `feat/horizon-clouds` (đã sao lưu an toàn vào `_BACKUPS_LOCAL/`).
@@ -95,7 +95,7 @@
 ---
 
 ### Bước 5: Bộ Kiểm Thử Vàng H-Style Lifting Beam & Nghiệm Thu Toàn Diện (`test/h_style_lifting_beam.test.js`)
-- [ ] **Trạng thái:** Chưa làm
+- [x] **Trạng thái:** Hoàn tất (`test/h_style_lifting_beam.test.js` 3/3 test xanh; `beams_seed.js` tinh chỉnh `calibrateBeamCollisionProxy` cho H-Style Lifting Beam; `npm run architecture:gate` + `45/45` file / `334/334` test + `npm run build` + `check:dist` xanh 100%)
 - **Mục tiêu:** Kiểm chứng toàn bộ 4 chế độ của H-Style Lifting Beam và đảm bảo 100% test cũ không bị ảnh hưởng.
 - **File được phép tạo/sửa (tối đa 3 file):**
   1. `test/h_style_lifting_beam.test.js` *(tạo mới, `< 200` dòng, có `// @purpose: Kiểm thử vàng cấu tạo H-Style Lifting Beam 4 góc và 4 tổ hợp liên kết Trên/Dưới`)*:

@@ -1,6 +1,14 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-16 15:19 [feat] Hoàn tất 5/5 bước nâng cấp H-Style Lifting Beam (2 thanh ngang 4 góc) với tùy chọn liên kết Trên (Direct Hook Link / 2 cáp-xích) và Dưới (4 cáp-xích 4 góc / Gắp Container Twistlock)
+- Nhánh: feat/horizon-clouds | Commit trước đó: d55a201
+- File: src/rigging/HStyleLiftingBeam.js,src/sim/state.js,src/sim/cargo/specialty_meshes.js,src/sim/cargo/shell_rebuild.js,src/sim/physics/hoist_contacts.js,src/sim/physics/cables_break.js,src/sim/physics/footprint_rig.js,src/sim/physics/beams_seed.js,src/sim/telemetry.js,src/sim/session/prelift_reset.js,src/sim/session/ui_units_bom.js,src/sim/plan_wizard.js,index.html,test/h_style_lifting_beam.test.js,test/rigging.test.js
+
+## 2026-11-16 14:40 [docs] Lập kế hoạch 5 bước nâng cấp Lifting Beam sang cấu tạo H-Style Lifting Beam (2 thanh ngang 4 góc) với tùy chọn liên kết Trên (Direct Hook Link / 2 cáp-xích) và Dưới (Gắp trực tiếp Container / 4 cáp-xích 4 góc)
+- Nhánh: feat/horizon-clouds | Commit trước đó: 9a94f2a
+- File: auto_memory/PLAN.md,STATE.md,auto_memory/CONTEXT.md
+
 ## 2026-11-16 14:27 [refactor] Loại bỏ 3 loại ngáng thừa khỏi giao diện chọn ngáng, Wizard và danh mục mặc định (Cascaded Spreader System, Spreader Beam Truss, Equalizer Beam) mà vẫn giữ tương thích nếu phương án cũ có lưu
 - Nhánh: feat/horizon-clouds | Commit trước đó: 7965757
 - File: index.html,src/sim/plan_wizard.js,src/sim/state.js,src/saas/feature_access_ui.js

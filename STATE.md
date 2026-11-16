@@ -45,13 +45,8 @@
 ---
 
 ## 4. CÔNG VIỆC ĐANG LÀM DỞ (ONGOING WORK)
-- **Mục tiêu hiện tại:** Hoàn tất 6/6 bước nâng cấp chuyên sâu **Tiếp xúc Bề mặt 3D Thực (0mm khe hở), Kết cấu Dầm chữ H, Chuẩn hóa Ngáng Cẩu STS ISO 1161/668 & Vật lý Đứt cáp Thực tế** (`auto_memory/PLAN.md` `Trạng thái: DONE`, nhánh `feat/horizon-clouds`):
-  1. `src/rigging/TrueMeshSurfaceContact.js` (`220` dòng) + đấu nối vào `shell_rebuild.js`, `hook_pool.js`, `draw_update.js`: Quét & giải tiếp xúc 1:1 trực tiếp trên bề mặt cong/mesh 3D thực, xóa hộp chữ nhật vô hình và lỗi cộng đúp `pad`.
-  2. Chia lưới dọc `widthSegments = 32` cho dầm nâng chữ H (`specialty_meshes.js`), thu gọn gân đen nằm trong lòng bụng dầm, và chuẩn hóa độ cứng $I_{\text{beam}}$ (`beams_seed.js`) để không bao giờ lòi thanh đen xuống đáy dầm.
-  3. Sửa `BrokenCableWhipXPBD.js`, `RigidInertialDynamics.js`, `draw_update.js`: Mỗi nửa cáp đứt neo đúng chốt của nó (`stepSingleStub`), triệt tiêu tia đỏ bắn lên trời & xích văng ngang.
-  4. `src/rigging/StsSpreaderRealism.js` (`174` dòng) + đấu nối `specialty_meshes.js`, `beams_seed.js`: Chuẩn hóa kích thước phủ bì khung Ngáng STS khớp chuẩn quốc tế ISO 668 / ISO 1161 ($2.438\text{ m}$ rộng), nối liền 8 cáp tời Headblock lên trolley (`hookPos`), và chuẩn hóa nâng/hạ + nghiêng lệch CoG chế độ Direct & Cable.
-  5. Bộ kiểm thử Vàng `test/rigging_realism_sts_contact.test.js` (5/5 test đạt).
-- **Bước tiếp theo:** Founder kiểm tra trực quan trên màn hình 3D (chọn bồn cầu/trụ bọc xích, thử dầm nâng chữ H 30T, thử ngáng STS gắp công & cắt cáp ở chế độ Cáp/Trực tiếp), nếu ưng ý thì chạy `./scripts/manual_chot_ban.ps1`.
+- **Mục tiêu hiện tại:** Đã hoàn tất 5/5 bước trong `auto_memory/PLAN.md` (`Trạng thái: DONE`, nhánh `feat/horizon-clouds`) cho đợt nâng cấp **H-Style Lifting Beam (2 thanh ngang 4 góc)** với 2 tùy chọn phía trên (`direct_hook` bắt thẳng Hook Link / `bridle2` 2 cáp-xích) và 2 tùy chọn 4 góc phía dưới (`cable` 4 cáp-xích / `direct` gắp container Twistlock). Toàn bộ `45/45` file / `334/334` test xanh.
+- **Bước tiếp theo:** Founder kiểm tra trực quan 3D trên trình duyệt (chuyển đổi 4 tổ hợp Trên/Dưới + thử Nhấc thử 4 góc), khi ưng ý thì chạy `./scripts/manual_chot_ban.ps1` để chốt bản ổn định.
 
 ---
 
@@ -59,4 +54,4 @@
 - [x] Tất cả các file mới/vừa tách đều dưới 300 dòng, có `@purpose`, không sinh ra file `patch*.js` hay `fix.js` nào.
 - [x] Không vi phạm Physics Quarantine (`/src/core/` không import DOM/Three.js) và qua `npm run architecture:gate`.
 - [x] Đã chạy `./scripts/auto_check.ps1` và `./scripts/auto_log.ps1` để cập nhật `auto_memory/HISTORY.md` + `auto_memory/MAP.md`.
-- [x] Toàn bộ 44 file / 331 test (`npm test`), kiểm tra bảo mật (`@secure`) + Golden Test (`@test`) và `npm run build` chạy khớp 100%. (Founder mở F12 kiểm tra thêm trên trình duyệt trước khi chốt bản).
+- [x] Toàn bộ 45 file / 334 test (`npm test`), kiểm tra bảo mật (`@secure`) + Golden Test (`@test`) và `npm run build` chạy khớp 100%. (Founder mở F12 kiểm tra thêm trên trình duyệt trước khi chốt bản).

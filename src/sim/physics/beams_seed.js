@@ -1917,7 +1917,9 @@
             const size = bounds.getSize(new THREE.Vector3());
             if (b.axis === 'x') {
                 b.collisionLength = Math.max(b.length, size.x + 0.02);
-                b.visualRadius = Math.max(Math.abs(bounds.min.y), Math.abs(bounds.max.y), Math.abs(bounds.min.z), Math.abs(bounds.max.z)) + 0.008;
+                b.visualRadius = state.beamType === 'lifting_beam'
+                    ? 0.20
+                    : (Math.max(Math.abs(bounds.min.y), Math.abs(bounds.max.y), Math.abs(bounds.min.z), Math.abs(bounds.max.z)) + 0.008);
             } else if (b.axis === 'z') {
                 b.collisionLength = Math.max(b.length, size.z + 0.02);
                 b.visualRadius = Math.max(Math.abs(bounds.min.x), Math.abs(bounds.max.x), Math.abs(bounds.min.y), Math.abs(bounds.max.y)) + 0.008;
@@ -2195,7 +2197,8 @@
                 { c: phy.hookPos.clone().add(new THREE.Vector3(0, 0.34, 0)), r: 0.26 },
                 { c: phy.hookPos.clone().add(new THREE.Vector3(0, -0.32, 0)), r: 0.16 }
             ];
-            hooks.forEach(hk => {
+            const skipHookPush = state.beamType === 'lifting_beam' && state.liftingBeamTopMode === 'direct_hook';
+            if (!skipHookPush) hooks.forEach(hk => {
                 beams.forEach(b => beamSegments(b).forEach(ends => {
                     const axis = ends[1].clone().sub(ends[0]);
                     const len2 = Math.max(1e-8, axis.lengthSq());
@@ -2703,7 +2706,8 @@
                         || (phy.twinCableFlare.pitchB || 0) > 0.02
                     ))
                 );
-            if (!stsBusy && (state.beamType !== 'basket' || (phy.groundClearance || 0) <= 0.05)) {
+            const lbDirectBusy = state.beamType === 'lifting_beam' && (state.liftingBeamBottomMode || 'cable') === 'direct' && (phy.groundClearance || 0) > 0.02;
+            if (!stsBusy && !lbDirectBusy && (state.beamType !== 'basket' || (phy.groundClearance || 0) <= 0.05)) {
                 (phy.beams || []).forEach(b => depenetrateBeamFromCargo(b, state.beamType === 'basket' ? 6 : 10));
             }
             if (basketUsesKinematicPose()) {

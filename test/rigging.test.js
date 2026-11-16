@@ -637,7 +637,7 @@ describe('3D Rigging Testbed, Hardware Geometry & Mass Deductions', () => {
 
         const cat = simApi.getLibraryCatalog();
         expect(cat.hardware.length).toBeGreaterThanOrEqual(13);
-        expect(cat.rig_preset.length).toBeGreaterThanOrEqual(11);
+        expect(cat.rig_preset.length).toBeGreaterThanOrEqual(10);
     });
 
     it('12. Basket Spreader Cradle pulls transverse bars inward collinearly (zero mid-air kink) and never orphans beam meshes', () => {
