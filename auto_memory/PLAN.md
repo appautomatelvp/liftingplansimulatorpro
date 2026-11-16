@@ -38,7 +38,7 @@ Nhánh Git: feat/horizon-clouds
   3. `src/sim/telemetry.js` (`<= 15` dòng thay đổi): khi `#sel-crane-mat` đổi giá trị thì gọi `GFX.syncCraneOutriggerMats3D(...)`; giữ `dunnageGroup` bám vị trí/góc xoay & nghiêng theo độ dốc.
 - **Kiểm tra:** `npm run architecture:gate` + `npm run build` + `./scripts/auto_check.ps1`.
 
-### [ ] Bước 3: Dây chằng Flat Rack ôm khít kiện & helper đứt tuần tự tự nhiên
+### [x] Bước 3: Dây chằng Flat Rack ôm khít kiện & helper đứt tuần tự tự nhiên
 - **File tạo/sửa (3 file):**
   1. Tạo `src/rigging/FlatRackLashingPhysics.js` (`< 230` dòng, `@purpose:`):
      - `buildTightFlatRackLashingVisuals({ THREE, oogGroup, group, MATS, dims })`: bọc dây chằng sát mặt trên/mặt bên `polyHood` & thùng hàng, kéo chéo gọn vào vòng neo trong mép dầm Flat Rack (`<= Math.max(W*0.5 - 0.03, Math.abs(offsetZ) + cW*0.5 + 0.035)`), bỏ hẳn thanh ngang lòi ra ngoài không trung; tạo sẵn 2 đoạn dây đứt (`brokenTop`, `brokenBot`) cho từng sợi kèm thông số `relStrength` & `seed`.

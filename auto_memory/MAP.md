@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 20:11 | Nhánh: feat/horizon-clouds | Commit cuối: 6229feb step 1: add JobsiteSiteVisuals and wire 3D timber dunnage (2 minutes ago)
-Tổng: 261 file, 76086 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 20:13 | Nhánh: feat/horizon-clouds | Commit cuối: 50c5d06 step 2: wire Tab 6 dunnage slope and outrigger mats to 3D (2 minutes ago)
+Tổng: 262 file, 76265 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -20,7 +20,7 @@ Tổng: 261 file, 76086 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/i18n/keys.js (598 dòng)
 - src/rigging/RiggingPhysicsSolver.js (684 dòng)
 - src/sim/audio.js (725 dòng)
-- src/sim/cargo/containers_iso.js (1494 dòng)
+- src/sim/cargo/containers_iso.js (1453 dòng)
 - src/sim/cargo/shell_rebuild.js (573 dòng)
 - src/sim/cargo/specialty_meshes.js (2512 dòng)
 - src/sim/compliance.js (625 dòng)
@@ -182,8 +182,9 @@ Tổng: 261 file, 76086 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/constraints/CornerProtectorModel.js` | 51 |  |
 | `src/rigging/constraints/HardwareConstraint.js` | 236 |  |
 | `src/rigging/constraints/UnilateralCableConstraint.js` | 151 |  |
+| `src/rigging/FlatRackLashingPhysics.js` | 219 | Dựng dây chằng Flat Rack ôm khít kiện hàng (không lòi ngang) và mô phỏng đứt tuần tự tự nhiên theo vật lý. |
 | `src/rigging/HStyleLiftingBeam.js` | 188 | Cấu tạo 3D và thông số khớp nối H-Style Lifting Beam (tùy chọn trên Direct Hook/2-Cáp và dưới 4-Cáp/Twistlock) |
-| `src/rigging/index.js` | 21 | src/rigging/index.js |
+| `src/rigging/index.js` | 22 | src/rigging/index.js |
 | `src/rigging/PretensionSolver.js` | 296 | Giải cao độ móc cẩu và dầm ngáng tại trạng thái Nhớm Cáp (kiện chạm đất, toàn bộ cáp căng đúng chiều dài thực) ⚠️>250 |
 | `src/rigging/riggingConstants.js` | 69 | src/rigging/riggingConstants.js |
 | `src/rigging/RiggingPhysicsSolver.js` | 684 | src/rigging/RiggingPhysicsSolver.js ⚠️>300 |
@@ -226,7 +227,7 @@ Tổng: 261 file, 76086 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/shared/index.js` | 1 |  |
 | `src/sim/audio.js` | 725 |  ⚠️>300 |
 | `src/sim/cargo.js` | 6 |  |
-| `src/sim/cargo/containers_iso.js` | 1494 |  ⚠️>300 |
+| `src/sim/cargo/containers_iso.js` | 1453 |  ⚠️>300 |
 | `src/sim/cargo/shell_rebuild.js` | 573 | --- 6B. SHELL CONTACT — pad-eyes weld to the real mesh, not the bounding box --- ⚠️>300 |
 | `src/sim/cargo/specialty_meshes.js` | 2512 | --- HIGH-FIDELITY 3D REFRIGERATION MACHINERY UNIT (CARRIER TRANSICOLD / THERMO KING) --- ⚠️>300 |
 | `src/sim/compliance.js` | 625 |  ⚠️>300 |
