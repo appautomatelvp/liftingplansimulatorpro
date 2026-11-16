@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-16 10:42 [feat] Cap nhat hinh nen cau cang Digital Twin moi da xoa sach logo Gemini o goc duoi phai, giu hieu ung Cinematic Zoom-In va bo sung man trap Fade-in Den -> Mo dan he thong 3D (playCinemaWorkspaceReveal) khi dang nhap.
+- Nhánh: feat/hide-dev-contact-antispam | Commit trước đó: fc87f34
+- File: public/brand/industrial-lifting-bg.png,src/styles/brand_splash.css,src/saas/saas.css,src/saas/session_ui_bindings.js,src/saas/session.js,test/auth_screen.test.js
+
 ## 2026-11-16 09:58 [feat] Nang cap hop thoai Gop y ky thuat len chuan Enterprise: bo huy hieu va cau chu tu quang cao chong spam/an email, thay phep tinh cong don gian bang Thanh truot Khoa Xac Nhan Thao Tac (Slide-to-Unlock Interlock) co kiem tra quy dao keo thuc te va chu ky FNV-1a.
 - Nhánh: feat/hide-dev-contact-antispam | Commit trước đó: e8d00ef
 - File: src/saas/feedback.js,src/saas/contact_dialog.js,src/i18n/contact_keys.js,src/saas/saas.css,test/feedback_mailto.test.js

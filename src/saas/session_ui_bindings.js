@@ -23,6 +23,23 @@ export function clearAppSplash() {
   if (splash) splash.remove();
 }
 
+export function playCinemaWorkspaceReveal() {
+  if (typeof document === 'undefined' || !document.body) return;
+  document.getElementById('saas-cinema-curtain')?.remove();
+  const curtain = document.createElement('div');
+  curtain.id = 'saas-cinema-curtain';
+  curtain.className = 'saas-cinema-curtain';
+  curtain.setAttribute('aria-hidden', 'true');
+  document.body.classList.add('saas-cinema-entering');
+  document.body.append(curtain);
+  const cleanup = () => {
+    curtain.remove();
+    document.body?.classList.remove('saas-cinema-entering');
+  };
+  curtain.addEventListener('animationend', cleanup, { once: true });
+  setTimeout(cleanup, 1900);
+}
+
 export function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
 }

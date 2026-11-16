@@ -43,4 +43,14 @@ describe('authentication action recovery', () => {
     expect(COPYRIGHT.developer).toBe('Lê Việt Phương (Mr)');
     expect(authSrc).toContain('data-action="contact-developer"');
   });
+
+  it('configures cinematic zoom-in background and fade-to-black workspace reveal curtain', () => {
+    const splashCss = readFileSync(new URL('../src/styles/brand_splash.css', import.meta.url), 'utf8');
+    const saasCss = readFileSync(new URL('../src/saas/saas.css', import.meta.url), 'utf8');
+    const sessionSrc = readFileSync(new URL('../src/saas/session.js', import.meta.url), 'utf8');
+    expect(splashCss).toContain('industrial-cinematic-zoom');
+    expect(splashCss).toContain('.saas-cinema-curtain');
+    expect(saasCss).toContain('saas-industrial-zoom-in');
+    expect(sessionSrc).toContain('playCinemaWorkspaceReveal()');
+  });
 });

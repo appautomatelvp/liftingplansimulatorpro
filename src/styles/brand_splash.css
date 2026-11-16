@@ -1,18 +1,18 @@
-/* @purpose: Hiệu ứng nền công nghiệp Zoom-Out & khóa nhận diện đồng bộ cho màn hình khởi động */
+/* @purpose: Hiệu ứng nền công nghiệp Cinematic Zoom-In & màn trập Fade-in Đen mở dần hệ thống 3D */
 #app-loading-screen { overflow: hidden; isolation: isolate; background: #07111b; }
 #app-loading-screen::after {
   content: ""; position: absolute; inset: -4%; z-index: -2;
   background: url('/brand/industrial-lifting-bg.png') center / cover no-repeat;
-  transform-origin: 65% 45%;
-  animation: industrial-zoom-out 18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: 68% 48%;
+  animation: industrial-cinematic-zoom 18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
-@keyframes industrial-zoom-out {
-  0% { transform: scale(1.14); filter: brightness(0.92); }
-  100% { transform: scale(1); filter: brightness(1); }
+@keyframes industrial-cinematic-zoom {
+  0% { transform: scale(1); filter: brightness(0.92) saturate(1.04); }
+  100% { transform: scale(1.11); filter: brightness(1.02) saturate(1.1); }
 }
 #app-loading-screen::before {
   content: ""; position: absolute; inset: 0; z-index: -1; opacity: 1;
-  background: radial-gradient(circle at 66% 45%, rgba(7, 17, 27, .28) 0%, rgba(4, 9, 18, .78) 72%, rgba(4, 9, 18, .92) 100%);
+  background: radial-gradient(circle at 68% 46%, rgba(5, 13, 24, .22) 0%, rgba(4, 9, 18, .74) 72%, rgba(3, 7, 15, .91) 100%);
 }
 .loader-box {
   display: flex; flex-direction: column; align-items: center; max-width: 560px; width: min(90%, 560px);
@@ -34,3 +34,30 @@
 .loader-brand-name { font-size: clamp(24px, 4vw, 31px); font-weight: 900; letter-spacing: .08em; line-height: 1; color: #f8fafc; text-shadow: 0 2px 14px rgba(0, 0, 0, .45); }
 .loader-brand-name span { color: #fbbf24; }
 .loader-brand-tagline { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: .14em; color: #94a3b8; }
+
+.saas-cinema-curtain {
+  position: fixed; inset: 0; z-index: 1250000; pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, #050a14 0%, #010307 100%);
+  animation: saas-cinema-reveal 1.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes saas-cinema-reveal {
+  0% { opacity: 0; }
+  22% { opacity: 1; }
+  42% { opacity: 1; }
+  100% { opacity: 0; }
+}
+body.saas-cinema-entering #canvas-container {
+  animation: saas-viewport-emerge 1.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+body.saas-cinema-entering #top-bar,
+body.saas-cinema-entering #ui-layer {
+  animation: saas-hud-emerge 1.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes saas-viewport-emerge {
+  0%, 30% { filter: brightness(0.14) saturate(0.85); transform: scale(1.022); }
+  100% { filter: brightness(1) saturate(1); transform: scale(1); }
+}
+@keyframes saas-hud-emerge {
+  0%, 38% { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}

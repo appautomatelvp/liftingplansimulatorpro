@@ -14,7 +14,7 @@ import { saasT } from './i18n.js';
 import { installBoundedErrorCounter, normalizeFeatureFlags, readFeatureFlags } from './telemetry_usage.js';
 import { isMaintenance, loadFlagsOnce } from './runtime_flags.js';
 import { mountWorkspaceDashboard } from './workspace_dashboard.js';
-import { clearAppSplash, ensureSaasRoot, installSessionShellUI, mountAccountWidget } from './session_ui_bindings.js';
+import { clearAppSplash, ensureSaasRoot, installSessionShellUI, mountAccountWidget, playCinemaWorkspaceReveal } from './session_ui_bindings.js';
 
 function createGoogleProvider() {
   const provider = new GoogleAuthProvider();
@@ -113,8 +113,10 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
       clearAppSplash();
       return;
     }
+    const enteringWorkspace = Boolean(authScreen) || !workspaceStarted;
     if (authScreen) { authScreen.dispose(); authScreen = null; }
     root.hidden = true;
+    if (enteringWorkspace) playCinemaWorkspaceReveal();
     accountWidget?.dispose();
     accountWidget = mountAccountWidget(profile, authUser, () => signOut(firebase.auth), () => {
       if (isMaintenance(sessionFlags, window.SafeLift?.saas?.profile || profile)) {
