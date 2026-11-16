@@ -27,3 +27,7 @@ export {
   syncCraneOutriggerMats3D,
   evaluateDunnageSupportSurface
 } from './JobsiteSiteVisuals.js';
+export {
+  computeElevationMarkers,
+  createElevationRulerTool
+} from './ElevationRulerTool.js';

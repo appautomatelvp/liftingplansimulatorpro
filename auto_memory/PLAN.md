@@ -40,7 +40,7 @@ Nhánh Git: feat/horizon-clouds
   3. `src/sim/physics/beams_seed.js`: mở rộng `contactLocals()` thêm dãy điểm dò dọc đáy kiện tại nhịp đà kê để kiện đè thật lên mặt gỗ (không xuyên qua) và tự nghiêng nhẹ theo trọng lực nếu đặt lệch/hụt đầu khỏi thanh gỗ.
 - **Kiểm tra:** `npx vitest run test/pretension_nhom_cap.test.js test/jobsite_lashing_follow_regression.test.js` + `npm run build`.
 
-### [ ] Bước 4: Dựng Cây thước đo độ cao 3D + Điểm Đỏ di chuột & nút Bật/Tắt trong Display
+### [x] Bước 4: Dựng Cây thước đo độ cao 3D + Điểm Đỏ di chuột & nút Bật/Tắt trong Display
 - **File tạo/sửa (3 file):**
   1. Tạo `src/graphics/ElevationRulerTool.js` (`< 240` dòng, `@purpose:`): cột thước chia vạch từ `0.00 m` đến trên Hook, 4 chỉ dấu live (**Hook**, **Spreader**, **Đỉnh Kiện**, **Đáy Kiện**) kèm nhãn mét rõ nét, và Raycaster hiện **Điểm Đỏ** + đường gióng ngang khi rê chuột lên bất kỳ chi tiết 3D nào.
   2. `src/graphics/index.js`: export `ElevationRulerTool`.
