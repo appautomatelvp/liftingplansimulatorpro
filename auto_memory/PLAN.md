@@ -1,5 +1,5 @@
 # KẾ HOẠCH THỰC HIỆN (PLAN.md)
-Trạng thái: ACTIVE
+Trạng thái: DONE
 Tính năng: Đồng bộ 3D Tab 6 (Đà gỗ / Địa chất-Độ dốc / Tấm lót chân chống), Dây chằng Flat Rack ôm sát & đứt tự nhiên, Camera Follow (đổi tên từ Auto, bỏ tự zoom-in)
 Nhánh Git: feat/horizon-clouds
 
@@ -56,7 +56,7 @@ Nhánh Git: feat/horizon-clouds
   3. `src/sim/session/presets_events.js` (`<= 15` dòng thay đổi): khi bấm `#btn-cam-cinema` (`Follow`) gọi `applyCamBehavior('cinema')` thay vì `frameCinematicHeroShot` (không giật zoom); đổi text `'Auto'` -> `'Follow'` trong `syncCameraFollowUI` & từ điển EN/VI.
 - **Kiểm tra:** `npx vitest run` + `npm run architecture:gate` + `npm run build` + `./scripts/auto_check.ps1`.
 
-### [ ] Bước 5: Đổi nút giao diện thành `Follow`, thêm test hồi quy & nghiệm thu toàn bộ
+### [x] Bước 5: Đổi nút giao diện thành `Follow`, thêm test hồi quy & nghiệm thu toàn bộ
 - **File sửa/tạo (2 file):**
   1. `index.html` (`<= 8` dòng thay đổi): đổi chữ & tooltip `Auto` -> `Follow` ở `#btn-cam-cinema`, `#cam-follow-label` và mô tả popover Camera.
   2. Tạo `test/jobsite_lashing_follow_regression.test.js` (`< 200` dòng): test 3D dunnage/mats/slope config, Flat Rack lashing nằm trong biên khung (không lòi ngang) + đứt tuần tự theo độ nghiêng/seed, Camera Follow giữ nguyên khoảng cách zoom khi vật nâng lên.

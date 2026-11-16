@@ -470,7 +470,7 @@
 
                     <span class="text-[8.5px] font-extrabold uppercase text-violet-300 tracking-wider">Cam:</span>
                     <div class="flex items-center gap-0.5" data-testid="dock-cam-behavior">
-                        <button id="btn-cam-cinema" type="button" class="pendant-btn !py-0.5 !px-1.5 text-[10px] font-bold whitespace-nowrap !bg-sky-700 !border-sky-400 !text-white" title="Auto — đưa kiện về góc cinematic rule-of-thirds (1/3), dễ nhìn nhất">Auto</button>
+                        <button id="btn-cam-cinema" type="button" class="pendant-btn !py-0.5 !px-1.5 text-[10px] font-bold whitespace-nowrap !bg-sky-700 !border-sky-400 !text-white" title="Follow — bám theo kiện hàng di chuyển (giữ nguyên góc &amp; zoom)">Follow</button>
                         <button id="btn-cam-lock" type="button" class="pendant-btn !py-0.5 !px-1.5 text-[10px] font-bold whitespace-nowrap text-slate-300" title="Giữ — camera đứng yên tại góc hiện tại">Giữ</button>
                         <button id="btn-cam-hold-angle" type="button" class="pendant-btn !py-0.5 !px-1.5 text-[10px] font-bold whitespace-nowrap text-slate-300" title="Góc — mỗi lần nhấn chuyển 1/12 góc cinematic quanh kiện (chiều kim đồng hồ)">Góc</button>
                         <button id="btn-cam-flycam" type="button" class="pendant-btn !py-0.5 !px-1.5 text-[10px] font-bold whitespace-nowrap text-slate-300" title="Flycam — giả lập góc quay bay chuyên nghiệp, xoay liên tục quanh kiện">Fly</button>
@@ -2909,11 +2909,11 @@
     <!-- FLOATING POPOVERS: ĐẶT Ở CẤP ROOT BODY ĐỂ KHÔNG BỊ #TOP-BAR CẮT (CLIP)  -->
     <!-- ======================================================================= -->
 
-    <!-- 1. POPOVER CAMERA — góc nhìn chuyên sâu (chế độ Auto/Giữ/Góc nằm ở dock dưới) -->
+    <!-- 1. POPOVER CAMERA — góc nhìn chuyên sâu (chế độ Follow/Giữ/Góc nằm ở dock dưới) -->
     <div id="dropdown-panel-camera" class="topbar-popover-panel hidden fixed bg-slate-950 border border-sky-500/50 rounded-xl shadow-2xl p-3 text-xs text-slate-200 select-none w-80 box-border pointer-events-auto">
         <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-700/80">
             <span class="font-extrabold text-[11px] uppercase tracking-wider text-sky-400">Camera · Góc nhìn</span>
-            <span id="cam-follow-label" class="text-[9px] font-semibold text-sky-300/90">Auto</span>
+            <span id="cam-follow-label" class="text-[9px] font-semibold text-sky-300/90">Follow</span>
         </div>
 
         <div class="mb-2">
@@ -2930,7 +2930,7 @@
         </div>
 
         <div class="pt-2 border-t border-slate-800">
-            <div class="text-[9px] font-bold uppercase tracking-wide text-slate-500 mb-1.5">2. Điểm focus (khi Auto / Góc)</div>
+            <div class="text-[9px] font-bold uppercase tracking-wide text-slate-500 mb-1.5">2. Điểm focus (khi Follow / Góc)</div>
             <select id="sel-cam-follow-mode" class="w-full bg-slate-800 text-sky-200 border border-slate-600 rounded px-2 py-1.5 text-[11px] outline-none focus:border-sky-400 cursor-pointer" title="Điểm camera bám theo">
                 <option value="auto" selected>Tự động (kiện + móc)</option>
                 <option value="cog">Trọng tâm CoG</option>
@@ -2944,7 +2944,7 @@
                 <option value="custom">Tọa độ tùy chỉnh…</option>
             </select>
             <p class="text-[9px] text-slate-500 mt-2 leading-snug">
-                <b class="text-slate-400">Auto</b> = cinematic tự xoay ·
+                <b class="text-slate-400">Follow</b> = bám theo kiện hàng (giữ nguyên góc &amp; zoom) ·
                 <b class="text-slate-400">Giữ</b> = đứng yên ·
                 <b class="text-slate-400">Góc</b> = mỗi lần nhấn sang góc tiếp theo (12 góc quanh kiện) ·
                 <b class="text-slate-400">Fly</b> = flycam chuyên nghiệp, xoay liên tục quanh kiện.
