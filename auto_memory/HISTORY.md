@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-16 20:24 [feat] Dong bo 3D that cho Tab 6 Cong truong (JobsiteSiteVisuals.js: da ke go 2/3/4/Grid Mat, tiet dien, loai go/thep I, do doc va tam lot chan chong cau), sua day chang Flat Rack om khit & dut tuan tu tu nhien (FlatRackLashingPhysics.js) va doi nut Camera Auto thanh Follow bam tinh tien khong tu zoom-in
+- Nhánh: feat/horizon-clouds | Commit trước đó: c6cee28
+- File: src/graphics/JobsiteSiteVisuals.js,src/rigging/FlatRackLashingPhysics.js,src/sim/cargo/containers_iso.js,src/sim/scene.js,src/sim/physics/flatrack_payload.js,src/sim/library/reconstruction_export.js,src/sim/session/presets_events.js,src/sim/telemetry.js,index.html,test/jobsite_lashing_follow_regression.test.js
+
 ## 2026-11-16 19:57 [feat] Chuan hoa toc do nang/ha dong nhat 0.85 m/s*scale cho moi phuong an (khong phu thuoc tai/ngang) va sua triet de loi STS Container Spreader ban tung kien hang len (UnifiedHoistProfile.js, tach xung XPBD cap STS Direct, khoa gioi han van toc buoc)
 - Nhánh: feat/horizon-clouds | Commit trước đó: cf04c60
 - File: src/rigging/UnifiedHoistProfile.js,src/rigging/index.js,src/sim/physics/step_engine.js,src/sim/physics/cables_break.js,src/sim/physics/hoist_contacts.js,src/sim/physics/beams_seed.js,test/optimize_horizon_cargo_perf.test.js,STATE.md

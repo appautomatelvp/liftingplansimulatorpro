@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 20:24 | Nhánh: feat/horizon-clouds | Commit cuối: fd80747 step 5: rename Camera Auto to Follow and add full regression test suite (2 minutes ago)
+Cập nhật: 2026-11-16 20:24 | Nhánh: feat/horizon-clouds | Commit cuối: c6cee28 fix: tune staggered Flat Rack strap cascade timing (4 seconds ago)
 Tổng: 263 file, 76446 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
