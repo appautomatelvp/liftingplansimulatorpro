@@ -9,6 +9,7 @@ import {
   buildSteelPipeCargoMesh,
   buildProceduralCoachBusMesh
 } from '../src/graphics/SpecialtyCargoMeshes.js';
+import { sealSolidCargoShell } from '../src/graphics/SolidShellSealer.js';
 import {
   tryReuseSettledSlackRope,
   recordSolvedSlackRope,
@@ -18,28 +19,58 @@ import { QUALITY_TIERS } from '../src/graphics/SceneRenderer.js';
 import { AssetLoaders } from '../src/core/AssetLoaders.js';
 
 describe('Horizon seamless blend', () => {
-  it('enables toneMapped + tonemapping_fragment before colorspace_fragment and holds y<=0 at horizon', () => {
+  it('matches Three.js fog_fragment space (un-tonemapped + colorspace_fragment) with smooth gradient above y=0', () => {
     const scene = new THREE.Scene();
     const dome = createHorizonSkyDome(scene);
     const mat = dome.material;
-    expect(mat.toneMapped).toBe(true);
-    const toneIdx = mat.fragmentShader.indexOf('#include <tonemapping_fragment>');
-    const colorIdx = mat.fragmentShader.indexOf('#include <colorspace_fragment>');
-    expect(toneIdx).toBeGreaterThan(-1);
-    expect(colorIdx).toBeGreaterThan(toneIdx);
+    expect(mat.toneMapped).toBe(false);
+    expect(mat.fragmentShader).not.toContain('#include <tonemapping_fragment>');
+    expect(mat.fragmentShader).toContain('#include <colorspace_fragment>');
     expect(mat.fragmentShader).toContain('float elev = clamp(y, 0.0, 1.0);');
     expect(mat.fragmentShader).not.toContain('y + 0.055');
   });
 
   it('patches ground material once for radial horizon fade', () => {
     const mat = new THREE.MeshStandardMaterial({ color: 0x475569 });
-    applyGroundHorizonFade(mat, 220, 540);
-    expect(mat.userData.__groundHorizonFadeKey).toBe('ground_horizon_fade_220_540');
+    applyGroundHorizonFade(mat, 130, 490);
+    expect(mat.userData.__groundHorizonFadeKey).toBe('ground_horizon_fade_130_490');
     expect(typeof mat.onBeforeCompile).toBe('function');
     const mockShader = { vertexShader: 'void main() {\n#include <fog_vertex>\n}' };
     mat.onBeforeCompile(mockShader, null);
     expect(mockShader.vertexShader).toContain('_groundRadialM');
     expect(mockShader.vertexShader).toContain('vFogDepth = max(vFogDepth');
+  });
+});
+
+describe('Solid opaque sealing for bus and 3D cargo blocks', () => {
+  it('converts transparent glass and FrontSide meshes into opaque DoubleSide and seals bus belly/cabin', () => {
+    const g = new THREE.Group();
+    const glassMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(1, 1, 1),
+      new THREE.MeshStandardMaterial({ name: 'Vehicle_Glass', transparent: true, opacity: 0.72 })
+    );
+    const bodyMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(9, 2.8, 2.38),
+      new THREE.MeshStandardMaterial({ name: 'Vehicle_BodyPaint' })
+    );
+    g.add(glassMesh, bodyMesh);
+    sealSolidCargoShell(THREE, g, 'car', { L: 9, W: 2.38, H: 2.8 });
+    expect(glassMesh.material.transparent).toBe(false);
+    expect(glassMesh.material.opacity).toBe(1);
+    expect(glassMesh.material.side).toBe(THREE.DoubleSide);
+    expect(bodyMesh.material.side).toBe(THREE.DoubleSide);
+    expect(g.children.some((c) => c.name === 'Vehicle_Belly_Seal')).toBe(true);
+    expect(g.children.some((c) => c.name === 'Vehicle_Cabin_Seal')).toBe(true);
+  });
+
+  it('adds sealed inner core for closed ISO containers and floor slab for uncovered open-top', () => {
+    const dryBox = new THREE.Group();
+    sealSolidCargoShell(THREE, dryBox, 'iso40', { L: 12.19, W: 2.44, H: 2.59 });
+    expect(dryBox.children.some((c) => c.name === 'Solid_Seal_Core')).toBe(true);
+
+    const openTop = new THREE.Group();
+    sealSolidCargoShell(THREE, openTop, 'opentop', { L: 6.06, W: 2.44, H: 2.59, oogTarp: false });
+    expect(openTop.children.some((c) => c.name === 'Cargo_Deck_Seal')).toBe(true);
   });
 });
 

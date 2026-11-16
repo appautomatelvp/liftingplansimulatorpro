@@ -684,7 +684,7 @@
             const prevGeo = floorMesh.geometry;
             floorMesh.geometry = createCircularGroundGeometry(560, state.groundId);
             if (typeof GFX !== 'undefined' && GFX.applyGroundHorizonFade) {
-                GFX.applyGroundHorizonFade(floorMesh.material, 220, 540);
+                GFX.applyGroundHorizonFade(floorMesh.material, 130, 490);
             }
             floorMesh.rotation.x = 0;
             prevGeo.dispose();

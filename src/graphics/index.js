@@ -11,3 +11,4 @@ export { PBRMaterialFactory } from './PBRMaterialFactory.js';
 export { computeMechanicalStressVisual, resolveStressTintedMaterial } from './pbr/StressPBRMaterials.js';
 export { applyGroundHorizonFade } from './GroundHorizonFade.js';
 export { buildSteelPipeCargoMesh, buildProceduralCoachBusMesh } from './SpecialtyCargoMeshes.js';
+export { sealSolidCargoShell } from './SolidShellSealer.js';

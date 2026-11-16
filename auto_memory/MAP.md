@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 18:30 | Nhánh: feat/horizon-clouds | Commit cuối: 0203cc3 step 6: add Vitest suite and finalize horizon/cargo/perf optimizations (26 seconds ago)
-Tổng: 257 file, 75272 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 18:48 | Nhánh: feat/horizon-clouds | Commit cuối: 7035562 docs: log optimization milestone in HISTORY and MAP (18 minutes ago)
+Tổng: 258 file, 75413 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -21,7 +21,7 @@ Tổng: 257 file, 75272 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/audio.js (725 dòng)
 - src/sim/cargo/containers_iso.js (1490 dòng)
 - src/sim/cargo/shell_rebuild.js (573 dòng)
-- src/sim/cargo/specialty_meshes.js (2508 dòng)
+- src/sim/cargo/specialty_meshes.js (2512 dòng)
 - src/sim/compliance.js (625 dòng)
 - src/sim/dynamics.js (848 dòng)
 - src/sim/gear/editor.js (3539 dòng)
@@ -159,12 +159,13 @@ Tổng: 257 file, 75272 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/domain/standards/index.js` | 26 |  |
 | `src/graphics/EnvironmentManager.js` | 280 | Quản lý ánh sáng IBL, sương mù chân trời, HDR và đồng bộ thời gian thực cho cảnh 3D ⚠️>250 |
 | `src/graphics/GroundHorizonFade.js` | 46 | Hòa mượt mép ngoài đĩa mặt đất vào màu sương mù chân trời không lộ đường cắt |
-| `src/graphics/HorizonSkyDome.js` | 283 | Dựng vòm bầu trời HorizonSkyDome với mây chân trời 3D Gradient Quintic mềm mại và màu khí quyển thực tế ⚠️>250 |
-| `src/graphics/index.js` | 13 |  |
+| `src/graphics/HorizonSkyDome.js` | 279 | Dựng vòm bầu trời HorizonSkyDome với mây chân trời 3D Gradient Quintic mềm mại và màu khí quyển thực tế ⚠️>250 |
+| `src/graphics/index.js` | 14 |  |
 | `src/graphics/pbr/ProceduralTextures.js` | 196 | Vẽ texture canvas thủ công (bê tông cảng, cáp thép, xích, sling, mặt nước, vạch cảnh báo) |
 | `src/graphics/pbr/StressPBRMaterials.js` | 146 | Tạo bản đồ PBR thép sơn công nghiệp, thép rèn mạ kẽm và màu ứng suất căng cơ học thời gian thực |
 | `src/graphics/PBRMaterialFactory.js` | 244 | Nhà máy tạo vật liệu PBR chuẩn công nghiệp hàng hải và đồng bộ không gian màu Three.js r170+ |
 | `src/graphics/SceneRenderer.js` | 294 |  ⚠️>250 |
+| `src/graphics/SolidShellSealer.js` | 109 | Bịt kín lõi/đáy rỗng và bật hai mặt vật liệu cho xe 3D và kiện hàng tránh nhìn xuyên |
 | `src/graphics/SpecialtyCargoMeshes.js` | 158 | Dựng khối 3D ống thép siêu trường Steel Pipe (OOG) và xe buýt procedural đồng bộ CAD |
 | `src/i18n/cargo_labels.js` | 48 |  |
 | `src/i18n/cms_keys.js` | 137 | Bộ từ điển song ngữ VI/EN chuyên biệt cho hệ thống CMS Enterprise Command Center |
@@ -223,7 +224,7 @@ Tổng: 257 file, 75272 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/cargo.js` | 6 |  |
 | `src/sim/cargo/containers_iso.js` | 1490 |  ⚠️>300 |
 | `src/sim/cargo/shell_rebuild.js` | 573 | --- 6B. SHELL CONTACT — pad-eyes weld to the real mesh, not the bounding box --- ⚠️>300 |
-| `src/sim/cargo/specialty_meshes.js` | 2508 | --- HIGH-FIDELITY 3D REFRIGERATION MACHINERY UNIT (CARRIER TRANSICOLD / THERMO KING) --- ⚠️>300 |
+| `src/sim/cargo/specialty_meshes.js` | 2512 | --- HIGH-FIDELITY 3D REFRIGERATION MACHINERY UNIT (CARRIER TRANSICOLD / THERMO KING) --- ⚠️>300 |
 | `src/sim/compliance.js` | 625 |  ⚠️>300 |
 | `src/sim/dynamics.js` | 848 |  ⚠️>300 |
 | `src/sim/gear.js` | 6 |  |
@@ -292,7 +293,7 @@ Tổng: 257 file, 75272 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/i18n_keys.test.js` | 56 |  |
 | `test/inclined_lashing_slide.test.js` | 67 |  |
 | `test/liftplan.test.js` | 153 |  |
-| `test/optimize_horizon_cargo_perf.test.js` | 139 | Kiểm thử tự động cho hòa chân trời, 3D Steel Pipe / Vehicle, cache CAD và tối ưu hiệu năng |
+| `test/optimize_horizon_cargo_perf.test.js` | 170 | Kiểm thử tự động cho hòa chân trời, 3D Steel Pipe / Vehicle, cache CAD và tối ưu hiệu năng |
 | `test/phase1_core_safety.test.js` | 208 |  |
 | `test/physics_destruction.test.js` | 69 |  |
 | `test/physics_master_blueprint.test.js` | 524 |  ⚠️>300 |

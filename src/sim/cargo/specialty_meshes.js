@@ -692,6 +692,7 @@
         function applyXRayToCargo(group, isXray) {
             if (!group) return;
             group.traverse(m => {
+                if (m.userData?.isSolidSealCore) { m.visible = !isXray; return; }
                 if (m.isMesh && m.material && !m.userData?.isCADEdge) {
                     const mats = Array.isArray(m.material) ? m.material : [m.material];
                     mats.forEach(mat => {
@@ -719,6 +720,9 @@
         function buildCargoMesh(type, L, W, H) {
             const group = new THREE.Group();
             const finishCargoGroup = (g) => {
+                if (typeof GFX !== 'undefined' && GFX.sealSolidCargoShell) {
+                    GFX.sealSolidCargoShell(THREE, g, type, { L, W, H, oogTarp: state.oogTarp });
+                }
                 if (state.xrayCargo) applyXRayToCargo(g, true);
                 if (typeof applyCADFeatureEdges === 'function' && !g.userData?._cadEdgesApplied) {
                     applyCADFeatureEdges(g, false);

@@ -552,13 +552,13 @@
                         mode: 'cad_strict'
                     }).then(res => {
                         const bodyMat = new THREE.MeshStandardMaterial({
-                            color: 0x2c8c8a, roughness: 0.38, metalness: 0.22, name: 'Vehicle_BodyPaint'
+                            color: 0x2c8c8a, roughness: 0.38, metalness: 0.22, side: THREE.DoubleSide, name: 'Vehicle_BodyPaint'
                         });
                         const glassMat = new THREE.MeshStandardMaterial({
-                            color: 0x0f172a, roughness: 0.12, metalness: 0.55, transparent: true, opacity: 0.72, name: 'Vehicle_Glass'
+                            color: 0x0b1526, roughness: 0.08, metalness: 0.86, transparent: false, opacity: 1.0, side: THREE.DoubleSide, name: 'Vehicle_Glass'
                         });
                         const darkMat = new THREE.MeshStandardMaterial({
-                            color: 0x111827, roughness: 0.55, metalness: 0.45, name: 'Vehicle_Trim'
+                            color: 0x111827, roughness: 0.55, metalness: 0.45, side: THREE.DoubleSide, name: 'Vehicle_Trim'
                         });
                         res.root.traverse(child => {
                             if (!child.isMesh) return;
