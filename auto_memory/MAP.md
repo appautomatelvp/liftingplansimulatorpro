@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 11:13 | Nhánh: feat/default-en-clean | Commit cuối: de6e794 fix: eliminate premature 3D canvas flash and double-fade during startup and login reveal (19 minutes ago)
+Cập nhật: 2026-11-16 11:27 | Nhánh: feat/default-en-clean | Commit cuối: 47ab30e feat: default startup language to English and synchronize EN/VI across all layers (14 minutes ago)
 Tổng: 241 file, 71870 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
