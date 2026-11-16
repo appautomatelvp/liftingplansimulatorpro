@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-15 17:08 | Nhánh: codex/safelift-g0-ci | Commit cuối: 4864b45 fix(ci): allow 180s per E2E test on software-WebGL CI runners (38 minutes ago)
-Tổng: 239 file, 71114 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 09:37 | Nhánh: feat/hide-dev-contact-antispam | Commit cuối: fd52bbe Merge pull request #1 from appautomatelvp/codex/safelift-g0-ci (16 hours ago)
+Tổng: 239 file, 71318 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -192,7 +192,7 @@ Tổng: 239 file, 71114 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/saas/deployment_environment.js` | 22 |  |
 | `src/saas/dialog_accessibility.js` | 45 |  |
 | `src/saas/feature_access_ui.js` | 191 |  |
-| `src/saas/feedback.js` | 31 |  |
+| `src/saas/feedback.js` | 144 | Giải mã động địa chỉ nhận góp ý và bảo vệ hộp thoại gửi email khỏi bot/spam 5 lớp |
 | `src/saas/firebase.js` | 95 |  |
 | `src/saas/firebase_data.js` | 82 |  |
 | `src/saas/i18n.js` | 12 | Format a localized template key from `src/i18n/keys.js` with optional `{var}` substitutions. |
@@ -272,7 +272,7 @@ Tổng: 239 file, 71114 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/custom_slings.test.js` | 712 |  ⚠️>300 |
 | `test/deployment_environment.test.js` | 21 |  |
 | `test/engineering.test.js` | 410 |  ⚠️>300 |
-| `test/feedback_mailto.test.js` | 32 |  |
+| `test/feedback_mailto.test.js` | 123 |  |
 | `test/firestore-rules-emulator.mjs` | 351 |  |
 | `test/graphics.test.js` | 91 |  |
 | `test/i18n_keys.test.js` | 45 |  |
