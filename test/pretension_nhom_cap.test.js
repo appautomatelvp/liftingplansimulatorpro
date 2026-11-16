@@ -65,7 +65,8 @@ describe('Nhớm Cáp (pretensionRig) — Grounded Cargo + Full Real-Length Taut
       globalThis.pretensionRig();
       sim.stepSim(30);
 
-      assertAllCablesTautGrounded(sim, s, phy, s.H * 0.5, JSON.stringify(tc));
+      const supportBaseY = Math.max(sim.getSupportY(0, 0), sim.getSupportY(0.39 * s.L, 0));
+      assertAllCablesTautGrounded(sim, s, phy, supportBaseY + s.H * 0.5, JSON.stringify(tc));
 
       if (tc.beamType !== 'container_spreader' && tc.bottomMode !== 'direct') {
         if (tc.beamType !== 'none' && phy.beams[0]) {
@@ -109,7 +110,8 @@ describe('Nhớm Cáp (pretensionRig) — Grounded Cargo + Full Real-Length Taut
     globalThis.pretensionRig();
     sim.stepSim(20);
 
-    assertAllCablesTautGrounded(sim, s, phy, s.H * 0.5);
+    const supportBaseY = Math.max(sim.getSupportY(0, 0), sim.getSupportY(0.39 * s.L, 0));
+    assertAllCablesTautGrounded(sim, s, phy, supportBaseY + s.H * 0.5);
     const upper = phy.cables.find((c) => c.role === 'upper');
     const leg = phy.cables.find((c) => c.role === 'leg');
     expect(upper.L0).toBeGreaterThan(6.5);

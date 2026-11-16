@@ -126,8 +126,9 @@ export function rebuildDunnageVisual3D({ THREE, dunnageGroup, state, MATS }) {
   const padL = Math.max(L + 1.2, 4.4);
   const padW = Math.max(cfg.lengthM + 1.1, W + 1.2);
   const padH = cfg.groundId === 'soil' ? 0.08 : 0.045;
+  const baseTopY = cfg.groundId === 'soil' ? 0.015 : 0.004;
   const sitePad = new THREE.Mesh(new THREE.BoxGeometry(padL, padH, padW), padMat);
-  sitePad.position.y = padH * 0.5;
+  sitePad.position.y = baseTopY - padH * 0.5;
   sitePad.receiveShadow = true;
   sitePad.userData.noCADEdge = true;
   siteContainer.add(sitePad);
@@ -137,27 +138,29 @@ export function rebuildDunnageVisual3D({ THREE, dunnageGroup, state, MATS }) {
       new THREE.BoxGeometry(padL, Math.sin(slopeRad) * padL * 0.5 + 0.03, padW * 0.98),
       new THREE.MeshStandardMaterial({ color: soil.border, roughness: 0.9, metalness: 0.1 })
     );
-    wedge.position.set(0, -0.015, 0);
+    wedge.position.set(0, -0.025, 0);
     wedge.userData.noCADEdge = true;
     siteContainer.add(wedge);
   }
 
-  const baseTopY = cfg.groundId === 'soil' ? padH * 0.65 : padH;
   const xSpan = L * 0.78;
   const isGridMat = cfg.qtyRaw === 'mat';
   const beamCount = isGridMat ? 4 : Math.max(2, Math.min(4, parseInt(cfg.qtyRaw, 10) || 2));
+  const profileBeams = [];
 
   if (isGridMat) {
     const runnerCount = 3;
+    const runnerH = cfg.secH * 0.75;
     for (let r = 0; r < runnerCount; r++) {
       const rz = ((r / (runnerCount - 1)) - 0.5) * Math.max(1.2, cfg.lengthM * 0.76);
       const runner = createSleeperBeam({
-        THREE, lenZ: L * 0.94, secW: cfg.secW * 0.9, secH: cfg.secH * 0.75,
+        THREE, lenZ: L * 0.94, secW: cfg.secW * 0.9, secH: runnerH,
         woodType: cfg.woodType, beamMat, capMat
       });
       runner.rotation.y = Math.PI * 0.5;
       runner.position.set(0, baseTopY, rz);
       siteContainer.add(runner);
+      profileBeams.push({ cx: 0, cz: rz, halfW: L * 0.47, halfL: cfg.secW * 0.46, topY: baseTopY + runnerH });
     }
   }
 
@@ -170,7 +173,8 @@ export function rebuildDunnageVisual3D({ THREE, dunnageGroup, state, MATS }) {
       woodType: cfg.woodType, beamMat, capMat
     });
     const stepDeltaY = cfg.groundId === 'rough' ? ((i % 2 === 0 ? 0.05 : -0.025) + (t - 0.5) * 0.04) : 0;
-    beam.position.set(bx, baseTopY + topLayerOffsetY + Math.max(-0.02, stepDeltaY), 0);
+    const beamY = baseTopY + topLayerOffsetY + Math.max(-0.02, stepDeltaY);
+    beam.position.set(bx, beamY, 0);
     if (cfg.groundId === 'rough') {
       beam.rotation.z = (i % 2 === 0 ? 1 : -1) * 0.022;
       const shim = new THREE.Mesh(new THREE.BoxGeometry(cfg.secW * 1.1, 0.055, cfg.lengthM * 0.92), capMat);
@@ -178,11 +182,52 @@ export function rebuildDunnageVisual3D({ THREE, dunnageGroup, state, MATS }) {
       siteContainer.add(shim);
     }
     siteContainer.add(beam);
+    profileBeams.push({ cx: bx, cz: 0, halfW: cfg.secW * 0.5 + 0.02, halfL: cfg.lengthM * 0.5 + 0.02, topY: beamY + cfg.secH });
   }
 
   dunnageGroup.add(siteContainer);
+  dunnageGroup.position.set(0, 0, 0);
+  dunnageGroup.rotation.y = ((state?.cargoYawDeg || 0) * Math.PI) / 180;
   dunnageGroup.userData.lastSiteConfig = cfg;
+  dunnageGroup.userData.siteProfile = {
+    padHalfL: padL * 0.5,
+    padHalfW: padW * 0.5,
+    baseTopY,
+    slopeRad,
+    beams: profileBeams
+  };
   return cfg;
+}
+
+export function evaluateDunnageSupportSurface(worldX, worldZ, dunnageGroup, fallbackBaseY = 0) {
+  const profile = dunnageGroup?.userData?.siteProfile;
+  if (!profile || !dunnageGroup.visible) return { y: fallbackBaseY, normal: null, onBeam: false };
+  const yaw = dunnageGroup.rotation?.y || 0;
+  const dx = worldX - (dunnageGroup.position?.x || 0);
+  const dz = worldZ - (dunnageGroup.position?.z || 0);
+  const cy = Math.cos(yaw), sy = Math.sin(yaw);
+  const lx = dx * cy - dz * sy;
+  const lz = dx * sy + dz * cy;
+  if (Math.abs(lx) > profile.padHalfL || Math.abs(lz) > profile.padHalfW) {
+    return { y: fallbackBaseY, normal: null, onBeam: false };
+  }
+  const slope = profile.slopeRad || 0;
+  const ySlope = -Math.sin(slope) * lx;
+  let bestY = Math.max(fallbackBaseY, profile.baseTopY * Math.cos(slope) + ySlope);
+  let onBeam = false;
+  for (const b of profile.beams) {
+    if (Math.abs(lx - b.cx) <= b.halfW && Math.abs(lz - b.cz) <= b.halfL) {
+      const candidateY = b.topY * Math.cos(slope) + ySlope;
+      if (candidateY > bestY) { bestY = candidateY; onBeam = true; }
+    }
+  }
+  const nlx = Math.sin(slope);
+  const nly = Math.cos(slope);
+  return {
+    y: bestY,
+    normal: slope > 1e-4 ? { x: nlx * cy, y: nly, z: -nlx * sy } : null,
+    onBeam
+  };
 }
 
 export function syncCraneOutriggerMats3D({ THREE, craneVehicleGroup, presetId = 'steel_mat_2x2', MATS }) {

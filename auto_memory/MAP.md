@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 20:47 | Nhánh: feat/horizon-clouds | Commit cuối: 436210b step 1: flush lashing tie-in, SWL >= 12 MT default, and multi-select sync (3 minutes ago)
-Tổng: 263 file, 76513 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 20:52 | Nhánh: feat/horizon-clouds | Commit cuối: f1dbeb7 step 2: smooth set-down without snap and live Camera angle transition (4 minutes ago)
+Tổng: 263 file, 76575 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -29,7 +29,7 @@ Tổng: 263 file, 76513 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/library/core.js (641 dòng)
 - src/sim/library/parsers.js (654 dòng)
 - src/sim/library/reconstruction_export.js (2116 dòng)
-- src/sim/physics/beams_seed.js (2955 dòng)
+- src/sim/physics/beams_seed.js (2961 dòng)
 - src/sim/physics/cables_break.js (1553 dòng)
 - src/sim/physics/flatrack_payload.js (657 dòng)
 - src/sim/physics/footprint_rig.js (838 dòng)
@@ -38,7 +38,7 @@ Tổng: 263 file, 76513 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/plan_wizard.js (650 dòng)
 - src/sim/rigging/draw_update.js (837 dòng)
 - src/sim/rigging/hook_pool.js (3118 dòng)
-- src/sim/scene.js (1982 dòng)
+- src/sim/scene.js (1989 dòng)
 - src/sim/session/prelift_reset.js (1074 dòng)
 - src/sim/session/presets_events.js (3577 dòng)
 - src/sim/session/ui_units_bom.js (1953 dòng)
@@ -162,8 +162,8 @@ Tổng: 263 file, 76513 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/graphics/GraphicsToneHelper.js` | 114 | Điều chỉnh và lưu độ sáng tối (Brightness) và tương phản (Contrast) cho khung hình 3D như game |
 | `src/graphics/GroundHorizonFade.js` | 46 | Hòa mượt mép ngoài đĩa mặt đất vào màu sương mù chân trời không lộ đường cắt |
 | `src/graphics/HorizonSkyDome.js` | 282 | Dựng vòm bầu trời HorizonSkyDome với mây chân trời 3D Gradient Quintic mềm mại và màu khí quyển thực tế ⚠️>250 |
-| `src/graphics/index.js` | 28 |  |
-| `src/graphics/JobsiteSiteVisuals.js` | 220 | Dựng và đồng bộ hình khối 3D cho đà kê gỗ, đệm địa chất độ dốc và tấm lót chân chống cẩu ở Tab 6. |
+| `src/graphics/index.js` | 29 |  |
+| `src/graphics/JobsiteSiteVisuals.js` | 265 | Dựng và đồng bộ hình khối 3D cho đà kê gỗ, đệm địa chất độ dốc và tấm lót chân chống cẩu ở Tab 6. ⚠️>250 |
 | `src/graphics/pbr/ProceduralTextures.js` | 276 | Vẽ texture canvas thủ công (bê tông cảng, cáp thép, xích, sling, mặt nước, vạch cảnh báo) ⚠️>250 |
 | `src/graphics/pbr/StressPBRMaterials.js` | 146 | Tạo bản đồ PBR thép sơn công nghiệp, thép rèn mạ kẽm và màu ứng suất căng cơ học thời gian thực |
 | `src/graphics/PBRMaterialFactory.js` | 244 | Nhà máy tạo vật liệu PBR chuẩn công nghiệp hàng hải và đồng bộ không gian màu Three.js r170+ |
@@ -185,7 +185,7 @@ Tổng: 263 file, 76513 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/FlatRackLashingPhysics.js` | 234 | Dựng dây chằng Flat Rack ôm khít kiện hàng (không lòi ngang) và mô phỏng đứt tuần tự tự nhiên theo vật lý. |
 | `src/rigging/HStyleLiftingBeam.js` | 188 | Cấu tạo 3D và thông số khớp nối H-Style Lifting Beam (tùy chọn trên Direct Hook/2-Cáp và dưới 4-Cáp/Twistlock) |
 | `src/rigging/index.js` | 22 | src/rigging/index.js |
-| `src/rigging/PretensionSolver.js` | 296 | Giải cao độ móc cẩu và dầm ngáng tại trạng thái Nhớm Cáp (kiện chạm đất, toàn bộ cáp căng đúng chiều dài thực) ⚠️>250 |
+| `src/rigging/PretensionSolver.js` | 297 | Giải cao độ móc cẩu và dầm ngáng tại trạng thái Nhớm Cáp (kiện chạm đất, toàn bộ cáp căng đúng chiều dài thực) ⚠️>250 |
 | `src/rigging/riggingConstants.js` | 69 | src/rigging/riggingConstants.js |
 | `src/rigging/RiggingPhysicsSolver.js` | 684 | src/rigging/RiggingPhysicsSolver.js ⚠️>300 |
 | `src/rigging/riggingUIStore.js` | 100 | src/rigging/riggingUIStore.js |
@@ -241,7 +241,7 @@ Tổng: 263 file, 76513 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/library/reconstruction_export.js` | 2116 | --- 2D IMAGE TO 3D CONTOUR & RELIEF RECONSTRUCTION ENGINE --- ⚠️>300 |
 | `src/sim/manifest.js` | 39 |  |
 | `src/sim/physics.js` | 6 |  |
-| `src/sim/physics/beams_seed.js` | 2955 |  ⚠️>300 |
+| `src/sim/physics/beams_seed.js` | 2961 |  ⚠️>300 |
 | `src/sim/physics/cables_break.js` | 1553 |  ⚠️>300 |
 | `src/sim/physics/flatrack_payload.js` | 657 | --- FLAT RACK LASHING RUPTURE, DECK SLIDING & FALLING PAYLOAD PHYSICS --- ⚠️>300 |
 | `src/sim/physics/footprint_rig.js` | 838 |  ⚠️>300 |
@@ -253,7 +253,7 @@ Tổng: 263 file, 76513 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/rigging.js` | 6 |  |
 | `src/sim/rigging/draw_update.js` | 837 | Slack cable morphology is solved by a persistent material-aware XPBD chain. ⚠️>300 |
 | `src/sim/rigging/hook_pool.js` | 3118 |  ⚠️>300 |
-| `src/sim/scene.js` | 1982 |  ⚠️>300 |
+| `src/sim/scene.js` | 1989 |  ⚠️>300 |
 | `src/sim/session.js` | 6 |  |
 | `src/sim/session/prelift_reset.js` | 1074 |  ⚠️>300 |
 | `src/sim/session/presets_events.js` | 3577 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
@@ -304,7 +304,7 @@ Tổng: 263 file, 76513 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/physics_destruction.test.js` | 69 |  |
 | `test/physics_master_blueprint.test.js` | 524 |  ⚠️>300 |
 | `test/pipeline.test.js` | 232 |  |
-| `test/pretension_nhom_cap.test.js` | 236 | Kiểm thử vàng nút Nhớm Cáp (pretensionRig): kiện chạm đất 0.00m và toàn bộ hệ cáp căng đúng chiều dài thực |
+| `test/pretension_nhom_cap.test.js` | 238 | Kiểm thử vàng nút Nhớm Cáp (pretensionRig): kiện chạm đất 0.00m và toàn bộ hệ cáp căng đúng chiều dài thực |
 | `test/rigging.test.js` | 1370 |  ⚠️>300 |
 | `test/rigging_alarms_and_tolerances.test.js` | 216 |  |
 | `test/rigging_groups_and_dynamics.test.js` | 84 |  |

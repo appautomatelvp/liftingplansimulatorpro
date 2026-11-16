@@ -96,8 +96,9 @@ export function solveGroundedTautPose(ctx) {
     }
   } else if (isLbDirectBot) {
     const b0 = (phy.beams || [])[0];
-    const gY = typeof supportY === 'function' ? supportY(centroid.x, centroid.z) : 0;
-    const roofY = gY + (state.H || 2.591);
+    const halfH = (state.H || 2.591) * 0.5;
+    const gY = phy.cargoPos ? (phy.cargoPos.y - halfH) : (typeof supportY === 'function' ? supportY(centroid.x, centroid.z) : 0);
+    const roofY = gY + halfH * 2;
     if (b0) {
       b0.x.set(phy.cargoPos.x, roofY + 0.34, phy.cargoPos.z);
       if (phy.cargoQuat) b0.q.copy(phy.cargoQuat);

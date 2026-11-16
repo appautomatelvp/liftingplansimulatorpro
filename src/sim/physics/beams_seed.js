@@ -2262,6 +2262,12 @@
             [-1, 1].forEach(x => [-1, 1].forEach(y => [-1, 1].forEach(z => {
                 pts.push(new THREE.Vector3(x * L / 2, y * H / 2, z * W / 2));
             })));
+            // Underside rib grid aligned with exact dunnage sleeper stations (±0.39L, ±0.13L, 0) so cargo rests on timber & tilts if off-center
+            [-0.39, -0.26, -0.13, 0, 0.13, 0.26, 0.39].forEach(fx => {
+                [-0.46, 0, 0.46].forEach(fz => {
+                    pts.push(new THREE.Vector3(fx * L, -H / 2, fz * W));
+                });
+            });
             (phy.supportLocals || []).forEach(p => pts.push(p.clone()));
             return pts;
         }

@@ -556,13 +556,20 @@
         }
 
         function supportY(x, z) {
-            // Quay / ground only — no timber cribbing offset (keeps static cargo flush).
-            return groundSurfaceY(x, z);
+            const base = groundSurfaceY(x, z);
+            if (typeof dunnageGroup !== 'undefined' && dunnageGroup && typeof GFX !== 'undefined' && GFX.evaluateDunnageSupportSurface) {
+                return GFX.evaluateDunnageSupportSurface(x, z, dunnageGroup, base).y;
+            }
+            return base;
         }
 
         // Unit normal for the height-field used by the contact solver. Using the
-        // terrain normal lets a load settle and slide on a slope realistically.
+        // terrain/dunnage normal lets a load settle and slide on a slope realistically.
         function supportNormal(x, z) {
+            if (typeof dunnageGroup !== 'undefined' && dunnageGroup && typeof GFX !== 'undefined' && GFX.evaluateDunnageSupportSurface) {
+                const surf = GFX.evaluateDunnageSupportSurface(x, z, dunnageGroup, groundSurfaceY(x, z));
+                if (surf && surf.normal) return new THREE.Vector3(surf.normal.x, surf.normal.y, surf.normal.z).normalize();
+            }
             let dx = 0;
             let dz = 0;
             if (state.groundId === 'soil') {

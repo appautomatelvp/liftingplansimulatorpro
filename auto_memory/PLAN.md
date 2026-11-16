@@ -33,7 +33,7 @@ Nhánh Git: feat/horizon-clouds
   3. `src/sim/library/reconstruction_export.js` (`cycleCargoAngleShot`, `updateCameraFollowSystem`): bỏ đóng băng `cf.paused = true` khi chuyển góc; nội suy mượt vector góc `cf.targetAngleOffset` bám trực tiếp `worldTarget` đang di chuyển mỗi khung hình.
 - **Kiểm tra:** `npx vitest run test/rigging.test.js` + `npm run architecture:gate` + `npm run build`.
 
-### [ ] Bước 3: Vật lý tương tác 3D thật với Khúc gỗ kê (Đỡ kiện & Nghiêng tự nhiên khi lệch)
+### [x] Bước 3: Vật lý tương tác 3D thật với Khúc gỗ kê (Đỡ kiện & Nghiêng tự nhiên khi lệch)
 - **File sửa (3 file):**
   1. `src/graphics/JobsiteSiteVisuals.js`: đặt mặt tấm nền `sitePad` ngang mặt đất `y = 0.00 m` (khi `slopeDeg = 0`), lưu `siteProfile` chứa các thanh đà gỗ đỡ `beams[]`, và thêm hàm thuần `evaluateDunnageSupportSurface(x, z, dunnageGroup)`.
   2. `src/sim/scene.js`: nối `supportY(x, z)` và `supportNormal(x, z)` vào `GFX.evaluateDunnageSupportSurface` (chuyển tọa độ theo vị trí/góc đà kê thực).

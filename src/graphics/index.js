@@ -24,5 +24,6 @@ export {
   CRANE_MAT_PRESETS,
   readJobsiteVisualConfig,
   rebuildDunnageVisual3D,
-  syncCraneOutriggerMats3D
+  syncCraneOutriggerMats3D,
+  evaluateDunnageSupportSurface
 } from './JobsiteSiteVisuals.js';
