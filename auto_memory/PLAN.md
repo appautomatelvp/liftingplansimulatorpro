@@ -1,5 +1,5 @@
 # KẾ HOẠCH THỰC HIỆN (PLAN.md)
-Trạng thái: ACTIVE
+Trạng thái: DONE
 Tính năng: Chống xuyên đà gỗ khi kéo kiện ra vị trí bất kỳ, Ghi/Xem/Dừng tái hiện 100% (tối đa 60s), Tối ưu Tablet (iPad / Android >= 4GB RAM) giữ đủ bảng chức năng, Thước cao độ mặc định bên phải & số to gấp đôi, Dứt điểm giật STS Hạ/Hạ đất, Triển khai GitHub & Cloudflare Pages
 Nhánh Git: feat/horizon-clouds
 
@@ -57,7 +57,7 @@ Nhánh Git: feat/horizon-clouds
   1. Cập nhật `test/v3_ruler_drag_hoist_sts_gear_regression.test.js`: bổ sung test kéo kiện lệch tâm lên thanh gỗ không xuyên, test ReplayRecorder 60s tái hiện đủ OOG rơi + đứt dây chằng + cắt cáp + đong đưa, test thước mặc định bên phải & font gấp đôi, test tablet viewport/CSS & STS hạ êm tới sát sàn.
   2. Chạy toàn bộ: `npx vitest run`, `npm run architecture:gate`, `npm run build`, `npm run check:dist`, `./scripts/auto_check.ps1`, `./scripts/auto_log.ps1`.
 
-### [ ] Bước 6: Triển khai lên GitHub & Cloudflare Pages
+### [x] Bước 6: Triển khai lên GitHub & Cloudflare Pages
 - **Thao tác:**
   1. Kiểm tra `git status` sạch sẽ, gộp nhánh `feat/horizon-clouds` về `master` và đẩy lên GitHub (`git push origin master`) theo xác nhận của Founder.
   2. Chạy `npm run build && npm run check:dist` lần cuối, rồi deploy `dist/` lên Cloudflare Pages (`npx wrangler pages deploy dist --project-name safelift3d`) và báo link production thực tế cho Founder.

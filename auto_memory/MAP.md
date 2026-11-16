@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 22:23 | Nhánh: feat/horizon-clouds | Commit cuối: cabbd24 step 4: tablet responsive layout (iPad/Android >=4GB) and coarse-pointer DPR cap (2 minutes ago)
+Cập nhật: 2026-11-16 22:23 | Nhánh: feat/horizon-clouds | Commit cuối: 2e5e2e1 step 5: finalize regression suite, PLAN, CONTEXT, HISTORY and MAP (30 seconds ago)
 Tổng: 269 file, 78026 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
