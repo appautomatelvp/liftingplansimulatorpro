@@ -5,6 +5,11 @@ import path from 'node:path';
 import * as THREE from 'three';
 import { createElevationRulerTool } from '../src/graphics/ElevationRulerTool.js';
 import { pickBestElevationHoverPoint, buildRulerHoverInputs } from '../src/graphics/ElevationRulerMath.js';
+import {
+  startReplayRecording,
+  captureReplayFrame,
+  stepReplayPlayback
+} from '../src/rigging/ReplayRecorder.js';
 import { createHeadlessSim } from './sim_test_harness.js';
 
 describe('V3 UX & Physics Upgrades Regression', () => {
@@ -125,5 +130,67 @@ describe('V3 UX & Physics Upgrades Regression', () => {
     sim.stepSim(220);
     expect(phy.groundClearance).toBeLessThan(0.05);
     expect((phy.cables || []).every((c) => c.slack)).toBe(true);
+  });
+
+  it('6. Ghi/Xem/Dừng ReplayRecorder captures and replays full rigging pose (hook, spreader beams, cargo, cables, slew)', () => {
+    const beamGroup = new THREE.Group();
+    const state = { poseLock: true, slewDeg: 0, craneAngleDeg: 0, gear: { legs: [{ broken: false }], uppers: [], hangers: [] } };
+    const phy = {
+      rigLive: false,
+      groundClearance: 0,
+      hookPos: new THREE.Vector3(0, 8.0, 0),
+      hookTarget: new THREE.Vector3(0, 8.0, 0),
+      hookVel: new THREE.Vector3(),
+      cargoPos: new THREE.Vector3(0, 1.3, 0),
+      cargoQuat: new THREE.Quaternion(),
+      cargoVel: new THREE.Vector3(),
+      cargoOmega: new THREE.Vector3(),
+      beams: [{ id: 'main', x: new THREE.Vector3(0, 4.5, 0), q: new THREE.Quaternion(), isRestingOnCargo: true, group: beamGroup }],
+      cables: [{ role: 'leg', index: 0, L0: 2.0, tensionT: 0, slack: true, broken: false }],
+      legSlacks: [true],
+      legTensions: [0],
+      upperTensions: [0]
+    };
+    const replay = { recording: false, playing: false, frames: [], t0: 0, cursor: 0 };
+
+    startReplayRecording({ replay, state, phy, nowSec: 0 });
+    phy.rigLive = true;
+    state.poseLock = false;
+    state.slewDeg = 42;
+    phy.hookPos.set(1.2, 13.5, -0.5);
+    phy.beams[0].x.set(1.2, 10.2, -0.5);
+    phy.cargoPos.set(1.2, 6.1, -0.5);
+    phy.groundClearance = 4.8;
+    phy.cables[0].tensionT = 6.25;
+    phy.cables[0].slack = false;
+    phy.cables[0].broken = true;
+    phy.cables[0].break = { upperLen: 1.0, lowerLen: 1.0, tipU: new THREE.Vector3(1.1, 9.0, -0.4), tipL: new THREE.Vector3(1.2, 7.2, -0.5) };
+    phy.legSlacks = [false];
+    phy.legTensions = [6.25];
+    captureReplayFrame({ replay, state, phy, nowSec: 1.0, force: true });
+
+    // Mutate state away to ground pose before replaying (reproducing screenshot bug where beams fell to y=0!)
+    phy.rigLive = false;
+    state.poseLock = true;
+    state.slewDeg = 0;
+    phy.beams[0].x.set(0, 0, 0);
+    phy.cargoPos.set(0, 1.3, 0);
+    phy.cables[0].broken = false;
+
+    replay.playing = true;
+    replay.cursor = 0;
+    stepReplayPlayback({ THREE, replay, state, phy, dt: 0.5 });
+
+    expect(phy.rigLive).toBe(true);
+    expect(state.poseLock).toBe(false);
+    expect(state.slewDeg).toBeCloseTo(21, 1);
+    expect(phy.beams[0].x.y).toBeCloseTo(7.35, 1);
+    expect(beamGroup.position.y).toBeCloseTo(7.35, 1);
+    expect(phy.cargoPos.y).toBeCloseTo(3.7, 1);
+
+    stepReplayPlayback({ THREE, replay, state, phy, dt: 0.6 });
+    expect(phy.cables[0].broken).toBe(true);
+    expect(state.gear.legs[0].broken).toBe(true);
+    expect(phy.legTensions[0]).toBeCloseTo(6.25, 2);
   });
 });

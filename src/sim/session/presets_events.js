@@ -2706,14 +2706,18 @@
             holdBtn('btn-slew-right', () => { phy.slewRate = 32; }, () => { if (phy.slewRate > 0) phy.slewRate = 0; });
 
             document.getElementById('btn-rec').addEventListener('click', () => {
-                replay.recording = true;
-                replay.playing = false;
-                replay.frames = [];
-                replay.t0 = performance.now() / 1000;
+                if (typeof RIG !== 'undefined' && RIG.startReplayRecording) {
+                    RIG.startReplayRecording({ replay, state, phy });
+                } else {
+                    replay.recording = true;
+                    replay.playing = false;
+                    replay.frames = [];
+                    replay.t0 = performance.now() / 1000;
+                }
                 document.getElementById('lbl-replay').textContent = 'REC 0.0s';
                 document.getElementById('btn-rec')?.classList.add('ring-2', 'ring-rose-400', 'animate-pulse');
                 document.getElementById('btn-replay')?.classList.remove('ring-2', 'ring-sky-400');
-                document.getElementById('sim-status-text').textContent = '⏺ Đang ghi lại...';
+                document.getElementById('sim-status-text').textContent = '⏺ Đang ghi lại toàn bộ trạng thái mô phỏng...';
             });
             document.getElementById('btn-replay').addEventListener('click', () => {
                 document.getElementById('btn-rec')?.classList.remove('ring-2', 'ring-rose-400', 'animate-pulse');
@@ -2726,12 +2730,23 @@
                 replay.cursor = 0;
                 phy.slewRate = 0;
                 phy.hoistSpeed = 0;
+                phy.autoHoistActive = false;
+                phy._setDownActive = false;
+                phy._trialLiftActive = false;
+                phy._autoTargetClearanceM = 0;
+                if (typeof RIG !== 'undefined' && RIG.applyReplayFrame) {
+                    RIG.applyReplayFrame({ THREE, replay, state, phy, a: replay.frames[0], b: replay.frames[0], u: 0 });
+                }
                 document.getElementById('btn-replay')?.classList.add('ring-2', 'ring-sky-400');
-                document.getElementById('sim-status-text').textContent = '▶ Đang xem lại...';
+                document.getElementById('sim-status-text').textContent = '▶ Đang phát lại toàn bộ tình huống đã ghi...';
             });
             document.getElementById('btn-replay-stop').addEventListener('click', () => {
+                if (replay.recording && typeof RIG !== 'undefined' && RIG.captureReplayFrame) {
+                    RIG.captureReplayFrame({ replay, state, phy, force: true });
+                }
                 replay.recording = false;
                 replay.playing = false;
+                if (phy?.hookPos && phy?.hookTarget) phy.hookTarget.copy(phy.hookPos);
                 document.getElementById('btn-rec')?.classList.remove('ring-2', 'ring-rose-400', 'animate-pulse');
                 document.getElementById('btn-replay')?.classList.remove('ring-2', 'ring-sky-400');
                 document.getElementById('lbl-replay').textContent = 'Đã dừng';

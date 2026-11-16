@@ -880,46 +880,18 @@
         }
 
         function pushReplaySample() {
-            if (!replay.recording) return;
-            const now = performance.now() / 1000 - replay.t0;
-            const last = replay.frames[replay.frames.length - 1];
-            if (last && now - last.t < 0.1) return;
-            if (replay.frames.length > 360) {
-                replay.recording = false;
-                document.getElementById('lbl-replay').textContent = 'Đầy 36s';
-                return;
-            }
-            replay.frames.push({
-                t: now,
-                h: phy.hookPos.toArray(),
-                c: phy.cargoPos.toArray(),
-                q: phy.cargoQuat.toArray()
-            });
-            document.getElementById('lbl-replay').textContent = 'REC ' + now.toFixed(1) + 's';
+            if (!replay.recording || typeof RIG === 'undefined' || !RIG.captureReplayFrame) return;
+            const res = RIG.captureReplayFrame({ replay, state, phy });
+            if (!res) return;
+            const lbl = document.getElementById('lbl-replay');
+            if (lbl) lbl.textContent = res.full ? 'Đầy 36s' : ('REC ' + res.t.toFixed(1) + 's');
         }
 
         function stepReplay(dt) {
-            const frames = replay.frames;
-            if (!frames.length) { replay.playing = false; return; }
-            replay.cursor += dt;
-            const end = frames[frames.length - 1].t;
-            if (replay.cursor >= end) {
-                replay.playing = false;
-                document.getElementById('lbl-replay').textContent = 'Hết bản ghi';
-                return;
-            }
-            let i = 0;
-            while (i < frames.length - 1 && frames[i + 1].t < replay.cursor) i++;
-            const a = frames[i];
-            const b = frames[Math.min(i + 1, frames.length - 1)];
-            const u = THREE.MathUtils.clamp((replay.cursor - a.t) / Math.max(0.0001, b.t - a.t), 0, 1);
-            phy.hookPos.fromArray(a.h).lerp(new THREE.Vector3().fromArray(b.h), u);
-            phy.hookTarget.copy(phy.hookPos);
-            phy.cargoPos.fromArray(a.c).lerp(new THREE.Vector3().fromArray(b.c), u);
-            phy.cargoQuat.fromArray(a.q).slerp(new THREE.Quaternion().fromArray(b.q), u);
-            phy.cargoVel.set(0, 0, 0);
-            phy.cargoOmega.set(0, 0, 0);
-            document.getElementById('lbl-replay').textContent = 'PLAY ' + replay.cursor.toFixed(1) + 's';
+            if (typeof RIG === 'undefined' || !RIG.stepReplayPlayback) { replay.playing = false; return; }
+            const res = RIG.stepReplayPlayback({ THREE, replay, state, phy, dt });
+            const lbl = document.getElementById('lbl-replay');
+            if (lbl) lbl.textContent = res.done ? 'Hết bản ghi' : ('PLAY ' + res.t.toFixed(1) + 's');
         }
 
         let prevFollowWorldPos = null;

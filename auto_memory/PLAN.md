@@ -1,5 +1,5 @@
 # KẾ HOẠCH THỰC HIỆN (PLAN.md)
-Trạng thái: ACTIVE
+Trạng thái: DONE
 Tính năng: Bỏ cục tời khi tắt cẩu 3D, Kéo vị trí Cây thước 3D & Điểm Đỏ bắt cả Cáp/Ma ní, Double-Click Hạ/Kéo (chạm đất trùng cáp / lên 10m), Mở khóa chỉnh Chiều dài & Thông số Cáp/Công cụ, Hết giật STS Spreader Gắp trực tiếp
 Nhánh Git: feat/horizon-clouds
 
@@ -58,7 +58,7 @@ Nhánh Git: feat/horizon-clouds
   2. `src/sim/library/reconstruction_export.js`: truyền đầy đủ `targets` và `segmentSources` (`hookGroup`, `spreaderRootGroup`, `phy.beamGroups`, `sling3DPool`, `hwMeshes`, `padEyeMeshes`, `cargoRootGroup`, `dunnageGroup`) vào `phy._elevationRuler.updateHover` + truyền danh sách mesh kéo của thước nếu cần.
   3. Tạo `test/v3_ruler_drag_hoist_sts_gear_regression.test.js` kiểm chứng cả 6 yêu cầu + chạy trọn bộ: `npx vitest run`, `npm run architecture:gate`, `npm run build`, `npm run check:dist`, `./scripts/auto_check.ps1`, `./scripts/auto_log.ps1`.
 
-### [ ] Bước 6: Nâng cấp `Ghi / Xem / Dừng` ghi & phát lại TOÀN BỘ trạng thái mô phỏng
+### [x] Bước 6: Nâng cấp `Ghi / Xem / Dừng` ghi & phát lại TOÀN BỘ trạng thái mô phỏng
 - **File tạo/sửa (3 file):**
   1. Tạo `src/sim/library/ReplayRecorder.js` (`< 240` dòng, `@purpose:`): bộ ghi & phát lại toàn trạng thái (Hook + Dầm/Ngáng `beams[]` + Kiện + Từng sợi cáp `L0/tensionT/slack/broken/break tips` + Góc quay cẩu `craneAngleDeg` + Khóa `poseLock` & `groundClearance`), lưu snapshot ban đầu khi bấm `Ghi`, khôi phục sạch khi `Dừng`.
   2. `src/sim/library/reconstruction_export.js`: ủy quyền `pushReplaySample()` và `stepReplay()` sang `ReplayRecorder` (`<= 18` dòng).

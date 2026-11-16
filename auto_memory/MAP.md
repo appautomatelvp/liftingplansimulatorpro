@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 21:46 | Nhánh: feat/horizon-clouds | Commit cuối: 82759e2 step 4: dblclick Lower (full-slack ground) & Hoist (10m) and keep manual cable lengths (10 minutes ago)
-Tổng: 267 file, 77498 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 21:52 | Nhánh: feat/horizon-clouds | Commit cuối: 0b093ed step 5: wire ruler drag, full cable/shackle red-dot picking, and poseLock sync (6 minutes ago)
+Tổng: 268 file, 77753 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -28,7 +28,7 @@ Tổng: 267 file, 77498 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/gear/editor.js (3614 dòng)
 - src/sim/library/core.js (641 dòng)
 - src/sim/library/parsers.js (654 dòng)
-- src/sim/library/reconstruction_export.js (2138 dòng)
+- src/sim/library/reconstruction_export.js (2110 dòng)
 - src/sim/physics/beams_seed.js (2976 dòng)
 - src/sim/physics/cables_break.js (1555 dòng)
 - src/sim/physics/flatrack_payload.js (657 dòng)
@@ -40,7 +40,7 @@ Tổng: 267 file, 77498 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/rigging/hook_pool.js (3118 dòng)
 - src/sim/scene.js (1980 dòng)
 - src/sim/session/prelift_reset.js (1142 dòng)
-- src/sim/session/presets_events.js (3595 dòng)
+- src/sim/session/presets_events.js (3610 dòng)
 - src/sim/session/ui_units_bom.js (1966 dòng)
 - src/sim/state.js (607 dòng)
 - src/sim/telemetry.js (1114 dòng)
@@ -186,8 +186,9 @@ Tổng: 267 file, 77498 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/constraints/UnilateralCableConstraint.js` | 151 |  |
 | `src/rigging/FlatRackLashingPhysics.js` | 234 | Dựng dây chằng Flat Rack ôm khít kiện hàng (không lòi ngang) và mô phỏng đứt tuần tự tự nhiên theo vật lý. |
 | `src/rigging/HStyleLiftingBeam.js` | 188 | Cấu tạo 3D và thông số khớp nối H-Style Lifting Beam (tùy chọn trên Direct Hook/2-Cáp và dưới 4-Cáp/Twistlock) |
-| `src/rigging/index.js` | 22 | src/rigging/index.js |
+| `src/rigging/index.js` | 23 | src/rigging/index.js |
 | `src/rigging/PretensionSolver.js` | 297 | Giải cao độ móc cẩu và dầm ngáng tại trạng thái Nhớm Cáp (kiện chạm đất, toàn bộ cáp căng đúng chiều dài thực) ⚠️>250 |
+| `src/rigging/ReplayRecorder.js` | 200 | Ghi và phát lại toàn bộ trạng thái mô phỏng (Hook, Ngáng dầm, Kiện hàng, Dây cáp, Cẩu, OOG/Lashing) cho nút Ghi / Xem / Dừng. |
 | `src/rigging/riggingConstants.js` | 69 | src/rigging/riggingConstants.js |
 | `src/rigging/RiggingPhysicsSolver.js` | 684 | src/rigging/RiggingPhysicsSolver.js ⚠️>300 |
 | `src/rigging/riggingUIStore.js` | 100 | src/rigging/riggingUIStore.js |
@@ -240,7 +241,7 @@ Tổng: 267 file, 77498 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/library.js` | 6 |  |
 | `src/sim/library/core.js` | 641 |  ⚠️>300 |
 | `src/sim/library/parsers.js` | 654 | --- HIGH-SPEED BINARY & ASCII .STL / .OBJ / .GLB PARSERS --- ⚠️>300 |
-| `src/sim/library/reconstruction_export.js` | 2138 | --- 2D IMAGE TO 3D CONTOUR & RELIEF RECONSTRUCTION ENGINE --- ⚠️>300 |
+| `src/sim/library/reconstruction_export.js` | 2110 | --- 2D IMAGE TO 3D CONTOUR & RELIEF RECONSTRUCTION ENGINE --- ⚠️>300 |
 | `src/sim/manifest.js` | 39 |  |
 | `src/sim/physics.js` | 6 |  |
 | `src/sim/physics/beams_seed.js` | 2976 |  ⚠️>300 |
@@ -258,7 +259,7 @@ Tổng: 267 file, 77498 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/scene.js` | 1980 |  ⚠️>300 |
 | `src/sim/session.js` | 6 |  |
 | `src/sim/session/prelift_reset.js` | 1142 |  ⚠️>300 |
-| `src/sim/session/presets_events.js` | 3595 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
+| `src/sim/session/presets_events.js` | 3610 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
 | `src/sim/session/ui_units_bom.js` | 1966 | --- 12. UI EVENT BINDINGS & COLLAPSIBLE PANELS --- ⚠️>300 |
 | `src/sim/state.js` | 607 | Floor cribbing removed: static cargo rests flush on the quay / ground plane. ⚠️>300 |
 | `src/sim/telemetry.js` | 1114 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
@@ -323,6 +324,6 @@ Tổng: 267 file, 77498 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/sts_twin_cable_flare.test.js` | 106 |  |
 | `test/telemetry_usage.test.js` | 50 |  |
 | `test/v2_ux_dunnage_ruler_regression.test.js` | 149 | Kiểm thử hồi quy 7 tính năng mới: Lashing khít đáy, SWL >= 12MT, Chỉnh đồng bộ, Hạ êm, Góc xoay mượt, Gỗ kê đỡ/nghiêng kiện, Thước cao độ 3D + Điểm đỏ. |
-| `test/v3_ruler_drag_hoist_sts_gear_regression.test.js` | 129 | Kiểm thử hồi quy 6 nâng cấp mới: bỏ cục tời khi tắt cẩu 3D, kéo đặt thước 3D & bắt Điểm Đỏ cáp/ma ní, dblclick Hạ/Kéo, mở khóa chỉnh cáp, hết giật STS Direct. |
+| `test/v3_ruler_drag_hoist_sts_gear_regression.test.js` | 196 | Kiểm thử hồi quy 6 nâng cấp mới: bỏ cục tời khi tắt cẩu 3D, kéo đặt thước 3D & bắt Điểm Đỏ cáp/ma ní, dblclick Hạ/Kéo, mở khóa chỉnh cáp, hết giật STS Direct. |
 | `test/workspace_data.test.js` | 155 |  |
 | `vite.config.js` | 115 |  |
