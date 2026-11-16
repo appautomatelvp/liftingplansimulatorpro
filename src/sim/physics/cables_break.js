@@ -51,8 +51,9 @@
                 return new THREE.Vector3(posX ? m.a : m.b, -0.22, posZ ? 0.065 : -0.065);
             }
             if (type === 'lifting_beam') {
-                const m = memberSpec('main');
-                return new THREE.Vector3(posX ? m.a : m.b, -0.24, posZ ? 0.065 : -0.065);
+                const { spanX, spanZ } = getLPBoundingSpan();
+                const yOff = state.liftingBeamBottomMode === 'direct' ? STS_TWISTLOCK_FOOT_Y : -0.22;
+                return new THREE.Vector3(posX ? spanX * 0.5 : -spanX * 0.5, yOff, posZ ? spanZ * 0.5 : -spanZ * 0.5);
             }
             if (type === 'cascaded' || type === 'modular_truss') {
                 const top = memberSpec(type === 'modular_truss' ? 'truss' : 'top');

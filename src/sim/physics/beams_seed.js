@@ -24,6 +24,21 @@
                 seatStsSpreaderToCargo();
                 return;
             }
+            if (state.beamType === 'lifting_beam' && (state.liftingBeamBottomMode === 'direct' || state.liftingBeamTopMode === 'direct_hook')) {
+                const b0 = (phy.beams || [])[0];
+                if (b0 && state.liftingBeamBottomMode === 'direct') {
+                    const roof = (typeof supportY === 'function' ? supportY(phy.cargoPos.x, phy.cargoPos.z) : 0) + (state.H || 2.591);
+                    b0.x.set(phy.cargoPos.x, roof + 0.34, phy.cargoPos.z);
+                    b0.q.copy(phy.cargoQuat || new THREE.Quaternion());
+                    b0.isRestingOnCargo = true;
+                    if (state.liftingBeamTopMode === 'direct_hook') {
+                        const mOff = (typeof HOOK_MASTER_OFFSET_Y === 'number') ? HOOK_MASTER_OFFSET_Y : -0.56;
+                        phy.hookPos.set(b0.x.x, b0.x.y + 0.44 - mOff, b0.x.z);
+                        phy.hookTarget.copy(phy.hookPos);
+                    }
+                    return;
+                }
+            }
             const rig = kinematicRigPose();
             phy.beams.forEach(b => {
                 b.x.copy(b.origin.clone().applyQuaternion(rig.frameQ).add(rig.spreaderPos));
@@ -82,9 +97,9 @@
                 n.normalize().applyQuaternion(phy.cargoQuat);
                 const ring = lug.clone().applyQuaternion(phy.cargoQuat).add(phy.cargoPos);
                 if (phy.cornerSag && phy.cornerSag[i]) ring.y -= phy.cornerSag[i];
-                // STS direct: twistlock seats in ISO casting face — no pad-eye / shackle stand-off.
-                const stsDirect = typeof isStsDirectAttach === 'function' && isStsDirectAttach();
-                if (!stsDirect) ring.addScaledVector(n, 0.12);
+                const directPin = (typeof isStsDirectAttach === 'function' && isStsDirectAttach())
+                    || (state.beamType === 'lifting_beam' && state.liftingBeamBottomMode === 'direct');
+                if (!directPin) ring.addScaledVector(n, 0.12);
                 return ring;
             }
             if (!end.body) return new THREE.Vector3();
@@ -2636,6 +2651,31 @@
             const stsDirectNow = (typeof isStsDirectAttach === 'function') && isStsDirectAttach();
             if (state.beamType === 'container_spreader') enforceStsSpreaderAsHeadblock(frameDt);
             if (stsDirectNow) enforceStsDirectTwistlockCouple(frameDt);
+            if (state.beamType === 'lifting_beam' && typeof RIG !== 'undefined' && RIG.solveHBeamDirectCoupling) {
+                const topM = state.liftingBeamTopMode || 'bridle2';
+                const botM = state.liftingBeamBottomMode || 'cable';
+                const b0 = (phy.beams || [])[0];
+                if (b0 && (topM === 'direct_hook' || botM === 'direct')) {
+                    const gY = (typeof supportY === 'function') ? supportY(b0.x.x, b0.x.z) : 0;
+                    const upOk = !(phy.cables || []).some(c => c.role === 'upper' && cableIsBroken(c));
+                    if (topM === 'direct_hook' && upOk) {
+                        b0.x.x = THREE.MathUtils.lerp(b0.x.x, phy.hookPos.x, 0.5);
+                        b0.x.z = THREE.MathUtils.lerp(b0.x.z, phy.hookPos.z, 0.5);
+                    }
+                    const yawR = THREE.MathUtils.degToRad(state.cargoYawDeg || 0);
+                    const sol = RIG.solveHBeamDirectCoupling({
+                        beamPos: b0.x, beamQuat: b0.q, hookPos: phy.hookPos, cargoPos: phy.cargoPos,
+                        cargoDims: state, cogOffset: { x: state.cogX || 0, z: state.cogZ || 0 }, yawRad: yawR,
+                        floorY: gY, topMode: upOk ? topM : 'bridle2', bottomMode: botM, masterOffsetY: HOOK_MASTER_OFFSET_Y
+                    });
+                    if (topM === 'direct_hook' && upOk) b0.x.y = sol.nextBeamY;
+                    if (botM === 'direct' && !state.poseLock && (beamIsSuspended(b0) || (phy.groundClearance || 0) > 0.05 || sol.clearance > 0.02)) {
+                        phy.cargoPos.x = b0.x.x; phy.cargoPos.z = b0.x.z; phy.cargoPos.y = sol.cargoY;
+                        phy.cargoQuat.slerp(sol.quat, 0.25); b0.q.slerp(sol.quat, 0.25);
+                        phy.groundClearance = sol.clearance; b0.isRestingOnCargo = sol.seatedOnDeck;
+                    }
+                }
+            }
             constrainStsSpreaderYaw(frameDt);
             // Airborne: kill false slack flicker on load-bearing legs (chains looked hung)
             if ((phy.groundClearance || 0) > 0.08) {

@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 14:48 | Nhánh: feat/horizon-clouds | Commit cuối: 16b029b step 1: add HStyleLiftingBeam 3D builder and coupling solver (83 seconds ago)
-Tổng: 250 file, 73871 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 14:53 | Nhánh: feat/horizon-clouds | Commit cuối: 20f4e24 step 2: wire H-Style Lifting Beam meshes and state modes (5 minutes ago)
+Tổng: 250 file, 73949 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -28,21 +28,21 @@ Tổng: 250 file, 73871 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/library/core.js (641 dòng)
 - src/sim/library/parsers.js (652 dòng)
 - src/sim/library/reconstruction_export.js (2136 dòng)
-- src/sim/physics/beams_seed.js (2895 dòng)
-- src/sim/physics/cables_break.js (1556 dòng)
+- src/sim/physics/beams_seed.js (2935 dòng)
+- src/sim/physics/cables_break.js (1557 dòng)
 - src/sim/physics/flatrack_payload.js (629 dòng)
-- src/sim/physics/footprint_rig.js (834 dòng)
-- src/sim/physics/hoist_contacts.js (1003 dòng)
+- src/sim/physics/footprint_rig.js (840 dòng)
+- src/sim/physics/hoist_contacts.js (1025 dòng)
 - src/sim/physics/step_engine.js (774 dòng)
 - src/sim/plan_wizard.js (630 dòng)
 - src/sim/rigging/draw_update.js (867 dòng)
 - src/sim/rigging/hook_pool.js (3118 dòng)
 - src/sim/scene.js (1974 dòng)
-- src/sim/session/prelift_reset.js (1144 dòng)
+- src/sim/session/prelift_reset.js (1151 dòng)
 - src/sim/session/presets_events.js (3563 dòng)
 - src/sim/session/ui_units_bom.js (1906 dòng)
 - src/sim/state.js (605 dòng)
-- src/sim/telemetry.js (1104 dòng)
+- src/sim/telemetry.js (1106 dòng)
 - src/sim/weather_fx.js (572 dòng)
 - test/cable_morphology_and_deformation.test.js (426 dòng)
 - test/custom_slings.test.js (712 dòng)
@@ -231,11 +231,11 @@ Tổng: 250 file, 73871 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/library/reconstruction_export.js` | 2136 | --- 2D IMAGE TO 3D CONTOUR & RELIEF RECONSTRUCTION ENGINE --- ⚠️>300 |
 | `src/sim/manifest.js` | 39 |  |
 | `src/sim/physics.js` | 6 |  |
-| `src/sim/physics/beams_seed.js` | 2895 |  ⚠️>300 |
-| `src/sim/physics/cables_break.js` | 1556 |  ⚠️>300 |
+| `src/sim/physics/beams_seed.js` | 2935 |  ⚠️>300 |
+| `src/sim/physics/cables_break.js` | 1557 |  ⚠️>300 |
 | `src/sim/physics/flatrack_payload.js` | 629 | --- FLAT RACK LASHING RUPTURE, DECK SLIDING & FALLING PAYLOAD PHYSICS --- ⚠️>300 |
-| `src/sim/physics/footprint_rig.js` | 834 |  ⚠️>300 |
-| `src/sim/physics/hoist_contacts.js` | 1003 |  ⚠️>300 |
+| `src/sim/physics/footprint_rig.js` | 840 |  ⚠️>300 |
+| `src/sim/physics/hoist_contacts.js` | 1025 |  ⚠️>300 |
 | `src/sim/physics/index.js` | 9 | Bounded context index — parts are assembled via src/sim/manifest.js (shared scope). |
 | `src/sim/physics/port.js` | 59 |  |
 | `src/sim/physics/step_engine.js` | 774 |  ⚠️>300 |
@@ -245,11 +245,11 @@ Tổng: 250 file, 73871 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/rigging/hook_pool.js` | 3118 |  ⚠️>300 |
 | `src/sim/scene.js` | 1974 |  ⚠️>300 |
 | `src/sim/session.js` | 6 |  |
-| `src/sim/session/prelift_reset.js` | 1144 |  ⚠️>300 |
+| `src/sim/session/prelift_reset.js` | 1151 |  ⚠️>300 |
 | `src/sim/session/presets_events.js` | 3563 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
 | `src/sim/session/ui_units_bom.js` | 1906 | --- 12. UI EVENT BINDINGS & COLLAPSIBLE PANELS --- ⚠️>300 |
 | `src/sim/state.js` | 605 | Floor cribbing removed: static cargo rests flush on the quay / ground plane. ⚠️>300 |
-| `src/sim/telemetry.js` | 1104 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
+| `src/sim/telemetry.js` | 1106 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
 | `src/sim/ui-layout.js` | 241 |  |
 | `src/sim/weather_fx.js` | 572 |  ⚠️>300 |
 | `src/simulation/destruction-manager/DestructionSolver.js` | 147 |  |

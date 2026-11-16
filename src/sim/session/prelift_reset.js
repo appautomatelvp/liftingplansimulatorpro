@@ -483,6 +483,8 @@
                 stsSizeFt: state.stsSizeFt || 40,
                 stsTwinLift: !!state.stsTwinLift,
                 stsAttachMode: state.stsAttachMode || 'direct',
+                liftingBeamTopMode: state.liftingBeamTopMode || 'bridle2',
+                liftingBeamBottomMode: state.liftingBeamBottomMode || 'cable',
                 slingType: state.slingType,
                 hwType: state.hwType,
                 slingLength: state.slingLength,
@@ -614,6 +616,8 @@
             if (b.stsSizeFt != null) state.stsSizeFt = b.stsSizeFt;
             if (b.stsTwinLift != null) state.stsTwinLift = !!b.stsTwinLift;
             if (b.stsAttachMode) state.stsAttachMode = b.stsAttachMode;
+            if (b.liftingBeamTopMode) state.liftingBeamTopMode = b.liftingBeamTopMode;
+            if (b.liftingBeamBottomMode) state.liftingBeamBottomMode = b.liftingBeamBottomMode;
             state.slingType = b.slingType;
             state.hwType = b.hwType;
             state.slingLength = b.slingLength;
@@ -875,7 +879,10 @@
                     if (d > lowerDropActual) lowerDropActual = d;
                 });
             }
-            if (stsDirectLift) lowerDropActual = Math.min(lowerDropActual, 0.08);
+            const lbDirectTop = beamType === 'lifting_beam' && state.liftingBeamTopMode === 'direct_hook';
+            const lbDirectBot = beamType === 'lifting_beam' && state.liftingBeamBottomMode === 'direct';
+            if (lbDirectTop) horizU = 0.04;
+            if (stsDirectLift || lbDirectBot) lowerDropActual = Math.min(lowerDropActual, 0.08);
 
             let upperDropActual = 0;
             let beamStructuralSep = 0;

@@ -174,6 +174,8 @@
                     // Cable physics = H-beam bridle (visual 8-fall headblock is cosmetic only).
                     horizU = Math.max(0.35, Math.hypot(spanX / 2, spanZ / 2));
                 }
+            } else if (beamType === 'lifting_beam' && state.liftingBeamTopMode === 'direct_hook') {
+                horizU = 0.04;
             } else if (beamType === 'frame' || (typeof customBeamMeshes !== 'undefined' && customBeamMeshes[beamType])) {
                 horizU = Math.max(0.35, Math.hypot(spanX / 2, spanZ / 2));
             }
@@ -204,7 +206,10 @@
                     recUpper = 0.28;
                     maxUpper = 1.20;
                 }
-                // Cable: keep H-beam-style minUpper/recUpper from horizU above.
+            } else if (beamType === 'lifting_beam' && state.liftingBeamTopMode === 'direct_hook') {
+                minUpper = 0.06;
+                recUpper = 0.14;
+                maxUpper = 0.60;
             }
 
             // Compute required vertical drop from beam underside to lowest lug
@@ -241,7 +246,8 @@
                 && (typeof isStsDirectAttach === 'function'
                     ? isStsDirectAttach()
                     : (state.stsAttachMode || 'direct') !== 'cable');
-            if (stsDirect) {
+            const lbDirect = beamType === 'lifting_beam' && state.liftingBeamBottomMode === 'direct';
+            if (stsDirect || lbDirect) {
                 // Twistlock pin protrusion only — spreader flush on container roof.
                 minLower = 0.04;
                 recLower = 0.06;

@@ -633,9 +633,9 @@
                 }
                 return { bodies: bodies, cables: cables, lugs: null };
             }
-            if (type === 'spreader' || type === 'lifting_beam') {
+            if (type === 'spreader') {
                 const m = memberSpec('main');
-                const yLug = type === 'lifting_beam' ? 0.24 : 0.22;
+                const yLug = 0.22;
                 const selfKg = userBeamKg != null ? userBeamKg : estimateMemberStructuralMassKg('main');
                 add('main', Math.max(45, selfKg + hwShareKg), m.length, 'x', new THREE.Vector3(), ['main']);
                 const dual = (state.hookCount || 1) >= 2;
@@ -643,6 +643,28 @@
                 cables.push({ role: 'upper', index: 0, a: endOf('hook'), b: endOf('body', 'main', m.b, yLug, 0) });
                 [[0, m.a, 0.065], [3, m.a, -0.065], [1, m.b, 0.065], [2, m.b, -0.065]].forEach(pair => {
                     cables.push({ role: 'leg', index: pair[0], a: endOf('body', 'main', pair[1], -yLug, pair[2]), b: endOf('cargo', null, 0, 0, 0, pair[0]) });
+                });
+                return { bodies: bodies, cables: cables, lugs: null };
+            }
+            if (type === 'lifting_beam') {
+                const topMode = state.liftingBeamTopMode || 'bridle2';
+                const bottomMode = state.liftingBeamBottomMode || 'cable';
+                const sp = spanBase();
+                const hb = (typeof RIG !== 'undefined' && RIG.resolveHBeamCorners)
+                    ? RIG.resolveHBeamCorners(sp.spanX, sp.spanZ, state, bottomMode)
+                    : { halfX: sp.spanX * 0.5, halfZ: sp.spanZ * 0.5, outerX: sp.spanX + 0.28, corners: [[sp.spanX * 0.5, sp.spanZ * 0.5, 0], [-sp.spanX * 0.5, sp.spanZ * 0.5, 1], [-sp.spanX * 0.5, -sp.spanZ * 0.5, 2], [sp.spanX * 0.5, -sp.spanZ * 0.5, 3]] };
+                const selfKg = userBeamKg != null ? userBeamKg : estimateMemberStructuralMassKg('main');
+                add('main', Math.max(120, selfKg + hwShareKg), hb.outerX, 'x', new THREE.Vector3(), ['main']);
+                const dual = (state.hookCount || 1) >= 2;
+                if (topMode === 'direct_hook') {
+                    cables.push({ role: 'upper', index: 0, a: endOf('hook'), b: endOf('body', 'main', 0, 0.30, 0) });
+                } else {
+                    cables.push({ role: 'upper', index: 1, a: dual ? endOf('hook2') : endOf('hook'), b: endOf('body', 'main', hb.halfX, 0.24, 0) });
+                    cables.push({ role: 'upper', index: 0, a: endOf('hook'), b: endOf('body', 'main', -hb.halfX, 0.24, 0) });
+                }
+                const yLow = bottomMode === 'direct' ? STS_TWISTLOCK_FOOT_Y : -0.22;
+                hb.corners.forEach(([cx, cz, idx]) => {
+                    cables.push({ role: 'leg', index: idx, a: endOf('body', 'main', cx, yLow, cz), b: endOf('cargo', null, 0, 0, 0, idx) });
                 });
                 return { bodies: bodies, cables: cables, lugs: null };
             }

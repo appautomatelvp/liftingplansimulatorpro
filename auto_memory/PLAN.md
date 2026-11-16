@@ -60,7 +60,7 @@
 ---
 
 ### Bước 3: Đấu nối Vật lý Khớp nối Trên/Dưới & Hiển thị Cáp/Hook (`hoist_contacts.js`, `beams_seed.js`, `footprint_rig.js`, `prelift_reset.js`, `telemetry.js`)
-- [ ] **Trạng thái:** Chưa làm
+- [x] **Trạng thái:** Hoàn tất (đấu nối `hoist_contacts.js`, `cables_break.js`, `footprint_rig.js`, `beams_seed.js`, `prelift_reset.js`, `telemetry.js`; `architecture:gate`, `vite build`, `rigging_realism_sts_contact.test.js` xanh)
 - **Mục tiêu:** Cho phép `lifting_beam` hoạt động chuẩn vật lý với cả 4 tổ hợp (trên `direct_hook`/`bridle2`, dưới `direct`/`cable`).
 - **File được phép sửa (tối đa 5 file, mỗi file $\le 18$ dòng):**
   1. `src/sim/physics/hoist_contacts.js` *(tại `beamRecipe` dòng 636–648)*:

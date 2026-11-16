@@ -117,9 +117,11 @@
                     const stsDirect = stsMode && (typeof isStsDirectAttach === 'function'
                         ? isStsDirectAttach()
                         : (state.stsAttachMode || 'direct') !== 'cable');
-                    // STS headblock: no visible upper bridle from a hook — falls are inside the trolley
-                    if (stsMode && c.role === 'upper') return;
-                    if (stsDirect && c.role === 'leg') return;
+                    // STS headblock / H-Beam direct modes hide virtual link segments
+                    const lbDirectTop = state.beamType === 'lifting_beam' && state.liftingBeamTopMode === 'direct_hook';
+                    const lbDirectBot = state.beamType === 'lifting_beam' && state.liftingBeamBottomMode === 'direct';
+                    if ((stsMode || lbDirectTop) && c.role === 'upper') return;
+                    if ((stsDirect || lbDirectBot) && c.role === 'leg') return;
                     const A = attachWorld(c.a);
                     const B = attachWorld(c.b);
                     const role = c.role === 'leg' ? 'leg' : (c.role === 'upper' ? 'upper' : (c.role === 'extra' ? 'extra' : 'hanger'));
