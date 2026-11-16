@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-16 11:56 [fix] Nâng cấp bộ tạo mây vòm trời sang 3D Quintic Gradient Noise trên mặt cầu liền mạch để xóa hoàn toàn hiện tượng mây vỡ thành khối chắp vá và tia kéo giãn ở góc trên
+- Nhánh: feat/horizon-clouds | Commit trước đó: db93241
+- File: src/graphics/HorizonSkyDome.js
+
 ## 2026-11-16 11:47 [feat] Nang cap mau sac chan troi theo 5 anh tham khao (xanh bien ban ngay & cam vang hoang hon), bo sung shader may xa da tang (Cumulus + Cirrus) troi nhe va khoa chong weather_fx ghi de mau xam suong mu.
 - Nhánh: feat/horizon-clouds | Commit trước đó: bcde67b
 - File: src/graphics/HorizonSkyDome.js,src/graphics/EnvironmentManager.js,src/graphics/SceneRenderer.js,test/graphics.test.js

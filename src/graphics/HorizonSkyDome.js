@@ -1,4 +1,4 @@
-// @purpose: Dựng vòm bầu trời HorizonSkyDome với mây chân trời đa tầng (Cumulus + Cirrus) và màu khí quyển thực tế
+// @purpose: Dựng vòm bầu trời HorizonSkyDome với mây chân trời 3D Gradient Quintic mềm mại và màu khí quyển thực tế
 import * as THREE from 'three';
 
 export const LIGHTING_PRESETS = {
@@ -61,32 +61,32 @@ export const getVietnamHorizonBand = (date = new Date()) => getVietnamTimeInfo(d
 const ATMOSPHERE_BANDS = {
   night: {
     fog: 0x0b1526, mid: 0x08101f, sky: 0x040812, glow: 0.08, haze: 0.28, near: 60, far: 185,
-    cloudLight: 0x243b5e, cloudShade: 0x0d182b, cloudOpacity: 0.26,
+    cloudLight: 0x243b5e, cloudShade: 0x0d182b, cloudOpacity: 0.24,
     sun: [0xdbe8fa, 2.05, [-20, 38, 22]], fill: [0x38bdf8, 0.52], amb: [0x182236, 0.36], exposure: 1.22
   },
   sunset: {
     fog: 0xf08c36, mid: 0xc26e52, sky: 0x163b7a, glow: 0.78, haze: 0.36, near: 66, far: 202,
-    cloudLight: 0xffc478, cloudShade: 0x48567d, cloudOpacity: 0.86,
+    cloudLight: 0xffcfa0, cloudShade: 0x5c6991, cloudOpacity: 0.78,
     sun: [0xff9436, 2.85, [36, 16, 26]], fill: [0x4aa3df, 0.62], amb: [0xfdecd2, 0.60], exposure: 1.20
   },
   overcast: {
     fog: 0xd6e8f5, mid: 0x7cb2df, sky: 0x2b6cb0, glow: 0.28, haze: 0.38, near: 70, far: 210,
-    cloudLight: 0xf8fbff, cloudShade: 0x8fb5d9, cloudOpacity: 0.75,
+    cloudLight: 0xf8fbff, cloudShade: 0x9abde0, cloudOpacity: 0.68,
     sun: [0xfffbeb, 2.55, [24, 46, 28]], fill: [0x93c5fd, 0.82], amb: [0xffffff, 0.66], exposure: 1.16
   },
   dawn: {
     fog: 0xe8a586, mid: 0x6b8ec2, sky: 0x1f4378, glow: 0.62, haze: 0.36, near: 66, far: 200,
-    cloudLight: 0xffd9bd, cloudShade: 0x64789e, cloudOpacity: 0.78,
+    cloudLight: 0xffe2cc, cloudShade: 0x7084ab, cloudOpacity: 0.72,
     sun: [0xffcfa0, 2.25, [-30, 17, 24]], fill: [0x60a5fa, 0.66], amb: [0xf5e4dc, 0.54], exposure: 1.16
   },
   dusk: {
     fog: 0x283655, mid: 0x1a2642, sky: 0x0b1224, glow: 0.26, haze: 0.30, near: 60, far: 185,
-    cloudLight: 0x6e5b7a, cloudShade: 0x1d2740, cloudOpacity: 0.45,
+    cloudLight: 0x6e5b7a, cloudShade: 0x1d2740, cloudOpacity: 0.40,
     sun: [0xc47d5e, 1.15], fill: [0x334155, 0.45], amb: [0x1f293d, 0.42], exposure: 1.16
   },
   day: {
     fog: 0xcfe7f7, mid: 0x4ea0e6, sky: 0x0c63b8, glow: 0.44, haze: 0.30, near: 72, far: 215,
-    cloudLight: 0xffffff, cloudShade: 0x8cb8e0, cloudOpacity: 0.82,
+    cloudLight: 0xffffff, cloudShade: 0x9ec5e8, cloudOpacity: 0.72,
     sun: [0xfff8e6, 2.80], fill: [0x8ec5f8, 0.88, [-24, 22, -18]], amb: [0xfffcf5, 0.72], exposure: 1.18
   }
 };
@@ -124,30 +124,47 @@ const SKY_FRAGMENT_SHADER = `
   uniform float uTime;
   varying vec3 vSkyDir;
 
-  float hash21(vec2 p) {
-    p = fract(p * vec2(123.34, 456.21));
-    p += dot(p, p + 45.32);
-    return fract(p.x * p.y);
+  vec3 hash33(vec3 p) {
+    p = vec3(
+      dot(p, vec3(127.1, 311.7, 74.7)),
+      dot(p, vec3(269.5, 183.3, 246.1)),
+      dot(p, vec3(113.5, 271.9, 124.6))
+    );
+    return -1.0 + 2.0 * fract(sin(p) * 43758.5453123);
   }
 
-  float noise2(vec2 p) {
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-    vec2 u = f * f * (3.0 - 2.0 * f);
-    float a = hash21(i);
-    float b = hash21(i + vec2(1.0, 0.0));
-    float c = hash21(i + vec2(0.0, 1.0));
-    float d = hash21(i + vec2(1.0, 1.0));
-    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+  // C2-continuous 3D Quintic Gradient Noise (zero grid creases or boxy facets)
+  float gnoise3(vec3 p) {
+    vec3 i = floor(p);
+    vec3 f = fract(p);
+    vec3 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+    return mix(
+      mix(
+        mix(dot(hash33(i + vec3(0,0,0)), f - vec3(0,0,0)), dot(hash33(i + vec3(1,0,0)), f - vec3(1,0,0)), u.x),
+        mix(dot(hash33(i + vec3(0,1,0)), f - vec3(0,1,0)), dot(hash33(i + vec3(1,1,0)), f - vec3(1,1,0)), u.x),
+        u.y
+      ),
+      mix(
+        mix(dot(hash33(i + vec3(0,0,1)), f - vec3(0,0,1)), dot(hash33(i + vec3(1,0,1)), f - vec3(1,0,1)), u.x),
+        mix(dot(hash33(i + vec3(0,1,1)), f - vec3(0,1,1)), dot(hash33(i + vec3(1,1,1)), f - vec3(1,1,1)), u.x),
+        u.y
+      ),
+      u.z
+    );
   }
 
-  float fbm4(vec2 p) {
+  const mat3 OCT_ROT = mat3(
+     0.00,  0.80,  0.60,
+    -0.80,  0.36, -0.48,
+    -0.60, -0.48,  0.64
+  );
+
+  float fbm4(vec3 p) {
     float v = 0.0;
-    float amp = 0.5;
-    mat2 rot = mat2(0.8, -0.6, 0.6, 0.8);
+    float amp = 0.52;
     for (int i = 0; i < 4; i++) {
-      v += amp * noise2(p);
-      p = rot * p * 2.03 + vec2(17.1, 31.7);
+      v += amp * gnoise3(p);
+      p = OCT_ROT * p * 2.02 + vec3(13.7, 7.3, 19.1);
       amp *= 0.5;
     }
     return v;
@@ -159,45 +176,47 @@ const SKY_FRAGMENT_SHADER = `
     float elev = clamp(y + 0.055, 0.0, 1.0);
     vec3 sunD = normalize(uSunDir);
 
-    float horizonToMid = 1.0 - smoothstep(0.0, max(0.04, uHorizonHaze * 0.42), elev);
-    float midToZenith = smoothstep(0.025, 0.34, elev);
+    float horizonToMid = 1.0 - smoothstep(0.0, max(0.05, uHorizonHaze * 0.45), elev);
+    float midToZenith = smoothstep(0.02, 0.36, elev);
     vec3 skyGrad = mix(uMidSkyColor, uSkyColor, midToZenith);
     vec3 col = mix(skyGrad, uHorizonColor, pow(horizonToMid, 1.45));
 
     float sunCos = max(dot(dir, sunD), 0.0);
-    float mieBand = pow(sunCos, 5.0) * 0.28 * (1.0 - smoothstep(0.0, 0.38, elev));
-    float sunDisc = pow(sunCos, 12.0) * 0.20 + pow(sunCos, 140.0) * 0.45;
+    float mieBand = pow(sunCos, 5.0) * 0.26 * (1.0 - smoothstep(0.0, 0.38, elev));
+    float sunDisc = pow(sunCos, 12.0) * 0.18 + pow(sunCos, 140.0) * 0.42;
     col += uSunColor * ((mieBand + sunDisc) * uSunGlow * smoothstep(0.0, 0.06, elev));
 
-    if (elev > 0.008 && uCloudOpacity > 0.01) {
-      vec2 skyUv = dir.xz / (elev + 0.11);
-      vec2 drift = vec2(uTime * 0.0045, uTime * 0.0015);
-      vec2 warp = vec2(fbm4(skyUv * 0.55 + drift * 0.5 + vec2(2.3, -1.7)), fbm4(skyUv * 0.55 - drift * 0.4 + vec2(-4.1, 3.2)));
+    if (elev > 0.004 && elev < 0.36 && uCloudOpacity > 0.01) {
+      // Evaluate in seamless 3D spherical-shell coordinates (zero 1/elev radial shearing!)
+      vec3 drift = vec3(uTime * 0.0035, 0.0, uTime * 0.0018);
+      vec3 pCum = vec3(dir.x * 2.6, elev * 10.5, dir.z * 2.6) + drift;
+      float warp = gnoise3(pCum * 0.65 + vec3(4.2, 1.5, -3.1));
 
-      // 1. Distant low-horizon cumulus bank (visible right above horizon mist)
-      vec2 cumUv = skyUv * vec2(0.92, 1.38) + drift + warp * 0.36;
-      float cumBase = fbm4(cumUv);
-      float cumDetail = fbm4(cumUv * 2.8 - vec2(0.0, elev * 4.5));
-      float cumDensity = smoothstep(0.44, 0.72, cumBase * 0.70 + cumDetail * 0.30);
-      float cumBand = smoothstep(0.010, 0.042, elev) * (1.0 - smoothstep(0.09, 0.22, elev));
-      float cumAlpha = cumDensity * cumBand;
+      // 1. Soft distant horizon cumulus pillows (elev = 0.008 .. 0.15)
+      float nCum = fbm4(pCum + vec3(warp * 0.45, warp * 0.2, -warp * 0.45));
+      float cumRaw = smoothstep(-0.06, 0.46, nCum);
+      float cumShape = pow(cumRaw, 1.45);
+      float cumEnvelope = smoothstep(0.006, 0.036, elev) * (1.0 - smoothstep(0.055, 0.155, elev));
+      float cumAlpha = cumShape * cumEnvelope;
 
-      // 2. High-altitude wispy cirrus streaks
-      vec2 cirUv = skyUv * vec2(0.60, 1.95) + drift * 0.45 + warp * 0.65;
-      float cirNoise = fbm4(cirUv * 1.65) * fbm4(cirUv * 3.2 + vec2(5.2, -2.4));
-      float cirDensity = smoothstep(0.18, 0.44, cirNoise);
-      float cirBand = smoothstep(0.035, 0.10, elev) * (1.0 - smoothstep(0.20, 0.44, elev));
-      float cirAlpha = cirDensity * cirBand * 0.72;
+      // 2. Delicate, ultra-soft high-altitude atmospheric veil (elev = 0.06 .. 0.32)
+      vec3 pCir = vec3(dir.x * 1.85, elev * 14.0, dir.z * 1.85) + drift * 0.6 + vec3(warp * 0.7, 0.0, warp * 0.5);
+      float nCir = fbm4(pCir);
+      float cirShape = pow(smoothstep(0.02, 0.48, nCir), 1.65);
+      float cirEnvelope = smoothstep(0.04, 0.10, elev) * (1.0 - smoothstep(0.15, 0.32, elev));
+      float cirAlpha = cirShape * cirEnvelope * 0.36;
 
-      float totalCloud = clamp(cumAlpha + cirAlpha * (1.0 - cumAlpha * 0.55), 0.0, 1.0);
-      float topLit = clamp((elev - 0.015) * 6.5 + (cumDetail - 0.44) * 0.95, 0.0, 1.0);
-      vec3 cloudCol = mix(uCloudShadeColor, uCloudLightColor, topLit);
-      float silverLining = pow(sunCos, 5.0) * uSunGlow * (1.0 - cumDensity * 0.42);
-      cloudCol += uSunColor * silverLining * 0.42;
+      float totalCloud = clamp(cumAlpha + cirAlpha * (1.0 - cumAlpha * 0.65), 0.0, 1.0);
+      // Silky vertical lighting gradient across cloud volume (zero contour banding)
+      float lightGrad = smoothstep(-0.18, 0.38, nCum) * 0.55 + smoothstep(0.01, 0.12, elev) * 0.45;
+      vec3 cloudCol = mix(uCloudShadeColor, uCloudLightColor, clamp(lightGrad, 0.0, 1.0));
+      float silverLining = pow(sunCos, 5.0) * uSunGlow * (1.0 - cumShape * 0.35);
+      cloudCol += uSunColor * silverLining * 0.32;
 
-      float distFade = smoothstep(0.008, 0.058, elev);
-      cloudCol = mix(uHorizonColor, cloudCol, 0.42 + 0.58 * distFade);
-      col = mix(col, cloudCol, totalCloud * uCloudOpacity * distFade);
+      // Soft atmospheric mist fusion near the horizon line
+      float mistBlend = smoothstep(0.005, 0.055, elev);
+      cloudCol = mix(uHorizonColor, cloudCol, 0.35 + 0.65 * mistBlend);
+      col = mix(col, cloudCol, totalCloud * uCloudOpacity * mistBlend);
     }
 
     if (y < -0.055) {
@@ -209,7 +228,7 @@ const SKY_FRAGMENT_SHADER = `
 `;
 
 export function createHorizonSkyDome(scene) {
-  const geo = new THREE.SphereGeometry(900, 48, 24);
+  const geo = new THREE.SphereGeometry(900, 64, 32);
   const mat = new THREE.ShaderMaterial({
     name: 'AtmosphericHorizonSkyDome',
     side: THREE.BackSide,
@@ -224,10 +243,10 @@ export function createHorizonSkyDome(scene) {
       uSunDir: { value: new THREE.Vector3(28, 44, 24).normalize() },
       uSunColor: { value: new THREE.Color(0xfff8e6) },
       uCloudLightColor: { value: new THREE.Color(0xffffff) },
-      uCloudShadeColor: { value: new THREE.Color(0x8cb8e0) },
+      uCloudShadeColor: { value: new THREE.Color(0x9ec5e8) },
       uSunGlow: { value: 0.44 },
       uHorizonHaze: { value: 0.30 },
-      uCloudOpacity: { value: 0.82 },
+      uCloudOpacity: { value: 0.72 },
       uTime: { value: 0.0 }
     },
     vertexShader: SKY_VERTEX_SHADER,
@@ -245,7 +264,7 @@ export function createHorizonSkyDome(scene) {
 
 export function updateHorizonSkyDome(dome, scene, sunLight, {
   skyColor, midSkyColor, horizonColor, cloudLightColor, cloudShadeColor,
-  sunGlow = 0.44, horizonHaze = 0.30, cloudOpacity = 0.82, visible = true
+  sunGlow = 0.44, horizonHaze = 0.30, cloudOpacity = 0.72, visible = true
 }) {
   dome.visible = visible;
   const u = dome.material.uniforms;

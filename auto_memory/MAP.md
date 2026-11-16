@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 11:48 | Nhánh: feat/horizon-clouds | Commit cuối: bcde67b Merge pull request #3 from appautomatelvp/feat/default-en-clean (11 minutes ago)
-Tổng: 241 file, 72003 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 11:56 | Nhánh: feat/horizon-clouds | Commit cuối: db93241 feat: upgrade horizon sky palette with distant cumulus/cirrus clouds and lock fog color (8 minutes ago)
+Tổng: 241 file, 72022 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -159,7 +159,7 @@ Tổng: 241 file, 72003 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/domain/site/types.js` | 9 | Site / quay domain vocabulary (pure). |
 | `src/domain/standards/index.js` | 26 |  |
 | `src/graphics/EnvironmentManager.js` | 280 | Quản lý ánh sáng IBL, sương mù chân trời, HDR và đồng bộ thời gian thực cho cảnh 3D ⚠️>250 |
-| `src/graphics/HorizonSkyDome.js` | 265 | Dựng vòm bầu trời HorizonSkyDome với mây chân trời đa tầng (Cumulus + Cirrus) và màu khí quyển thực tế ⚠️>250 |
+| `src/graphics/HorizonSkyDome.js` | 284 | Dựng vòm bầu trời HorizonSkyDome với mây chân trời 3D Gradient Quintic mềm mại và màu khí quyển thực tế ⚠️>250 |
 | `src/graphics/index.js` | 10 |  |
 | `src/graphics/pbr/ProceduralTextures.js` | 196 | Vẽ texture canvas thủ công (bê tông cảng, cáp thép, xích, sling, mặt nước, vạch cảnh báo) |
 | `src/graphics/PBRMaterialFactory.js` | 199 | Nhà máy tạo vật liệu PBR chuẩn công nghiệp hàng hải và đồng bộ không gian màu Three.js r170+ |
