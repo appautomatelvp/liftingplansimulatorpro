@@ -64,11 +64,8 @@
 
             if (phy.hoistSpeed !== 0) {
                 phy.autoHoistActive = false;
-                const grossLoadT = phy.massBreakdown ? phy.massBreakdown.grossCraneLoadT : (state.weight + phy.gearWeight);
-                const totalMassKg = Math.max(100, grossLoadT * 1000);
-                const loadRatio = Math.min(0.92, (totalMassKg * 9.81) / 650000); // 65T winch capacity
-                const speedMult = Math.max(0.15, 1.0 - loadRatio);
-                const actualSpeed = phy.hoistSpeed * speedMult;
+                // Standardized constant cargo hoist speed regardless of cargo weight or spreader type
+                const actualSpeed = phy.hoistSpeed;
                 // Cargo ground clearance hard cap = 50 m AGL (hook ceiling leaves headroom for sling/spreader).
                 const MAX_CARGO_AGL_M = 50;
                 const MAX_HOOK_Y_M = 56;

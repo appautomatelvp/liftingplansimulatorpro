@@ -16,6 +16,12 @@ import {
   applyToneSettingsToCanvas
 } from '../src/graphics/GraphicsToneHelper.js';
 import {
+  UNIFIED_BASE_HOIST_SPEED_MPS,
+  computeUnifiedHoistRates,
+  computeStsHeadblockFollow
+} from '../src/rigging/UnifiedHoistProfile.js';
+import { createHeadlessSim } from './sim_test_harness.js';
+import {
   tryReuseSettledSlackRope,
   recordSolvedSlackRope,
   writeChainLinkInstanceMatrix
@@ -193,5 +199,74 @@ describe('Runtime & Asset performance helpers', () => {
     expect(wxSrc).not.toContain('size * 0.42');
     expect(texSrc).toContain('drawTileableBlotch');
     expect(pbrSrc).toContain('options.includeJoints !== false');
+  });
+
+  it('provides symmetrical unified hoist speed independent of weight or rig type', () => {
+    const r = computeUnifiedHoistRates(1.0);
+    expect(r.up).toBeCloseTo(UNIFIED_BASE_HOIST_SPEED_MPS, 4);
+    expect(r.down).toBeCloseTo(UNIFIED_BASE_HOIST_SPEED_MPS, 4);
+    const followY = computeStsHeadblockFollow({
+      hookPosY: 4.5,
+      beamY: 2.93,
+      roofContactY: 2.93,
+      maxSpeedMps: 0.85,
+      dt: 1 / 60
+    });
+    expect(followY - 2.93).toBeLessThanOrEqual(0.85 * 1.05 / 60 + 1e-6);
+  });
+
+  it('hoists STS Container Spreader smoothly without catapulting and matches other plans speed', () => {
+    const measureLift = (beamType, stsAttachMode = 'direct', weight = 28) => {
+      const sim = createHeadlessSim();
+      const st = sim.getState();
+      const phy = sim.getPhy();
+      st.cargoType = 'iso40';
+      st.L = 12.192;
+      st.W = 2.438;
+      st.H = 2.591;
+      st.weight = weight;
+      st.beamType = beamType;
+      st.slingUserSet = false;
+      st.upperSlingLength = null;
+      st.lowerSlingLength = null;
+      if (stsAttachMode) st.stsAttachMode = stsAttachMode;
+      sim.rebuildCargoAndRig(true);
+      if (typeof sim.resetToInitialPreLiftState === 'function') sim.resetToInitialPreLiftState();
+      st.poseLock = false;
+      phy.hoistSpeed = UNIFIED_BASE_HOIST_SPEED_MPS;
+      let maxVelY = 0;
+      for (let i = 0; i < 420 && (phy.groundClearance || 0) < 0.25; i++) {
+        sim.stepPhysicsEngine(1 / 60);
+        maxVelY = Math.max(maxVelY, Math.abs(phy.cargoVel?.y || 0));
+      }
+      const steadyStartY = phy.cargoPos.y;
+      for (let i = 0; i < 60; i++) {
+        sim.stepPhysicsEngine(1 / 60);
+        maxVelY = Math.max(maxVelY, Math.abs(phy.cargoVel?.y || 0));
+      }
+      return {
+        steadyRiseM: Number((phy.cargoPos.y - steadyStartY).toFixed(3)),
+        maxVelY: Number(maxVelY.toFixed(3)),
+        clearance: Number((phy.groundClearance || 0).toFixed(3))
+      };
+    };
+
+    const stsDirect = measureLift('container_spreader', 'direct', 36);
+    const stsCable = measureLift('container_spreader', 'cable', 32);
+    const spreader = measureLift('spreader', null, 18);
+    const hbeam = measureLift('lifting_beam', null, 28);
+    const bridle = measureLift('none', null, 12);
+
+    // STS Direct must never catapult cargo upward (<1.3 m/s) or overshoot commanded travel
+    expect(stsDirect.maxVelY).toBeLessThan(1.3);
+    expect(stsDirect.clearance).toBeGreaterThan(0.5);
+    expect(stsDirect.steadyRiseM).toBeGreaterThan(0.75);
+    expect(stsDirect.steadyRiseM).toBeLessThanOrEqual(0.95);
+
+    // Steady-state airborne cargo travel speed (m/s) matches across ALL plans regardless of gear or weight (12T..36T)
+    expect(Math.abs(stsDirect.steadyRiseM - stsCable.steadyRiseM)).toBeLessThan(0.10);
+    expect(Math.abs(stsDirect.steadyRiseM - spreader.steadyRiseM)).toBeLessThan(0.10);
+    expect(Math.abs(stsDirect.steadyRiseM - hbeam.steadyRiseM)).toBeLessThan(0.10);
+    expect(Math.abs(stsDirect.steadyRiseM - bridle.steadyRiseM)).toBeLessThan(0.10);
   });
 });

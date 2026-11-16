@@ -45,7 +45,7 @@
 ---
 
 ## 4. CÔNG VIỆC ĐANG LÀM DỞ (ONGOING WORK)
-- **Mục tiêu hiện tại:** Đã hoàn tất 6/6 bước trong `auto_memory/PLAN.md` (`Trạng thái: DONE`, nhánh `feat/horizon-clouds`) cho đợt **Tối ưu tổng thể hệ thống & Sửa lỗi**: (1) Hòa mượt đường chân trời (`HorizonSkyDome.js` bật `toneMapped: true` + `#include <tonemapping_fragment>`, `GroundHorizonFade.js`, mở rộng đĩa nền `560m`); (2) Bổ sung khối 3D `Steel Pipe (OOG)` (`SpecialtyPipeCargo`/`SpecialtyCargoMeshes.js`) và đồng nhất tạo hình `Vehicle` sang xe buýt xanh (hết lỗi đổi từ xe con đỏ sang xe buýt); (3) Khử lag khi load CAD (`AssetLoaders` URL cache + `yieldFrame`, `parsers.js` giữ tư thế `rebuildCargoAndRig(false)`, `scene.js` bỏ `EdgesGeometry` mesh `> 8000` đỉnh); (4) Tối ưu runtime (`SlingPerfHelper.js` cache XPBD nghỉ + scratch math, LRU `6` + `dispose()` `cargoMeshCache`, dirty-check HUD DOM `telemetry.js`). Toàn bộ `47/47` file / `349/349` test xanh, `vite build` & `architecture:gate` & `check:dist` đạt 100%.
+- **Mục tiêu hiện tại:** Đã hoàn tất tối ưu tổng thể & chuẩn hóa đồng bộ tốc độ nâng/hạ + chống bắn kiện hàng trên STS Spreader ([UnifiedHoistProfile.js](src/rigging/UnifiedHoistProfile.js), nhánh `feat/horizon-clouds`), bổ sung mây trôi đa múi, vật liệu bê tông cảng, bịt kín xe/container 3D và thanh chỉnh Độ sáng/Tương phản trong Graphics. Toàn bộ `47/47` file / `355/355` test xanh, `vite build` & `architecture:gate` & `check:dist` đạt 100%.
 - **Bước tiếp theo:** Founder kiểm tra trực quan 3D trên trình duyệt (chân trời ở các preset bầu trời, chọn `Vehicle`, chọn `Steel Pipe (OOG)`, xoay kéo mượt), khi ưng ý thì chạy `./scripts/manual_chot_ban.ps1` để chốt bản ổn định.
 
 ---
@@ -54,4 +54,4 @@
 - [x] Tất cả các file mới/vừa tách đều dưới 300 dòng, có `@purpose`, không sinh ra file `patch*.js` hay `fix.js` nào.
 - [x] Không vi phạm Physics Quarantine (`/src/core/` không import DOM/Three.js) và qua `npm run architecture:gate`.
 - [x] Đã chạy `./scripts/auto_check.ps1` và `./scripts/auto_log.ps1` để cập nhật `auto_memory/HISTORY.md` + `auto_memory/MAP.md`.
-- [x] Toàn bộ 47 file / 349 test (`npm test`), kiểm tra bảo mật (`@secure`) + Golden Test (`@test`) và `npm run build` chạy khớp 100%. (Founder mở F12 kiểm tra thêm trên trình duyệt trước khi chốt bản).
+- [x] Toàn bộ 47 file / 355 test (`npm test`), kiểm tra bảo mật (`@secure`) + Golden Test (`@test`) và `npm run build` chạy khớp 100%. (Founder mở F12 kiểm tra thêm trên trình duyệt trước khi chốt bản).

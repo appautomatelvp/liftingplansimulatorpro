@@ -20,38 +20,43 @@
                 );
 
             if (cargoGrounded) {
-                // 1. Cargo roof under the hook — prefer shell sample, fall back to AABB top.
-                const shellTop = cargoShellTopWorldY(phy.hookPos.x, phy.hookPos.z, 0.20);
-                const aabbTop = phy.cargoPos.y + (state.H || 2.6) * 0.5;
-                const roofY = (shellTop > -1e5) ? Math.max(shellTop, aabbTop - 0.05) : aabbTop;
-                minHookY = Math.max(minHookY, roofY + masterBottomOffset + 0.02);
+                if (state.beamType === 'container_spreader') {
+                    // STS headblock sits at roof + 0.56 (no hanging J-hook block underneath)
+                    minHookY = Math.max(minHookY, groundY + (state.H || 2.591) + 0.56);
+                } else {
+                    // 1. Cargo roof under the hook — prefer shell sample, fall back to AABB top.
+                    const shellTop = cargoShellTopWorldY(phy.hookPos.x, phy.hookPos.z, 0.20);
+                    const aabbTop = phy.cargoPos.y + (state.H || 2.6) * 0.5;
+                    const roofY = (shellTop > -1e5) ? Math.max(shellTop, aabbTop - 0.05) : aabbTop;
+                    minHookY = Math.max(minHookY, roofY + masterBottomOffset + 0.02);
 
-                // 2. Spreader / lifting beam is a solid: hook cannot sink through it.
-                if (state.beamType !== 'none') {
-                    (phy.beams || []).forEach(b => {
-                        if (!b || b.axis === 'frame') return;
-                        const bRad = Math.max(0.10, b.radius || 0.14);
-                        minHookY = Math.max(minHookY, b.x.y + bRad + masterBottomOffset + 0.02);
-                    });
-                }
+                    // 2. Spreader / lifting beam is a solid: hook cannot sink through it.
+                    if (state.beamType !== 'none') {
+                        (phy.beams || []).forEach(b => {
+                            if (!b || b.axis === 'frame') return;
+                            const bRad = Math.max(0.10, b.radius || 0.14);
+                            minHookY = Math.max(minHookY, b.x.y + bRad + masterBottomOffset + 0.02);
+                        });
+                    }
 
-                // 3. Test 3D spheres of the Hook Assembly against cargo outer shell
-                const hookSpheres = [
-                    { dy: -0.50, r: 0.12 },
-                    { dy: -0.26, r: 0.18 },
-                    { dy:  0.28, r: 0.26 }
-                ];
-                for (let i = 0; i < hookSpheres.length; i++) {
-                    const hs = hookSpheres[i];
-                    const center = new THREE.Vector3(phy.hookPos.x, phy.hookPos.y + hs.dy, phy.hookPos.z);
-                    const pushed = pushOutOfCargoShellWorld(center, hs.r, false);
-                    if (pushed.distanceToSquared(center) > 1e-8) {
-                        const diff = pushed.sub(center);
-                        if (diff.y > 0) {
-                            minHookY = Math.max(minHookY, phy.hookPos.y + diff.y);
-                        } else {
-                            phy.hookPos.x += diff.x;
-                            phy.hookPos.z += diff.z;
+                    // 3. Test 3D spheres of the Hook Assembly against cargo outer shell
+                    const hookSpheres = [
+                        { dy: -0.50, r: 0.12 },
+                        { dy: -0.26, r: 0.18 },
+                        { dy:  0.28, r: 0.26 }
+                    ];
+                    for (let i = 0; i < hookSpheres.length; i++) {
+                        const hs = hookSpheres[i];
+                        const center = new THREE.Vector3(phy.hookPos.x, phy.hookPos.y + hs.dy, phy.hookPos.z);
+                        const pushed = pushOutOfCargoShellWorld(center, hs.r, false);
+                        if (pushed.distanceToSquared(center) > 1e-8) {
+                            const diff = pushed.sub(center);
+                            if (diff.y > 0) {
+                                minHookY = Math.max(minHookY, phy.hookPos.y + diff.y);
+                            } else {
+                                phy.hookPos.x += diff.x;
+                                phy.hookPos.z += diff.z;
+                            }
                         }
                     }
                 }
@@ -244,25 +249,24 @@
                 }
             }
 
-            if (rising) {
-                // Soft-pay L0 so take-up cannot one-frame overstretch → Zone-3 snap.
-                // STS cable uses the same thresholds as H-beam / normal 4-leg hoist.
+            if (rising && (phy.groundClearance || 0) < 0.05) {
+                // Soft-pay L0 only during initial ground take-up so cables stay inextensible once airborne.
                 if (typeof relieveCableOverstretch === 'function') {
                     relieveCableOverstretch({ rising: true, margin: 0.015, trigger: 0.035 });
                 }
             }
-            if (rising && phy.groundClearance < 0.05) {
+            // Soft pickup only during tiny < 3cm final slack kiss so all plans lift cargo at the exact same speed
+            if (rising && phy.groundClearance < 0.03) {
                 const stsDirectRise = (typeof isStsDirectAttach === 'function') && isStsDirectAttach();
                 const aboutToTaut = (phy.cables || []).some(c => {
                     if (cableIsBroken(c)) return false;
-                    // Only the lower legs can pick the cargo from the ground.
                     if (!(c.role === 'leg' && c.b && c.b.kind === 'cargo')) return false;
-                    // Twistlocks already engaged — don't creep-throttle the whole lift.
                     if (stsDirectRise) return false;
-                    return attachWorld(c.a).distanceTo(attachWorld(c.b)) > c.L0 - 0.15;
+                    const d = attachWorld(c.a).distanceTo(attachWorld(c.b));
+                    return d > c.L0 - 0.05 && d < c.L0 + 0.01;
                 });
                 if (aboutToTaut) {
-                    maxWinch = Math.min(maxWinch, rates.up * 0.28);
+                    maxWinch = Math.min(maxWinch, rates.up * 0.65);
                 }
             }
 

@@ -1487,29 +1487,21 @@
             return applyInertiaInverse(invM, local).applyQuaternion(quat);
         }
 
-        function winchSpeedForLoad() {
-            const massT = state.weight + (phy.gearWeight || 0);
-            const swl = Math.max(5, state.gear && state.gear.hook ? state.gear.hook.swlT : 50);
-            // Cargo hoist view-speed (not a winch-reel demo). Cap near mid of old scale.
-            const vMax = 0.55;
-            let v = vMax * Math.max(0.20, 1 - 0.70 * (massT / swl));
-            const takingUp = phy.groundClearance < 0.05 && (phy.cables || []).some(c => c.role === 'leg' && (c.tensionT || 0) > 0.2 && !cableIsBroken(c));
-            if (takingUp) v *= 0.40;
-            return v * hoistSpeedScaleFactor();
-        }
-
         function hoistSpeedScaleFactor() {
             return THREE.MathUtils.clamp(state.hoistSpeedScale != null ? state.hoistSpeedScale : 1, 0.25, 2.0);
         }
 
-        /**
-         * ONE hoist rate for hook and STS spreader (swap mode → same feel).
-         * Scale 1× → 0.85 m/s; slider-governed, perfectly symmetrical up & down.
-         */
         function cargoHoistRates() {
             const scale = hoistSpeedScaleFactor();
+            if (typeof RIG !== 'undefined' && RIG.computeUnifiedHoistRates) {
+                return RIG.computeUnifiedHoistRates(scale);
+            }
             const v = 0.85 * scale;
             return { up: v, down: v };
+        }
+
+        function winchSpeedForLoad() {
+            return cargoHoistRates().up;
         }
 
         /** Alias — identical to cargoHoistRates (no STS-only boost). */
