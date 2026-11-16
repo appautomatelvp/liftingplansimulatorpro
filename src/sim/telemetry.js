@@ -234,11 +234,7 @@
                 updateCargoGroundAngleIndicator3D();
             }
 
-            // Sync timber dunnage blocks orientation under cargo
-            if (dunnageGroup && phy.cargoPos) {
-                dunnageGroup.position.set(phy.cargoPos.x, 0, phy.cargoPos.z);
-                dunnageGroup.rotation.y = THREE.MathUtils.degToRad(state.cargoYawDeg || 0);
-            }
+            // Dunnage stays fixed at its quay staging datum so shifted cargo interacts / tilts off it naturally
 
             hwWorldPos.forEach((wPos, i) => {
                 const arrow = forceArrows[i];

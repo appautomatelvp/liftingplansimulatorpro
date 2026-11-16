@@ -1,5 +1,5 @@
 # KẾ HOẠCH THỰC HIỆN (PLAN.md)
-Trạng thái: ACTIVE
+Trạng thái: DONE
 Tính năng: Hạ/Hạ đất êm chính xác, Camera Góc xoay mượt khi đang nâng/hạ, Lashing hết tõe đáy, Chỉnh đồng thời nhiều thiết bị cùng loại, Kiện đứng thật trên/nghiêng lệch khỏi Đà gỗ 3D, SWL mặc định ≥ 12 MT giữ nguyên kích thước, Cây thước đo cao độ 3D + Điểm đỏ di chuột
 Nhánh Git: feat/horizon-clouds
 
@@ -47,7 +47,7 @@ Nhánh Git: feat/horizon-clouds
   3. `index.html`: thêm tùy chọn ẩn/hiện cây thước (`#chk-disp-ruler` — `📏 Thước đo cao độ 3D`) trong popover Hiển thị.
 - **Kiểm tra:** `npm run architecture:gate` + `npm run build`.
 
-### [ ] Bước 5: Nối mạch Cây thước, sửa giật `btnDown` & Nghiệm thu toàn bộ + Golden Test
+### [x] Bước 5: Nối mạch Cây thước, sửa giật `btnDown` & Nghiệm thu toàn bộ + Golden Test
 - **File sửa/tạo (3–4 file):**
   1. `src/sim/library/reconstruction_export.js`: cập nhật cây thước `ElevationRulerTool` trong `animate()` và xử lý hover chuột `pointermove`.
   2. `src/sim/session/presets_events.js`: gắn bật/tắt `#chk-disp-ruler`, hỗ trợ nút Tất cả/Ẩn hết, và bỏ ép `applyLockedPose()` giật khi giữ nút `Hạ` (`btnDown`).

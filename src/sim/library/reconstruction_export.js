@@ -2093,6 +2093,23 @@
             // Red force-flow pulses along cables that just went taut under hoist
             if (typeof updateCableForceFlows === 'function') updateCableForceFlows(dt);
 
+            if (!phy._elevationRuler && typeof GFX !== 'undefined' && GFX.createElevationRulerTool && scene && renderer?.domElement) {
+                phy._elevationRuler = GFX.createElevationRulerTool({ THREE, scene });
+                const onRulerMove = (ev) => {
+                    if (!phy._elevationRuler || !state.displayOptions?.showRuler) return;
+                    const targets = [cargoRootGroup, spreaderRootGroup, craneVehicleGroup, dunnageGroup];
+                    if (typeof hookGroup !== 'undefined' && hookGroup) targets.push(hookGroup);
+                    phy._elevationRuler.updateHover({
+                        clientX: ev.clientX, clientY: ev.clientY, domElement: renderer.domElement, camera, targets
+                    });
+                };
+                renderer.domElement.addEventListener('pointermove', onRulerMove);
+                renderer.domElement.addEventListener('pointerleave', () => phy._elevationRuler?.clearHover());
+            }
+            if (phy._elevationRuler) {
+                phy._elevationRuler.update({ visible: Boolean(state.displayOptions?.showRuler), state, phy });
+            }
+
             // Shadow frustum: every ~4 frames is enough at 1080p
             if (!animate._shadowTick) animate._shadowTick = 0;
             animate._shadowTick++;

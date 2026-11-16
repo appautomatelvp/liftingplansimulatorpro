@@ -2471,10 +2471,7 @@
                     phy._nhomFreezeSpreader = false;
                     state.holdCableLength = false;
                     state.heldCableL0 = null;
-                    state.poseLock = true;
                     phy.groundClearance = 0;
-                    if (typeof applyLockedPose === 'function') applyLockedPose();
-                    if (typeof syncPoseLockUI === 'function') syncPoseLockUI();
                     phy.autoHoistActive = false;
                     phy.hookTarget.x = phy.hookPos.x;
                     phy.hookTarget.z = phy.hookPos.z;
@@ -2788,6 +2785,7 @@
                 setChk('chk-disp-vectors', dOpt.showVectors);
                 setChk('chk-disp-cad', dOpt.showCADEdges);
                 setChk('chk-disp-hud', dOpt.showHUD);
+                setChk('chk-disp-ruler', dOpt.showRuler);
 
                 // Backward-compatibility state sync
                 state.showVectors = Boolean(dOpt.showVectors);
@@ -2975,6 +2973,7 @@
             bindChk('chk-disp-vectors', 'showVectors');
             bindChk('chk-disp-cad', 'showCADEdges');
             bindChk('chk-disp-hud', 'showHUD');
+            bindChk('chk-disp-ruler', 'showRuler');
 
             // Top toolbar buttons
             document.getElementById('btn-toggle-cad-edges')?.addEventListener('click', () => {

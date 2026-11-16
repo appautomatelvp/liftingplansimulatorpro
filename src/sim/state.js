@@ -125,7 +125,8 @@
                 showCoG: true,             // Trọng tâm CoG & dây dọi (HIỂN THỊ)
                 showVectors: false,        // Mũi tên véc-tơ lực 3D (Tạm ẩn)
                 showCADEdges: true,        // Nét CAD kỹ thuật
-                showHUD: false             // Thanh số liệu HUD (Tạm ẩn)
+                showHUD: false,            // Thanh số liệu HUD (Tạm ẩn)
+                showRuler: true            // Thước đo cao độ 3D & Điểm đỏ di chuột
             },
 
             // Camera Tracking & Follow Mechanism

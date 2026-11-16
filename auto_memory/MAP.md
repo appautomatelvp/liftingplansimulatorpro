@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 20:53 | Nhánh: feat/horizon-clouds | Commit cuối: 8a9a1e0 step 3: real 3D dunnage physical support and off-center gravity tilt (2 minutes ago)
-Tổng: 264 file, 76843 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 20:55 | Nhánh: feat/horizon-clouds | Commit cuối: efcd0e6 step 4: add ElevationRulerTool 3D altitude gauge and Display toggle (2 minutes ago)
+Tổng: 265 file, 77005 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -28,7 +28,7 @@ Tổng: 264 file, 76843 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/gear/editor.js (3562 dòng)
 - src/sim/library/core.js (641 dòng)
 - src/sim/library/parsers.js (654 dòng)
-- src/sim/library/reconstruction_export.js (2116 dòng)
+- src/sim/library/reconstruction_export.js (2133 dòng)
 - src/sim/physics/beams_seed.js (2961 dòng)
 - src/sim/physics/cables_break.js (1553 dòng)
 - src/sim/physics/flatrack_payload.js (657 dòng)
@@ -40,10 +40,10 @@ Tổng: 264 file, 76843 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/rigging/hook_pool.js (3118 dòng)
 - src/sim/scene.js (1989 dòng)
 - src/sim/session/prelift_reset.js (1074 dòng)
-- src/sim/session/presets_events.js (3577 dòng)
+- src/sim/session/presets_events.js (3576 dòng)
 - src/sim/session/ui_units_bom.js (1953 dòng)
-- src/sim/state.js (606 dòng)
-- src/sim/telemetry.js (1118 dòng)
+- src/sim/state.js (607 dòng)
+- src/sim/telemetry.js (1114 dòng)
 - src/sim/weather_fx.js (596 dòng)
 - test/cable_morphology_and_deformation.test.js (426 dòng)
 - test/custom_slings.test.js (712 dòng)
@@ -239,7 +239,7 @@ Tổng: 264 file, 76843 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/library.js` | 6 |  |
 | `src/sim/library/core.js` | 641 |  ⚠️>300 |
 | `src/sim/library/parsers.js` | 654 | --- HIGH-SPEED BINARY & ASCII .STL / .OBJ / .GLB PARSERS --- ⚠️>300 |
-| `src/sim/library/reconstruction_export.js` | 2116 | --- 2D IMAGE TO 3D CONTOUR & RELIEF RECONSTRUCTION ENGINE --- ⚠️>300 |
+| `src/sim/library/reconstruction_export.js` | 2133 | --- 2D IMAGE TO 3D CONTOUR & RELIEF RECONSTRUCTION ENGINE --- ⚠️>300 |
 | `src/sim/manifest.js` | 39 |  |
 | `src/sim/physics.js` | 6 |  |
 | `src/sim/physics/beams_seed.js` | 2961 |  ⚠️>300 |
@@ -257,10 +257,10 @@ Tổng: 264 file, 76843 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/scene.js` | 1989 |  ⚠️>300 |
 | `src/sim/session.js` | 6 |  |
 | `src/sim/session/prelift_reset.js` | 1074 |  ⚠️>300 |
-| `src/sim/session/presets_events.js` | 3577 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
+| `src/sim/session/presets_events.js` | 3576 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
 | `src/sim/session/ui_units_bom.js` | 1953 | --- 12. UI EVENT BINDINGS & COLLAPSIBLE PANELS --- ⚠️>300 |
-| `src/sim/state.js` | 606 | Floor cribbing removed: static cargo rests flush on the quay / ground plane. ⚠️>300 |
-| `src/sim/telemetry.js` | 1118 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
+| `src/sim/state.js` | 607 | Floor cribbing removed: static cargo rests flush on the quay / ground plane. ⚠️>300 |
+| `src/sim/telemetry.js` | 1114 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
 | `src/sim/ui-layout.js` | 241 |  |
 | `src/sim/weather_fx.js` | 596 |  ⚠️>300 |
 | `src/simulation/destruction-manager/DestructionSolver.js` | 147 |  |
@@ -321,5 +321,6 @@ Tổng: 264 file, 76843 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/standards_compliance_engine.test.js` | 281 |  ⚠️>250 |
 | `test/sts_twin_cable_flare.test.js` | 106 |  |
 | `test/telemetry_usage.test.js` | 50 |  |
+| `test/v2_ux_dunnage_ruler_regression.test.js` | 149 | Kiểm thử hồi quy 7 tính năng mới: Lashing khít đáy, SWL >= 12MT, Chỉnh đồng bộ, Hạ êm, Góc xoay mượt, Gỗ kê đỡ/nghiêng kiện, Thước cao độ 3D + Điểm đỏ. |
 | `test/workspace_data.test.js` | 155 |  |
 | `vite.config.js` | 115 |  |
