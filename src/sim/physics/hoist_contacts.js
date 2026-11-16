@@ -950,7 +950,7 @@
                     ? 0.5 * (cLowA.L0 + cLowB.L0)
                     : (spec.lower || 1.5);
                 const dLowAx = Math.sqrt(Math.max(0.04, L_low * L_low - halfZ * halfZ));
-                const fSeries = THREE.MathUtils.clamp((dUpAx + 0.14) / Math.max(0.5, dUpAx + 0.28 + dLowAx), 0.32, 0.72);
+                const fSeries = THREE.MathUtils.clamp((dUpAx + 0.14) / Math.max(0.5, dUpAx + 0.28 + dLowAx), 0.15, 0.92);
                 const maxReach = (legABroken || legBBroken) ? (dUpAx + 0.55) : (dUpAx + 0.14);
                 const dBarLoad = Math.min(maxReach, dist * fSeries);
                 const loadHang = master.clone().addScaledVector(u, dBarLoad);

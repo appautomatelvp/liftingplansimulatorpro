@@ -205,9 +205,13 @@
                 if (captureDesign && c.role === 'hanger' && held == null && !customLength) {
                     c.designL0 = Math.max(0.15, attachWorld(c.a).distanceTo(attachWorld(c.b)));
                 }
+                const isLbDirectTopPin = c.role === 'upper' && state.beamType === 'lifting_beam' && state.liftingBeamTopMode === 'direct_hook';
+                const isLbDirectBotPin = c.role === 'leg' && state.beamType === 'lifting_beam' && state.liftingBeamBottomMode === 'direct';
                 let nominal;
                 // Nhớm / hold: live held L0 wins so design lengthM cannot re-stretch cables.
-                if (held != null) nominal = held;
+                if (isLbDirectTopPin) nominal = 0.04;
+                else if (isLbDirectBotPin) nominal = 0.12;
+                else if (held != null) nominal = held;
                 else if (customLength) nominal = item.lengthM;
                 else if (c.role === 'upper') nominal = spec.topLeg;
                 else if (c.role === 'hanger') {
@@ -216,12 +220,9 @@
                         : (spec.hanger || c.designL0 || Math.max(0.3, spec.mast || 2.0));
                 }
                 else nominal = spec.lower;
-                // STS direct twistlock pins are centimetres long — do NOT floor to 0.2 m
-                // (that left permanent slack so the spreader rose without picking the box).
-                const stsPin = c.role === 'leg'
-                    && (typeof isStsDirectAttach === 'function')
-                    && isStsDirectAttach();
-                const minL0 = stsPin ? 0.04 : 0.2;
+                const directLink = isLbDirectTopPin || isLbDirectBotPin
+                    || (c.role === 'leg' && typeof isStsDirectAttach === 'function' && isStsDirectAttach());
+                const minL0 = directLink ? 0.04 : 0.2;
                 c.L0 = Math.max(minL0, nominal + turn);
                 if (c.role !== 'hanger' || customLength) c.designL0 = c.L0;
             });

@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-16 15:44 [fix] Sửa nút Nhớm Cáp (pretensionRig -> PretensionSolver.js) để kéo móc cẩu & ngáng lên đúng cao độ căng toàn bộ cáp thực tế trong khi kiện hàng vẫn chạm đất 0.00 m trên đủ 11 cấu hình ngáng
+- Nhánh: feat/horizon-clouds | Commit trước đó: b1648c1
+- File: src/rigging/PretensionSolver.js,src/rigging/index.js,src/sim/session/prelift_reset.js,src/sim/physics/step_engine.js,src/sim/physics/beams_seed.js,src/sim/physics/hoist_contacts.js,src/sim/rigging/draw_update.js,test/pretension_nhom_cap.test.js
+
 ## 2026-11-16 15:19 [feat] Hoàn tất 5/5 bước nâng cấp H-Style Lifting Beam (2 thanh ngang 4 góc) với tùy chọn liên kết Trên (Direct Hook Link / 2 cáp-xích) và Dưới (4 cáp-xích 4 góc / Gắp Container Twistlock)
 - Nhánh: feat/horizon-clouds | Commit trước đó: d55a201
 - File: src/rigging/HStyleLiftingBeam.js,src/sim/state.js,src/sim/cargo/specialty_meshes.js,src/sim/cargo/shell_rebuild.js,src/sim/physics/hoist_contacts.js,src/sim/physics/cables_break.js,src/sim/physics/footprint_rig.js,src/sim/physics/beams_seed.js,src/sim/telemetry.js,src/sim/session/prelift_reset.js,src/sim/session/ui_units_bom.js,src/sim/plan_wizard.js,index.html,test/h_style_lifting_beam.test.js,test/rigging.test.js

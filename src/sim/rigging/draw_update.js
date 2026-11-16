@@ -114,15 +114,23 @@
                 }
             };
 
+            const CableDynClass = (typeof XPBDCableDynamics !== 'undefined')
+                ? XPBDCableDynamics
+                : ((typeof RIG !== 'undefined' && RIG.CableDynamicsXPBD) ? RIG.CableDynamicsXPBD : null);
+            if (!CableDynClass) {
+                return (typeof fitPathToLength === 'function')
+                    ? fitPathToLength(A, B, L, 20, pathMeta)
+                    : [A.clone(), B.clone()];
+            }
             const solver = slingObj.ropeSim;
-            if (!(solver instanceof XPBDCableDynamics)
+            if (!(solver instanceof CableDynClass)
                 || solver.segments !== N
                 || solver.material !== normalizedMaterial
                 || slingObj._ropeSimCargoKey !== cargoKey
                 || Math.abs(solver.lengthM - L) > 0.25 * L + 0.1
                 || solver.positions[0]?.distanceTo(A) > 1.2
                 || solver.positions[N]?.distanceTo(B) > 1.2) {
-                slingObj.ropeSim = new XPBDCableDynamics({ lengthM: L, diameterMm: diameterMm || 16, material: normalizedMaterial, segments: N });
+                slingObj.ropeSim = new CableDynClass({ lengthM: L, diameterMm: diameterMm || 16, material: normalizedMaterial, segments: N });
                 slingObj.ropeSim.reset(A, B);
                 slingObj._ropeSimCargoKey = cargoKey;
             }

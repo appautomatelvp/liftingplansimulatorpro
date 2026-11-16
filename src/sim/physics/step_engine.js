@@ -130,6 +130,14 @@
                 // Hard roof clamp every pose-lock frame (safety net).
                 if (Array.isArray(phy.beams)) phy.beams.forEach(clampBeamAboveCargoRoof);
                 advanceHook(frameDt);
+                if (phy._nhomFreezeSpreader && !phy.autoHoistActive
+                    && Math.abs(phy.hoistSpeed || 0) < 0.01 && !(dragTarget && dragTarget.type === 'hook')
+                    && phy.hookPos && phy.hookTarget && phy.hookPos.y < phy.hookTarget.y - 0.001) {
+                    phy.hookPos.y = phy.hookTarget.y;
+                    if (phy.hoist && phy.hoist.kin && phy.hoist.off) {
+                        phy.hoist.kin.y = phy.hookTarget.y - phy.hoist.off.y;
+                    }
+                }
                 stepCornerYield(frameDt);
                 // Nhớm cáp: keep light pretension + non-slack flags so ropes DRAW taut
                 // while cargo stays on the quay. Blanking tensions forced a gravity belly.
@@ -261,8 +269,8 @@
                 if (typeof applyStsTwinCableFlareVisual === 'function') applyStsTwinCableFlareVisual();
                 if (typeof syncTwinCableLugsFromFlare === 'function') syncTwinCableLugsFromFlare();
             }
-            // After set-down, STS direct must re-seat twistlocks flush on the roof.
-            if (state.beamType === 'container_spreader' && typeof seatStsSpreaderToCargo === 'function') {
+            // After set-down, STS must re-seat on the roof — but never clobber an active Nhớm Cáp pose.
+            if (!phy._nhomFreezeSpreader && state.beamType === 'container_spreader' && typeof seatStsSpreaderToCargo === 'function') {
                 seatStsSpreaderToCargo();
             }
         }

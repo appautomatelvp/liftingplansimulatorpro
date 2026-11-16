@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 15:19 | Nhánh: feat/horizon-clouds | Commit cuối: d55a201 step 4: add H-Style Lifting Beam top and bottom mode UI controls (22 minutes ago)
-Tổng: 251 file, 74237 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 15:45 | Nhánh: feat/horizon-clouds | Commit cuối: b1648c1 step 5: add Golden Tests for H-Style Lifting Beam and complete upgrade (26 minutes ago)
+Tổng: 253 file, 74540 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -28,17 +28,17 @@ Tổng: 251 file, 74237 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/library/core.js (641 dòng)
 - src/sim/library/parsers.js (652 dòng)
 - src/sim/library/reconstruction_export.js (2136 dòng)
-- src/sim/physics/beams_seed.js (2939 dòng)
+- src/sim/physics/beams_seed.js (2940 dòng)
 - src/sim/physics/cables_break.js (1557 dòng)
 - src/sim/physics/flatrack_payload.js (629 dòng)
 - src/sim/physics/footprint_rig.js (840 dòng)
 - src/sim/physics/hoist_contacts.js (1025 dòng)
-- src/sim/physics/step_engine.js (774 dòng)
+- src/sim/physics/step_engine.js (782 dòng)
 - src/sim/plan_wizard.js (650 dòng)
-- src/sim/rigging/draw_update.js (867 dòng)
+- src/sim/rigging/draw_update.js (875 dòng)
 - src/sim/rigging/hook_pool.js (3118 dòng)
 - src/sim/scene.js (1974 dòng)
-- src/sim/session/prelift_reset.js (1151 dòng)
+- src/sim/session/prelift_reset.js (1014 dòng)
 - src/sim/session/presets_events.js (3563 dòng)
 - src/sim/session/ui_units_bom.js (1953 dòng)
 - src/sim/state.js (605 dòng)
@@ -177,7 +177,8 @@ Tổng: 251 file, 74237 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/constraints/HardwareConstraint.js` | 236 |  |
 | `src/rigging/constraints/UnilateralCableConstraint.js` | 151 |  |
 | `src/rigging/HStyleLiftingBeam.js` | 188 | Cấu tạo 3D và thông số khớp nối H-Style Lifting Beam (tùy chọn trên Direct Hook/2-Cáp và dưới 4-Cáp/Twistlock) |
-| `src/rigging/index.js` | 18 | src/rigging/index.js |
+| `src/rigging/index.js` | 19 | src/rigging/index.js |
+| `src/rigging/PretensionSolver.js` | 296 | Giải cao độ móc cẩu và dầm ngáng tại trạng thái Nhớm Cáp (kiện chạm đất, toàn bộ cáp căng đúng chiều dài thực) ⚠️>250 |
 | `src/rigging/riggingConstants.js` | 69 | src/rigging/riggingConstants.js |
 | `src/rigging/RiggingPhysicsSolver.js` | 682 | src/rigging/RiggingPhysicsSolver.js ⚠️>300 |
 | `src/rigging/riggingUIStore.js` | 100 | src/rigging/riggingUIStore.js |
@@ -231,21 +232,21 @@ Tổng: 251 file, 74237 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/library/reconstruction_export.js` | 2136 | --- 2D IMAGE TO 3D CONTOUR & RELIEF RECONSTRUCTION ENGINE --- ⚠️>300 |
 | `src/sim/manifest.js` | 39 |  |
 | `src/sim/physics.js` | 6 |  |
-| `src/sim/physics/beams_seed.js` | 2939 |  ⚠️>300 |
+| `src/sim/physics/beams_seed.js` | 2940 |  ⚠️>300 |
 | `src/sim/physics/cables_break.js` | 1557 |  ⚠️>300 |
 | `src/sim/physics/flatrack_payload.js` | 629 | --- FLAT RACK LASHING RUPTURE, DECK SLIDING & FALLING PAYLOAD PHYSICS --- ⚠️>300 |
 | `src/sim/physics/footprint_rig.js` | 840 |  ⚠️>300 |
 | `src/sim/physics/hoist_contacts.js` | 1025 |  ⚠️>300 |
 | `src/sim/physics/index.js` | 9 | Bounded context index — parts are assembled via src/sim/manifest.js (shared scope). |
 | `src/sim/physics/port.js` | 59 |  |
-| `src/sim/physics/step_engine.js` | 774 |  ⚠️>300 |
+| `src/sim/physics/step_engine.js` | 782 |  ⚠️>300 |
 | `src/sim/plan_wizard.js` | 650 |  ⚠️>300 |
 | `src/sim/rigging.js` | 6 |  |
-| `src/sim/rigging/draw_update.js` | 867 | Slack cable morphology is solved by a persistent material-aware XPBD chain. ⚠️>300 |
+| `src/sim/rigging/draw_update.js` | 875 | Slack cable morphology is solved by a persistent material-aware XPBD chain. ⚠️>300 |
 | `src/sim/rigging/hook_pool.js` | 3118 |  ⚠️>300 |
 | `src/sim/scene.js` | 1974 |  ⚠️>300 |
 | `src/sim/session.js` | 6 |  |
-| `src/sim/session/prelift_reset.js` | 1151 |  ⚠️>300 |
+| `src/sim/session/prelift_reset.js` | 1014 |  ⚠️>300 |
 | `src/sim/session/presets_events.js` | 3563 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
 | `src/sim/session/ui_units_bom.js` | 1953 | --- 12. UI EVENT BINDINGS & COLLAPSIBLE PANELS --- ⚠️>300 |
 | `src/sim/state.js` | 605 | Floor cribbing removed: static cargo rests flush on the quay / ground plane. ⚠️>300 |
@@ -292,6 +293,7 @@ Tổng: 251 file, 74237 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/physics_destruction.test.js` | 69 |  |
 | `test/physics_master_blueprint.test.js` | 524 |  ⚠️>300 |
 | `test/pipeline.test.js` | 232 |  |
+| `test/pretension_nhom_cap.test.js` | 126 | Kiểm thử vàng nút Nhớm Cáp (pretensionRig): kiện chạm đất 0.00m và toàn bộ hệ cáp căng đúng chiều dài thực |
 | `test/rigging.test.js` | 1367 |  ⚠️>300 |
 | `test/rigging_alarms_and_tolerances.test.js` | 216 |  |
 | `test/rigging_groups_and_dynamics.test.js` | 84 |  |
