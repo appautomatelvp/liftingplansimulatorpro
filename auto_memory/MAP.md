@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 14:27 | Nhánh: feat/horizon-clouds | Commit cuối: 7965757 fix: guard vertical bounds in TrueMeshSurfaceContact to prevent mid-air shackle kinks (26 minutes ago)
+Cập nhật: 2026-11-16 14:37 | Nhánh: feat/horizon-clouds | Commit cuối: 7bb8855 ui: remove Cascaded Spreader System, Spreader Beam (Truss), and Equalizer Beam options (11 minutes ago)
 Tổng: 249 file, 73700 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
