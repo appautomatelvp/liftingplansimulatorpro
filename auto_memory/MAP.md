@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 10:54 | Nhánh: feat/hide-dev-contact-antispam | Commit cuối: 24cf4e4 feat: upscale background to 2K vector-crisp quality and refine cinematic dolly zoom curve (6 minutes ago)
-Tổng: 241 file, 71804 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 11:13 | Nhánh: feat/default-en-clean | Commit cuối: de6e794 fix: eliminate premature 3D canvas flash and double-fade during startup and login reveal (19 minutes ago)
+Tổng: 241 file, 71870 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -89,7 +89,7 @@ Tổng: 241 file, 71804 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `playwright.auth.config.js` | 28 |  |
 | `playwright.config.js` | 45 |  |
 | `postcss.config.js` | 6 |  |
-| `public/loading-screen-init.js` | 19 |  |
+| `public/loading-screen-init.js` | 28 |  |
 | `public/safelift3d-icons/README.md` | 29 |  |
 | `README.md` | 81 |  |
 | `scripts/architecture-gate.mjs` | 45 |  |
@@ -167,9 +167,9 @@ Tổng: 241 file, 71804 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/i18n/cargo_labels.js` | 48 |  |
 | `src/i18n/cms_keys.js` | 137 | Bộ từ điển song ngữ VI/EN chuyên biệt cho hệ thống CMS Enterprise Command Center |
 | `src/i18n/contact_keys.js` | 73 | Bộ từ điển song ngữ VI/EN chuẩn công nghiệp cho hộp thoại Hỗ trợ kỹ thuật & Góp ý |
-| `src/i18n/index.js` | 97 |  |
+| `src/i18n/index.js` | 131 |  |
 | `src/i18n/keys.js` | 598 |  ⚠️>300 |
-| `src/main.js` | 65 |  |
+| `src/main.js` | 66 |  |
 | `src/rigging/CableDynamicsXPBD.js` | 310 |  ⚠️>300 |
 | `src/rigging/constraints/CornerProtectorModel.js` | 51 |  |
 | `src/rigging/constraints/HardwareConstraint.js` | 236 |  |
@@ -190,7 +190,7 @@ Tổng: 241 file, 71804 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/saas/branding.js` | 49 |  |
 | `src/saas/catalog_client.js` | 87 |  |
 | `src/saas/cms_data.js` | 247 |  |
-| `src/saas/contact_dialog.js` | 259 | Hộp thoại Liên hệ & Góp ý kỹ thuật chuẩn Enterprise với khóa trượt xác nhận hành vi chống bot ⚠️>250 |
+| `src/saas/contact_dialog.js` | 267 | Hộp thoại Liên hệ & Góp ý kỹ thuật chuẩn Enterprise với khóa trượt xác nhận hành vi chống bot ⚠️>250 |
 | `src/saas/deployment_environment.js` | 22 |  |
 | `src/saas/dialog_accessibility.js` | 45 |  |
 | `src/saas/feature_access_ui.js` | 196 |  |
@@ -204,7 +204,7 @@ Tổng: 241 file, 71804 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/saas/session.js` | 262 |  ⚠️>250 |
 | `src/saas/session_ui_bindings.js` | 157 | Gắn kết giao diện header, widget tài khoản, banner bảo trì và hộp thoại liên hệ SaaS |
 | `src/saas/telemetry_usage.js` | 143 |  |
-| `src/saas/workspace_dashboard.js` | 257 |  ⚠️>250 |
+| `src/saas/workspace_dashboard.js` | 260 |  ⚠️>250 |
 | `src/saas/workspace_data.js` | 228 |  |
 | `src/saas/workspace_views.js` | 184 | Các hàm dựng HTML, hộp thoại chọn phụ trợ và di trú dữ liệu rig cũ cho Workspace SaaS |
 | `src/shared/events.js` | 31 |  |
@@ -277,7 +277,7 @@ Tổng: 241 file, 71804 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/feedback_mailto.test.js` | 144 |  |
 | `test/firestore-rules-emulator.mjs` | 351 |  |
 | `test/graphics.test.js` | 91 |  |
-| `test/i18n_keys.test.js` | 45 |  |
+| `test/i18n_keys.test.js` | 56 |  |
 | `test/inclined_lashing_slide.test.js` | 67 |  |
 | `test/liftplan.test.js` | 153 |  |
 | `test/phase1_core_safety.test.js` | 208 |  |

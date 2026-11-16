@@ -6,7 +6,7 @@
  * Format the derived OOG cargo envelope summary and optional flat-rack end-stop clearances.
  */
 export function formatCargoDerivedLabel({
-  lang = 'vi',
+  lang = 'en',
   geom,
   state,
   isFlatRack = false,
@@ -37,7 +37,7 @@ export function formatCargoDerivedLabel({
 /**
  * Format the compact OOG cargo crate summary shown inside the cargo/gear editor.
  */
-export function formatCargoCrateLabel({ lang = 'vi', geom } = {}) {
+export function formatCargoCrateLabel({ lang = 'en', geom } = {}) {
   if (!geom) return '— × — × — m';
   const cL = Number(geom.cL || 0).toFixed(2);
   const cW = Number(geom.cW || 0).toFixed(2);

@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-16 11:10 [feat] Chuyen ngon ngu khoi dong mac dinh sang Tieng Anh (en), tu dong migrate safelift3d.lang cu va dong bo song ngu 2 chieu EN-VI giua Splash, Auth, CMS, Workspace, Contact Dialog va 3D Simulator.
+- Nhánh: feat/hide-dev-contact-antispam | Commit trước đó: de6e794
+- File: public/loading-screen-init.js,src/i18n/index.js,src/i18n/cargo_labels.js,src/saas/i18n.js,src/saas/feature_access_ui.js,src/saas/admin_panels.js,src/saas/workspace_dashboard.js,src/saas/contact_dialog.js,src/main.js,test/i18n_keys.test.js
+
 ## 2026-11-16 10:54 [fix] Sua triet de loi nhay man hinh 3D truoc UI (hien -> an den -> hien lai): giu #app-loading-screen cho toi khi onAuthStateChanged va bootSimulator hoan tat, khoa #canvas-container opacity 0 cho toi khi body.app-ready san sang, va dong bo man trap den chi mo ra 1 lan duy nhat.
 - Nhánh: feat/hide-dev-contact-antispam | Commit trước đó: 24cf4e4
 - File: src/styles/brand_splash.css,src/saas/session_ui_bindings.js,src/saas/session.js

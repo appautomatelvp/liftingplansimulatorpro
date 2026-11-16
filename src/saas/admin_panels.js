@@ -77,7 +77,7 @@ function renderUserRow(tr, user, canEditUsers, currentUid) {
 }
 
 export function renderUsersSection({
-  tr, lang = 'vi', loading, canEditUsers, users, emailPrefix, accessReason, authUser,
+  tr, lang = 'en', loading, canEditUsers, users, emailPrefix, accessReason, authUser,
   pageIndex, hasMore, userFilters = { role: 'all', tier: 'all', status: 'all' }
 }) {
   const visibleUsers = filterUsersList(users, userFilters);

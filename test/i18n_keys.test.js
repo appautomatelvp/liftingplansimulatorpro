@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { getLang, setLang, toggleLang } from '../src/i18n/index.js';
 import { KEYS, SAAS_KEYS } from '../src/i18n/keys.js';
 import { saasT } from '../src/saas/i18n.js';
 
@@ -41,5 +42,15 @@ describe('i18n dictionary and SaaS key parity', () => {
       const content = readFileSync(resolve(saasDir, file), 'utf8');
       expect(content, `${file} should use centralized i18n keys`).not.toMatch(/getLang\(\)\s*===\s*'en'|lang\(\)\s*===\s*'en'/);
     }
+  });
+
+  it('defaults to English (en) on startup and synchronizes EN/VI toggles cleanly', () => {
+    const loaderInit = readFileSync(resolve(process.cwd(), 'public/loading-screen-init.js'), 'utf8');
+    expect(loaderInit).toContain("var lang = 'en';");
+    expect(getLang()).toBe('en');
+    expect(toggleLang()).toBe('vi');
+    expect(getLang()).toBe('vi');
+    expect(setLang('en')).toBe('en');
+    expect(getLang()).toBe('en');
   });
 });
