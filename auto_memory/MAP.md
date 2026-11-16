@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 17:38 | Nhánh: feat/horizon-clouds | Commit cuối: cb1e232 fix: enable real cargo hoisting and tension transmission for Basket Spreader (35 minutes ago)
-Tổng: 253 file, 74743 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 18:18 | Nhánh: feat/horizon-clouds | Commit cuối: e4d1824 fix: keep short 2m lower slings and end-positioned bars on Basket initial/reset pose (40 minutes ago)
+Tổng: 254 file, 74792 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -37,7 +37,7 @@ Tổng: 253 file, 74743 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/plan_wizard.js (650 dòng)
 - src/sim/rigging/draw_update.js (875 dòng)
 - src/sim/rigging/hook_pool.js (3118 dòng)
-- src/sim/scene.js (1974 dòng)
+- src/sim/scene.js (1977 dòng)
 - src/sim/session/prelift_reset.js (1030 dòng)
 - src/sim/session/presets_events.js (3573 dòng)
 - src/sim/session/ui_units_bom.js (1953 dòng)
@@ -158,8 +158,9 @@ Tổng: 253 file, 74743 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/domain/site/types.js` | 9 | Site / quay domain vocabulary (pure). |
 | `src/domain/standards/index.js` | 26 |  |
 | `src/graphics/EnvironmentManager.js` | 280 | Quản lý ánh sáng IBL, sương mù chân trời, HDR và đồng bộ thời gian thực cho cảnh 3D ⚠️>250 |
-| `src/graphics/HorizonSkyDome.js` | 284 | Dựng vòm bầu trời HorizonSkyDome với mây chân trời 3D Gradient Quintic mềm mại và màu khí quyển thực tế ⚠️>250 |
-| `src/graphics/index.js` | 11 |  |
+| `src/graphics/GroundHorizonFade.js` | 46 | Hòa mượt mép ngoài đĩa mặt đất vào màu sương mù chân trời không lộ đường cắt |
+| `src/graphics/HorizonSkyDome.js` | 283 | Dựng vòm bầu trời HorizonSkyDome với mây chân trời 3D Gradient Quintic mềm mại và màu khí quyển thực tế ⚠️>250 |
+| `src/graphics/index.js` | 12 |  |
 | `src/graphics/pbr/ProceduralTextures.js` | 196 | Vẽ texture canvas thủ công (bê tông cảng, cáp thép, xích, sling, mặt nước, vạch cảnh báo) |
 | `src/graphics/pbr/StressPBRMaterials.js` | 146 | Tạo bản đồ PBR thép sơn công nghiệp, thép rèn mạ kẽm và màu ứng suất căng cơ học thời gian thực |
 | `src/graphics/PBRMaterialFactory.js` | 244 | Nhà máy tạo vật liệu PBR chuẩn công nghiệp hàng hải và đồng bộ không gian màu Three.js r170+ |
@@ -244,7 +245,7 @@ Tổng: 253 file, 74743 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/rigging.js` | 6 |  |
 | `src/sim/rigging/draw_update.js` | 875 | Slack cable morphology is solved by a persistent material-aware XPBD chain. ⚠️>300 |
 | `src/sim/rigging/hook_pool.js` | 3118 |  ⚠️>300 |
-| `src/sim/scene.js` | 1974 |  ⚠️>300 |
+| `src/sim/scene.js` | 1977 |  ⚠️>300 |
 | `src/sim/session.js` | 6 |  |
 | `src/sim/session/prelift_reset.js` | 1030 |  ⚠️>300 |
 | `src/sim/session/presets_events.js` | 3573 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |

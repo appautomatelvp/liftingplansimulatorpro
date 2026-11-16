@@ -681,7 +681,10 @@
             }
 
             const prevGeo = floorMesh.geometry;
-            floorMesh.geometry = createCircularGroundGeometry(460, state.groundId);
+            floorMesh.geometry = createCircularGroundGeometry(560, state.groundId);
+            if (typeof GFX !== 'undefined' && GFX.applyGroundHorizonFade) {
+                GFX.applyGroundHorizonFade(floorMesh.material, 220, 540);
+            }
             floorMesh.rotation.x = 0;
             prevGeo.dispose();
             gridHelper.visible = state.groundId === 'flat';

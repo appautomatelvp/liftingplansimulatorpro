@@ -9,3 +9,4 @@ export { SceneRenderer, QUALITY_TIERS } from './SceneRenderer.js';
 export { EnvironmentManager, LIGHTING_PRESETS } from './EnvironmentManager.js';
 export { PBRMaterialFactory } from './PBRMaterialFactory.js';
 export { computeMechanicalStressVisual, resolveStressTintedMaterial } from './pbr/StressPBRMaterials.js';
+export { applyGroundHorizonFade } from './GroundHorizonFade.js';

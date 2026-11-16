@@ -173,56 +173,55 @@ const SKY_FRAGMENT_SHADER = `
   void main() {
     vec3 dir = normalize(vSkyDir);
     float y = dir.y;
-    float elev = clamp(y + 0.055, 0.0, 1.0);
+    // Keep y <= 0 pure uHorizonColor so the finite ground disc rim melts seamlessly into sky
+    float elev = clamp(y, 0.0, 1.0);
     vec3 sunD = normalize(uSunDir);
 
-    float horizonToMid = 1.0 - smoothstep(0.0, max(0.05, uHorizonHaze * 0.45), elev);
-    float midToZenith = smoothstep(0.02, 0.36, elev);
+    float horizonToMid = 1.0 - smoothstep(0.0, max(0.06, uHorizonHaze * 0.48), elev);
+    float midToZenith = smoothstep(0.03, 0.40, elev);
     vec3 skyGrad = mix(uMidSkyColor, uSkyColor, midToZenith);
-    vec3 col = mix(skyGrad, uHorizonColor, pow(horizonToMid, 1.45));
+    vec3 col = mix(skyGrad, uHorizonColor, pow(horizonToMid, 1.35));
 
     float sunCos = max(dot(dir, sunD), 0.0);
     float mieBand = pow(sunCos, 5.0) * 0.26 * (1.0 - smoothstep(0.0, 0.38, elev));
     float sunDisc = pow(sunCos, 12.0) * 0.18 + pow(sunCos, 140.0) * 0.42;
-    col += uSunColor * ((mieBand + sunDisc) * uSunGlow * smoothstep(0.0, 0.06, elev));
+    col += uSunColor * ((mieBand + sunDisc) * uSunGlow * smoothstep(0.008, 0.08, elev));
 
-    if (elev > 0.004 && elev < 0.36 && uCloudOpacity > 0.01) {
+    if (elev > 0.01 && elev < 0.38 && uCloudOpacity > 0.01) {
       // Evaluate in seamless 3D spherical-shell coordinates (zero 1/elev radial shearing!)
       vec3 drift = vec3(uTime * 0.0035, 0.0, uTime * 0.0018);
       vec3 pCum = vec3(dir.x * 2.6, elev * 10.5, dir.z * 2.6) + drift;
       float warp = gnoise3(pCum * 0.65 + vec3(4.2, 1.5, -3.1));
 
-      // 1. Soft distant horizon cumulus pillows (elev = 0.008 .. 0.15)
+      // 1. Soft distant horizon cumulus pillows (elev = 0.014 .. 0.16)
       float nCum = fbm4(pCum + vec3(warp * 0.45, warp * 0.2, -warp * 0.45));
       float cumRaw = smoothstep(-0.06, 0.46, nCum);
       float cumShape = pow(cumRaw, 1.45);
-      float cumEnvelope = smoothstep(0.006, 0.036, elev) * (1.0 - smoothstep(0.055, 0.155, elev));
+      float cumEnvelope = smoothstep(0.014, 0.048, elev) * (1.0 - smoothstep(0.065, 0.165, elev));
       float cumAlpha = cumShape * cumEnvelope;
 
-      // 2. Delicate, ultra-soft high-altitude atmospheric veil (elev = 0.06 .. 0.32)
+      // 2. Delicate, ultra-soft high-altitude atmospheric veil (elev = 0.06 .. 0.34)
       vec3 pCir = vec3(dir.x * 1.85, elev * 14.0, dir.z * 1.85) + drift * 0.6 + vec3(warp * 0.7, 0.0, warp * 0.5);
       float nCir = fbm4(pCir);
       float cirShape = pow(smoothstep(0.02, 0.48, nCir), 1.65);
-      float cirEnvelope = smoothstep(0.04, 0.10, elev) * (1.0 - smoothstep(0.15, 0.32, elev));
+      float cirEnvelope = smoothstep(0.045, 0.11, elev) * (1.0 - smoothstep(0.16, 0.34, elev));
       float cirAlpha = cirShape * cirEnvelope * 0.36;
 
       float totalCloud = clamp(cumAlpha + cirAlpha * (1.0 - cumAlpha * 0.65), 0.0, 1.0);
       // Silky vertical lighting gradient across cloud volume (zero contour banding)
-      float lightGrad = smoothstep(-0.18, 0.38, nCum) * 0.55 + smoothstep(0.01, 0.12, elev) * 0.45;
+      float lightGrad = smoothstep(-0.18, 0.38, nCum) * 0.55 + smoothstep(0.015, 0.12, elev) * 0.45;
       vec3 cloudCol = mix(uCloudShadeColor, uCloudLightColor, clamp(lightGrad, 0.0, 1.0));
       float silverLining = pow(sunCos, 5.0) * uSunGlow * (1.0 - cumShape * 0.35);
       cloudCol += uSunColor * silverLining * 0.32;
 
       // Soft atmospheric mist fusion near the horizon line
-      float mistBlend = smoothstep(0.005, 0.055, elev);
+      float mistBlend = smoothstep(0.012, 0.075, elev);
       cloudCol = mix(uHorizonColor, cloudCol, 0.35 + 0.65 * mistBlend);
       col = mix(col, cloudCol, totalCloud * uCloudOpacity * mistBlend);
     }
 
-    if (y < -0.055) {
-      col = mix(uHorizonColor, uHorizonColor * 0.94, clamp((-y - 0.055) * 2.5, 0.0, 1.0));
-    }
     gl_FragColor = vec4(col, 1.0);
+    #include <tonemapping_fragment>
     #include <colorspace_fragment>
   }
 `;
@@ -235,7 +234,7 @@ export function createHorizonSkyDome(scene) {
     depthWrite: false,
     depthTest: true,
     fog: false,
-    toneMapped: false,
+    toneMapped: true,
     uniforms: {
       uHorizonColor: { value: new THREE.Color(0xcfe7f7) },
       uMidSkyColor: { value: new THREE.Color(0x4ea0e6) },
