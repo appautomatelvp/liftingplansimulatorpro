@@ -27,7 +27,7 @@ Trạng thái: ACTIVE        <!-- NONE | ACTIVE | DONE -->
   - Chi tiết: Gỡ `FEEDBACK_EMAIL` chuỗi thô; dùng hàm giải mã động `resolveFeedbackEmail()` từ mảng mã lệch; bổ sung `createContactChallenge()`, `verifyContactChallenge()`, kiểm tra honeypot, dwell-time `>= 2500ms`, chống URL spam (`<= 2` links), giới hạn gửi bền vững via `safeReadLocalStore`/`safeWriteLocalStore` (`30s` cooldown + `3` lần/giờ), và chuẩn hóa tiêu đề theo phân loại `[SafeLift3D · Loại]`.
   - Kiểm tra xong: chạy `npx vitest run test/feedback_mailto.test.js` và kiểm tra file `src/saas/feedback.js` `< 200` dòng.
 
-- [ ] Bước 2: Tạo hộp thoại Góp ý chống spam chuyên nghiệp `src/saas/contact_dialog.js` và bổ sung CSS ở `src/saas/saas.css`
+- [x] Bước 2: Tạo hộp thoại Góp ý chống spam chuyên nghiệp `src/saas/contact_dialog.js` và bổ sung CSS ở `src/saas/saas.css`
   - Sửa: `src/saas/contact_dialog.js` (tạo mới `< 230` dòng, mở đầu `@purpose`), `src/saas/saas.css`
   - CẤM đụng: `index.html`, `src/i18n/keys.js`, các file `[LOCKED]`
   - Chi tiết: Xây dựng `openDeveloperContact({ category, subject } = {})` hỗ trợ song ngữ VI/EN: chỉ hiện tên `Lê Việt Phương (Mr)` và nhãn kênh hỗ trợ chính thức (TUYỆT ĐỐI không hiện SĐT và KHÔNG in email vào DOM trước khi gửi); gồm phân loại góp ý, chủ đề, nội dung, trường honeypot ẩn, câu hỏi xác minh toán học, thông báo lỗi rõ ràng (`role="status"`), mở `mailto:` khi hợp lệ và hiện thẻ dự phòng sao chép chỉ ở bước sau khi gửi thành công.

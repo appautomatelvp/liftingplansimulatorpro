@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 09:37 | Nhánh: feat/hide-dev-contact-antispam | Commit cuối: fd52bbe Merge pull request #1 from appautomatelvp/codex/safelift-g0-ci (16 hours ago)
-Tổng: 239 file, 71318 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 09:38 | Nhánh: feat/hide-dev-contact-antispam | Commit cuối: 3a669dd step 1: harden feedback anti-spam and dynamic email resolution (85 seconds ago)
+Tổng: 240 file, 71565 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -189,6 +189,7 @@ Tổng: 239 file, 71318 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/saas/branding.js` | 54 |  |
 | `src/saas/catalog_client.js` | 87 |  |
 | `src/saas/cms_data.js` | 247 |  |
+| `src/saas/contact_dialog.js` | 238 | Hộp thoại gửi email góp ý & hỗ trợ chống bot/spam đa lớp, ẩn email cho tới khi khách xác minh gửi |
 | `src/saas/deployment_environment.js` | 22 |  |
 | `src/saas/dialog_accessibility.js` | 45 |  |
 | `src/saas/feature_access_ui.js` | 191 |  |
@@ -198,7 +199,7 @@ Tổng: 239 file, 71318 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/saas/i18n.js` | 12 | Format a localized template key from `src/i18n/keys.js` with optional `{var}` substitutions. |
 | `src/saas/plan_snapshot.js` | 170 | Chuẩn hóa dữ liệu thiết bị và đóng gói/giải mã/di trú snapshot phương án nâng hạ |
 | `src/saas/runtime_flags.js` | 63 |  |
-| `src/saas/saas.css` | 244 | saas-root[hidden] { display: none !important; } |
+| `src/saas/saas.css` | 253 | saas-root[hidden] { display: none !important; } |
 | `src/saas/session.js` | 260 |  ⚠️>250 |
 | `src/saas/session_ui_bindings.js` | 165 | Gắn kết giao diện header, widget tài khoản, banner bảo trì và hộp thoại liên hệ SaaS |
 | `src/saas/telemetry_usage.js` | 143 |  |
