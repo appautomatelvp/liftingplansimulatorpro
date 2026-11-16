@@ -1,4 +1,4 @@
-// @purpose: Giải mã động địa chỉ nhận góp ý và bảo vệ hộp thoại gửi email khỏi bot/spam 5 lớp
+// @purpose: Giải mã động địa chỉ nhận góp ý và xác thực hành vi thao tác chống bot/spam đa lớp
 import { safeReadLocalStore, safeWriteLocalStore } from '../utils/localDataStore.js';
 
 export const MAX_FEEDBACK_SUBJECT = 120;
@@ -9,6 +9,9 @@ export const FEEDBACK_COOLDOWN_MS = 30_000;
 export const FEEDBACK_HOUR_LIMIT = 3;
 export const FEEDBACK_HOUR_WINDOW_MS = 3_600_000;
 export const MIN_INTERACTION_MS = 2_500;
+export const MIN_GESTURE_DURATION_MS = 220;
+export const MAX_GESTURE_DURATION_MS = 15_000;
+export const MIN_GESTURE_STEPS = 5;
 export const FEEDBACK_RATE_KEY = 'safelift.feedback.rate.v1';
 
 const RECIPIENT_MASK = Object.freeze([23, 41, 13, 59, 31]);
@@ -31,6 +34,16 @@ function feedbackError(code, message, extra = {}) {
   return Object.assign(err, extra);
 }
 
+function fnv1aHex(input) {
+  let hash = 0x811c9dc5;
+  const str = String(input);
+  for (let i = 0; i < str.length; i++) {
+    hash ^= str.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash.toString(16).padStart(8, '0');
+}
+
 /** Resolve recipient only in memory at send time so bots cannot scrape raw strings from HTML/JS. */
 export function resolveFeedbackEmail() {
   return RECIPIENT_CHUNKS
@@ -38,16 +51,53 @@ export function resolveFeedbackEmail() {
     .join('');
 }
 
+/**
+ * Create an interactive safety-interlock challenge requiring continuous human gesture telemetry.
+ */
 export function createContactChallenge(rng = Math.random) {
-  const a = 2 + (Math.floor(rng() * 8) % 8);
-  const b = 2 + (Math.floor(rng() * 8) % 8);
-  return { a, b, prompt: `${a} + ${b} = ?`, expected: a + b };
+  const nonce = `${Math.floor(100_000 + rng() * 899_999)}-${Math.floor(100_000 + rng() * 899_999)}`;
+  return {
+    nonce,
+    minSteps: MIN_GESTURE_STEPS,
+    minDurationMs: MIN_GESTURE_DURATION_MS
+  };
 }
 
-export function verifyContactChallenge(challenge, answer) {
-  if (!challenge || !Number.isInteger(challenge.expected)) return false;
-  const parsed = Number(String(answer ?? '').trim());
-  return Number.isInteger(parsed) && parsed === challenge.expected;
+/**
+ * Seal a human gesture trajectory into a signed verification token.
+ */
+export function sealGestureProof(challenge, {
+  progress = 0,
+  steps = 0,
+  durationMs = 0
+} = {}) {
+  if (!challenge?.nonce) return '';
+  const cleanProgress = Math.min(100, Math.floor(Number(progress) || 0));
+  const cleanSteps = Math.floor(Number(steps) || 0);
+  const cleanDuration = Math.floor(Number(durationMs) || 0);
+  if (
+    cleanProgress < 96 ||
+    cleanSteps < (challenge.minSteps || MIN_GESTURE_STEPS) ||
+    cleanDuration < (challenge.minDurationMs || MIN_GESTURE_DURATION_MS) ||
+    cleanDuration > MAX_GESTURE_DURATION_MS
+  ) {
+    return '';
+  }
+  const digest = fnv1aHex(`${challenge.nonce}:${cleanProgress}:${cleanSteps}:${cleanDuration}:safelift-v5`);
+  return `${cleanProgress}.${cleanSteps}.${cleanDuration}.${digest}`;
+}
+
+export function verifyContactChallenge(challenge, proofToken) {
+  if (!challenge?.nonce || typeof proofToken !== 'string') return false;
+  const parts = proofToken.trim().split('.');
+  if (parts.length !== 4) return false;
+  const [progressStr, stepsStr, durationStr] = parts;
+  const expected = sealGestureProof(challenge, {
+    progress: Number(progressStr),
+    steps: Number(stepsStr),
+    durationMs: Number(durationStr)
+  });
+  return Boolean(expected) && expected === proofToken.trim();
 }
 
 function readStoredAttempts(now) {
@@ -86,7 +136,7 @@ function countUrls(text) {
 }
 
 /**
- * Validate anti-spam checks and compose a `mailto:` handoff URI only on verified submit.
+ * Validate behavioral & anti-spam checks and compose a `mailto:` URI only on verified submit.
  */
 export function buildDeveloperContactMailto({
   category = '',
@@ -111,7 +161,7 @@ export function buildDeveloperContactMailto({
     throw feedbackError('safelift/feedback-too-fast', `Please review your message (${retryAfterSec}s) before sending.`, { retryAfterSec });
   }
   if (challenge && !verifyContactChallenge(challenge, challengeAnswer)) {
-    throw feedbackError('safelift/feedback-challenge-failed', 'Verification answer is incorrect.');
+    throw feedbackError('safelift/feedback-challenge-failed', 'Safety verification interlock is incomplete.');
   }
 
   const tag = CATEGORY_TAGS[category] ? `[${CATEGORY_TAGS[category]}] ` : '';

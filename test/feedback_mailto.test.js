@@ -9,26 +9,35 @@ import {
   MAX_FEEDBACK_SUBJECT,
   recordFeedbackSubmission,
   resolveFeedbackEmail,
+  sealGestureProof,
   verifyContactChallenge
 } from '../src/saas/feedback.js';
 import * as feedbackModule from '../src/saas/feedback.js';
 
-describe('Developer feedback anti-spam and dynamic mailto boundary', () => {
+describe('Developer feedback behavioral interlock and dynamic mailto boundary', () => {
   beforeEach(() => {
     if (typeof localStorage !== 'undefined') localStorage.removeItem(FEEDBACK_RATE_KEY);
   });
 
-  it('does not expose raw FEEDBACK_EMAIL constant and builds clamped mailto URI after challenge', () => {
+  it('does not expose raw FEEDBACK_EMAIL constant and seals/verifies human gesture trajectory proofs', () => {
     expect('FEEDBACK_EMAIL' in feedbackModule).toBe(false);
-    const challenge = createContactChallenge(() => 0.25);
-    expect(verifyContactChallenge(challenge, String(challenge.expected))).toBe(true);
+    const challenge = createContactChallenge(() => 0.42);
+
+    // Instant 1-step jump or too-short duration is rejected
+    expect(sealGestureProof(challenge, { progress: 100, steps: 1, durationMs: 500 })).toBe('');
+    expect(sealGestureProof(challenge, { progress: 100, steps: 10, durationMs: 50 })).toBe('');
+
+    const validProof = sealGestureProof(challenge, { progress: 100, steps: 12, durationMs: 680 });
+    expect(validProof).toBeTruthy();
+    expect(verifyContactChallenge(challenge, validProof)).toBe(true);
+    expect(verifyContactChallenge(challenge, `${validProof}tampered`)).toBe(false);
 
     const uri = buildDeveloperContactMailto({
       category: 'bug',
       subject: `  ${'S'.repeat(150)}  `,
       message: `  ${'M'.repeat(3200)}  `,
       challenge,
-      challengeAnswer: String(challenge.expected),
+      challengeAnswer: validProof,
       openedAt: 10_000,
       now: 14_000
     });
@@ -39,14 +48,16 @@ describe('Developer feedback anti-spam and dynamic mailto boundary', () => {
     expect(parsed.searchParams.get('body')?.length).toBe(MAX_FEEDBACK_MESSAGE);
   });
 
-  it('blocks honeypot, too-fast bot submits, wrong human verification, short/link spam, and cooldowns', () => {
-    const challenge = { a: 3, b: 4, prompt: '3 + 4 = ?', expected: 7 };
+  it('blocks honeypot, too-fast bot submits, unverified interlocks, short/link spam, and cooldowns', () => {
+    const challenge = createContactChallenge(() => 0.15);
+    const validProof = sealGestureProof(challenge, { progress: 100, steps: 9, durationMs: 520 });
+
     expect(() => buildDeveloperContactMailto({
       subject: 'Question',
       message: 'Valid detailed engineering inquiry here.',
       honeypot: 'http://spam.example',
       challenge,
-      challengeAnswer: '7'
+      challengeAnswer: validProof
     })).toThrow(/Automated/);
 
     expect(() => buildDeveloperContactMailto({
@@ -55,7 +66,7 @@ describe('Developer feedback anti-spam and dynamic mailto boundary', () => {
       openedAt: 10_000,
       now: 11_000,
       challenge,
-      challengeAnswer: '7'
+      challengeAnswer: validProof
     })).toThrow(/review your message/i);
 
     expect(() => buildDeveloperContactMailto({
@@ -64,28 +75,28 @@ describe('Developer feedback anti-spam and dynamic mailto boundary', () => {
       openedAt: 10_000,
       now: 15_000,
       challenge,
-      challengeAnswer: '9'
-    })).toThrow(/Verification/);
+      challengeAnswer: '100.12.520.deadbeef'
+    })).toThrow(/interlock/i);
 
     expect(() => buildDeveloperContactMailto({
       subject: '   ',
       message: 'Valid detailed message',
       challenge,
-      challengeAnswer: '7'
+      challengeAnswer: validProof
     })).toThrow(/required/);
 
     expect(() => buildDeveloperContactMailto({
       subject: 'Bug',
       message: 'short',
       challenge,
-      challengeAnswer: '7'
+      challengeAnswer: validProof
     })).toThrow(/at least 10/);
 
     expect(() => buildDeveloperContactMailto({
       subject: 'Promo',
       message: 'Check https://a.com https://b.com https://c.com right now!',
       challenge,
-      challengeAnswer: '7'
+      challengeAnswer: validProof
     })).toThrow(/Too many links/);
 
     expect(() => buildDeveloperContactMailto({
@@ -95,7 +106,7 @@ describe('Developer feedback anti-spam and dynamic mailto boundary', () => {
       now: 14_000,
       cooldownMs: 30_000,
       challenge,
-      challengeAnswer: '7'
+      challengeAnswer: validProof
     })).toThrow(/26s/);
   });
 
@@ -107,7 +118,8 @@ describe('Developer feedback anti-spam and dynamic mailto boundary', () => {
       removeItem: (k) => store.delete(k)
     };
     try {
-      const challenge = { a: 2, b: 5, prompt: '2 + 5 = ?', expected: 7 };
+      const challenge = createContactChallenge(() => 0.33);
+      const validProof = sealGestureProof(challenge, { progress: 100, steps: 8, durationMs: 480 });
       recordFeedbackSubmission(1_000);
       recordFeedbackSubmission(40_000);
       recordFeedbackSubmission(80_000);
@@ -116,16 +128,17 @@ describe('Developer feedback anti-spam and dynamic mailto boundary', () => {
         message: 'Trying to flood the feedback channel repeatedly.',
         now: 120_000,
         challenge,
-        challengeAnswer: '7'
+        challengeAnswer: validProof
       })).toThrow(/Hourly feedback limit/);
     } finally {
       delete globalThis.localStorage;
     }
   });
 
-  it('keeps CONTACT_KEYS symmetric across VI and EN and formats cooldown placeholders', () => {
+  it('keeps CONTACT_KEYS symmetric across VI and EN and omits amateur anti-spam bragging copy', () => {
     expect(Object.keys(CONTACT_KEYS.en).sort()).toEqual(Object.keys(CONTACT_KEYS.vi).sort());
-    expect(saasT('contactErrCooldown', { sec: 12 }, 'en')).toBe('Please wait 12s before sending another message.');
+    expect(JSON.stringify(CONTACT_KEYS)).not.toMatch(/chống spam|anti-spam|ẩn email/i);
+    expect(saasT('contactErrCooldown', { sec: 12 }, 'en')).toBe('Please wait 12s before submitting another inquiry.');
     expect(saasT('contactErrHourly', { min: 45 }, 'vi')).toContain('45 phút');
   });
 });

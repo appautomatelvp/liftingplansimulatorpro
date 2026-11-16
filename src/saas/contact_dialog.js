@@ -1,4 +1,4 @@
-// @purpose: Hộp thoại gửi email góp ý & hỗ trợ chống bot/spam đa lớp, ẩn email cho tới khi khách xác minh gửi
+// @purpose: Hộp thoại Liên hệ & Góp ý kỹ thuật chuẩn Enterprise với khóa trượt xác nhận hành vi chống bot
 import { getLang } from '../i18n/index.js';
 import { BRAND, COPYRIGHT } from './branding.js';
 import { trapDialogFocus } from './dialog_accessibility.js';
@@ -6,7 +6,8 @@ import {
   buildDeveloperContactMailto,
   createContactChallenge,
   recordFeedbackSubmission,
-  resolveFeedbackEmail
+  resolveFeedbackEmail,
+  sealGestureProof
 } from './feedback.js';
 import { saasT } from './i18n.js';
 
@@ -43,6 +44,11 @@ export function openDeveloperContact({ category = 'feedback', subject = '' } = {
   const tr = (key, vars = null) => saasT(key, vars, lang);
   const openedAt = Date.now();
   let challenge = createContactChallenge();
+  let proofToken = '';
+  let gestureStart = 0;
+  let gestureSteps = 0;
+  let lastProgress = 0;
+  let holdRaf = 0;
 
   document.getElementById('saas-contact-dialog')?.remove();
   const dialog = document.createElement('div');
@@ -59,7 +65,7 @@ export function openDeveloperContact({ category = 'feedback', subject = '' } = {
     <h2 id="saas-contact-title">${tr('contactTitle')}</h2>
     <div class="saas-contact-identity">
       <p class="saas-contact-person">${escapeAttr(COPYRIGHT.developer)}</p>
-      <span class="saas-contact-shield">${tr('contactShieldBadge')}</span>
+      <span class="saas-contact-role">${tr('contactRoleBadge')}</span>
     </div>
     <form class="saas-contact-form" novalidate>
       <label>${tr('contactCategoryLabel')}<select name="category">${catOptions}</select></label>
@@ -67,11 +73,14 @@ export function openDeveloperContact({ category = 'feedback', subject = '' } = {
       <label>${tr('contactSenderLabel')}<input name="senderContact" maxlength="120" placeholder="${escapeAttr(tr('contactSenderPlaceholder'))}"></label>
       <label>${tr('contactMessageLabel')}<textarea name="message" maxlength="3000" minlength="10" rows="4" required placeholder="${escapeAttr(tr('contactMessagePlaceholder'))}"></textarea></label>
       <div class="saas-hp-field" aria-hidden="true"><label>Website<input name="website" type="text" tabindex="-1" autocomplete="off"></label></div>
-      <div class="saas-contact-verify-row">
-        <label class="saas-contact-verify-field">${tr('contactVerifyLabel')}: <strong data-challenge-prompt>${escapeAttr(challenge.prompt)}</strong>
-          <input name="challengeAnswer" inputmode="numeric" maxlength="6" autocomplete="off" required placeholder="${escapeAttr(tr('contactVerifyPlaceholder'))}">
-        </label>
-        <button type="button" class="saas-secondary-button" data-refresh-challenge>${tr('contactRefreshChallenge')}</button>
+      <div class="saas-interlock-wrap">
+        <span class="saas-interlock-caption">${tr('contactVerifyLabel')}</span>
+        <div class="saas-interlock" data-interlock>
+          <div class="saas-interlock-fill" data-interlock-fill></div>
+          <span class="saas-interlock-text" data-interlock-text>${tr('contactSlidePrompt')}</span>
+          <div class="saas-interlock-thumb" data-interlock-thumb aria-hidden="true">⇥</div>
+          <input type="range" name="interlockSlider" min="0" max="100" value="0" aria-label="${escapeAttr(tr('contactSlidePrompt'))}">
+        </div>
       </div>
       <div class="saas-contact-status" role="status" aria-live="polite" hidden></div>
       <small>${tr('contactPrivacyHint')}</small>
@@ -81,6 +90,7 @@ export function openDeveloperContact({ category = 'feedback', subject = '' } = {
 
   let releaseFocusTrap = () => {};
   const close = () => {
+    if (holdRaf) cancelAnimationFrame(holdRaf);
     dialog.remove();
     releaseFocusTrap();
   };
@@ -94,8 +104,11 @@ export function openDeveloperContact({ category = 'feedback', subject = '' } = {
 
   const formEl = dialog.querySelector('form');
   const statusEl = dialog.querySelector('.saas-contact-status');
-  const promptEl = dialog.querySelector('[data-challenge-prompt]');
-  const answerEl = dialog.querySelector('[name="challengeAnswer"]');
+  const interlockEl = dialog.querySelector('[data-interlock]');
+  const fillEl = dialog.querySelector('[data-interlock-fill]');
+  const textEl = dialog.querySelector('[data-interlock-text]');
+  const thumbEl = dialog.querySelector('[data-interlock-thumb]');
+  const sliderEl = dialog.querySelector('input[name="interlockSlider"]');
 
   const setStatus = (msg, isError) => {
     if (!statusEl) return;
@@ -105,13 +118,91 @@ export function openDeveloperContact({ category = 'feedback', subject = '' } = {
     statusEl.classList.toggle('is-ok', !isError && Boolean(msg));
   };
 
-  const rotateChallenge = () => {
-    challenge = createContactChallenge();
-    if (promptEl) promptEl.textContent = challenge.prompt;
-    if (answerEl) answerEl.value = '';
+  const updateSliderVisual = (pct) => {
+    const clamped = Math.max(0, Math.min(100, pct));
+    if (fillEl) fillEl.style.width = `${clamped}%`;
+    if (thumbEl) thumbEl.style.left = `calc(${clamped}% - ${(clamped / 100) * 42}px)`;
   };
 
-  dialog.querySelector('[data-refresh-challenge]')?.addEventListener('click', () => rotateChallenge());
+  const resetInterlock = () => {
+    challenge = createContactChallenge();
+    proofToken = '';
+    gestureStart = 0;
+    gestureSteps = 0;
+    lastProgress = 0;
+    if (sliderEl) {
+      sliderEl.disabled = false;
+      sliderEl.value = '0';
+    }
+    interlockEl?.classList.remove('is-verified');
+    if (textEl) textEl.textContent = tr('contactSlidePrompt');
+    if (thumbEl) thumbEl.textContent = '⇥';
+    updateSliderVisual(0);
+  };
+
+  const processSlideStep = (nextVal) => {
+    if (proofToken) return;
+    const now = Date.now();
+    if (!gestureStart || nextVal <= 4) {
+      gestureStart = now;
+      gestureSteps = 0;
+      lastProgress = 0;
+    }
+    const delta = nextVal - lastProgress;
+    if (delta > 48 && gestureSteps < 2) {
+      resetInterlock();
+      return;
+    }
+    if (nextVal > lastProgress) {
+      gestureSteps += 1;
+      lastProgress = nextVal;
+    }
+    updateSliderVisual(nextVal);
+    if (nextVal >= 96) {
+      const token = sealGestureProof(challenge, {
+        progress: nextVal,
+        steps: gestureSteps,
+        durationMs: Math.max(240, now - gestureStart)
+      });
+      if (token) {
+        proofToken = token;
+        if (sliderEl) {
+          sliderEl.value = '100';
+          sliderEl.disabled = true;
+        }
+        updateSliderVisual(100);
+        interlockEl?.classList.add('is-verified');
+        if (textEl) textEl.textContent = tr('contactSlideVerified');
+        if (thumbEl) thumbEl.textContent = '✓';
+        setStatus('', false);
+      } else {
+        resetInterlock();
+      }
+    }
+  };
+
+  sliderEl?.addEventListener('input', () => processSlideStep(Number(sliderEl.value || 0)));
+  sliderEl?.addEventListener('change', () => {
+    if (!proofToken) resetInterlock();
+  });
+  sliderEl?.addEventListener('keydown', (ev) => {
+    if (proofToken || (ev.key !== ' ' && ev.key !== 'Enter')) return;
+    ev.preventDefault();
+    if (holdRaf) return;
+    const tick = () => {
+      if (proofToken) { holdRaf = 0; return; }
+      const next = Math.min(100, lastProgress + 6);
+      if (sliderEl) sliderEl.value = String(next);
+      processSlideStep(next);
+      if (!proofToken) holdRaf = requestAnimationFrame(tick);
+      else holdRaf = 0;
+    };
+    holdRaf = requestAnimationFrame(tick);
+  });
+  sliderEl?.addEventListener('keyup', () => {
+    if (holdRaf) { cancelAnimationFrame(holdRaf); holdRaf = 0; }
+    if (!proofToken) resetInterlock();
+  });
 
   formEl?.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -126,7 +217,7 @@ export function openDeveloperContact({ category = 'feedback', subject = '' } = {
         honeypot: form.get('website'),
         openedAt,
         challenge,
-        challengeAnswer: form.get('challengeAnswer'),
+        challengeAnswer: proofToken,
         lastSentAt: lastFeedbackAt,
         now,
         appMeta: { version: BRAND.versionLabel, lang }
@@ -157,7 +248,7 @@ export function openDeveloperContact({ category = 'feedback', subject = '' } = {
     } catch (err) {
       const key = ERROR_KEY_MAP[err?.code] || 'contactErrRequired';
       setStatus(tr(key, { sec: err?.retryAfterSec ?? 1, min: err?.retryAfterMin ?? 1 }), true);
-      if (err?.code === 'safelift/feedback-challenge-failed') rotateChallenge();
+      if (err?.code === 'safelift/feedback-challenge-failed') resetInterlock();
     }
   });
 

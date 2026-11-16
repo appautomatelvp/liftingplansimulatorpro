@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 09:46 | Nhánh: feat/hide-dev-contact-antispam | Commit cuối: fe8bb18 step 3: strip personal phone and email from public UI and wire anti-spam contact dialog (3 minutes ago)
-Tổng: 241 file, 71541 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 09:58 | Nhánh: feat/hide-dev-contact-antispam | Commit cuối: e8d00ef step 4: finalize anti-spam contact protection and update project memory (11 minutes ago)
+Tổng: 241 file, 71703 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -166,7 +166,7 @@ Tổng: 241 file, 71541 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/graphics/SceneRenderer.js` | 291 |  ⚠️>250 |
 | `src/i18n/cargo_labels.js` | 48 |  |
 | `src/i18n/cms_keys.js` | 137 | Bộ từ điển song ngữ VI/EN chuyên biệt cho hệ thống CMS Enterprise Command Center |
-| `src/i18n/contact_keys.js` | 73 | Bộ từ điển song ngữ VI/EN cho hộp thoại Gửi góp ý & Hỗ trợ chống spam |
+| `src/i18n/contact_keys.js` | 73 | Bộ từ điển song ngữ VI/EN chuẩn công nghiệp cho hộp thoại Hỗ trợ kỹ thuật & Góp ý |
 | `src/i18n/index.js` | 97 |  |
 | `src/i18n/keys.js` | 598 |  ⚠️>300 |
 | `src/main.js` | 65 |  |
@@ -190,17 +190,17 @@ Tổng: 241 file, 71541 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/saas/branding.js` | 49 |  |
 | `src/saas/catalog_client.js` | 87 |  |
 | `src/saas/cms_data.js` | 247 |  |
-| `src/saas/contact_dialog.js` | 168 | Hộp thoại gửi email góp ý & hỗ trợ chống bot/spam đa lớp, ẩn email cho tới khi khách xác minh gửi |
+| `src/saas/contact_dialog.js` | 259 | Hộp thoại Liên hệ & Góp ý kỹ thuật chuẩn Enterprise với khóa trượt xác nhận hành vi chống bot ⚠️>250 |
 | `src/saas/deployment_environment.js` | 22 |  |
 | `src/saas/dialog_accessibility.js` | 45 |  |
 | `src/saas/feature_access_ui.js` | 196 |  |
-| `src/saas/feedback.js` | 144 | Giải mã động địa chỉ nhận góp ý và bảo vệ hộp thoại gửi email khỏi bot/spam 5 lớp |
+| `src/saas/feedback.js` | 194 | Giải mã động địa chỉ nhận góp ý và xác thực hành vi thao tác chống bot/spam đa lớp |
 | `src/saas/firebase.js` | 95 |  |
 | `src/saas/firebase_data.js` | 82 |  |
 | `src/saas/i18n.js` | 15 | Định dạng khóa ngôn ngữ SaaS và hộp thoại góp ý theo ngôn ngữ hiện tại |
 | `src/saas/plan_snapshot.js` | 170 | Chuẩn hóa dữ liệu thiết bị và đóng gói/giải mã/di trú snapshot phương án nâng hạ |
 | `src/saas/runtime_flags.js` | 63 |  |
-| `src/saas/saas.css` | 253 | saas-root[hidden] { display: none !important; } |
+| `src/saas/saas.css` | 261 | saas-root[hidden] { display: none !important; } |
 | `src/saas/session.js` | 260 |  ⚠️>250 |
 | `src/saas/session_ui_bindings.js` | 119 | Gắn kết giao diện header, widget tài khoản, banner bảo trì và hộp thoại liên hệ SaaS |
 | `src/saas/telemetry_usage.js` | 143 |  |
@@ -274,7 +274,7 @@ Tổng: 241 file, 71541 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/custom_slings.test.js` | 712 |  ⚠️>300 |
 | `test/deployment_environment.test.js` | 21 |  |
 | `test/engineering.test.js` | 410 |  ⚠️>300 |
-| `test/feedback_mailto.test.js` | 131 |  |
+| `test/feedback_mailto.test.js` | 144 |  |
 | `test/firestore-rules-emulator.mjs` | 351 |  |
 | `test/graphics.test.js` | 91 |  |
 | `test/i18n_keys.test.js` | 45 |  |
