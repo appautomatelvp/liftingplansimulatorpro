@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 18:48 | Nhánh: feat/horizon-clouds | Commit cuối: 7035562 docs: log optimization milestone in HISTORY and MAP (18 minutes ago)
+Cập nhật: 2026-11-16 18:48 | Nhánh: feat/horizon-clouds | Commit cuối: e588b0f fix: seal hollow bus/container 3D shells and match sky horizon gradient to fog color space (23 seconds ago)
 Tổng: 258 file, 75413 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)

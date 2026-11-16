@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-16 18:48 [fix] Bit kin loi/day rong va bat DoubleSide + kinh toi dac cho xe buyt 3D/container (SolidShellSealer.js) va dong bo he mau HorizonSkyDome khop tuyet doi voi suong mu fog_fragment de chan troi chuyen mau muot khong chia 2 mang
+- Nhánh: feat/horizon-clouds | Commit trước đó: e588b0f
+- File: src/graphics/SolidShellSealer.js,src/graphics/HorizonSkyDome.js,src/graphics/index.js,src/sim/scene.js,src/sim/library/parsers.js,src/sim/cargo/specialty_meshes.js,test/optimize_horizon_cargo_perf.test.js
+
 ## 2026-11-16 18:30 [feat] Hoan tat 6 buoc toi uu tong the va sua loi: hoa muot chan troi, bo sung 3D Steel Pipe (OOG), dong nhat Vehicle xe buyt, toi uu tai CAD va vong lap 60Hz
 - Nhánh: feat/horizon-clouds | Commit trước đó: 0203cc3
 - File: src/graphics/GroundHorizonFade.js,src/graphics/HorizonSkyDome.js,src/graphics/SpecialtyCargoMeshes.js,src/graphics/index.js,src/rigging/SlingPerfHelper.js,src/rigging/index.js,src/core/AssetLoaders.js,src/sim/scene.js,src/sim/state.js,src/sim/cargo/specialty_meshes.js,src/sim/cargo/shell_rebuild.js,src/sim/library/parsers.js,src/sim/rigging/draw_update.js,src/sim/telemetry.js,test/optimize_horizon_cargo_perf.test.js
