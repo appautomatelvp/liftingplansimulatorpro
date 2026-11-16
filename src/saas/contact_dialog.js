@@ -89,11 +89,19 @@ export function openDeveloperContact({ category = 'feedback', subject = '' } = {
   </section>`;
 
   let releaseFocusTrap = () => {};
+  const onLanguageChanged = () => {
+    if (!dialog.isConnected) return;
+    close();
+    openDeveloperContact({ category, subject });
+  };
   const close = () => {
     if (holdRaf) cancelAnimationFrame(holdRaf);
+    window.removeEventListener('safelift:language-changed', onLanguageChanged);
     dialog.remove();
     releaseFocusTrap();
   };
+
+  window.addEventListener('safelift:language-changed', onLanguageChanged);
 
   dialog.addEventListener('click', (event) => {
     if (event.target === dialog || event.target.closest('[data-contact-close]')) close();

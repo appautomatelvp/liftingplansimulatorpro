@@ -50,6 +50,7 @@ function onProfileChange(profile) {
   if (!profile) return;
   document.body.classList.add('saas-workspace-authorized');
   document.body.classList.remove('saas-locked');
+  setLang(getLang());
 }
 
 function onSignedOut() {

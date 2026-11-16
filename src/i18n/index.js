@@ -5,19 +5,44 @@ import { safeReadLocalStore, safeWriteLocalStore } from '../utils/localDataStore
 
 const SUPPORTED = new Set(['vi', 'en']);
 const STORAGE_KEY = 'safelift3d.lang';
+const MIGRATION_KEY = 'safelift3d.lang.en_v1';
 
 function detectInitialLang() {
-  if (typeof localStorage === 'undefined') return 'vi';
+  if (typeof localStorage === 'undefined') return 'en';
   try {
+    if (localStorage.getItem(MIGRATION_KEY) !== '1') {
+      if (localStorage.getItem(STORAGE_KEY) === '"vi"') {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+      localStorage.setItem(MIGRATION_KEY, '1');
+    }
     const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return 'en';
     if (SUPPORTED.has(raw)) return raw;
+    const cleaned = raw.replace(/^"|"$/g, '');
+    if (SUPPORTED.has(cleaned)) return cleaned;
   } catch (_) { /* ignore */ }
   const saved = safeReadLocalStore(STORAGE_KEY, null);
   if (SUPPORTED.has(saved)) return saved;
-  return 'vi';
+  return 'en';
 }
 
 let currentLang = detectInitialLang();
+let inToggleCall = false;
+let syncingSimBtn = false;
+
+function syncSimulatorButtonIfNeeded() {
+  if (inToggleCall || syncingSimBtn || typeof window === 'undefined') return;
+  const simState = window.__LIFTING_RUNTIME__?.state || window.__LIFTING_RUNTIME__?.api?.getState?.();
+  if (!simState || typeof simState !== 'object' || simState.lang === currentLang) return;
+  const langBtn = typeof document !== 'undefined' ? document.getElementById('btn-lang') : null;
+  if (langBtn) {
+    syncingSimBtn = true;
+    try { langBtn.click(); } finally { syncingSimBtn = false; }
+  } else {
+    simState.lang = currentLang;
+  }
+}
 
 export function getLang() {
   return currentLang;
@@ -25,19 +50,28 @@ export function getLang() {
 
 export function setLang(lang) {
   if (!SUPPORTED.has(lang)) return currentLang;
+  const changed = currentLang !== lang;
   currentLang = lang;
-  if (typeof localStorage !== 'undefined') {
+  if (typeof window !== 'undefined') window.__SAFELIFT_BOOT_LANG__ = currentLang;
+  if (changed && typeof localStorage !== 'undefined') {
     safeWriteLocalStore(STORAGE_KEY, lang);
   }
   applyDocumentBrand(currentLang);
-  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+  syncSimulatorButtonIfNeeded();
+  if (changed && typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
     window.dispatchEvent(new CustomEvent('safelift:language-changed', { detail: { lang: currentLang } }));
   }
   return currentLang;
 }
 
 export function toggleLang() {
-  return setLang(currentLang === 'vi' ? 'en' : 'vi');
+  if (syncingSimBtn) return currentLang;
+  inToggleCall = true;
+  try {
+    return setLang(currentLang === 'vi' ? 'en' : 'vi');
+  } finally {
+    inToggleCall = false;
+  }
 }
 
 export function t(key, lang = currentLang) {

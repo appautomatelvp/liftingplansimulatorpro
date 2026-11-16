@@ -4,8 +4,8 @@ import { getLang, t } from '../i18n/index.js';
 
 /** Format a localized template key from centralized i18n dictionaries with optional `{var}` substitutions. */
 export function saasT(key, vars = null, lang = getLang()) {
-  const locale = lang === 'en' ? 'en' : 'vi';
-  let text = CONTACT_KEYS[locale]?.[key] ?? t(key, lang);
+  const locale = lang === 'vi' ? 'vi' : 'en';
+  let text = CONTACT_KEYS[locale]?.[key] ?? t(key, locale);
   if (vars && typeof vars === 'object') {
     for (const [name, value] of Object.entries(vars)) {
       text = text.replaceAll(`{${name}}`, String(value ?? ''));

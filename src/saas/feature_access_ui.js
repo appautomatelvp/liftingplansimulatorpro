@@ -44,7 +44,7 @@ export function installFeatureAccessUI() {
     const rule = getFeatureRule(featureId);
     if (!rule) return;
     document.querySelector('.saas-paywall-backdrop')?.remove();
-    const lang = window.SafeLift?.i18n?.getLang?.() || document.documentElement.lang || 'vi';
+    const lang = window.SafeLift?.i18n?.getLang?.() || document.documentElement.lang || 'en';
     const bodyText = accessReason === 'disabled_module'
       ? saasT('paywallDisabledModuleBody', null, lang)
       : (accessReason === 'maintenance'
@@ -145,7 +145,7 @@ function decorateCard(card, featureId, profile, flags) {
     card.append(badge);
   }
   if (badge) {
-    const lang = window.SafeLift?.i18n?.getLang?.() || document.documentElement.lang || 'vi';
+    const lang = window.SafeLift?.i18n?.getLang?.() || document.documentElement.lang || 'en';
     badge.textContent = resolveBadgeText(access, comingSoon, lang);
     badge.hidden = !locked;
   }
@@ -174,7 +174,7 @@ function decoratePanel(panel, featureId, profile, flags) {
     panel.prepend(badge);
   }
   if (badge) {
-    const lang = window.SafeLift?.i18n?.getLang?.() || document.documentElement.lang || 'vi';
+    const lang = window.SafeLift?.i18n?.getLang?.() || document.documentElement.lang || 'en';
     badge.textContent = resolveBadgeText(access, false, lang);
     badge.hidden = !locked;
   }
