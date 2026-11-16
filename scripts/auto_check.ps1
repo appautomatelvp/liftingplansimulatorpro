@@ -36,14 +36,14 @@ foreach ($f in $Code) {
     }
 }
 # 2. Script vá tạm bị cấm
-$All | Where-Object { $_.Name -match '^(patch|fix[-_.]|revert|replace)[^\\]*\.(js|mjs|cjs)$' } | ForEach-Object {
+$All | Where-Object { $_.Name -match '^(patch|fix|revert|replace)[^\\]*\.(js|mjs|cjs)$' } | ForEach-Object {
     Write-Host "🔴 Script vá tạm bị cấm: $($_.FullName.Substring($Root.Length + 1))" -ForegroundColor Red; $Red++ }
 # 3. File trùng kiểu copy/final/v2
 $All | Where-Object { $_.Name -match '(?i)(copy of|_final|_v\d+|\(\d+\)|backup|_old)\.(js|jsx|ts|tsx|html)$' } | ForEach-Object {
     Write-Host "🟡 Nghi file trùng lặp: $($_.FullName.Substring($Root.Length + 1))" -ForegroundColor Yellow; $Yellow++ }
-# 4. Key bí mật nằm trong code front-end (bỏ qua public Firebase apiKey ở src/saas/firebase.js theo thiết kế)
+# 4. Key bí mật nằm trong code front-end
 $SecretPat = 'AIza[0-9A-Za-z_\-]{35}|sk-[A-Za-z0-9]{32,}|-----BEGIN (RSA |EC )?PRIVATE KEY|GEMINI_API_KEY\s*[=:]\s*["''][^"'']{8,}|PAYMENT_WEBHOOK_SECRET\s*[=:]\s*["''][^"'']{4,}'
-$Code | Where-Object { $_.FullName -notmatch '\\(functions|api)\\' -and $_.FullName -notmatch '\\src\\saas\\firebase\.js$' } | ForEach-Object {
+$Code | Where-Object { $_.FullName -notmatch '\\(functions|api)\\' } | ForEach-Object {
     if (Select-String -Path $_.FullName -Pattern $SecretPat -Quiet -ErrorAction SilentlyContinue) {
         Write-Host "🔴 Nghi lộ KHÓA BÍ MẬT trong: $($_.FullName.Substring($Root.Length + 1))" -ForegroundColor Red; $Red++ } }
 # 5. .env bị theo dõi bởi Git

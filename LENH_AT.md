@@ -20,9 +20,9 @@
 ## Lệnh về quy trình
 | Gõ | Dùng khi |
 |---|---|
-| `@plan` | Việc lớn: AI lập kế hoạch từng bước rồi dừng (dùng model mạnh) |
-| `làm tiếp` hoặc `@tiep` | Thực thi kế hoạch, 1 bước mỗi lần (dùng model rẻ) |
-| `@upgrade` | **Nâng cấp & tái cấu trúc dự án cũ** về chuẩn mới (khám bệnh → backup → tách từng file >300 dòng + lắp bộ giáp dữ liệu mà không làm hỏng app đang chạy) |
+| `@plan` | Chỉ dùng khi muốn **Model mạnh lập kế hoạch trước** rồi dừng để mày đổi sang Model rẻ chạy cho tiết kiệm quota |
+| `làm tiếp` hoặc `@tiep` | Gõ **ĐÚNG 1 LẦN** sau `@plan`: Model rẻ sẽ **chạy một mạch từ đầu đến cuối kế hoạch** (tự test + tự commit ngầm từng bước, không bắt gõ lặp lại!) |
+| `@upgrade` | **Nâng cấp & tái cấu trúc dự án cũ** về chuẩn mới (tự backup → tự tách tuần tự từng file >300 dòng kèm cầu chì chống lỗi) |
 | `@debug` | Có lỗi: treo, trắng màn hình, tính sai |
 | `@secure` | Muốn soi bảo mật, đăng nhập, phân quyền |
 | `@ship` | Chuẩn bị cho khách thật dùng (chuyển PRODUCTION) |

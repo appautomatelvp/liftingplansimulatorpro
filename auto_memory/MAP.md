@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 11:56 | Nhánh: feat/horizon-clouds | Commit cuối: db93241 feat: upgrade horizon sky palette with distant cumulus/cirrus clouds and lock fog color (8 minutes ago)
+Cập nhật: 2026-11-16 12:04 | Nhánh: feat/horizon-clouds | Commit cuối: 95303ad fix(graphics): upgrade sky dome clouds to seamless 3D quintic gradient noise (8 minutes ago)
 Tổng: 241 file, 72022 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
