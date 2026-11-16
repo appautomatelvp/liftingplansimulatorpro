@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-16 19:57 [feat] Chuan hoa toc do nang/ha dong nhat 0.85 m/s*scale cho moi phuong an (khong phu thuoc tai/ngang) va sua triet de loi STS Container Spreader ban tung kien hang len (UnifiedHoistProfile.js, tach xung XPBD cap STS Direct, khoa gioi han van toc buoc)
+- Nhánh: feat/horizon-clouds | Commit trước đó: cf04c60
+- File: src/rigging/UnifiedHoistProfile.js,src/rigging/index.js,src/sim/physics/step_engine.js,src/sim/physics/cables_break.js,src/sim/physics/hoist_contacts.js,src/sim/physics/beams_seed.js,test/optimize_horizon_cargo_perf.test.js,STATE.md
+
 ## 2026-11-16 19:31 [feat] Thay cac thanh ke gio bang may troi bồng bềnh đa múi (multi-lobed cumulus mask destination-in khong vo hinh, doi mau theo bau troi) va nang cap texture nen be tong cang co khe co gian, van xoa, hat soi da cap
 - Nhánh: feat/horizon-clouds | Commit trước đó: c42dd89
 - File: src/sim/weather_fx.js,src/graphics/pbr/ProceduralTextures.js,src/graphics/PBRMaterialFactory.js,test/optimize_horizon_cargo_perf.test.js

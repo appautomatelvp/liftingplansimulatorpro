@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 19:57 | Nhánh: feat/horizon-clouds | Commit cuối: 72c63b0 docs: log drifting wind clouds and concrete floor texture upgrade (25 minutes ago)
+Cập nhật: 2026-11-16 19:57 | Nhánh: feat/horizon-clouds | Commit cuối: cf04c60 feat: unify constant cargo hoist speed across all plans and eliminate STS spreader catapult (23 seconds ago)
 Tổng: 260 file, 75848 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
