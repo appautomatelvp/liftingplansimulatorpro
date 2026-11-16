@@ -23,7 +23,7 @@ Nhánh Git: feat/horizon-clouds
 
 ## CÁC BƯỚC THỰC HIỆN TUẦN TỰ
 
-### [ ] Bước 1: Chống kiện xuyên qua đà gỗ ở mọi vị trí kéo/xoay & Khử nốt giật khi `Hạ`/`Hạ đất` STS Spreader
+### [x] Bước 1: Chống kiện xuyên qua đà gỗ ở mọi vị trí kéo/xoay & Khử nốt giật khi `Hạ`/`Hạ đất` STS Spreader
 - **File sửa (3 file):**
   1. `src/graphics/JobsiteSiteVisuals.js`: thêm hàm thuần `sampleDunnageContactPointsForCargo({ cargoPos, cargoQuat, L, W, H, dunnageGroup })` tính chính xác các điểm tiếp xúc trên đáy kiện nằm đúng đỉnh/mép các thanh đà gỗ (kể cả khi kéo lệch tâm hay xoay góc).
   2. `src/sim/physics/beams_seed.js`: gọi hàm trên trong `contactLocals()` (và `flatRackContactSampleLocals()`), đồng thời đồng bộ vận tốc/giảm nẩy cho STS Spreader khi `lowering`.
@@ -59,5 +59,5 @@ Nhánh Git: feat/horizon-clouds
 
 ### [ ] Bước 6: Triển khai lên GitHub & Cloudflare Pages
 - **Thao tác:**
-  1. Kiểm tra `git status` sạch sẽ, gộp nhánh `feat/horizon-clouds` về `main` (hoặc chốt qua `./scripts/manual_chot_ban.ps1` / `git merge` + `git push origin main` theo xác nhận của Founder).
+  1. Kiểm tra `git status` sạch sẽ, gộp nhánh `feat/horizon-clouds` về `master` và đẩy lên GitHub (`git push origin master`) theo xác nhận của Founder.
   2. Chạy `npm run build && npm run check:dist` lần cuối, rồi deploy `dist/` lên Cloudflare Pages (`npx wrangler pages deploy dist --project-name safelift3d`) và báo link production thực tế cho Founder.

@@ -263,3 +263,27 @@ export function syncCraneOutriggerMats3D({ THREE, craneVehicleGroup, presetId = 
   });
   return updated;
 }
+
+/** Projects dunnage beam tops onto cargo-local bottom face so shifted/rotated cargos never pierce timber. */
+export function sampleDunnageContactPointsForCargo({ THREE, cargoPos, cargoQuat, L, W, H, dunnageGroup } = {}) {
+  const profile = dunnageGroup?.userData?.siteProfile;
+  if (!THREE || !profile || !dunnageGroup.visible || !cargoPos || !Array.isArray(profile.beams)) return [];
+  const halfL = (L || 6) * 0.5, halfW = (W || 2.4) * 0.5, botY = -(H || 2.5) * 0.5;
+  const yaw = dunnageGroup.rotation?.y || 0, cy = Math.cos(yaw), sy = Math.sin(yaw);
+  const ox = dunnageGroup.position?.x || 0, oz = dunnageGroup.position?.z || 0;
+  const invCargoQ = (cargoQuat || new THREE.Quaternion()).clone().invert();
+  const out = [];
+  for (const b of profile.beams) {
+    for (const fx of [-0.85, 0, 0.85]) {
+      for (const fz of [-0.85, 0, 0.85]) {
+        const lx = b.cx + fx * b.halfW, lz = b.cz + fz * b.halfL;
+        const wx = ox + lx * cy + lz * sy, wz = oz - lx * sy + lz * cy;
+        const localPt = new THREE.Vector3(wx - cargoPos.x, 0, wz - cargoPos.z).applyQuaternion(invCargoQ);
+        if (Math.abs(localPt.x) <= halfL + 0.04 && Math.abs(localPt.z) <= halfW + 0.04) {
+          out.push(new THREE.Vector3(THREE.MathUtils.clamp(localPt.x, -halfL, halfL), botY, THREE.MathUtils.clamp(localPt.z, -halfW, halfW)));
+        }
+      }
+    }
+  }
+  return out;
+}

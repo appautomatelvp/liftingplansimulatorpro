@@ -25,7 +25,8 @@ export {
   readJobsiteVisualConfig,
   rebuildDunnageVisual3D,
   syncCraneOutriggerMats3D,
-  evaluateDunnageSupportSurface
+  evaluateDunnageSupportSurface,
+  sampleDunnageContactPointsForCargo
 } from './JobsiteSiteVisuals.js';
 export {
   computeElevationMarkers,

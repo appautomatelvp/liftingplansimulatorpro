@@ -2270,6 +2270,11 @@
                     pts.push(new THREE.Vector3(fx * L, -H / 2, fz * W));
                 });
             });
+            if (typeof GFX !== 'undefined' && GFX.sampleDunnageContactPointsForCargo && typeof dunnageGroup !== 'undefined') {
+                GFX.sampleDunnageContactPointsForCargo({
+                    THREE, cargoPos: phy.cargoPos, cargoQuat: phy.cargoQuat, L, W, H, dunnageGroup
+                }).forEach(p => pts.push(p));
+            }
             (phy.supportLocals || []).forEach(p => pts.push(p.clone()));
             return pts;
         }
@@ -2321,6 +2326,12 @@
                 && cargoHasIntactLoadLegs();
 
             for (let step = 0; step < substeps; step++) {
+                if (stsDirectControlled && phy.hoist) {
+                    // Prevent elastic hoist spring from oscillating on unloaded STS Direct cables during Hạ / Hạ đất.
+                    phy.hoist.vel.y = 0;
+                    phy.hoist.off.y = THREE.MathUtils.lerp(phy.hoist.off.y, 0, 0.45);
+                    phy.hoist.offLP.y = THREE.MathUtils.lerp(phy.hoist.offLP.y, 0, 0.45);
+                }
                 advanceHook(dt);
 
                 const rCog = new THREE.Vector3(slideCogX, cogY, slideCogZ).applyQuaternion(phy.cargoQuat);
