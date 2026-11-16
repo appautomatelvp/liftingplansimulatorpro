@@ -426,6 +426,9 @@
             if (meta.broken || isOverloaded) mat = MATS.redMaster;
             else if (meta.selected) mat = MATS.lpSelected;
             else if (meta.ctrlHover) mat = MATS.lpCtrlHover || MATS.lpSelected;
+            else if (actualTension > 0 && typeof GFX !== 'undefined' && GFX.resolveStressTintedMaterial) {
+                mat = GFX.resolveStressTintedMaterial(mat, actualTension, wllNow, phy._stressMatCache || (phy._stressMatCache = new Map()));
+            }
 
             // International Sling Angle Warning / cut-hover enter: red pulse
             if (cable && cable._isFlashing && cable._flashStartTime) {

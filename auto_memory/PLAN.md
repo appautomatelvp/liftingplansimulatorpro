@@ -50,7 +50,7 @@ Nâng cấp toàn diện **SafeLift3D** từ trình mô phỏng 3D cơ bản lê
     3. Trong `src/sim/rigging/draw_update.js`: dùng `BrokenCableWhipSimulator` cho nhánh cáp đứt và gọi `resolveInterCableCapsuleCollisions` giữa các sợi cáp đang hiển thị để không sợi nào xuyên qua sợi nào.
   - Kiểm tra xong: `npx vitest run test/physics_destruction.test.js test/solid_collision_and_settling.test.js test/solid_collision_and_sliding.test.js` xanh.
 
-- [ ] Bước 4: Nâng cấp Vật liệu PBR Siêu thực, HDRI Cảng Công Nghiệp & Hiển thị Ứng suất Căng Cơ học (`src/graphics/pbr/StressPBRMaterials.js`)
+- [x] Bước 4: Nâng cấp Vật liệu PBR Siêu thực, HDRI Cảng Công Nghiệp & Hiển thị Ứng suất Căng Cơ học (`src/graphics/pbr/StressPBRMaterials.js`)
   - Sửa: `src/graphics/pbr/StressPBRMaterials.js` (tạo mới `< 230` dòng, mở đầu bằng `// @purpose:`), `src/graphics/PBRMaterialFactory.js`, `src/sim/rigging/draw_update.js` (thêm `<= 12` dòng)
   - CẤM đụng: `src/core/*`, `firestore.rules`
   - Chi tiết:
