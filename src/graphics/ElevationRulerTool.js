@@ -46,14 +46,14 @@ export function computeElevationMarkers({ THREE, state = {}, phy = {} }) {
 function makeSpriteLabel(THREE, borderColor = '#38bdf8') {
   if (typeof document === 'undefined') return null;
   const canvas = document.createElement('canvas');
-  canvas.width = 320;
-  canvas.height = 68;
+  canvas.width = 512;
+  canvas.height = 112;
   const ctx = canvas.getContext('2d');
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
   const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, depthWrite: false });
   const sprite = new THREE.Sprite(mat);
-  sprite.scale.set(2.3, 0.49, 1);
+  sprite.scale.set(4.4, 0.96, 1);
   sprite.renderOrder = 25;
   sprite.userData._lastText = '';
   sprite.userData._redraw = (text, accent = borderColor) => {
@@ -61,18 +61,18 @@ function makeSpriteLabel(THREE, borderColor = '#38bdf8') {
     sprite.userData._lastText = text;
     sprite.userData._lastAccent = accent;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = 'rgba(2, 6, 23, 0.88)';
+    ctx.fillStyle = 'rgba(2, 6, 23, 0.90)';
     ctx.strokeStyle = accent;
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 6;
     ctx.beginPath();
-    ctx.roundRect(4, 4, canvas.width - 8, canvas.height - 8, 12);
+    ctx.roundRect(6, 6, canvas.width - 12, canvas.height - 12, 18);
     ctx.fill();
     ctx.stroke();
     ctx.fillStyle = '#f8fafc';
-    ctx.font = 'bold 26px ui-monospace, SFMono-Regular, Menlo, monospace';
+    ctx.font = 'bold 46px ui-monospace, SFMono-Regular, Menlo, monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(text, canvas.width * 0.5, canvas.height * 0.5 + 1);
+    ctx.fillText(text, canvas.width * 0.5, canvas.height * 0.5 + 2);
     tex.needsUpdate = true;
   };
   return sprite;
@@ -138,8 +138,8 @@ export function createElevationRulerTool({ THREE, scene }) {
       if (isMajor && meters > 0 && meters % 2 === 0) {
         const numSpr = makeSpriteLabel(THREE, '#38bdf8');
         if (numSpr) {
-          numSpr.scale.set(0.95, 0.24, 1);
-          numSpr.position.set(-0.62, meters, 0);
+          numSpr.scale.set(1.85, 0.48, 1);
+          numSpr.position.set(-1.12, meters, 0);
           numSpr.userData._redraw(`${meters.toFixed(0)}m`, '#38bdf8');
           ticksGroup.add(numSpr);
         }
@@ -156,7 +156,7 @@ export function createElevationRulerTool({ THREE, scene }) {
     const bar = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.025, 0.025), new THREE.MeshBasicMaterial({ color: colorHex }));
     bar.position.x = 0.32;
     const spr = makeSpriteLabel(THREE, cssColor);
-    if (spr) spr.position.set(1.65, 0, 0);
+    if (spr) spr.position.set(2.55, 0, 0);
     grp.add(dot, bar);
     if (spr) grp.add(spr);
     grp.userData.sprite = spr;
@@ -190,7 +190,7 @@ export function createElevationRulerTool({ THREE, scene }) {
   const hoverSprite = makeSpriteLabel(THREE, '#ef4444');
   if (hoverSprite) {
     hoverSprite.visible = false;
-    hoverSprite.scale.set(2.5, 0.52, 1);
+    hoverSprite.scale.set(4.8, 1.0, 1);
     rulerGroup.add(hoverSprite);
   }
 
@@ -235,8 +235,8 @@ export function createElevationRulerTool({ THREE, scene }) {
     } else {
       const cx = phy?.cargoPos ? phy.cargoPos.x : 0;
       const cz = phy?.cargoPos ? phy.cargoPos.z : 0;
-      rx = cx - Math.max(2.4, (state?.L || 6) * 0.5) - 1.35;
-      rz = cz + Math.max(1.4, (state?.W || 2.4) * 0.5) + 0.55;
+      rx = cx + Math.max(2.4, (state?.L || 6) * 0.5) + 1.55;
+      rz = cz - Math.max(0.8, (state?.W || 2.4) * 0.25);
     }
     rulerGroup.position.set(rx, 0, rz);
 
@@ -265,7 +265,7 @@ export function createElevationRulerTool({ THREE, scene }) {
       hoverLine.visible = true;
       if (hoverSprite) {
         hoverSprite.visible = true;
-        hoverSprite.position.set(-1.65, hy, 0);
+        hoverSprite.position.set(-2.65, hy, 0);
         hoverSprite.userData?._redraw(`Điểm đỏ: ${hy.toFixed(2)} m`, '#ef4444');
       }
     } else {

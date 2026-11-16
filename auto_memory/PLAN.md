@@ -38,7 +38,7 @@ Nhánh Git: feat/horizon-clouds
   3. `src/sim/session/presets_events.js`: khi bấm `Ghi` ghi ngay cấu hình ban đầu; khi bấm `Xem` khôi phục sạch về frame `0` (reset các cờ vật lý cũ không cho dính sang lần xem lại), chạy trơn tru tới hết; khi bấm `Dừng` chốt frame cuối rõ ràng.
 - **Kiểm tra:** `npx vitest run test/v3_ruler_drag_hoist_sts_gear_regression.test.js` + `npm run architecture:gate` + `npm run build`.
 
-### [ ] Bước 3: Cây thước đo độ cao mặc định bên PHẢI khi F5 & con số to gấp đôi
+### [x] Bước 3: Cây thước đo độ cao mặc định bên PHẢI khi F5 & con số to gấp đôi
 - **File sửa (3 file):**
   1. `src/graphics/ElevationRulerTool.js` (`< 298` dòng): đổi tọa độ mặc định (`customPos === null`) sang bên phải `+X` (`cx + Math.max(2.4, L * 0.5) + 1.55`) đúng như vị trí chuẩn trong hình F5; tăng gấp đôi độ lớn font + khung nhãn của 4 mốc (`Hook`, `Ngáng`, `Đỉnh`, `Đáy`), `Điểm Đỏ` và vạch số `2m, 4m...`.
   2. `src/sim/physics/hoist_contacts.js`: bổ sung chốt mượt chống giật cho `advanceHook()` khi STS Direct bắt đầu/kết thúc `Hạ` (tránh `clampHookOutOfSolids()` nẩy ngược khi chạm đất).

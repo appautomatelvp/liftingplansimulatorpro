@@ -128,6 +128,8 @@ describe('7 UX & 3D Physics Enhancements Regression', () => {
     expect(marks.cargoTopY).toBeCloseTo(2.75, 3);
     expect(marks.cargoBottomY).toBeCloseTo(0.25, 3);
     expect(ruler.group.visible).toBe(true);
+    // Default position is on the right side (+X) of cargo with 2x enlarged labels
+    expect(ruler.group.position.x).toBeGreaterThan(mockPhy.cargoPos.x + mockState.L * 0.5);
 
     // Simulate mouse hover directly over center of canvas looking at targetBox (height ~ 2.0..3.0m)
     const mockEl = { getBoundingClientRect: () => ({ left: 0, top: 0, width: 400, height: 400 }) };

@@ -42,7 +42,7 @@
                 const aabbClr = (typeof cargoAabbClearance === 'function')
                     ? cargoAabbClearance()
                     : (phy.groundClearance || 0);
-                const seated = (phy.groundClearance || 0) < 0.035 && aabbClr < 0.04;
+                const seated = (phy.groundClearance || 0) < 0.008 && aabbClr < 0.012;
                 if (seated && !phy._setDownFullSlack) {
                     if (typeof finishSmoothSetDown === 'function') finishSmoothSetDown();
                 } else if (seated && phy._setDownFullSlack) {
@@ -67,7 +67,7 @@
                     const clr = Math.max(phy.groundClearance || 0, aabbClr);
                     let vDown = baseDown;
                     if (clr < 0.35) {
-                        const ratio = Math.max(0.18, clr / 0.35);
+                        const ratio = Math.max(0.08, clr / 0.35);
                         vDown = baseDown * Math.pow(ratio, 0.65);
                     }
                     phy.hoistSpeed = vDown;
