@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 10:42 | Nhánh: feat/hide-dev-contact-antispam | Commit cuối: fc87f34 feat: upgrade contact dialog to precision slide-to-unlock interlock and clean enterprise UI (45 minutes ago)
-Tổng: 241 file, 71763 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 10:48 | Nhánh: feat/hide-dev-contact-antispam | Commit cuối: 5cf993e feat: update CAD lifting background without watermark, add cinematic zoom-in and fade-to-black login reveal (6 minutes ago)
+Tổng: 241 file, 71767 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -200,7 +200,7 @@ Tổng: 241 file, 71763 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/saas/i18n.js` | 15 | Định dạng khóa ngôn ngữ SaaS và hộp thoại góp ý theo ngôn ngữ hiện tại |
 | `src/saas/plan_snapshot.js` | 170 | Chuẩn hóa dữ liệu thiết bị và đóng gói/giải mã/di trú snapshot phương án nâng hạ |
 | `src/saas/runtime_flags.js` | 63 |  |
-| `src/saas/saas.css` | 265 | saas-root[hidden] { display: none !important; } |
+| `src/saas/saas.css` | 267 | saas-root[hidden] { display: none !important; } |
 | `src/saas/session.js` | 262 |  ⚠️>250 |
 | `src/saas/session_ui_bindings.js` | 136 | Gắn kết giao diện header, widget tài khoản, banner bảo trì và hộp thoại liên hệ SaaS |
 | `src/saas/telemetry_usage.js` | 143 |  |
@@ -248,7 +248,7 @@ Tổng: 241 file, 71763 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/weather_fx.js` | 572 |  ⚠️>300 |
 | `src/simulation/destruction-manager/DestructionSolver.js` | 147 |  |
 | `src/styles/app.css` | 1018 |  |
-| `src/styles/brand_splash.css` | 63 | Hiệu ứng nền công nghiệp Cinematic Zoom-In & màn trập Fade-in Đen mở dần hệ thống 3D |
+| `src/styles/brand_splash.css` | 65 | Hiệu ứng nền công nghiệp 2K Cinematic Zoom-In & màn trập Fade-in Đen mở dần hệ thống 3D |
 | `src/telemetry/sensor-engine/SensorEngine.js` | 185 |  |
 | `src/ui/controllers/index.js` | 35 |  |
 | `src/ui/services/index.js` | 48 |  |

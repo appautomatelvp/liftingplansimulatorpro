@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-16 10:48 [feat] Nang cap do phan giai hinh nen len 2K (2048x1142) voi bo loc khu nhieu JPEG Bilateral + lam sac canh Vector Clamp-Guided, bo pre-stretch inset -4% va tinh chinh duong cong Cinematic Dolly Zoom-In 28s muot ma.
+- Nhánh: feat/hide-dev-contact-antispam | Commit trước đó: 5cf993e
+- File: public/brand/industrial-lifting-bg.png,src/styles/brand_splash.css,src/saas/saas.css
+
 ## 2026-11-16 10:42 [feat] Cap nhat hinh nen cau cang Digital Twin moi da xoa sach logo Gemini o goc duoi phai, giu hieu ung Cinematic Zoom-In va bo sung man trap Fade-in Den -> Mo dan he thong 3D (playCinemaWorkspaceReveal) khi dang nhap.
 - Nhánh: feat/hide-dev-contact-antispam | Commit trước đó: fc87f34
 - File: public/brand/industrial-lifting-bg.png,src/styles/brand_splash.css,src/saas/saas.css,src/saas/session_ui_bindings.js,src/saas/session.js,test/auth_screen.test.js
