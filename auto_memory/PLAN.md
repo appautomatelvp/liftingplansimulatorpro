@@ -103,7 +103,7 @@
 ---
 
 ### Bước 4: Sửa lỗi Cắt cáp phóng tia đỏ lên trời / văng xích ngang & Chuẩn hóa Vật lý Đứt cáp (`BrokenCableWhipXPBD.js`, `RigidInertialDynamics.js`, `draw_update.js`)
-- [ ] **Trạng thái:** Chưa làm
+- [x] **Trạng thái:** Hoàn tất (`stepSingleStub` neo đúng chốt, triệt tiêu tia đỏ/xích bay ngang, 8/8 `hyper_realistic_physics_pbr.test.js` & `vite build` xanh)
 - **Mục tiêu:** Chấm dứt 100% hiện tượng tia đỏ bắn vọt lên trời (Ảnh 1, 5) và chuỗi xích bay ngang (Ảnh 4) khi bấm nút Cắt cáp; mô phỏng đúng vật lý thực tế của cáp thép và xích thép khi đứt (thu hồi đàn hồi nhẹ dọc trục rồi rơi thẳng xuống theo trọng lực $9.81\text{ m/s}^2$, rũ dọc dưới chốt treo hoặc nằm gọn trên nóc container/mặt đất).
 - **File được phép sửa (tối đa 3 file):**
   1. `src/rigging/BrokenCableWhipXPBD.js` *(sửa $\le 45$ dòng)*:

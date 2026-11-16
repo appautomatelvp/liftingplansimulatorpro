@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 13:36 | Nhánh: feat/horizon-clouds | Commit cuối: 6ef2e08 step 2: wire true 3D surface contact into shell rebuild and sling routing (2 minutes ago)
-Tổng: 247 file, 73328 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 13:38 | Nhánh: feat/horizon-clouds | Commit cuối: 30717dd step 3: subdivide H-beam flanges/web and calibrate structural stiffness (2 minutes ago)
+Tổng: 247 file, 73374 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -35,7 +35,7 @@ Tổng: 247 file, 73328 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/physics/hoist_contacts.js (1003 dòng)
 - src/sim/physics/step_engine.js (774 dòng)
 - src/sim/plan_wizard.js (632 dòng)
-- src/sim/rigging/draw_update.js (863 dòng)
+- src/sim/rigging/draw_update.js (866 dòng)
 - src/sim/rigging/hook_pool.js (3118 dòng)
 - src/sim/scene.js (1974 dòng)
 - src/sim/session/prelift_reset.js (1144 dòng)
@@ -170,7 +170,7 @@ Tổng: 247 file, 73328 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/i18n/index.js` | 131 |  |
 | `src/i18n/keys.js` | 598 |  ⚠️>300 |
 | `src/main.js` | 66 |  |
-| `src/rigging/BrokenCableWhipXPBD.js` | 212 | Mô phỏng XPBD sóng quật, thu hồi năng lượng đàn hồi và va chạm CCD cho hai nửa cáp đứt hoặc cáp tháo chốt |
+| `src/rigging/BrokenCableWhipXPBD.js` | 250 | Mô phỏng XPBD sóng quật, thu hồi năng lượng đàn hồi và va chạm CCD cho hai nửa cáp đứt hoặc cáp tháo chốt |
 | `src/rigging/CableDynamicsXPBD.js` | 264 | Bộ giải động lực học cáp/xích XPBD chịu kéo, tự va chạm và đứt thu hồi đàn hồi ⚠️>250 |
 | `src/rigging/CollisionMaterialSolver.js` | 247 | Bộ giải va chạm liên tục (CCD), ma sát cặp vật liệu, độ nảy theo khối lượng và chống xuyên giữa các sợi cáp/xích |
 | `src/rigging/constraints/CornerProtectorModel.js` | 51 |  |
@@ -180,7 +180,7 @@ Tổng: 247 file, 73328 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/riggingConstants.js` | 69 | src/rigging/riggingConstants.js |
 | `src/rigging/RiggingPhysicsSolver.js` | 682 | src/rigging/RiggingPhysicsSolver.js ⚠️>300 |
 | `src/rigging/riggingUIStore.js` | 100 | src/rigging/riggingUIStore.js |
-| `src/rigging/RigidInertialDynamics.js` | 207 | Động lực học vật rắn lệch tâm (Steiner-Huygens Inertia Tensor), mô-men xoắn/nghiêng khi cẩu và rơi tự do 9.81 m/s² |
+| `src/rigging/RigidInertialDynamics.js` | 212 | Động lực học vật rắn lệch tâm (Steiner-Huygens Inertia Tensor), mô-men xoắn/nghiêng khi cẩu và rơi tự do 9.81 m/s² |
 | `src/rigging/TrueMeshSurfaceContact.js` | 220 | Bộ giải tiếp xúc bề mặt 3D thực (0mm khe hở, không xuyên thủng) cho cáp và xích ôm sát kiện hàng 3D |
 | `src/saas/access.js` | 48 |  |
 | `src/saas/admin_catalog_audit_panels.js` | 89 | Dựng giao diện phân hệ Catalog thiết bị 3 cột, Nhật ký Kiểm toán Diff và Modal chi tiết người dùng |
@@ -239,7 +239,7 @@ Tổng: 247 file, 73328 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/physics/step_engine.js` | 774 |  ⚠️>300 |
 | `src/sim/plan_wizard.js` | 632 |  ⚠️>300 |
 | `src/sim/rigging.js` | 6 |  |
-| `src/sim/rigging/draw_update.js` | 863 | Slack cable morphology is solved by a persistent material-aware XPBD chain. ⚠️>300 |
+| `src/sim/rigging/draw_update.js` | 866 | Slack cable morphology is solved by a persistent material-aware XPBD chain. ⚠️>300 |
 | `src/sim/rigging/hook_pool.js` | 3118 |  ⚠️>300 |
 | `src/sim/scene.js` | 1974 |  ⚠️>300 |
 | `src/sim/session.js` | 6 |  |

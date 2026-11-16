@@ -182,20 +182,25 @@ export function applyBrokenTipCCD(tip, vel, previous, radius, cargoPos, cargoQua
 }
 
 export function stepBrokenWhipPath(slingObj, br, meta, pointA, end, workLen, look, dims, cargoPos, cargoQuat, groundY = 0) {
-  if (!br || !br.wasTaut || (br.age || 0) >= 1.25) return null;
-  if (!slingObj._whipSim || slingObj._whipAge > (br.age || 0)) {
+  if (!br || (br.age || 0) >= 1.25) return null;
+  const half = (meta && meta.brokenHalf) || 'upper';
+  if (!slingObj._whipSim || slingObj._whipAge > (br.age || 0) || slingObj._whipHalf !== half) {
     slingObj._whipSim = new BrokenCableWhipSimulator({
-      totalLengthM: workLen,
+      totalLengthM: Math.max(0.3, (br.upperLen || 1) + (br.lowerLen || 1)),
       breakFraction: br.frac || 0.5,
       diameterMm: (meta && meta.diaMm) || 16,
       material: look,
       segmentsPerHalf: Math.max(8, (slingObj && slingObj.numSegments) || 10)
     });
-    slingObj._whipSim.triggerSnap(pointA, end, (br.snapTensionT || 10) * 9810, { lateralHint: br.velU });
+    slingObj._whipHalf = half;
   }
   slingObj._whipAge = br.age || 0;
-  const res = slingObj._whipSim.step(1 / 60, pointA, end, { obbBoxes: buildCargoObbList(cargoPos, cargoQuat, dims), groundY });
-  return meta && meta.brokenHalf === 'upper' ? res?.upperPoints : res?.lowerPoints;
+  const stubLen = half === 'lower' ? (br.lowerLen || workLen) : (br.upperLen || workLen);
+  return slingObj._whipSim.stepSingleStub(pointA, end, Math.max(0.15, stubLen), 1 / 60, {
+    obbBoxes: buildCargoObbList(cargoPos, cargoQuat, dims),
+    groundY,
+    tensionN: (br.snapTensionT || 0) * 9810
+  });
 }
 
 export function applySlingPoolCapsuleSeparation(slingObj, pool, pts, simPad) {

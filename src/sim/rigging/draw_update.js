@@ -303,9 +303,16 @@
                     ? RIG.stepBrokenWhipPath(slingObj, br, meta, pointA, end, workLen, look, state, phy.cargoPos, phy.cargoQuat, supportY(pointA.x, pointA.z))
                     : null;
                 if (!rawPts) rawPts = buildBrokenStubHangPath(pointA, end, renderLen, slingObj.numSegments, settle);
+                else if (settle > 0.05) {
+                    const hangPts = buildBrokenStubHangPath(pointA, end, renderLen, rawPts.length - 1, settle);
+                    const blend = THREE.MathUtils.clamp((settle - 0.05) / 0.95, 0, 1);
+                    for (let i = 1; i < rawPts.length && i < hangPts.length; i++) {
+                        rawPts[i].lerp(hangPts[i], blend);
+                    }
+                }
                 for (let i = 1; i < rawPts.length - 1; i++) {
                     if (typeof pushPointClear === 'function') {
-                        const cleared = pushPointClear(rawPts[i], 0.028, new Set());
+                        const cleared = pushPointClear(rawPts[i], simPad, new Set());
                         if (cleared.y <= rawPts[i].y + 0.01) rawPts[i].copy(cleared);
                     }
                 }
@@ -386,11 +393,7 @@
                 }
             }
             pts[0].copy(pointA);
-            if (isBrokenStub) {
-                end.copy(pts[pts.length - 1]);
-                if (end.y > pointA.y - 0.02) end.y = pointA.y - 0.06;
-                pts[pts.length - 1].copy(end);
-            } else {
+            if (!isBrokenStub) {
                 pts[pts.length - 1].copy(end);
             }
             if (!physicallyTaut && typeof RIG !== 'undefined' && RIG.applySlingPoolCapsuleSeparation) {

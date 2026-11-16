@@ -100,6 +100,7 @@ export class BrokenCableWhipSimulator {
     this.segmentsPerHalf = Math.max(6, Math.min(24, segmentsPerHalf | 0));
     this.upper = null;
     this.lower = null;
+    this.singleStub = null;
     this.recoilSpeedMps = 0;
     this.storedElasticEnergyJ = 0;
     this.age = 0;
@@ -191,6 +192,43 @@ export class BrokenCableWhipSimulator {
       const hit = resolveSweptSphereObbCCD(branch.previous[i], branch.positions[i], this.radiusM, obbBoxes, groundY);
       if (hit.collided) branch.positions[i].copy(hit.position);
     }
+  }
+
+  stepSingleStub(anchorPos, tipHint, stubLen, dt, { obbBoxes = [], groundY = 0, pairId = 'steel_on_steel', tensionN = 0 } = {}) {
+    if (!anchorPos || !(dt > 0)) return null;
+    const len = Math.max(0.15, stubLen || 0.5);
+    if (!this.singleStub) {
+      const dir = (tipHint || anchorPos).clone().sub(anchorPos);
+      if (dir.lengthSq() < 1e-8) dir.set(0, -1, 0);
+      const d = dir.length();
+      const clampedTip = anchorPos.clone().addScaledVector(dir.normalize(), Math.min(d, len));
+      const nMass = (this.linearMassKgM * len) / this.segmentsPerHalf;
+      this.singleStub = buildBranchNodes(anchorPos, clampedTip, len, this.segmentsPerHalf, true, false, nMass);
+      const recoil = computeElasticSnapRecoil({
+        tensionN, lengthM: this.totalLengthM, youngsModulusPa: this.profile.youngsModulusPa,
+        areaM2: this.areaM2, linearMassKgM: this.linearMassKgM,
+        maxRecoilSpeedMps: this.material === 'chain' ? 1.2 : 3.6
+      });
+      const pull = Math.min(this.material === 'chain' ? 1.2 : 3.6, recoil.recoilSpeedMps * 0.25);
+      for (let i = 1; i <= this.segmentsPerHalf; i++) {
+        const w = dir.clone().multiplyScalar(-pull * (i / this.segmentsPerHalf));
+        this.singleStub.previous[i].copy(this.singleStub.positions[i]).addScaledVector(w, -1 / 60);
+      }
+      this.age = 0;
+    }
+    const steps = Math.max(1, Math.min(4, Math.ceil(dt / (1 / 120))));
+    const subDt = Math.min(1 / 60, dt / steps);
+    for (let s = 0; s < steps; s++) {
+      this._stepBranch(this.singleStub, anchorPos, subDt, obbBoxes, groundY, pairId);
+      for (let i = 1; i < this.singleStub.positions.length; i++) {
+        const p = this.singleStub.positions[i], prev = this.singleStub.previous[i];
+        const rel = p.clone().sub(anchorPos);
+        if (rel.length() > len) p.copy(anchorPos).addScaledVector(rel.normalize(), len);
+        prev.lerp(p, 0.14);
+      }
+    }
+    this.age += dt;
+    return this.singleStub.positions.map((p) => p.clone());
   }
 
   step(dt, anchorA, anchorB, { obbBoxes = [], groundY = 0, pairId = 'steel_on_steel' } = {}) {
