@@ -549,10 +549,11 @@
                     if (padEyeMeshes[i]) hwMeshes[i].quaternion.copy(padEyeMeshes[i].quaternion);
                 }
             });
-            // STS direct twistlock: no pad-eyes / shackles on container corners — pins lock into ISO castings.
-            const stsDirectHideLp = typeof isStsDirectAttach === 'function' && isStsDirectAttach();
+            // Direct twistlock (STS or H-Style Lifting Beam): no pad-eyes / shackles on container corners.
+            const directHideLp = (typeof isStsDirectAttach === 'function' && isStsDirectAttach())
+                || (state.beamType === 'lifting_beam' && state.liftingBeamBottomMode === 'direct');
             for (let i = 0; i < padEyeMeshes.length; i++) {
-                const on = i < state.lugs.length && !stsDirectHideLp;
+                const on = i < state.lugs.length && !directHideLp;
                 padEyeMeshes[i].visible = on;
                 if (hwMeshes[i]) hwMeshes[i].visible = on;
                 if (!on && forceArrows[i]) forceArrows[i].visible = false;

@@ -45,7 +45,7 @@
 ---
 
 ### Bước 2: Đấu nối Hình học 3D Chữ H, Trạng thái & Ma-ní 4 góc (`src/sim/state.js`, `src/sim/cargo/specialty_meshes.js`)
-- [ ] **Trạng thái:** Chưa làm
+- [x] **Trạng thái:** Hoàn tất (`state.js`, `specialty_meshes.js`, `shell_rebuild.js` đã đấu nối H-Style & ẩn pad-eye khi gắp trực tiếp; `architecture:gate` & `vite build` xanh)
 - **Mục tiêu:** Thay khối dầm thẳng cũ của `lifting_beam` bằng khối chữ H 2 thanh ngang 4 góc hoàn chỉnh, hỗ trợ 4 tổ hợp trên/dưới.
 - **File được phép sửa (tối đa 2 file):**
   1. `src/sim/state.js` *(sửa $\le 6$ dòng)*:

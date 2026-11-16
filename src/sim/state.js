@@ -73,6 +73,8 @@
             stsTwinLift: false,     // true → 2×20ft twin-lift CAD spreader
             stsAttachMode: 'direct', // 'direct' = twistlock on container roof; 'cable' = shackles + sling/chain to cargo lugs (single cont only — never twin)
             stsSizeLinked: true,    // true = auto-match spreader ↔ container (direct only); cable mode always forces false
+            liftingBeamTopMode: 'bridle2',    // 'bridle2' (2 cáp/xích trên) | 'direct_hook' (bắt trực tiếp tai giữa vào Hook Link)
+            liftingBeamBottomMode: 'cable',   // 'cable' (4 cáp/xích từ 4 góc chữ H) | 'direct' (4 chốt gù Twistlock gắp container)
             hoistSpeedScale: 1.0,   // bottom-dock winch rate multiplier (0.25× … 2.0×)
             beamType: 'spreader',   // 'spreader' (Modular Spreader Beam), 'lifting_beam', 'cascaded', 'frame', 'modular_truss', 'basket', 'container_spreader', 'none'
             slingType: 'chain',             // 'wire', 'chain', 'web'

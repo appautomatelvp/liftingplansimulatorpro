@@ -1682,7 +1682,15 @@
             if (state.beamType === 'none') return base;
             if (state.beamType === 'inline4' || state.beamType === 'inline8' || state.beamType === 'spatial8') return base;
             const gap = (spec) => spec ? Math.max(0.4, Math.abs(spec.a - spec.b)) : 0;
-            if (state.beamType === 'spreader' || state.beamType === 'lifting_beam') return { spanX: gap(memberSpec('main')), spanZ: base.spanZ };
+            if (state.beamType === 'spreader') return { spanX: gap(memberSpec('main')), spanZ: base.spanZ };
+            if (state.beamType === 'lifting_beam') {
+                const mainGap = gap(memberSpec('main'));
+                if (typeof RIG !== 'undefined' && RIG.resolveHBeamCorners) {
+                    const hb = RIG.resolveHBeamCorners(mainGap, base.spanZ, state, state.liftingBeamBottomMode || 'cable');
+                    return { spanX: hb.spanX, spanZ: hb.spanZ };
+                }
+                return { spanX: mainGap, spanZ: base.spanZ };
+            }
             if (state.beamType === 'cascaded' || state.beamType === 'modular_truss') {
                 const top = memberSpec(state.beamType === 'modular_truss' ? 'truss' : 'top');
                 const z = Math.max(gap(memberSpec('lowPlus')), gap(memberSpec('lowMinus')));
@@ -2299,58 +2307,29 @@
                 addJointShackle(main.b, -0.22, -0.065, 'main', { role: 'leg',   index: 2 });
 
             } else if (beamType === 'lifting_beam') {
-                // HEAVY WIDE-FLANGE STEEL H-SECTION LIFTING BEAM (ASME B30.20, 32-seg bendable along span)
                 const main = memberSpec('main');
-                const web = new THREE.Mesh(new THREE.BoxGeometry(main.length, 0.274, 0.028, 32, 1, 1));
-                const topFlange = new THREE.Mesh(new THREE.BoxGeometry(main.length, 0.036, 0.24, 32, 1, 1));
-                topFlange.position.y = 0.155;
-                const botFlange = new THREE.Mesh(new THREE.BoxGeometry(main.length, 0.036, 0.24, 32, 1, 1));
-                botFlange.position.y = -0.155;
-                tagMember(web, 'main');
-                tagMember(topFlange, 'main');
-                tagMember(botFlange, 'main');
-
-                // End closure plates & internal web stiffener ribs (tucked strictly between top/bottom flanges)
-                [-main.length / 2, main.length / 2].forEach(ex => {
-                    const endCap = new THREE.Mesh(new THREE.BoxGeometry(0.024, 0.34, 0.24), MATS.darkSteel);
-                    endCap.position.x = ex;
-                    endCap.userData.gearKind = 'member';
-                    endCap.userData.memberId = 'main';
-                    endCap.userData.memberBody = true;
-                    spreaderRootGroup.add(endCap);
-                });
-                const ribs = Math.max(4, Math.round(main.length / 0.65));
-                for (let r = 0; r < ribs; r++) {
-                    const rx = -main.length / 2 + (r + 0.5) * (main.length / ribs);
-                    [-0.068, 0.068].forEach(rz => {
-                        const rib = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.244, 0.064), MATS.darkSteel);
-                        rib.position.set(rx, 0, rz);
-                        rib.userData.gearKind = 'member';
-                        rib.userData.memberId = 'main';
-                        rib.userData.memberBody = true;
-                        spreaderRootGroup.add(rib);
+                const topMode = state.liftingBeamTopMode || 'bridle2';
+                const bottomMode = state.liftingBeamBottomMode || 'cable';
+                if (typeof RIG !== 'undefined' && RIG.buildHStyleLiftingBeamMeshes) {
+                    RIG.buildHStyleLiftingBeamMeshes({
+                        group: spreaderRootGroup,
+                        yellowMat: MATS.yellowHazard,
+                        darkMat: MATS.darkSteel,
+                        spanX: main.length,
+                        spanZ,
+                        cargoDims: state,
+                        topMode,
+                        bottomMode,
+                        tagMesh: tagMember,
+                        addLug: addLugPlate,
+                        addPick: addPickMark,
+                        addShackle: addJointShackle,
+                        addTwistlockFeet: addIsoTwistlockFeet
                     });
+                } else {
+                    const web = new THREE.Mesh(new THREE.BoxGeometry(main.length, 0.274, 0.028, 32, 1, 1));
+                    tagMember(web, 'main');
                 }
-
-                // Welded top & twin bottom pad-eyes
-                [main.a, main.b].forEach(lx => {
-                    addLugPlate(lx,  0.24,  0.000, 'main', false);
-                    addLugPlate(lx, -0.24,  0.065, 'main', false);
-                    addLugPlate(lx, -0.24, -0.065, 'main', false);
-                });
-                // Auxiliary central top bail eye (visual ASME B30.20 reference)
-                addLugPlate(0, 0.23, 0, 'main', false);
-
-                addPickMark(main.a, 0, 0, 'main');
-                addPickMark(main.b, 0, 0, 'main');
-
-                addJointShackle(main.a,  0.24,  0.000, 'main', { role: 'upper', index: 1 });
-                addJointShackle(main.a, -0.24,  0.065, 'main', { role: 'leg',   index: 0 });
-                addJointShackle(main.a, -0.24, -0.065, 'main', { role: 'leg',   index: 3 });
-
-                addJointShackle(main.b,  0.24,  0.000, 'main', { role: 'upper', index: 0 });
-                addJointShackle(main.b, -0.24,  0.065, 'main', { role: 'leg',   index: 1 });
-                addJointShackle(main.b, -0.24, -0.065, 'main', { role: 'leg',   index: 2 });
 
             } else if (beamType === 'cascaded' || beamType === 'modular_truss') {
                 const topId = beamType === 'modular_truss' ? 'truss' : 'top';

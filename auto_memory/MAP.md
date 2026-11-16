@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 14:47 | Nhánh: feat/horizon-clouds | Commit cuối: 9a94f2a Snapshot 143716112026 (test): truoc khi lam h-shape-lifting-beam-upgrade (9 minutes ago)
-Tổng: 250 file, 73889 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 14:48 | Nhánh: feat/horizon-clouds | Commit cuối: 16b029b step 1: add HStyleLiftingBeam 3D builder and coupling solver (83 seconds ago)
+Tổng: 250 file, 73871 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -20,8 +20,8 @@ Tổng: 250 file, 73889 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/rigging/RiggingPhysicsSolver.js (682 dòng)
 - src/sim/audio.js (725 dòng)
 - src/sim/cargo/containers_iso.js (1490 dòng)
-- src/sim/cargo/shell_rebuild.js (566 dòng)
-- src/sim/cargo/specialty_meshes.js (2521 dòng)
+- src/sim/cargo/shell_rebuild.js (567 dòng)
+- src/sim/cargo/specialty_meshes.js (2500 dòng)
 - src/sim/compliance.js (625 dòng)
 - src/sim/dynamics.js (848 dòng)
 - src/sim/gear/editor.js (3539 dòng)
@@ -41,7 +41,7 @@ Tổng: 250 file, 73889 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/session/prelift_reset.js (1144 dòng)
 - src/sim/session/presets_events.js (3563 dòng)
 - src/sim/session/ui_units_bom.js (1906 dòng)
-- src/sim/state.js (603 dòng)
+- src/sim/state.js (605 dòng)
 - src/sim/telemetry.js (1104 dòng)
 - src/sim/weather_fx.js (572 dòng)
 - test/cable_morphology_and_deformation.test.js (426 dòng)
@@ -218,8 +218,8 @@ Tổng: 250 file, 73889 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/audio.js` | 725 |  ⚠️>300 |
 | `src/sim/cargo.js` | 6 |  |
 | `src/sim/cargo/containers_iso.js` | 1490 |  ⚠️>300 |
-| `src/sim/cargo/shell_rebuild.js` | 566 | --- 6B. SHELL CONTACT — pad-eyes weld to the real mesh, not the bounding box --- ⚠️>300 |
-| `src/sim/cargo/specialty_meshes.js` | 2521 | --- HIGH-FIDELITY 3D REFRIGERATION MACHINERY UNIT (CARRIER TRANSICOLD / THERMO KING) --- ⚠️>300 |
+| `src/sim/cargo/shell_rebuild.js` | 567 | --- 6B. SHELL CONTACT — pad-eyes weld to the real mesh, not the bounding box --- ⚠️>300 |
+| `src/sim/cargo/specialty_meshes.js` | 2500 | --- HIGH-FIDELITY 3D REFRIGERATION MACHINERY UNIT (CARRIER TRANSICOLD / THERMO KING) --- ⚠️>300 |
 | `src/sim/compliance.js` | 625 |  ⚠️>300 |
 | `src/sim/dynamics.js` | 848 |  ⚠️>300 |
 | `src/sim/gear.js` | 6 |  |
@@ -248,7 +248,7 @@ Tổng: 250 file, 73889 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/session/prelift_reset.js` | 1144 |  ⚠️>300 |
 | `src/sim/session/presets_events.js` | 3563 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
 | `src/sim/session/ui_units_bom.js` | 1906 | --- 12. UI EVENT BINDINGS & COLLAPSIBLE PANELS --- ⚠️>300 |
-| `src/sim/state.js` | 603 | Floor cribbing removed: static cargo rests flush on the quay / ground plane. ⚠️>300 |
+| `src/sim/state.js` | 605 | Floor cribbing removed: static cargo rests flush on the quay / ground plane. ⚠️>300 |
 | `src/sim/telemetry.js` | 1104 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
 | `src/sim/ui-layout.js` | 241 |  |
 | `src/sim/weather_fx.js` | 572 |  ⚠️>300 |
