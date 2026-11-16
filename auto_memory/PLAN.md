@@ -1,5 +1,5 @@
 # KẾ HOẠCH (Model cao nhất lập Plan → Model thực thi chạy 1 mạch từ Bước 1 đến Bước cuối)
-Trạng thái: ACTIVE        <!-- NONE | ACTIVE | DONE -->
+Trạng thái: DONE        <!-- NONE | ACTIVE | DONE -->
 
 ## Mục tiêu
 Nâng cấp toàn diện **SafeLift3D** từ trình mô phỏng 3D cơ bản lên **Môi trường Mô phỏng Vật lý Thực & Đồ họa PBR Siêu thực (Hyper-Realistic True-Physics & Photorealistic PBR Sandbox)** theo 3 trụ cột của Master Directive:
@@ -70,6 +70,6 @@ Nâng cấp toàn diện **SafeLift3D** từ trình mô phỏng 3D cơ bản lê
     3. **Test Pillar 3 (PBR Maps & Stress-Strain Visualization):** Kiểm chứng các vật liệu `PaintedSteelBeam`, `ForgedShackle`, `WireRope` có đầy đủ `metalnessMap` / `roughnessMap` / `normalMap` chuẩn không gian màu Three.js r170+ và hàm ứng suất `computeMechanicalStressVisual` đổi màu chính xác ở các mốc $40\%$, $85\%$ và $115\%$ SWL.
   - Kiểm tra xong: `npx vitest run test/hyper_realistic_physics_pbr.test.js` đạt 100%.
 
-- [ ] Bước 6: Nghiệm thu toàn diện & Cập nhật Bộ nhớ Dự án V7
+- [x] Bước 6: Nghiệm thu toàn diện & Cập nhật Bộ nhớ Dự án V7
   - Sửa: `auto_memory/PLAN.md` (`DONE`), `STATE.md`, `auto_memory/CONTEXT.md`
   - Kiểm tra xong: Chạy `npm run architecture:gate`, `npm test`, `npm run build`, `npm run check:dist`, `./scripts/auto_check.ps1`, `./scripts/auto_log.ps1` và báo cáo tổng kết 3 dòng cho Founder.

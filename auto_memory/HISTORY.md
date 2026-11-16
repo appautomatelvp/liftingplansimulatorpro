@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-16 12:20 [feat] Hoàn tất 6/6 bước nâng cấp Hyper-Realistic Rigging Simulator: Va chạm CCD & ma sát/độ nảy vật liệu, chống xuyên cáp đa sợi, quật cáp XPBD khi đứt, quán tính lệch tâm Steiner & vật liệu PBR hiển thị ứng suất SWL (43/43 file, 326/326 test xanh)
+- Nhánh: feat/horizon-clouds | Commit trước đó: d5bce77
+- File: src/rigging/CollisionMaterialSolver.js,src/rigging/BrokenCableWhipXPBD.js,src/rigging/CableDynamicsXPBD.js,src/rigging/RigidInertialDynamics.js,src/graphics/pbr/StressPBRMaterials.js,src/graphics/PBRMaterialFactory.js,src/sim/physics/cables_break.js,src/sim/rigging/draw_update.js,test/hyper_realistic_physics_pbr.test.js
+
 ## 2026-11-16 12:05 [docs] Lập kế hoạch 6 bước nâng cấp Hyper-Realistic Rigging Simulator (CCD, ma sát/độ nảy vật liệu, quật cáp XPBD, quán tính lệch tâm và PBR ứng suất căng) trong auto_memory/PLAN.md
 - Nhánh: feat/horizon-clouds | Commit trước đó: 00a0f18
 - File: auto_memory/PLAN.md,STATE.md,auto_memory/CONTEXT.md

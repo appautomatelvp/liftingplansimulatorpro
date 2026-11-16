@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 12:17 | Nhánh: feat/horizon-clouds | Commit cuối: 0df7476 step 4: add StressPBRMaterials for painted/forged steel PBR maps and SWL strain shading (2 minutes ago)
+Cập nhật: 2026-11-16 12:20 | Nhánh: feat/horizon-clouds | Commit cuối: d5bce77 step 5: add golden test suite for 3 pillars (CCD, 20T eccentric cut whip, PBR stress) (3 minutes ago)
 Tổng: 246 file, 73079 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)

@@ -45,8 +45,8 @@
 ---
 
 ## 4. CÔNG VIỆC ĐANG LÀM DỞ (ONGOING WORK)
-- **Mục tiêu hiện tại:** Lập kế hoạch 6 bước nâng cấp **Hyper-Realistic Rigging Simulator (True Physics & Photorealistic PBR Upgrade)** trong `auto_memory/PLAN.md` (`Trạng thái: ACTIVE`): (1) CCD & Ma sát/Độ nảy theo cặp vật liệu + Chống xuyên giữa các sợi cáp, (2) XPBD Whip & Recoil khi đứt cáp, (3) Trọng trường $g = 9.81\text{ m/s}^2$ & Quán tính lệch tâm Steiner-Huygens, (4) Vật liệu PBR Thép sơn/Thép rèn + Hiển thị ứng suất căng cơ học, (5) Bộ Golden Test 20 tấn nâng lệch tâm & cắt cáp.
-- **Bước tiếp theo:** Founder chuyển sang model thực thi (Auto/Flash/Hydro…) và gõ `làm tiếp` 1 lần để chạy một mạch từ Bước 1 đến hết Bước 6 trong `auto_memory/PLAN.md`.
+- **Mục tiêu hiện tại:** Hoàn tất 6/6 bước nâng cấp **Hyper-Realistic Rigging Simulator (True Physics & Photorealistic PBR Upgrade)** (`auto_memory/PLAN.md` `Trạng thái: DONE`, nhánh `feat/horizon-clouds`): Va chạm liên tục CCD + Ma sát/Độ nảy cặp vật liệu + Chống xuyên cáp đa sợi (`CollisionMaterialSolver.js`), Quật/Thu hồi năng lượng XPBD khi đứt cáp (`BrokenCableWhipXPBD.js`), Động lực học Quán tính lệch tâm Steiner-Huygens & Rơi $9.81\text{ m/s}^2$ (`RigidInertialDynamics.js`), Vật liệu PBR Thép sơn/Thép rèn + Hiển thị Ứng suất SWL (`StressPBRMaterials.js`), và Bộ kiểm thử Vàng 20 tấn nâng lệch tâm & cắt cáp (`hyper_realistic_physics_pbr.test.js`).
+- **Bước tiếp theo:** Founder kiểm tra trực tiếp trên trình duyệt tại `http://localhost:5173/` (thử nâng tải nặng/lệch tâm, cắt cáp đang căng để xem sóng quật XPBD, va chạm không xuyên thủng và màu ứng suất cáp); khi ưng ý thì chạy `./scripts/manual_chot_ban.ps1` hoặc cho phép đẩy lên GitHub/Cloudflare Pages.
 
 ---
 
@@ -54,4 +54,4 @@
 - [x] Tất cả các file mới/vừa tách đều dưới 300 dòng, có `@purpose`, không sinh ra file `patch*.js` hay `fix.js` nào.
 - [x] Không vi phạm Physics Quarantine (`/src/core/` không import DOM/Three.js) và qua `npm run architecture:gate`.
 - [x] Đã chạy `./scripts/auto_check.ps1` và `./scripts/auto_log.ps1` để cập nhật `auto_memory/HISTORY.md` + `auto_memory/MAP.md`.
-- [x] Toàn bộ 42 file / 308 test (`npm test`), kiểm tra bảo mật (`@secure`) + Golden Test (`@test`) và `npm run build` chạy khớp 100%. (Founder mở F12 kiểm tra thêm trên trình duyệt trước khi chốt bản).
+- [x] Toàn bộ 43 file / 326 test (`npm test`), kiểm tra bảo mật (`@secure`) + Golden Test (`@test`) và `npm run build` chạy khớp 100%. (Founder mở F12 kiểm tra thêm trên trình duyệt trước khi chốt bản).

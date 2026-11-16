@@ -16,7 +16,7 @@
 - `src/rigging/`, `src/sim/`, `src/simulation/` : Mô hình cáp XPBD, trạng thái & vòng lặp mô phỏng.
 - `src/saas/` : Tầng đăng nhập, workspace, admin dashboard, môi trường triển khai.
 - `src/ui/`, `src/app/` : Giao diện điều khiển.
-- `test/`, `e2e/` : Kiểm thử tự động Vitest (42 file / 308 test) & Playwright.
+- `test/`, `e2e/` : Kiểm thử tự động Vitest (43 file / 326 test) & Playwright.
 
 ## 4. Hợp đồng dữ liệu Firestore & LocalStorage (Bất khả xâm phạm khi nâng cấp)
 - **Firestore Collections (`firestore.rules`):**
@@ -28,6 +28,7 @@
 - **LocalStorage Keys:** `safelift_lang`, `safelift_auth_attempts_v1`, `lp-user-rigs`, `lp-user-rigs-migrated:{uid}`, `lifting_sim_audio_muted`, `lifting_sim_audio_vol`.
 
 ## 5. Quyết định quan trọng (mới nhất ở trên) — ghi KÈM LÝ DO
+- [2026-11-16] Hoàn tất 6/6 bước nâng cấp Hyper-Realistic Rigging Simulator (`auto_memory/PLAN.md` `DONE`): triển khai `CollisionMaterialSolver.js`, `BrokenCableWhipXPBD.js`, `RigidInertialDynamics.js` và `StressPBRMaterials.js` (<250 dòng/module, không đụng file `[LOCKED]`, rút gọn `CableDynamicsXPBD.js` từ 310 xuống 264 dòng), đấu nối CCD + sóng quật XPBD + màu ứng suất SWL vào vòng lặp mô phỏng.
 - [2026-11-16] Lập kế hoạch 6 bước nâng cấp Hyper-Realistic Rigging Simulator (`auto_memory/PLAN.md` `ACTIVE`): tách 4 module `<240` dòng (`CollisionMaterialSolver.js`, `BrokenCableWhipXPBD.js`, `RigidInertialDynamics.js`, `StressPBRMaterials.js`) cho Va chạm liên tục CCD, Ma sát/Độ nảy cặp vật liệu, Chống xuyên cáp đa sợi, Quật cáp đứt XPBD, Quán tính lệch tâm Steiner và Vật liệu PBR kèm hiển thị ứng suất căng cơ học mà không đụng file `[LOCKED]`.
 - [2026-11-16] Hoàn tất 4/4 bước ẩn thông tin cá nhân (SĐT & email thô) khỏi toàn bộ màn hình công khai, HTML và gói `dist/`, chuyển sang hộp thoại Gửi góp ý & Hỗ trợ (`contact_dialog.js`, `feedback.js`, `contact_keys.js`) chống bot/spam 5 lớp (honeypot, khóa thao tác `<2.5s`, phép tính xác minh người thật, chặn link spam, giới hạn `30s`/`3 lần/giờ` qua `localDataStore`) — chỉ giải mã bàn giao email qua `mailto:` khi khách xác minh gửi thành công.
 - [2026-11-15] Hoàn tất 4/4 bước đồng bộ Logo + Icon (`app-icon.png` + wordmark `SAFELIFT3D`) & cập nhật hình nền công nghiệp bản quyền sạch (`public/brand/industrial-lifting-bg.png`, `1376x768`) kèm hiệu ứng Zoom-Out khi khởi động (`auto_memory/PLAN.md` `DONE`): sửa triệt để lỗi trình duyệt chặn `main-logo.svg` gây mất logo ở Đăng nhập/Loading, thống nhất cùng 1 loại icon trên Favicon, Splash, Đăng nhập, Top-Bar 3D và CMS `/admin`; `architecture:gate`, 309 tests, `vite build`, `auto_check.ps1` và ảnh chụp trình duyệt đều đạt.
