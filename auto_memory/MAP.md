@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 21:28 | Nhánh: feat/horizon-clouds | Commit cuối: 728fecd step 1: hide empty crane crown and eliminate STS Direct lowering jerk (3 minutes ago)
-Tổng: 265 file, 77056 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 21:32 | Nhánh: feat/horizon-clouds | Commit cuối: f76ec8f step 2: unlock free editing of cable lengths and gear parameters after F5 (5 minutes ago)
+Tổng: 266 file, 77160 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -158,12 +158,13 @@ Tổng: 265 file, 77056 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/domain/rigging/types.js` | 25 | Rigging domain vocabulary (pure). |
 | `src/domain/site/types.js` | 9 | Site / quay domain vocabulary (pure). |
 | `src/domain/standards/index.js` | 26 |  |
-| `src/graphics/ElevationRulerTool.js` | 257 | Vẽ cây thước đo cao độ 3D so với mặt đất (Hook, Spreader, Đỉnh/Đáy kiện) và điểm đỏ theo chuột trên chi tiết 3D. ⚠️>250 |
+| `src/graphics/ElevationRulerMath.js` | 71 | Thuật toán bắt điểm 3D cho thước đo cao độ (lưới khối + dây cáp mảnh + ma ní) |
+| `src/graphics/ElevationRulerTool.js` | 289 | Vẽ cây thước đo cao độ 3D so với mặt đất, cho phép kéo đặt vị trí và điểm đỏ rà chuột mọi chi tiết. ⚠️>250 |
 | `src/graphics/EnvironmentManager.js` | 280 | Quản lý ánh sáng IBL, sương mù chân trời, HDR và đồng bộ thời gian thực cho cảnh 3D ⚠️>250 |
 | `src/graphics/GraphicsToneHelper.js` | 114 | Điều chỉnh và lưu độ sáng tối (Brightness) và tương phản (Contrast) cho khung hình 3D như game |
 | `src/graphics/GroundHorizonFade.js` | 46 | Hòa mượt mép ngoài đĩa mặt đất vào màu sương mù chân trời không lộ đường cắt |
 | `src/graphics/HorizonSkyDome.js` | 282 | Dựng vòm bầu trời HorizonSkyDome với mây chân trời 3D Gradient Quintic mềm mại và màu khí quyển thực tế ⚠️>250 |
-| `src/graphics/index.js` | 33 |  |
+| `src/graphics/index.js` | 34 |  |
 | `src/graphics/JobsiteSiteVisuals.js` | 265 | Dựng và đồng bộ hình khối 3D cho đà kê gỗ, đệm địa chất độ dốc và tấm lót chân chống cẩu ở Tab 6. ⚠️>250 |
 | `src/graphics/pbr/ProceduralTextures.js` | 276 | Vẽ texture canvas thủ công (bê tông cảng, cáp thép, xích, sling, mặt nước, vạch cảnh báo) ⚠️>250 |
 | `src/graphics/pbr/StressPBRMaterials.js` | 146 | Tạo bản đồ PBR thép sơn công nghiệp, thép rèn mạ kẽm và màu ứng suất căng cơ học thời gian thực |

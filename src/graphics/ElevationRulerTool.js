@@ -1,4 +1,5 @@
-// @purpose: Vẽ cây thước đo cao độ 3D so với mặt đất (Hook, Spreader, Đỉnh/Đáy kiện) và điểm đỏ theo chuột trên chi tiết 3D.
+// @purpose: Vẽ cây thước đo cao độ 3D so với mặt đất, cho phép kéo đặt vị trí và điểm đỏ rà chuột mọi chi tiết.
+import { pickBestElevationHoverPoint } from './ElevationRulerMath.js';
 
 export function computeElevationMarkers({ THREE, state = {}, phy = {} }) {
   const hookY = phy.hookPos ? Math.max(0, phy.hookPos.y) : 0;
@@ -88,12 +89,24 @@ export function createElevationRulerTool({ THREE, scene }) {
   const tickMat = new THREE.MeshBasicMaterial({ color: 0xe2e8f0, transparent: true, opacity: 0.72 });
   const minorMat = new THREE.MeshBasicMaterial({ color: 0x64748b, transparent: true, opacity: 0.55 });
   const basePlate = new THREE.Mesh(
-    new THREE.RingGeometry(0.14, 0.34, 24),
-    new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.85 })
+    new THREE.RingGeometry(0.14, 0.42, 28),
+    new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.88 })
   );
   basePlate.rotation.x = -Math.PI / 2;
   basePlate.position.y = 0.015;
+  basePlate.userData.isElevationRuler = true;
   rulerGroup.add(basePlate);
+
+  // Invisible-tolerant wide draggable puck on the floor XZ plane so users can grab & move the ruler freely
+  const dragHandle = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.55, 0.55, 0.36, 20),
+    new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.24, depthWrite: false })
+  );
+  dragHandle.position.y = 0.18;
+  dragHandle.name = 'Elevation_Ruler_DragHandle';
+  dragHandle.userData.dragType = 'ruler';
+  dragHandle.userData.isElevationRuler = true;
+  rulerGroup.add(dragHandle);
 
   const poleMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 1, 12), poleMat);
   rulerGroup.add(poleMesh);
@@ -182,24 +195,27 @@ export function createElevationRulerTool({ THREE, scene }) {
   }
 
   let hoverWorld = null;
+  let customPos = null;
   const raycaster = new THREE.Raycaster();
   const pointerNdc = new THREE.Vector2();
 
-  const updateHover = ({ clientX, clientY, domElement, camera, targets }) => {
+  const setCustomPosition = (x, z) => {
+    if (!Number.isFinite(x) || !Number.isFinite(z)) return;
+    customPos = { x: Number(x), z: Number(z) };
+    rulerGroup.position.set(customPos.x, 0, customPos.z);
+  };
+
+  const getCustomPosition = () => (customPos ? { ...customPos } : null);
+  const clearCustomPosition = () => { customPos = null; };
+
+  const updateHover = ({ clientX, clientY, domElement, camera, targets, segments }) => {
     if (!rulerGroup.visible || !domElement || !camera) { hoverWorld = null; return null; }
     const rect = domElement.getBoundingClientRect();
     if (!rect.width || !rect.height) return null;
     pointerNdc.x = ((clientX - rect.left) / rect.width) * 2 - 1;
     pointerNdc.y = -((clientY - rect.top) / rect.height) * 2 + 1;
     raycaster.setFromCamera(pointerNdc, camera);
-    const list = [];
-    (targets || []).forEach(root => {
-      if (!root || !root.visible || root.userData?.isElevationRuler) return;
-      list.push(root);
-    });
-    const hits = raycaster.intersectObjects(list, true).filter(h => h.object && h.object.visible && !h.object.userData?.isElevationRuler);
-    if (!hits.length) { hoverWorld = null; return null; }
-    hoverWorld = hits[0].point.clone();
+    hoverWorld = pickBestElevationHoverPoint({ THREE, raycaster, targets, segments, thresholdM: 0.18 });
     return hoverWorld;
   };
 
@@ -211,10 +227,17 @@ export function createElevationRulerTool({ THREE, scene }) {
       if (hoverSprite) hoverSprite.visible = false;
       return null;
     }
-    const cx = phy?.cargoPos ? phy.cargoPos.x : 0;
-    const cz = phy?.cargoPos ? phy.cargoPos.z : 0;
-    const rx = cx - Math.max(2.4, (state?.L || 6) * 0.5) - 1.35;
-    const rz = cz + Math.max(1.4, (state?.W || 2.4) * 0.5) + 0.55;
+    let rx;
+    let rz;
+    if (customPos) {
+      rx = customPos.x;
+      rz = customPos.z;
+    } else {
+      const cx = phy?.cargoPos ? phy.cargoPos.x : 0;
+      const cz = phy?.cargoPos ? phy.cargoPos.z : 0;
+      rx = cx - Math.max(2.4, (state?.L || 6) * 0.5) - 1.35;
+      rz = cz + Math.max(1.4, (state?.W || 2.4) * 0.5) + 0.55;
+    }
     rulerGroup.position.set(rx, 0, rz);
 
     const marks = computeElevationMarkers({ THREE, state, phy });
@@ -253,5 +276,14 @@ export function createElevationRulerTool({ THREE, scene }) {
     return marks;
   };
 
-  return { group: rulerGroup, update, updateHover, clearHover: () => { hoverWorld = null; } };
+  return {
+    group: rulerGroup,
+    dragHandle,
+    setCustomPosition,
+    getCustomPosition,
+    clearCustomPosition,
+    update,
+    updateHover,
+    clearHover: () => { hoverWorld = null; }
+  };
 }

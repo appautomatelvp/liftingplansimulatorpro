@@ -38,7 +38,7 @@ Nhánh Git: feat/horizon-clouds
   3. `src/sim/session/ui_units_bom.js`: sửa `onSelectedChange` (đồng bộ xóa `state.heldCableL0[sel.role][sel.index]`, hỗ trợ đồng thời nhóm nhiều cáp đang chọn) và đảm bảo các ô chỉnh chiều dài/thông số trong bảng cáp ghi thẳng xuống `state.gear` & `phy.cables`.
 - **Kiểm tra:** `npx vitest run test/custom_slings.test.js test/v2_ux_dunnage_ruler_regression.test.js` + `npm run architecture:gate` + `npm run build`.
 
-### [ ] Bước 3: Nâng cấp Cây thước đo độ cao 3D — Cho phép kéo đặt vị trí tùy ý & Bắt Điểm Đỏ cả dây cáp lẫn ma ní
+### [x] Bước 3: Nâng cấp Cây thước đo độ cao 3D — Cho phép kéo đặt vị trí tùy ý & Bắt Điểm Đỏ cả dây cáp lẫn ma ní
 - **File tạo/sửa (3 file):**
   1. Tạo `src/graphics/ElevationRulerMath.js` (`< 120` dòng, `@purpose:`): hàm thuần bắt điểm 3D kết hợp Raycaster khối lớn + khoảng cách tia chuột tới từng đoạn dây cáp/xích và cụm ma ní/pad-eye (`segmentDistSq <= threshold^2`) để rê chuột vào bất kỳ đâu từ Hook đến Đáy kiện đều bắt chuẩn xác.
   2. `src/graphics/ElevationRulerTool.js` (`< 285` dòng): bổ sung tay nắm đế thước 3D (`userData.dragType = 'ruler'`), giữ vị trí người dùng đặt tay (`setCustomPosition(x, z)`, `clearCustomPosition()`), và nâng cấp `updateHover` dùng `ElevationRulerMath` bắt đủ Hook, Spreader, Dây cáp/Xích, Ma ní, Pad-eye, Kiện hàng, Đà gỗ.
