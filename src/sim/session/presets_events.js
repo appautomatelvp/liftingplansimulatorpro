@@ -3374,6 +3374,7 @@
             // ENGINEERING CONTROLS: TIMBER DUNNAGE, CARGO SOIL, WIND & BOOM
             // -------------------------------------------------------------
             function updateSiteEngineeringCalculations() {
+                if (typeof rebuildDunnageBlocks === 'function') rebuildDunnageBlocks();
                 const grossTon = (state.W_cargo || 22.0) + (state.W_rig || 1.23);
                 const dunnageQty = parseInt(document.getElementById('sel-dunnage-qty')?.value || '2', 10) || 2;
                 const sectionStr = document.getElementById('sel-dunnage-section')?.value || '200x200';

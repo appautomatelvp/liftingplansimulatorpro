@@ -31,7 +31,7 @@ Nhánh Git: feat/horizon-clouds
   3. Sửa `src/sim/cargo/containers_iso.js` (`<= 12` dòng thay đổi): gọi `GFX.rebuildDunnageVisual3D(...)` trong `rebuildDunnageBlocks()`.
 - **Kiểm tra:** `npm run architecture:gate` + `npm run build` + `./scripts/auto_check.ps1`.
 
-### [ ] Bước 2: Nối sự kiện Tab 6 Công trường & Xe cẩu với 3D
+### [x] Bước 2: Nối sự kiện Tab 6 Công trường & Xe cẩu với 3D
 - **File sửa (3 file):**
   1. `src/sim/scene.js` (`<= 18` dòng thay đổi): gắn `userData.isOutriggerMatAnchor` cho 4 chân chống trong `buildCraneVehicle()`, gọi `GFX.syncCraneOutriggerMats3D(...)` và gọi `GFX.rebuildDunnageVisual3D(...)` trong `buildEnvironment()` (bỏ ẩn `dunnageGroup` ở chế độ `rough`).
   2. `src/sim/session/presets_events.js` (`<= 18` dòng thay đổi): gọi `rebuildDunnageBlocks()` trong `updateSiteEngineeringCalculations()` và khi click `#ground-store .card-btn` để đổi đà gỗ/địa chất/độ dốc là 3D đổi ngay.

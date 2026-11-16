@@ -744,7 +744,8 @@
                     GROUND_LABELS[state.groundId] || 'Sàn bê tông phẳng'
                 )}`;
             }
-            if (dunnageGroup) dunnageGroup.visible = state.groundId !== 'rough';
+            if (typeof rebuildDunnageBlocks === 'function') rebuildDunnageBlocks();
+            else if (dunnageGroup) dunnageGroup.visible = true;
         }
 
         // --- 4. BUILD CLEAN RIGGING-FOCUSED CRANE & OVERHEAD HOIST MODES ---
@@ -764,6 +765,9 @@
                 const cached = craneVehicleCache.get(type);
                 craneVehicleGroup.add(cached.container);
                 craneDynamicParts = cached.dynamicParts;
+                if (typeof GFX !== 'undefined' && GFX.syncCraneOutriggerMats3D) {
+                    GFX.syncCraneOutriggerMats3D({ THREE, craneVehicleGroup, presetId: state.craneMatPresetId || 'steel_mat_2x2', MATS });
+                }
                 return;
             }
 
@@ -853,15 +857,12 @@
                         const floatFoot = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.42, 0.10, 20), MATS.darkSteel);
                         floatFoot.position.set(ox, 0.15, oz);
 
-                        // Heavy Engineered Outrigger Spreader Mat (1.7m x 1.7m x 0.10m) resting flush on floor
-                        const matPad = new THREE.Mesh(new THREE.BoxGeometry(1.70, 0.10, 1.70), MATS.timberWood);
-                        matPad.position.set(ox, 0.05, oz);
-                        matPad.receiveShadow = true;
-                        matPad.castShadow = true;
-                        const matRim = new THREE.Mesh(new THREE.BoxGeometry(1.74, 0.04, 1.74), MATS.darkSteel);
-                        matRim.position.set(ox, 0.02, oz);
+                        const matSlot = new THREE.Group();
+                        matSlot.name = 'OutriggerMatSlot';
+                        matSlot.position.set(ox, 0, oz);
+                        matSlot.userData.isOutriggerMatSlot = true;
 
-                        carrierGroup.add(innerBeam, jackBarrel, jackRod, floatFoot, matPad, matRim);
+                        carrierGroup.add(innerBeam, jackBarrel, jackRod, floatFoot, matSlot);
                     });
                 });
 
@@ -1093,6 +1094,9 @@
                 };
             }
 
+            if (typeof GFX !== 'undefined' && GFX.syncCraneOutriggerMats3D) {
+                GFX.syncCraneOutriggerMats3D({ THREE, craneVehicleGroup, presetId: state.craneMatPresetId || 'steel_mat_2x2', MATS });
+            }
             if (pbrFactory) pbrFactory.enforcePBRMaterials(craneVehicleGroup);
             applyCADFeatureEdges(craneVehicleGroup, false);
 

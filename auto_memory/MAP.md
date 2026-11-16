@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 20:09 | Nhánh: feat/horizon-clouds | Commit cuối: 494c806 docs: log unified hoist speed profile and STS catapult fix (12 minutes ago)
-Tổng: 261 file, 76078 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 20:11 | Nhánh: feat/horizon-clouds | Commit cuối: 6229feb step 1: add JobsiteSiteVisuals and wire 3D timber dunnage (2 minutes ago)
+Tổng: 261 file, 76086 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -38,12 +38,12 @@ Tổng: 261 file, 76078 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/plan_wizard.js (650 dòng)
 - src/sim/rigging/draw_update.js (837 dòng)
 - src/sim/rigging/hook_pool.js (3118 dòng)
-- src/sim/scene.js (1978 dòng)
+- src/sim/scene.js (1982 dòng)
 - src/sim/session/prelift_reset.js (1030 dòng)
-- src/sim/session/presets_events.js (3580 dòng)
+- src/sim/session/presets_events.js (3581 dòng)
 - src/sim/session/ui_units_bom.js (1953 dòng)
 - src/sim/state.js (606 dòng)
-- src/sim/telemetry.js (1115 dòng)
+- src/sim/telemetry.js (1118 dòng)
 - src/sim/weather_fx.js (596 dòng)
 - test/cable_morphology_and_deformation.test.js (426 dòng)
 - test/custom_slings.test.js (712 dòng)
@@ -252,13 +252,13 @@ Tổng: 261 file, 76078 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/rigging.js` | 6 |  |
 | `src/sim/rigging/draw_update.js` | 837 | Slack cable morphology is solved by a persistent material-aware XPBD chain. ⚠️>300 |
 | `src/sim/rigging/hook_pool.js` | 3118 |  ⚠️>300 |
-| `src/sim/scene.js` | 1978 |  ⚠️>300 |
+| `src/sim/scene.js` | 1982 |  ⚠️>300 |
 | `src/sim/session.js` | 6 |  |
 | `src/sim/session/prelift_reset.js` | 1030 |  ⚠️>300 |
-| `src/sim/session/presets_events.js` | 3580 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
+| `src/sim/session/presets_events.js` | 3581 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
 | `src/sim/session/ui_units_bom.js` | 1953 | --- 12. UI EVENT BINDINGS & COLLAPSIBLE PANELS --- ⚠️>300 |
 | `src/sim/state.js` | 606 | Floor cribbing removed: static cargo rests flush on the quay / ground plane. ⚠️>300 |
-| `src/sim/telemetry.js` | 1115 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
+| `src/sim/telemetry.js` | 1118 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
 | `src/sim/ui-layout.js` | 241 |  |
 | `src/sim/weather_fx.js` | 596 |  ⚠️>300 |
 | `src/simulation/destruction-manager/DestructionSolver.js` | 147 |  |

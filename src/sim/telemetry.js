@@ -975,6 +975,9 @@
                 selMat.addEventListener('change', e => {
                     state.craneMatPresetId = e.target.value;
                     if (groundPressureEngine) groundPressureEngine.setMatPreset(e.target.value);
+                    if (typeof GFX !== 'undefined' && GFX.syncCraneOutriggerMats3D) {
+                        GFX.syncCraneOutriggerMats3D({ THREE, craneVehicleGroup, presetId: state.craneMatPresetId, MATS });
+                    }
                     if (typeof updateSceneAndTelemetry === 'function') updateSceneAndTelemetry();
                 });
             }
