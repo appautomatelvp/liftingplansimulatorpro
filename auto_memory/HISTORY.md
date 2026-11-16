@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-16 19:31 [feat] Thay cac thanh ke gio bang may troi bồng bềnh đa múi (multi-lobed cumulus mask destination-in khong vo hinh, doi mau theo bau troi) va nang cap texture nen be tong cang co khe co gian, van xoa, hat soi da cap
+- Nhánh: feat/horizon-clouds | Commit trước đó: c42dd89
+- File: src/sim/weather_fx.js,src/graphics/pbr/ProceduralTextures.js,src/graphics/PBRMaterialFactory.js,test/optimize_horizon_cargo_perf.test.js
+
 ## 2026-11-16 19:00 [feat] Sua vo hinh may gio bay (loai bo gradient cham canh o vuong, thu gon hat suong va them luong gio windStreaks + khu bac mau troi dem bang dither) va bo sung thanh chinh Do sang (Brightness) / Tuong phan (Contrast) kieu game trong Graphics
 - Nhánh: feat/horizon-clouds | Commit trước đó: 365ac3b
 - File: src/graphics/GraphicsToneHelper.js,src/graphics/HorizonSkyDome.js,src/graphics/SceneRenderer.js,src/graphics/index.js,src/sim/weather_fx.js,index.html,src/sim/session/presets_events.js,test/optimize_horizon_cargo_perf.test.js

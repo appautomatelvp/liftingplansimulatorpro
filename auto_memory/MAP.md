@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 19:31 | Nhánh: feat/horizon-clouds | Commit cuối: 326f232 docs: log wind FX fix and game brightness/contrast controls (30 minutes ago)
+Cập nhật: 2026-11-16 19:32 | Nhánh: feat/horizon-clouds | Commit cuối: c42dd89 feat: add multi-lobed drifting wind clouds (no sticks) and realistic concrete quay floor textures (28 seconds ago)
 Tổng: 259 file, 75710 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
