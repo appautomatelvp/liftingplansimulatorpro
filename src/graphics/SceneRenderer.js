@@ -96,9 +96,14 @@ export class SceneRenderer {
 
         const width = this.container.clientWidth || window.innerWidth;
         const height = this.container.clientHeight || window.innerHeight;
+        const isTabletTouch = typeof window !== 'undefined' && (
+            window.matchMedia?.('(pointer: coarse)')?.matches
+            || ((navigator?.maxTouchPoints || 0) > 0 && window.innerWidth <= 1366)
+        );
+        const maxDprCap = isTabletTouch ? Math.min(quality.maxDPR || 1.5, 1.5) : quality.maxDPR;
 
         this.renderer.setSize(width, height);
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, quality.maxDPR));
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxDprCap));
 
         // Color Management & Tone Mapping (Three.js r152+)
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;

@@ -45,7 +45,7 @@ Nhánh Git: feat/horizon-clouds
   3. `test/v2_ux_dunnage_ruler_regression.test.js`: cập nhật assertion kiểm tra vị trí phải mặc định & kích thước nhãn to gấp đôi của thước.
 - **Kiểm tra:** `npx vitest run test/v2_ux_dunnage_ruler_regression.test.js test/v3_ruler_drag_hoist_sts_gear_regression.test.js` + `npm run build`.
 
-### [ ] Bước 4: Tối ưu Tablet (iPad / Android >= 4GB RAM) & Không mất bảng điều khiển chức năng
+### [x] Bước 4: Tối ưu Tablet (iPad / Android >= 4GB RAM) & Không mất bảng điều khiển chức năng
 - **File tạo/sửa (3 file):**
   1. Tạo `src/styles/tablet.css` (`< 140` dòng, `@purpose:`): media rules chuyên cho tablet (`max-width: 1280px` & `pointer: coarse`): thanh `#top-bar` cho phép cuộn ngang chạm mượt hoặc rớt dòng không bị ẩn nút bên phải; `#bottom-dock-bar` hiển thị trọn đủ cụm `Ghi/Xem/Dừng`, `Kéo/Hạ`, `Nhấc thử/Cân bằng/Hạ đất` không tràn mép; ngăn kéo `#right-side-drawer` & `#gear-editor` co giãn vừa vặn theo màn hình tablet, nút bấm tối thiểu `36–44px` dễ chạm; `#canvas-container canvas` đặt `touch-action: none`.
   2. `src/main.js` (hoặc `index.html` CSS import): import `tablet.css` đúng chỗ.

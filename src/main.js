@@ -1,4 +1,5 @@
 import './styles/app.css';
+import './styles/tablet.css';
 import './saas/saas.css';
 import { applyDocumentBrand, BRAND, COPYRIGHT } from './saas/branding.js';
 import { createI18nApi, getLang, setLang } from './i18n/index.js';

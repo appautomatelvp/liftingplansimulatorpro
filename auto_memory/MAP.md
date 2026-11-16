@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 22:19 | Nhánh: feat/horizon-clouds | Commit cuối: d52fb42 step 2: full 60s Ghi/Xem/Dung replay with OOG drops, staggered straps, and broken cables (2 minutes ago)
-Tổng: 268 file, 77854 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 22:20 | Nhánh: feat/horizon-clouds | Commit cuối: c1afaef step 3: right-side default Elevation Ruler on F5, 2x labels, smooth STS setDown (73 seconds ago)
+Tổng: 269 file, 77950 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -16,7 +16,7 @@ Tổng: 268 file, 77854 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/core/LiftPlanModel.js (1073 dòng)
 - src/core/RiggingDictionary.js (434 dòng)
 - src/core/SimulationEngine.js (560 dòng)
-- src/graphics/SceneRenderer.js (308 dòng)
+- src/graphics/SceneRenderer.js (313 dòng)
 - src/i18n/keys.js (598 dòng)
 - src/rigging/RiggingPhysicsSolver.js (684 dòng)
 - src/sim/audio.js (725 dòng)
@@ -169,7 +169,7 @@ Tổng: 268 file, 77854 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/graphics/pbr/ProceduralTextures.js` | 276 | Vẽ texture canvas thủ công (bê tông cảng, cáp thép, xích, sling, mặt nước, vạch cảnh báo) ⚠️>250 |
 | `src/graphics/pbr/StressPBRMaterials.js` | 146 | Tạo bản đồ PBR thép sơn công nghiệp, thép rèn mạ kẽm và màu ứng suất căng cơ học thời gian thực |
 | `src/graphics/PBRMaterialFactory.js` | 244 | Nhà máy tạo vật liệu PBR chuẩn công nghiệp hàng hải và đồng bộ không gian màu Three.js r170+ |
-| `src/graphics/SceneRenderer.js` | 308 |  ⚠️>300 |
+| `src/graphics/SceneRenderer.js` | 313 |  ⚠️>300 |
 | `src/graphics/SolidShellSealer.js` | 109 | Bịt kín lõi/đáy rỗng và bật hai mặt vật liệu cho xe 3D và kiện hàng tránh nhìn xuyên |
 | `src/graphics/SpecialtyCargoMeshes.js` | 158 | Dựng khối 3D ống thép siêu trường Steel Pipe (OOG) và xe buýt procedural đồng bộ CAD |
 | `src/i18n/cargo_labels.js` | 48 |  |
@@ -177,7 +177,7 @@ Tổng: 268 file, 77854 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/i18n/contact_keys.js` | 73 | Bộ từ điển song ngữ VI/EN chuẩn công nghiệp cho hộp thoại Hỗ trợ kỹ thuật & Góp ý |
 | `src/i18n/index.js` | 131 |  |
 | `src/i18n/keys.js` | 598 |  ⚠️>300 |
-| `src/main.js` | 66 |  |
+| `src/main.js` | 67 |  |
 | `src/rigging/BrokenCableWhipXPBD.js` | 252 | Mô phỏng XPBD sóng quật, thu hồi năng lượng đàn hồi và va chạm CCD cho hai nửa cáp đứt hoặc cáp tháo chốt ⚠️>250 |
 | `src/rigging/CableDynamicsXPBD.js` | 264 | Bộ giải động lực học cáp/xích XPBD chịu kéo, tự va chạm và đứt thu hồi đàn hồi ⚠️>250 |
 | `src/rigging/CollisionMaterialSolver.js` | 247 | Bộ giải va chạm liên tục (CCD), ma sát cặp vật liệu, độ nảy theo khối lượng và chống xuyên giữa các sợi cáp/xích |
@@ -268,6 +268,7 @@ Tổng: 268 file, 77854 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/simulation/destruction-manager/DestructionSolver.js` | 147 |  |
 | `src/styles/app.css` | 1018 |  |
 | `src/styles/brand_splash.css` | 81 | Hiệu ứng nền công nghiệp 2K Cinematic Zoom-In & màn trập Fade-in Đen mở dần hệ thống 3D |
+| `src/styles/tablet.css` | 90 | Tối ưu giao diện cảm ứng, chống mất nút/bảng điều khiển trên iPad & Tablet Android (>= 4GB RAM) |
 | `src/telemetry/sensor-engine/SensorEngine.js` | 185 |  |
 | `src/ui/controllers/index.js` | 35 |  |
 | `src/ui/services/index.js` | 48 |  |
