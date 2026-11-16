@@ -30,7 +30,7 @@ Nhánh thực hiện: feat/horizon-clouds (đã sao lưu an toàn vào `_BACKUPS
 - **File CẤM đụng:** Toàn bộ `[LOCKED]`, `src/core/`, `draw_update.js`, `parsers.js`.
 - **Kiểm tra:** `npm run architecture:gate; npm run build`
 
-### [ ] Bước 2: Bổ sung 3D `Steel Pipe (OOG)` & đồng nhất hình ảnh `Vehicle` (3 files)
+### [x] Bước 2: Bổ sung 3D `Steel Pipe (OOG)` & đồng nhất hình ảnh `Vehicle` (3 files)
 - **File được sửa / tạo:**
   1. `src/graphics/SpecialtyCargoMeshes.js` *(FILE MỚI, `< 200` dòng, `@purpose:`)*: Export `buildSteelPipeCargoMesh(THREE, L, W, H, mats)` (ống thép siêu trường OOG gồm thân ống trụ lớn, bích đầu ống tăng cứng, 2 gối kê chống lăn chữ H/chữ V và 4 tai cẩu hàn) và `buildProceduralCoachBusMesh(THREE, L, W, H, mats)` (xe buýt xanh ngọc đồng bộ tỷ lệ `9.0×2.38×2.80m` với `bus.obj` để chọn `Vehicle` không còn nhảy từ xe đỏ sang xe xanh).
   2. `src/graphics/index.js` *(+2 dòng)* & `src/sim/state.js` *(+3 dòng vào `libraryCatalog.cargo` quanh dòng `257`)*: Re-export 2 hàm qua `GFX` và thêm preset `{ id: 'pipe', meshName: 'Steel_Pipe_OOG', name: 'Steel Pipe (OOG) — Ống thép siêu trường', L: 12.0, W: 2.2, H: 2.2, weight: 28, cogX: 0, cogY: -0.05, cogZ: 0, badge: 'OOG Pipe' }`.

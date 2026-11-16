@@ -1158,7 +1158,15 @@
                 group.add(cabinet);
 
             } else if (type === 'car') {
-                addRealisticCar(group, L, W, H);
+                if (typeof GFX !== 'undefined' && GFX.buildProceduralCoachBusMesh) {
+                    group.add(GFX.buildProceduralCoachBusMesh(THREE, L, W, H, MATS));
+                } else {
+                    addRealisticCar(group, L, W, H);
+                }
+            } else if (type === 'pipe') {
+                if (typeof GFX !== 'undefined' && GFX.buildSteelPipeCargoMesh) {
+                    group.add(GFX.buildSteelPipeCargoMesh(THREE, L, W, H, MATS));
+                }
             } else if (type === 'boat') {
                 addRealisticShip(group, L, W, H);
             } else if (type === 'wind_nacelle') {

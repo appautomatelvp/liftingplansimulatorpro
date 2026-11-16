@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 18:18 | Nhánh: feat/horizon-clouds | Commit cuối: e4d1824 fix: keep short 2m lower slings and end-positioned bars on Basket initial/reset pose (40 minutes ago)
-Tổng: 254 file, 74792 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 18:19 | Nhánh: feat/horizon-clouds | Commit cuối: ef1fad0 step 1: seamless horizon sky dome and ground fade (77 seconds ago)
+Tổng: 255 file, 74942 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -21,7 +21,7 @@ Tổng: 254 file, 74792 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/audio.js (725 dòng)
 - src/sim/cargo/containers_iso.js (1490 dòng)
 - src/sim/cargo/shell_rebuild.js (567 dòng)
-- src/sim/cargo/specialty_meshes.js (2500 dòng)
+- src/sim/cargo/specialty_meshes.js (2508 dòng)
 - src/sim/compliance.js (625 dòng)
 - src/sim/dynamics.js (848 dòng)
 - src/sim/gear/editor.js (3539 dòng)
@@ -41,7 +41,7 @@ Tổng: 254 file, 74792 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/session/prelift_reset.js (1030 dòng)
 - src/sim/session/presets_events.js (3573 dòng)
 - src/sim/session/ui_units_bom.js (1953 dòng)
-- src/sim/state.js (605 dòng)
+- src/sim/state.js (606 dòng)
 - src/sim/telemetry.js (1106 dòng)
 - src/sim/weather_fx.js (572 dòng)
 - test/cable_morphology_and_deformation.test.js (426 dòng)
@@ -160,11 +160,12 @@ Tổng: 254 file, 74792 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/graphics/EnvironmentManager.js` | 280 | Quản lý ánh sáng IBL, sương mù chân trời, HDR và đồng bộ thời gian thực cho cảnh 3D ⚠️>250 |
 | `src/graphics/GroundHorizonFade.js` | 46 | Hòa mượt mép ngoài đĩa mặt đất vào màu sương mù chân trời không lộ đường cắt |
 | `src/graphics/HorizonSkyDome.js` | 283 | Dựng vòm bầu trời HorizonSkyDome với mây chân trời 3D Gradient Quintic mềm mại và màu khí quyển thực tế ⚠️>250 |
-| `src/graphics/index.js` | 12 |  |
+| `src/graphics/index.js` | 13 |  |
 | `src/graphics/pbr/ProceduralTextures.js` | 196 | Vẽ texture canvas thủ công (bê tông cảng, cáp thép, xích, sling, mặt nước, vạch cảnh báo) |
 | `src/graphics/pbr/StressPBRMaterials.js` | 146 | Tạo bản đồ PBR thép sơn công nghiệp, thép rèn mạ kẽm và màu ứng suất căng cơ học thời gian thực |
 | `src/graphics/PBRMaterialFactory.js` | 244 | Nhà máy tạo vật liệu PBR chuẩn công nghiệp hàng hải và đồng bộ không gian màu Three.js r170+ |
 | `src/graphics/SceneRenderer.js` | 294 |  ⚠️>250 |
+| `src/graphics/SpecialtyCargoMeshes.js` | 140 | Dựng khối 3D ống thép siêu trường Steel Pipe (OOG) và xe buýt procedural đồng bộ CAD |
 | `src/i18n/cargo_labels.js` | 48 |  |
 | `src/i18n/cms_keys.js` | 137 | Bộ từ điển song ngữ VI/EN chuyên biệt cho hệ thống CMS Enterprise Command Center |
 | `src/i18n/contact_keys.js` | 73 | Bộ từ điển song ngữ VI/EN chuẩn công nghiệp cho hộp thoại Hỗ trợ kỹ thuật & Góp ý |
@@ -221,7 +222,7 @@ Tổng: 254 file, 74792 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/cargo.js` | 6 |  |
 | `src/sim/cargo/containers_iso.js` | 1490 |  ⚠️>300 |
 | `src/sim/cargo/shell_rebuild.js` | 567 | --- 6B. SHELL CONTACT — pad-eyes weld to the real mesh, not the bounding box --- ⚠️>300 |
-| `src/sim/cargo/specialty_meshes.js` | 2500 | --- HIGH-FIDELITY 3D REFRIGERATION MACHINERY UNIT (CARRIER TRANSICOLD / THERMO KING) --- ⚠️>300 |
+| `src/sim/cargo/specialty_meshes.js` | 2508 | --- HIGH-FIDELITY 3D REFRIGERATION MACHINERY UNIT (CARRIER TRANSICOLD / THERMO KING) --- ⚠️>300 |
 | `src/sim/compliance.js` | 625 |  ⚠️>300 |
 | `src/sim/dynamics.js` | 848 |  ⚠️>300 |
 | `src/sim/gear.js` | 6 |  |
@@ -250,7 +251,7 @@ Tổng: 254 file, 74792 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/session/prelift_reset.js` | 1030 |  ⚠️>300 |
 | `src/sim/session/presets_events.js` | 3573 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
 | `src/sim/session/ui_units_bom.js` | 1953 | --- 12. UI EVENT BINDINGS & COLLAPSIBLE PANELS --- ⚠️>300 |
-| `src/sim/state.js` | 605 | Floor cribbing removed: static cargo rests flush on the quay / ground plane. ⚠️>300 |
+| `src/sim/state.js` | 606 | Floor cribbing removed: static cargo rests flush on the quay / ground plane. ⚠️>300 |
 | `src/sim/telemetry.js` | 1106 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
 | `src/sim/ui-layout.js` | 241 |  |
 | `src/sim/weather_fx.js` | 572 |  ⚠️>300 |
