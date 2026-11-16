@@ -21,13 +21,8 @@ export const BRAND = {
 
 export const COPYRIGHT = {
   developer: 'Lê Việt Phương (Mr)',
-  email: 'levietphuong.hcmutrans@gmail.com',
-  tel: '+84 968 051 697',
   line(year = new Date().getFullYear()) {
     return `© ${year} ${BRAND.name} · Developed by ${this.developer}`;
-  },
-  contactLine() {
-    return `${this.email} · Tel ${this.tel}`;
   }
 };
 

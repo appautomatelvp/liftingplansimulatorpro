@@ -1,6 +1,7 @@
 import { getFeatureRule } from './access.js';
 import { applyFlagsToAccess } from './runtime_flags.js';
 import { trapDialogFocus } from './dialog_accessibility.js';
+import { openDeveloperContact } from './contact_dialog.js';
 import { saasT } from './i18n.js';
 
 const LOCKED_SELECTOR_FEATURES = [
@@ -60,7 +61,7 @@ export function installFeatureAccessUI() {
         <div class="saas-auth-kicker">${saasT('paywallKicker', null, lang)}</div>
         <h2 id="saas-paywall-title">${featureLabel(featureId, lang, rule.label)}</h2>
         <p>${bodyText}</p>
-        <a class="saas-contact-link" href="mailto:levietphuong.hcmutrans@gmail.com">${saasT('paywallContactCta', null, lang)}</a>
+        <button type="button" class="saas-contact-link" data-action="contact-developer">${saasT('paywallContactCta', null, lang)}</button>
       </section>`;
     let releaseFocusTrap = () => {};
     const onEscape = (event) => {
@@ -72,7 +73,11 @@ export function installFeatureAccessUI() {
       releaseFocusTrap();
     };
     backdrop.addEventListener('click', (event) => { if (event.target === backdrop) close(); });
-    backdrop.querySelector('button')?.addEventListener('click', close);
+    backdrop.querySelector('.saas-paywall-close')?.addEventListener('click', close);
+    backdrop.querySelector('[data-action="contact-developer"]')?.addEventListener('click', () => {
+      close();
+      openDeveloperContact({ category: 'enterprise', subject: featureLabel(featureId, lang, rule.label) });
+    });
     document.addEventListener('keydown', onEscape);
     document.body.append(backdrop);
     releaseFocusTrap = trapDialogFocus(backdrop.querySelector('[role="dialog"]'), { initialFocus: backdrop.querySelector('button') });

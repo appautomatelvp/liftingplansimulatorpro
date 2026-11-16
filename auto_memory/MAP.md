@@ -1,10 +1,10 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 09:38 | Nhánh: feat/hide-dev-contact-antispam | Commit cuối: 3a669dd step 1: harden feedback anti-spam and dynamic email resolution (85 seconds ago)
-Tổng: 240 file, 71565 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 09:43 | Nhánh: feat/hide-dev-contact-antispam | Commit cuối: 1b39800 step 2: add anti-spam developer contact dialog UI and styles (5 minutes ago)
+Tổng: 241 file, 71541 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
-- index.html (3133 dòng)
+- index.html (3122 dòng)
 - scripts/generate_port_assets.js (477 dòng)
 - src/core/AssemblyEngine.js (433 dòng)
 - src/core/AssetManager.js (325 dòng)
@@ -83,7 +83,7 @@ Tổng: 240 file, 71565 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `eslint.config.js` | 23 | Flat ESLint config — architecture gates for app/domain layers (optional eslint install). |
 | `firebase.json` | 29 |  |
 | `firestore.rules` | 239 |  |
-| `index.html` | 3133 |  ⚠️>300 |
+| `index.html` | 3122 |  ⚠️>300 |
 | `jsconfig.json` | 19 |  |
 | `package.json` | 42 |  |
 | `playwright.auth.config.js` | 28 |  |
@@ -166,6 +166,7 @@ Tổng: 240 file, 71565 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/graphics/SceneRenderer.js` | 291 |  ⚠️>250 |
 | `src/i18n/cargo_labels.js` | 48 |  |
 | `src/i18n/cms_keys.js` | 137 | Bộ từ điển song ngữ VI/EN chuyên biệt cho hệ thống CMS Enterprise Command Center |
+| `src/i18n/contact_keys.js` | 73 | Bộ từ điển song ngữ VI/EN cho hộp thoại Gửi góp ý & Hỗ trợ chống spam |
 | `src/i18n/index.js` | 97 |  |
 | `src/i18n/keys.js` | 598 |  ⚠️>300 |
 | `src/main.js` | 65 |  |
@@ -185,23 +186,23 @@ Tổng: 240 file, 71565 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/saas/admin_panels.js` | 159 | Các hàm dựng HTML giao diện Enterprise Command Center và đọc dữ liệu form cho bảng quản trị CMS |
 | `src/saas/app_check_config.js` | 15 |  |
 | `src/saas/auth_rate_limit.js` | 85 | Kiểm soát giới hạn tốc độ thử đăng nhập và chuẩn hóa thông báo lỗi xác thực (VI/EN) |
-| `src/saas/auth_screen.js` | 238 |  |
-| `src/saas/branding.js` | 54 |  |
+| `src/saas/auth_screen.js` | 241 |  |
+| `src/saas/branding.js` | 49 |  |
 | `src/saas/catalog_client.js` | 87 |  |
 | `src/saas/cms_data.js` | 247 |  |
-| `src/saas/contact_dialog.js` | 238 | Hộp thoại gửi email góp ý & hỗ trợ chống bot/spam đa lớp, ẩn email cho tới khi khách xác minh gửi |
+| `src/saas/contact_dialog.js` | 168 | Hộp thoại gửi email góp ý & hỗ trợ chống bot/spam đa lớp, ẩn email cho tới khi khách xác minh gửi |
 | `src/saas/deployment_environment.js` | 22 |  |
 | `src/saas/dialog_accessibility.js` | 45 |  |
-| `src/saas/feature_access_ui.js` | 191 |  |
+| `src/saas/feature_access_ui.js` | 196 |  |
 | `src/saas/feedback.js` | 144 | Giải mã động địa chỉ nhận góp ý và bảo vệ hộp thoại gửi email khỏi bot/spam 5 lớp |
 | `src/saas/firebase.js` | 95 |  |
 | `src/saas/firebase_data.js` | 82 |  |
-| `src/saas/i18n.js` | 12 | Format a localized template key from `src/i18n/keys.js` with optional `{var}` substitutions. |
+| `src/saas/i18n.js` | 15 | Định dạng khóa ngôn ngữ SaaS và hộp thoại góp ý theo ngôn ngữ hiện tại |
 | `src/saas/plan_snapshot.js` | 170 | Chuẩn hóa dữ liệu thiết bị và đóng gói/giải mã/di trú snapshot phương án nâng hạ |
 | `src/saas/runtime_flags.js` | 63 |  |
 | `src/saas/saas.css` | 253 | saas-root[hidden] { display: none !important; } |
 | `src/saas/session.js` | 260 |  ⚠️>250 |
-| `src/saas/session_ui_bindings.js` | 165 | Gắn kết giao diện header, widget tài khoản, banner bảo trì và hộp thoại liên hệ SaaS |
+| `src/saas/session_ui_bindings.js` | 119 | Gắn kết giao diện header, widget tài khoản, banner bảo trì và hộp thoại liên hệ SaaS |
 | `src/saas/telemetry_usage.js` | 143 |  |
 | `src/saas/workspace_dashboard.js` | 257 |  ⚠️>250 |
 | `src/saas/workspace_data.js` | 228 |  |
@@ -263,7 +264,7 @@ Tổng: 240 file, 71565 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/architecture/runtime_boot.test.js` | 24 |  |
 | `test/assembly.test.js` | 172 |  |
 | `test/audio.test.js` | 265 |  ⚠️>250 |
-| `test/auth_screen.test.js` | 30 |  |
+| `test/auth_screen.test.js` | 46 |  |
 | `test/cable_dynamics_xpbd.test.js` | 64 |  |
 | `test/cable_morphology_and_deformation.test.js` | 426 |  ⚠️>300 |
 | `test/cargo_labels.test.js` | 63 |  |
@@ -273,7 +274,7 @@ Tổng: 240 file, 71565 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/custom_slings.test.js` | 712 |  ⚠️>300 |
 | `test/deployment_environment.test.js` | 21 |  |
 | `test/engineering.test.js` | 410 |  ⚠️>300 |
-| `test/feedback_mailto.test.js` | 123 |  |
+| `test/feedback_mailto.test.js` | 131 |  |
 | `test/firestore-rules-emulator.mjs` | 351 |  |
 | `test/graphics.test.js` | 91 |  |
 | `test/i18n_keys.test.js` | 45 |  |

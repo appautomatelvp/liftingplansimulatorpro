@@ -33,7 +33,7 @@ Trạng thái: ACTIVE        <!-- NONE | ACTIVE | DONE -->
   - Chi tiết: Xây dựng `openDeveloperContact({ category, subject } = {})` hỗ trợ song ngữ VI/EN: chỉ hiện tên `Lê Việt Phương (Mr)` và nhãn kênh hỗ trợ chính thức (TUYỆT ĐỐI không hiện SĐT và KHÔNG in email vào DOM trước khi gửi); gồm phân loại góp ý, chủ đề, nội dung, trường honeypot ẩn, câu hỏi xác minh toán học, thông báo lỗi rõ ràng (`role="status"`), mở `mailto:` khi hợp lệ và hiện thẻ dự phòng sao chép chỉ ở bước sau khi gửi thành công.
   - Kiểm tra xong: `npm run build` và `npm run check:dist` xanh, `src/saas/contact_dialog.js` `< 250` dòng và `src/saas/saas.css` `< 300` dòng.
 
-- [ ] Bước 3: Gỡ toàn bộ email/SĐT khỏi màn hình công khai & nối nút mở hộp thoại Góp ý sạch
+- [x] Bước 3: Gỡ toàn bộ email/SĐT khỏi màn hình công khai & nối nút mở hộp thoại Góp ý sạch
   - Sửa: `index.html` (chỉ xóa 2 link `mailto:`/`tel:` ở `.loader-copyright`), `src/saas/branding.js`, `src/saas/auth_screen.js`, `src/saas/feature_access_ui.js`, `src/saas/session_ui_bindings.js`, `test/auth_screen.test.js`
   - CẤM đụng: `src/i18n/keys.js`, `src/core/*`, `firestore.rules`
   - Chi tiết:

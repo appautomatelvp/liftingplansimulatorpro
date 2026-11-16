@@ -1,8 +1,11 @@
+// @purpose: Định dạng khóa ngôn ngữ SaaS và hộp thoại góp ý theo ngôn ngữ hiện tại
+import { CONTACT_KEYS } from '../i18n/contact_keys.js';
 import { getLang, t } from '../i18n/index.js';
 
-/** Format a localized template key from `src/i18n/keys.js` with optional `{var}` substitutions. */
+/** Format a localized template key from centralized i18n dictionaries with optional `{var}` substitutions. */
 export function saasT(key, vars = null, lang = getLang()) {
-  let text = t(key, lang);
+  const locale = lang === 'en' ? 'en' : 'vi';
+  let text = CONTACT_KEYS[locale]?.[key] ?? t(key, lang);
   if (vars && typeof vars === 'object') {
     for (const [name, value] of Object.entries(vars)) {
       text = text.replaceAll(`{${name}}`, String(value ?? ''));

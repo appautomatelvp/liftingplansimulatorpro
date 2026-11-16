@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { CONTACT_KEYS } from '../src/i18n/contact_keys.js';
+import { saasT } from '../src/saas/i18n.js';
 import {
   buildDeveloperContactMailto,
   createContactChallenge,
@@ -119,5 +121,11 @@ describe('Developer feedback anti-spam and dynamic mailto boundary', () => {
     } finally {
       delete globalThis.localStorage;
     }
+  });
+
+  it('keeps CONTACT_KEYS symmetric across VI and EN and formats cooldown placeholders', () => {
+    expect(Object.keys(CONTACT_KEYS.en).sort()).toEqual(Object.keys(CONTACT_KEYS.vi).sort());
+    expect(saasT('contactErrCooldown', { sec: 12 }, 'en')).toBe('Please wait 12s before sending another message.');
+    expect(saasT('contactErrHourly', { min: 45 }, 'vi')).toContain('45 phút');
   });
 });
