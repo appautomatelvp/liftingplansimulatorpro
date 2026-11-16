@@ -122,8 +122,8 @@
 
 ---
 
-### Bước 5: Chuẩn hóa Thiết kế 3D & Cơ chế Kéo Thực tế của Ngáng Cẩu Container STS (`StsSpreaderRealism.js`, `editor.js`, `beams_seed.js`)
-- [ ] **Trạng thái:** Chưa làm
+### Bước 5: Chuẩn hóa Thiết kế 3D & Cơ chế Kéo Thực tế của Ngáng Cẩu Container STS (`StsSpreaderRealism.js`, `specialty_meshes.js`, `beams_seed.js`)
+- [x] **Trạng thái:** Hoàn tất (`174` dòng, chuẩn ISO 668/1161 `2.438m` rộng, 8 cáp tời Headblock nối liền trolley, `direct`/`cable` hoisting chuẩn; `architecture:gate` & `vite build` xanh)
 - **Mục tiêu:**
   1. Đưa kích thước dài × rộng của Ngáng STS (`container_spreader`) về chuẩn quốc tế ISO 668 / ISO 1161: khung vàng vừa khít kích thước container ($2.438\text{ m}$ rộng), 4 chốt gù Twistlock và 4 ma-ní góc nằm đúng tâm lỗ gù góc container, 4 chân dẫn hướng màu đỏ (Flippers) ôm sát mép ngoài 4 góc container.
   2. Cụm Headblock & 8 sợi cáp tời đứng nối liền mạch từ lưng ngáng STS lên cụm puly/trolley phía trên (`phy.hookPos`).

@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 13:38 | Nhánh: feat/horizon-clouds | Commit cuối: 30717dd step 3: subdivide H-beam flanges/web and calibrate structural stiffness (2 minutes ago)
-Tổng: 247 file, 73374 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 13:40 | Nhánh: feat/horizon-clouds | Commit cuối: 46bd29b step 4: fix broken cable stub anchor and eliminate upward whip spikes (2 minutes ago)
+Tổng: 248 file, 73520 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -21,14 +21,14 @@ Tổng: 247 file, 73374 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/audio.js (725 dòng)
 - src/sim/cargo/containers_iso.js (1490 dòng)
 - src/sim/cargo/shell_rebuild.js (566 dòng)
-- src/sim/cargo/specialty_meshes.js (2560 dòng)
+- src/sim/cargo/specialty_meshes.js (2521 dòng)
 - src/sim/compliance.js (625 dòng)
 - src/sim/dynamics.js (848 dòng)
 - src/sim/gear/editor.js (3539 dòng)
 - src/sim/library/core.js (641 dòng)
 - src/sim/library/parsers.js (652 dòng)
 - src/sim/library/reconstruction_export.js (2136 dòng)
-- src/sim/physics/beams_seed.js (2885 dòng)
+- src/sim/physics/beams_seed.js (2895 dòng)
 - src/sim/physics/cables_break.js (1556 dòng)
 - src/sim/physics/flatrack_payload.js (629 dòng)
 - src/sim/physics/footprint_rig.js (834 dòng)
@@ -176,11 +176,12 @@ Tổng: 247 file, 73374 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/constraints/CornerProtectorModel.js` | 51 |  |
 | `src/rigging/constraints/HardwareConstraint.js` | 236 |  |
 | `src/rigging/constraints/UnilateralCableConstraint.js` | 151 |  |
-| `src/rigging/index.js` | 16 | src/rigging/index.js |
+| `src/rigging/index.js` | 17 | src/rigging/index.js |
 | `src/rigging/riggingConstants.js` | 69 | src/rigging/riggingConstants.js |
 | `src/rigging/RiggingPhysicsSolver.js` | 682 | src/rigging/RiggingPhysicsSolver.js ⚠️>300 |
 | `src/rigging/riggingUIStore.js` | 100 | src/rigging/riggingUIStore.js |
 | `src/rigging/RigidInertialDynamics.js` | 212 | Động lực học vật rắn lệch tâm (Steiner-Huygens Inertia Tensor), mô-men xoắn/nghiêng khi cẩu và rơi tự do 9.81 m/s² |
+| `src/rigging/StsSpreaderRealism.js` | 174 | Chuẩn hóa kích thước ISO 668/1161, hệ cáp tời 8 nhánh và cơ học nâng hạ thực tế cho Ngáng cẩu Container STS |
 | `src/rigging/TrueMeshSurfaceContact.js` | 220 | Bộ giải tiếp xúc bề mặt 3D thực (0mm khe hở, không xuyên thủng) cho cáp và xích ôm sát kiện hàng 3D |
 | `src/saas/access.js` | 48 |  |
 | `src/saas/admin_catalog_audit_panels.js` | 89 | Dựng giao diện phân hệ Catalog thiết bị 3 cột, Nhật ký Kiểm toán Diff và Modal chi tiết người dùng |
@@ -217,7 +218,7 @@ Tổng: 247 file, 73374 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/cargo.js` | 6 |  |
 | `src/sim/cargo/containers_iso.js` | 1490 |  ⚠️>300 |
 | `src/sim/cargo/shell_rebuild.js` | 566 | --- 6B. SHELL CONTACT — pad-eyes weld to the real mesh, not the bounding box --- ⚠️>300 |
-| `src/sim/cargo/specialty_meshes.js` | 2560 | --- HIGH-FIDELITY 3D REFRIGERATION MACHINERY UNIT (CARRIER TRANSICOLD / THERMO KING) --- ⚠️>300 |
+| `src/sim/cargo/specialty_meshes.js` | 2521 | --- HIGH-FIDELITY 3D REFRIGERATION MACHINERY UNIT (CARRIER TRANSICOLD / THERMO KING) --- ⚠️>300 |
 | `src/sim/compliance.js` | 625 |  ⚠️>300 |
 | `src/sim/dynamics.js` | 848 |  ⚠️>300 |
 | `src/sim/gear.js` | 6 |  |
@@ -229,7 +230,7 @@ Tổng: 247 file, 73374 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/library/reconstruction_export.js` | 2136 | --- 2D IMAGE TO 3D CONTOUR & RELIEF RECONSTRUCTION ENGINE --- ⚠️>300 |
 | `src/sim/manifest.js` | 39 |  |
 | `src/sim/physics.js` | 6 |  |
-| `src/sim/physics/beams_seed.js` | 2885 |  ⚠️>300 |
+| `src/sim/physics/beams_seed.js` | 2895 |  ⚠️>300 |
 | `src/sim/physics/cables_break.js` | 1556 |  ⚠️>300 |
 | `src/sim/physics/flatrack_payload.js` | 629 | --- FLAT RACK LASHING RUPTURE, DECK SLIDING & FALLING PAYLOAD PHYSICS --- ⚠️>300 |
 | `src/sim/physics/footprint_rig.js` | 834 |  ⚠️>300 |

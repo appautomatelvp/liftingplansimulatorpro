@@ -1585,28 +1585,15 @@
             }
             const vis = ensureStsHeadblockVisual();
             vis.root.visible = true;
+            if (typeof RIG !== 'undefined' && RIG.syncStsHeadblockHoistRopes) {
+                RIG.syncStsHeadblockHoistRopes(vis, b.x, b.q, phy.hookPos, STS_HB_VIS_LOCALS);
+                return;
+            }
             const q = b.q || new THREE.Quaternion();
-            // Cosmetic headblock sits just above the yellow frame (not the physics hook),
-            // so cable-mode H-beam bridles stay invisible while the STS look stays short & vertical.
             const hbLocal = new THREE.Vector3(0, 0.92, 0);
             const hbWorld = hbLocal.applyQuaternion(q).add(b.x);
             vis.block.position.copy(hbWorld);
             vis.block.quaternion.copy(q);
-
-            for (let i = 0; i < 8; i++) {
-                const loc = STS_HB_VIS_LOCALS[i];
-                const bottom = new THREE.Vector3(loc[0], loc[1], loc[2]).applyQuaternion(q).add(b.x);
-                const top = new THREE.Vector3(loc[0] * 0.35, 0.78, loc[2] * 0.35).applyQuaternion(q).add(b.x);
-                const mid = top.clone().add(bottom).multiplyScalar(0.5);
-                const len = Math.max(0.08, top.distanceTo(bottom));
-                const dir = bottom.clone().sub(top);
-                if (dir.lengthSq() < 1e-8) dir.set(0, -1, 0);
-                else dir.normalize();
-                const rope = vis.ropes[i];
-                rope.position.copy(mid);
-                rope.scale.set(1, len, 1);
-                rope.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
-            }
         }
         if (typeof window !== 'undefined') {
             window.updateStsHeadblockVisual = updateStsHeadblockVisual;
@@ -2141,45 +2128,19 @@
 
                 if (stsCad) {
                     const cad = stsCad.clone(true);
-                    cad.updateMatrixWorld(true);
-                    const bbox = new THREE.Box3().setFromObject(cad);
-                    const center = new THREE.Vector3();
-                    bbox.getCenter(center);
-                    cad.position.sub(center);
-                    cad.updateMatrixWorld(true);
-
-                    // Scale CAD to the SELECTED STS ISO size (never invent a hybrid stretch).
-                    // Prefer twistlock-pin measure; fall back to yellow frame plan span.
-                    // Clamp scale so a bad measure cannot blow a 20ft mesh into a 40ft lookalike.
-                    const fitCadToIso = () => {
-                        const pins = measureStsCadTwistlockSpan(cad);
-                        let sx;
-                        let szs;
-                        if (pins && pins.spanX > 2 && pins.spanZ > 1) {
-                            sx = targetSpanX / Math.max(0.5, pins.spanX);
-                            szs = targetSpanZ / Math.max(0.5, pins.spanZ);
-                        } else {
-                            const frame = measureStsCadFramePlanSpan(cad);
-                            sx = targetOuterL / Math.max(0.5, frame.spanX);
-                            szs = targetOuterW / Math.max(0.5, frame.spanZ);
-                        }
-                        sx = THREE.MathUtils.clamp(sx, 0.35, 2.8);
-                        szs = THREE.MathUtils.clamp(szs, 0.35, 2.8);
-                        const sy = THREE.MathUtils.clamp((sx + szs) * 0.5, 0.35, 2.8);
-                        cad.scale.multiply(new THREE.Vector3(sx, sy, szs));
+                    if (typeof RIG !== 'undefined' && RIG.calibrateStsCadToIsoEnvelope) {
+                        RIG.calibrateStsCadToIsoEnvelope(cad, {
+                            outerLength: targetOuterL,
+                            outerWidth: targetOuterW,
+                            endBeamBottomY: -0.34
+                        });
+                    } else {
                         cad.updateMatrixWorld(true);
                         const box = new THREE.Box3().setFromObject(cad);
-                        const c = new THREE.Vector3();
-                        box.getCenter(c);
+                        const sz = new THREE.Vector3(), c = new THREE.Vector3();
+                        box.getSize(sz); box.getCenter(c);
                         cad.position.sub(c);
-                        cad.updateMatrixWorld(true);
-                    };
-                    fitCadToIso();
-                    {
-                        const frame2 = measureStsCadFramePlanSpan(cad);
-                        const errX = Math.abs(frame2.spanX - targetOuterL) / Math.max(0.5, targetOuterL);
-                        const errZ = Math.abs(frame2.spanZ - targetOuterW) / Math.max(0.5, targetOuterW);
-                        if (errX > 0.04 || errZ > 0.04) fitCadToIso();
+                        cad.scale.set(targetOuterL / Math.max(0.5, sz.x), 1, targetOuterW / Math.max(0.5, sz.z));
                     }
 
                     // Hide CAD twistlocks — procedural feet sit on exact ISO hole centres

@@ -1602,7 +1602,8 @@
 
             const over = anyLeg ? Math.max(0, maxLegOver) : 0;
             const payback = THREE.MathUtils.clamp(over * 0.35, 0, 0.45);
-            const targetY = headY - payback;
+            const roofContactY = ((typeof supportY === 'function') ? supportY(b.x.x, b.x.z) : 0) + (state.H || 2.591) + 0.34;
+            const targetY = Math.max(roofContactY, headY - payback);
             // Rate-limit to shared hoist speed so spreader never outruns the hook.
             const maxStep = (rising ? rates.up : rates.down) * dt * 1.05;
             const errY = targetY - b.x.y;
@@ -1739,13 +1740,20 @@
 
             // Hard twistlock lock: yellow underside ≈ −0.34 on roof — NO rate-lag gap
             // (soft lerp made “kéo vô hình” with a big air gap under the spreader).
-            const tipPad = 0.34;
             const H = state.H || 2.6;
-            const floorY = (typeof supportY === 'function')
-                ? supportY(b.x.x, b.x.z) + H * 0.5
-                : H * 0.5;
-            const lockedY = b.x.y - tipPad - H * 0.5;
-            const nextY = Math.max(floorY, lockedY);
+            const groundBaseY = (typeof supportY === 'function') ? supportY(b.x.x, b.x.z) : 0;
+            const floorY = groundBaseY + H * 0.5;
+            const brokenCorners = (phy.cables || []).filter(c => c.role === 'leg' && cableIsBroken(c)).length;
+            const yaw = stsLockedYawRad();
+            const pose = (typeof RIG !== 'undefined' && RIG.solveStsDirectTwistlockPose)
+                ? RIG.solveStsDirectTwistlockPose({
+                    beamPos: b.x, cargoPos: phy.cargoPos, cargoDims: state,
+                    cogOffset: { x: state.cogX || 0, z: state.cogZ || 0 },
+                    yawRad: yaw, floorY: groundBaseY, brokenCorners
+                })
+                : { clampedBeamY: Math.max(floorY + 0.34, b.x.y), cargoY: Math.max(floorY, b.x.y - 0.34 - H * 0.5), clearance: Math.max(0, b.x.y - 0.34 - H * 0.5 - floorY), quat: null, seatedOnDeck: false };
+            b.x.y = pose.clampedBeamY;
+            const nextY = pose.cargoY;
 
             if (nextY > (phy.cargoPos.y || 0) - 0.002 || nextY < (phy.cargoPos.y || 0) + 0.002
                 || suspended || rising || lowering || snugGround) {
@@ -1757,16 +1765,18 @@
                     if (b.v) phy.cargoVel.copy(b.v);
                     else if (phy.hookVel) phy.cargoVel.copy(phy.hookVel);
                     else phy.cargoVel.set(0, 0, 0);
-                    // Never rebound upward while paying out / Hạ đất
                     if (lowering && phy.cargoVel.y > 0) phy.cargoVel.y = 0;
                 }
                 if (phy.cargoOmega) phy.cargoOmega.set(0, 0, 0);
 
-                const yaw = stsLockedYawRad();
-                softLockYawQuat(phy.cargoQuat, yaw, 0.0, 1.0);
-                softLockYawQuat(b.q, yaw, 0.0, 1.0);
+                if (pose.quat) {
+                    phy.cargoQuat.slerp(pose.quat, 0.25);
+                    b.q.slerp(pose.quat, 0.25);
+                } else {
+                    softLockYawQuat(phy.cargoQuat, yaw, 0.0, 1.0);
+                    softLockYawQuat(b.q, yaw, 0.0, 1.0);
+                }
 
-                // Keep pin L0 = live span so XPBD cannot stretch a ghost gap open.
                 (phy.cables || []).forEach(c => {
                     if (c.role !== 'leg' || cableIsBroken(c)) return;
                     const span = attachWorld(c.a).distanceTo(attachWorld(c.b));
@@ -1774,8 +1784,8 @@
                     c.slack = false;
                 });
 
-                b.isRestingOnCargo = false;
-                phy.groundClearance = Math.max(0, phy.cargoPos.y - floorY);
+                b.isRestingOnCargo = !!pose.seatedOnDeck;
+                phy.groundClearance = pose.clearance;
             }
         }
 
