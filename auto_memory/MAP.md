@@ -1,10 +1,10 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 18:48 | Nhánh: feat/horizon-clouds | Commit cuối: e588b0f fix: seal hollow bus/container 3D shells and match sky horizon gradient to fog color space (23 seconds ago)
-Tổng: 258 file, 75413 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 19:00 | Nhánh: feat/horizon-clouds | Commit cuối: 34d21ac docs: log horizon gradient and solid cargo sealing fix (12 minutes ago)
+Tổng: 259 file, 75631 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
-- index.html (3136 dòng)
+- index.html (3156 dòng)
 - scripts/generate_port_assets.js (477 dòng)
 - src/core/AssemblyEngine.js (433 dòng)
 - src/core/AssetManager.js (325 dòng)
@@ -16,6 +16,7 @@ Tổng: 258 file, 75413 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/core/LiftPlanModel.js (1073 dòng)
 - src/core/RiggingDictionary.js (434 dòng)
 - src/core/SimulationEngine.js (560 dòng)
+- src/graphics/SceneRenderer.js (308 dòng)
 - src/i18n/keys.js (598 dòng)
 - src/rigging/RiggingPhysicsSolver.js (684 dòng)
 - src/sim/audio.js (725 dòng)
@@ -39,11 +40,11 @@ Tổng: 258 file, 75413 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/rigging/hook_pool.js (3118 dòng)
 - src/sim/scene.js (1978 dòng)
 - src/sim/session/prelift_reset.js (1030 dòng)
-- src/sim/session/presets_events.js (3573 dòng)
+- src/sim/session/presets_events.js (3580 dòng)
 - src/sim/session/ui_units_bom.js (1953 dòng)
 - src/sim/state.js (606 dòng)
 - src/sim/telemetry.js (1115 dòng)
-- src/sim/weather_fx.js (572 dòng)
+- src/sim/weather_fx.js (602 dòng)
 - test/cable_morphology_and_deformation.test.js (426 dòng)
 - test/custom_slings.test.js (712 dòng)
 - test/engineering.test.js (410 dòng)
@@ -82,7 +83,7 @@ Tổng: 258 file, 75413 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `eslint.config.js` | 23 | Flat ESLint config — architecture gates for app/domain layers (optional eslint install). |
 | `firebase.json` | 29 |  |
 | `firestore.rules` | 239 |  |
-| `index.html` | 3136 |  ⚠️>300 |
+| `index.html` | 3156 |  ⚠️>300 |
 | `jsconfig.json` | 19 |  |
 | `package.json` | 42 |  |
 | `playwright.auth.config.js` | 28 |  |
@@ -158,13 +159,14 @@ Tổng: 258 file, 75413 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/domain/site/types.js` | 9 | Site / quay domain vocabulary (pure). |
 | `src/domain/standards/index.js` | 26 |  |
 | `src/graphics/EnvironmentManager.js` | 280 | Quản lý ánh sáng IBL, sương mù chân trời, HDR và đồng bộ thời gian thực cho cảnh 3D ⚠️>250 |
+| `src/graphics/GraphicsToneHelper.js` | 114 | Điều chỉnh và lưu độ sáng tối (Brightness) và tương phản (Contrast) cho khung hình 3D như game |
 | `src/graphics/GroundHorizonFade.js` | 46 | Hòa mượt mép ngoài đĩa mặt đất vào màu sương mù chân trời không lộ đường cắt |
-| `src/graphics/HorizonSkyDome.js` | 279 | Dựng vòm bầu trời HorizonSkyDome với mây chân trời 3D Gradient Quintic mềm mại và màu khí quyển thực tế ⚠️>250 |
-| `src/graphics/index.js` | 14 |  |
+| `src/graphics/HorizonSkyDome.js` | 282 | Dựng vòm bầu trời HorizonSkyDome với mây chân trời 3D Gradient Quintic mềm mại và màu khí quyển thực tế ⚠️>250 |
+| `src/graphics/index.js` | 22 |  |
 | `src/graphics/pbr/ProceduralTextures.js` | 196 | Vẽ texture canvas thủ công (bê tông cảng, cáp thép, xích, sling, mặt nước, vạch cảnh báo) |
 | `src/graphics/pbr/StressPBRMaterials.js` | 146 | Tạo bản đồ PBR thép sơn công nghiệp, thép rèn mạ kẽm và màu ứng suất căng cơ học thời gian thực |
 | `src/graphics/PBRMaterialFactory.js` | 244 | Nhà máy tạo vật liệu PBR chuẩn công nghiệp hàng hải và đồng bộ không gian màu Three.js r170+ |
-| `src/graphics/SceneRenderer.js` | 294 |  ⚠️>250 |
+| `src/graphics/SceneRenderer.js` | 308 |  ⚠️>300 |
 | `src/graphics/SolidShellSealer.js` | 109 | Bịt kín lõi/đáy rỗng và bật hai mặt vật liệu cho xe 3D và kiện hàng tránh nhìn xuyên |
 | `src/graphics/SpecialtyCargoMeshes.js` | 158 | Dựng khối 3D ống thép siêu trường Steel Pipe (OOG) và xe buýt procedural đồng bộ CAD |
 | `src/i18n/cargo_labels.js` | 48 |  |
@@ -251,12 +253,12 @@ Tổng: 258 file, 75413 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/scene.js` | 1978 |  ⚠️>300 |
 | `src/sim/session.js` | 6 |  |
 | `src/sim/session/prelift_reset.js` | 1030 |  ⚠️>300 |
-| `src/sim/session/presets_events.js` | 3573 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
+| `src/sim/session/presets_events.js` | 3580 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
 | `src/sim/session/ui_units_bom.js` | 1953 | --- 12. UI EVENT BINDINGS & COLLAPSIBLE PANELS --- ⚠️>300 |
 | `src/sim/state.js` | 606 | Floor cribbing removed: static cargo rests flush on the quay / ground plane. ⚠️>300 |
 | `src/sim/telemetry.js` | 1115 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
 | `src/sim/ui-layout.js` | 241 |  |
-| `src/sim/weather_fx.js` | 572 |  ⚠️>300 |
+| `src/sim/weather_fx.js` | 602 |  ⚠️>300 |
 | `src/simulation/destruction-manager/DestructionSolver.js` | 147 |  |
 | `src/styles/app.css` | 1018 |  |
 | `src/styles/brand_splash.css` | 81 | Hiệu ứng nền công nghiệp 2K Cinematic Zoom-In & màn trập Fade-in Đen mở dần hệ thống 3D |
@@ -293,7 +295,7 @@ Tổng: 258 file, 75413 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/i18n_keys.test.js` | 56 |  |
 | `test/inclined_lashing_slide.test.js` | 67 |  |
 | `test/liftplan.test.js` | 153 |  |
-| `test/optimize_horizon_cargo_perf.test.js` | 170 | Kiểm thử tự động cho hòa chân trời, 3D Steel Pipe / Vehicle, cache CAD và tối ưu hiệu năng |
+| `test/optimize_horizon_cargo_perf.test.js` | 192 | Kiểm thử tự động cho hòa chân trời, 3D Steel Pipe / Vehicle, cache CAD và tối ưu hiệu năng |
 | `test/phase1_core_safety.test.js` | 208 |  |
 | `test/physics_destruction.test.js` | 69 |  |
 | `test/physics_master_blueprint.test.js` | 524 |  ⚠️>300 |

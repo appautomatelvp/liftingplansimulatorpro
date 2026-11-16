@@ -3,9 +3,8 @@
  * Physics loads live in dynamics.js; this is visual only.
  */
         const WEATHER_RAIN_MAX = 3200;
-        const WEATHER_WIND_MAX = 22; // sparse smoke wisps — keep cargo readable
-        const WEATHER_BOLT_MAX = 48; // segments per flash bolt
-        const WEATHER_FX_VERSION = 4; // bump to force rebuild when FX design changes
+        const WEATHER_WIND_MAX = 24; // sleek wind ribbons & subtle mist motes
+        const WEATHER_FX_VERSION = 5; // bump to force rebuild when FX design changes
 
         function makeWindSmokeTexture() {
             const size = 128;
@@ -13,25 +12,24 @@
             c.width = size;
             c.height = size;
             const g = c.getContext('2d');
-            const grd = g.createRadialGradient(size * 0.5, size * 0.5, 0, size * 0.5, size * 0.5, size * 0.5);
-            // Soft elongated puff: bright core → transparent edge (smoke / cloud)
-            grd.addColorStop(0.0, 'rgba(186, 230, 253, 0.55)');
-            grd.addColorStop(0.25, 'rgba(125, 211, 252, 0.28)');
-            grd.addColorStop(0.55, 'rgba(56, 189, 248, 0.10)');
-            grd.addColorStop(1.0, 'rgba(14, 165, 233, 0)');
+            const half = size * 0.5;
+            // Strict padding (radius = 0.38 * size < 0.5) guarantees exact alpha=0 before canvas edge
+            const grd = g.createRadialGradient(half, half, 0, half, half, size * 0.38);
+            grd.addColorStop(0.0, 'rgba(224, 242, 254, 0.34)');
+            grd.addColorStop(0.32, 'rgba(186, 230, 253, 0.16)');
+            grd.addColorStop(0.68, 'rgba(125, 211, 252, 0.04)');
+            grd.addColorStop(1.0, 'rgba(125, 211, 252, 0.0)');
+            g.clearRect(0, 0, size, size);
             g.fillStyle = grd;
-            g.fillRect(0, 0, size, size);
-            // Second softer blob offset for cloudy irregularity
-            const grd2 = g.createRadialGradient(size * 0.38, size * 0.42, 0, size * 0.38, size * 0.42, size * 0.42);
-            grd2.addColorStop(0.0, 'rgba(224, 242, 254, 0.22)');
-            grd2.addColorStop(1.0, 'rgba(224, 242, 254, 0)');
-            g.fillStyle = grd2;
-            g.fillRect(0, 0, size, size);
+            g.beginPath();
+            g.arc(half, half, size * 0.40, 0, Math.PI * 2);
+            g.fill();
             const tex = new THREE.CanvasTexture(c);
             tex.needsUpdate = true;
             return tex;
         }
 
+        const WEATHER_BOLT_MAX = 48; // segments per flash bolt
         function ensureWeatherFx() {
             if (phy._weatherFx && phy._weatherFx.root && phy._weatherFx.root.parent
                 && phy._weatherFx.version === WEATHER_FX_VERSION && phy._weatherFx.windSmoke) {
@@ -74,28 +72,45 @@
             for (let i = 0; i < WEATHER_WIND_MAX; i++) {
                 const mat = new THREE.SpriteMaterial({
                     map: smokeTex,
-                    color: 0xbae6fd,
+                    color: 0xe0f2fe,
                     transparent: true,
                     opacity: 0,
                     depthWrite: false,
-                    fog: false,
+                    alphaTest: 0.004,
+                    fog: true,
                     blending: THREE.NormalBlending
                 });
                 const spr = new THREE.Sprite(mat);
                 spr.visible = false;
-                spr.scale.set(4, 2.2, 1);
+                spr.scale.set(1.2, 0.55, 1);
                 windSmoke.add(spr);
                 windWisps.push({
                     spr,
                     x: 0, y: 0, z: 0,
                     vx: 0, vy: 0, vz: 0,
                     age: 0,
-                    life: 4,
-                    scale: 3,
-                    stretch: 1.6,
+                    life: 2.2,
+                    scale: 0.7,
+                    stretch: 1.8,
                     phase: Math.random() * Math.PI * 2
                 });
             }
+            // Crisp aerodynamic wind streamline streaks (zero billboard box clipping!)
+            const windStreakPos = new Float32Array(WEATHER_WIND_MAX * 2 * 3);
+            const windStreakGeo = new THREE.BufferGeometry();
+            windStreakGeo.setAttribute('position', new THREE.BufferAttribute(windStreakPos, 3));
+            windStreakGeo.setDrawRange(0, 0);
+            const windStreakMat = new THREE.LineBasicMaterial({
+                color: 0xbae6fd,
+                transparent: true,
+                opacity: 0.42,
+                depthWrite: false,
+                fog: true
+            });
+            const windStreaks = new THREE.LineSegments(windStreakGeo, windStreakMat);
+            windStreaks.frustumCulled = false;
+            windStreaks.renderOrder = 39;
+            windSmoke.add(windStreaks);
 
             // Lightning bolt polyline (rebuilt each flash)
             const boltPos = new Float32Array(WEATHER_BOLT_MAX * 2 * 3);
@@ -141,6 +156,8 @@
                 rainCount: 0,
                 windSmoke,
                 windWisps,
+                windStreaks,
+                windStreakPos,
                 windCount: 0,
                 smokeTex,
                 bolt,
@@ -249,9 +266,9 @@
             w.vy = 0.2 + Math.random() * 0.4;
             w.vz = dz * spd + (Math.random() - 0.5) * 0.25;
             w.age = 0;
-            w.life = 2.8 + Math.random() * 3.2;
-            w.scale = 1.8 + Math.random() * 2.0; // smaller puffs
-            w.stretch = 1.5 + Math.random() * 0.9;
+            w.life = 1.8 + Math.random() * 1.8;
+            w.scale = 0.65 + Math.random() * 0.75; // compact subtle wisps — zero giant square clouds
+            w.stretch = 1.8 + Math.random() * 1.2;
             w.phase = Math.random() * Math.PI * 2;
             w.spr.visible = true;
             w.spr.material.opacity = 0;
@@ -441,10 +458,9 @@
                     if (phy._weatherFx.arrow) phy._weatherFx.arrow.visible = false;
                     if (phy._weatherFx.flashLight) phy._weatherFx.flashLight.intensity = 0;
                     if (phy._weatherFx.boltMat) phy._weatherFx.boltMat.opacity = 0;
+                    if (phy._weatherFx.windStreaks) phy._weatherFx.windStreaks.visible = false;
                     if (phy._weatherFx.windWisps) {
-                        for (const w of phy._weatherFx.windWisps) {
-                            if (w.spr) w.spr.visible = false;
-                        }
+                        for (const w of phy._weatherFx.windWisps) if (w.spr) w.spr.visible = false;
                     }
                 }
                 return;
@@ -516,30 +532,39 @@
                 if (w && w.spr) w.spr.visible = false;
             }
             fx.windCount = wantWind;
-            const peakOp = THREE.MathUtils.clamp(0.10 + windSpd / 50, 0.10, 0.22);
-            const minSmokeY = windAnchor.y - 1.2; // don't drift down over the cargo face
+            const peakOp = THREE.MathUtils.clamp(0.06 + windSpd / 120, 0.06, 0.14);
+            const minSmokeY = windAnchor.y - 1.2;
+            const streakScale = THREE.MathUtils.clamp(0.85 + windSpd * 0.14, 0.9, 3.2);
             for (let i = 0; i < fx.windCount; i++) {
                 const w = fx.windWisps[i];
                 if (!w) continue;
                 w.age += step;
-                // Slow swirl / bob so clouds feel alive, not rigid
-                const bob = Math.sin(w.age * 0.7 + w.phase) * 0.2;
-                const sway = Math.sin(w.age * 0.45 + w.phase * 1.3) * 0.3;
+                const bob = Math.sin(w.age * 1.1 + w.phase) * 0.18;
+                const sway = Math.sin(w.age * 0.7 + w.phase * 1.3) * 0.24;
                 w.x += w.vx * step + sway * step;
                 w.y += (w.vy + bob * 0.12) * step;
                 w.z += w.vz * step;
                 if (w.y < minSmokeY) w.y = minSmokeY + Math.random() * 0.4;
-                // Billow: grow while fading out
                 const t = w.age / Math.max(1e-3, w.life);
-                const grow = 1 + t * 1.1;
-                const fade = t < 0.12
-                    ? (t / 0.12)
-                    : (t > 0.55 ? Math.max(0, 1 - (t - 0.55) / 0.45) : 1);
+                const grow = 1 + t * 0.65;
+                const fade = Math.sin(Math.min(1, t) * Math.PI);
                 w.spr.position.set(w.x, w.y, w.z);
-                w.spr.scale.set(w.scale * w.stretch * grow, w.scale * grow * 0.72, 1);
+                w.spr.scale.set(w.scale * w.stretch * grow, w.scale * grow * 0.55, 1);
                 w.spr.material.opacity = peakOp * fade;
-                w.spr.material.color.setHex(0xbae6fd);
-                w.spr.visible = fade > 0.02;
+                w.spr.visible = fade > 0.04;
+                if (fx.windStreakPos) {
+                    const spd = Math.hypot(w.vx, w.vz) || 1;
+                    const dirX = w.vx / spd;
+                    const dirZ = w.vz / spd;
+                    const len = streakScale * (0.45 + 0.55 * fade);
+                    const o = i * 6;
+                    fx.windStreakPos[o] = w.x - dirX * len * 0.5;
+                    fx.windStreakPos[o + 1] = w.y;
+                    fx.windStreakPos[o + 2] = w.z - dirZ * len * 0.5;
+                    fx.windStreakPos[o + 3] = w.x + dirX * len * 0.5;
+                    fx.windStreakPos[o + 4] = w.y + bob * 0.15;
+                    fx.windStreakPos[o + 5] = w.z + dirZ * len * 0.5;
+                }
 
                 if (t >= 1
                     || Math.abs(w.x - windAnchor.x) > 16
@@ -547,6 +572,11 @@
                     || w.y > windAnchor.y + 8) {
                     seedWindWisp(fx, i, windAnchor, windLive);
                 }
+            }
+            if (fx.windStreaks) {
+                fx.windStreaks.geometry.attributes.position.needsUpdate = true;
+                fx.windStreaks.geometry.setDrawRange(0, fx.windCount * 2);
+                fx.windStreaks.visible = wantWind > 0;
             }
             if (fx.windSmoke) fx.windSmoke.visible = wantWind > 0;
 

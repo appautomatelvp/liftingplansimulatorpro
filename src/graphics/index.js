@@ -12,3 +12,11 @@ export { computeMechanicalStressVisual, resolveStressTintedMaterial } from './pb
 export { applyGroundHorizonFade } from './GroundHorizonFade.js';
 export { buildSteelPipeCargoMesh, buildProceduralCoachBusMesh } from './SpecialtyCargoMeshes.js';
 export { sealSolidCargoShell } from './SolidShellSealer.js';
+export {
+  clampToneSettings,
+  buildCanvasFilterCss,
+  applyToneSettingsToCanvas,
+  bindGraphicsToneControls,
+  loadSavedToneSettings,
+  saveToneSettings
+} from './GraphicsToneHelper.js';

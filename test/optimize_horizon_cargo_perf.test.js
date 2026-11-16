@@ -11,6 +11,11 @@ import {
 } from '../src/graphics/SpecialtyCargoMeshes.js';
 import { sealSolidCargoShell } from '../src/graphics/SolidShellSealer.js';
 import {
+  clampToneSettings,
+  buildCanvasFilterCss,
+  applyToneSettingsToCanvas
+} from '../src/graphics/GraphicsToneHelper.js';
+import {
   tryReuseSettledSlackRope,
   recordSolvedSlackRope,
   writeChainLinkInstanceMatrix
@@ -166,5 +171,22 @@ describe('Runtime & Asset performance helpers', () => {
   it('skips EdgesGeometry for massive >8000 vertex CAD meshes in scene.js', () => {
     const sceneSrc = fs.readFileSync(path.resolve('src/sim/scene.js'), 'utf8');
     expect(sceneSrc).toContain('if (count > 8000) return;');
+  });
+
+  it('clamps and applies game-style brightness and contrast filter strings', () => {
+    expect(clampToneSettings({ brightness: 3.0, contrast: 0.1 })).toEqual({ brightness: 1.8, contrast: 0.6 });
+    expect(buildCanvasFilterCss({ brightness: 1.0, contrast: 1.0 })).toBe('none');
+    expect(buildCanvasFilterCss({ brightness: 1.25, contrast: 1.15 })).toBe('brightness(1.25) contrast(1.15)');
+    const mockCanvas = { style: {} };
+    applyToneSettingsToCanvas(mockCanvas, { brightness: 1.3, contrast: 1.2 });
+    expect(mockCanvas.style.filter).toBe('brightness(1.30) contrast(1.20)');
+  });
+
+  it('adds dark-sky dithering and zero-clipped wind smoke texture', () => {
+    const domeSrc = fs.readFileSync(path.resolve('src/graphics/HorizonSkyDome.js'), 'utf8');
+    const wxSrc = fs.readFileSync(path.resolve('src/sim/weather_fx.js'), 'utf8');
+    expect(domeSrc).toContain('dither');
+    expect(wxSrc).toContain('windStreaks');
+    expect(wxSrc).not.toContain('size * 0.42');
   });
 });

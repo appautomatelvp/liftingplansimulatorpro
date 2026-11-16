@@ -219,6 +219,9 @@ const SKY_FRAGMENT_SHADER = `
 
     gl_FragColor = vec4(col, 1.0);
     #include <colorspace_fragment>
+    // Subtle triangular filmic dither prevents 8-bit banding in dark night skies
+    float dither = (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) * (1.25 / 255.0);
+    gl_FragColor.rgb = clamp(gl_FragColor.rgb + vec3(dither), 0.0, 1.0);
   }
 `;
 

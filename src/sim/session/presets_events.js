@@ -1077,6 +1077,10 @@
             '🔋 Performance (Máy yếu)': '🔋 Performance (low-end device)',
             'Tải file HDRI ngoài:': 'Load external HDRI:',
             '🌆 Chọn File HDRI': '🌆 Choose HDRI file',
+            'Cân chỉnh khung hình (Game):': 'Display tone (Game):',
+            '↺ Đặt lại': '↺ Reset',
+            'Độ sáng (Brightness):': 'Brightness:',
+            'Độ tương phản (Contrast):': 'Contrast:',
             '📋 Hồ Sơ Kỹ Thuật & Thư Viện': '📋 Engineering documents and library',
             'Kiểm Định An Toàn (ASME/ISO)': 'Safety checks (ASME / ISO)',
             'Hồ Sơ Lift Plan ASME P30.1': 'ASME P30.1 lift plan',
@@ -1449,6 +1453,9 @@
                     const sr = window.sceneRenderer || sceneRenderer;
                     if (sr) sr.setQuality(e.target.value);
                 });
+            }
+            if (typeof GFX !== 'undefined' && GFX.bindGraphicsToneControls) {
+                GFX.bindGraphicsToneControls(() => window.sceneRenderer || sceneRenderer);
             }
             const btnUploadHdri = document.getElementById('btn-upload-hdri');
             const inpHdri = document.getElementById('inp-custom-hdri');

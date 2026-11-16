@@ -16,6 +16,7 @@ import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass.js';
 import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
 import { EnvironmentManager } from './EnvironmentManager.js';
 import { PBRMaterialFactory } from './PBRMaterialFactory.js';
+import { applyToneSettingsToCanvas, loadSavedToneSettings } from './GraphicsToneHelper.js';
 
 export const QUALITY_TIERS = {
     ultra: {
@@ -109,6 +110,7 @@ export class SceneRenderer {
         this.applyShadowType(quality.shadowType || 'pcf');
 
         this.container.appendChild(this.renderer.domElement);
+        this.toneSettings = applyToneSettingsToCanvas(this.renderer.domElement, loadSavedToneSettings());
     }
 
     applyShadowType(shadowType) {
@@ -274,6 +276,18 @@ export class SceneRenderer {
         // Rebuild composer pipeline with new passes
         this.initComposer();
         console.info(`[SceneRenderer] Graphics Quality Tier set to: ${q.name}`);
+    }
+
+    /**
+     * Applies game-style viewport Brightness & Contrast to the WebGL canvas.
+     */
+    setToneSettings(settings) {
+        this.toneSettings = applyToneSettingsToCanvas(this.renderer?.domElement, settings);
+        return this.toneSettings;
+    }
+
+    getToneSettings() {
+        return { ...(this.toneSettings || { brightness: 1.0, contrast: 1.0 }) };
     }
 
     /**
