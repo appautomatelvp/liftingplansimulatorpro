@@ -1,10 +1,10 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 14:53 | Nhánh: feat/horizon-clouds | Commit cuối: 20f4e24 step 2: wire H-Style Lifting Beam meshes and state modes (5 minutes ago)
-Tổng: 250 file, 73949 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 14:57 | Nhánh: feat/horizon-clouds | Commit cuối: 01e7573 step 3: wire H-Style Lifting Beam 4-corner physics, direct hook and twistlock coupling (4 minutes ago)
+Tổng: 250 file, 74042 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
-- index.html (3110 dòng)
+- index.html (3136 dòng)
 - scripts/generate_port_assets.js (477 dòng)
 - src/core/AssemblyEngine.js (433 dòng)
 - src/core/AssetManager.js (325 dòng)
@@ -34,13 +34,13 @@ Tổng: 250 file, 73949 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/physics/footprint_rig.js (840 dòng)
 - src/sim/physics/hoist_contacts.js (1025 dòng)
 - src/sim/physics/step_engine.js (774 dòng)
-- src/sim/plan_wizard.js (630 dòng)
+- src/sim/plan_wizard.js (650 dòng)
 - src/sim/rigging/draw_update.js (867 dòng)
 - src/sim/rigging/hook_pool.js (3118 dòng)
 - src/sim/scene.js (1974 dòng)
 - src/sim/session/prelift_reset.js (1151 dòng)
 - src/sim/session/presets_events.js (3563 dòng)
-- src/sim/session/ui_units_bom.js (1906 dòng)
+- src/sim/session/ui_units_bom.js (1953 dòng)
 - src/sim/state.js (605 dòng)
 - src/sim/telemetry.js (1106 dòng)
 - src/sim/weather_fx.js (572 dòng)
@@ -82,7 +82,7 @@ Tổng: 250 file, 73949 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `eslint.config.js` | 23 | Flat ESLint config — architecture gates for app/domain layers (optional eslint install). |
 | `firebase.json` | 29 |  |
 | `firestore.rules` | 239 |  |
-| `index.html` | 3110 |  ⚠️>300 |
+| `index.html` | 3136 |  ⚠️>300 |
 | `jsconfig.json` | 19 |  |
 | `package.json` | 42 |  |
 | `playwright.auth.config.js` | 28 |  |
@@ -239,7 +239,7 @@ Tổng: 250 file, 73949 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/physics/index.js` | 9 | Bounded context index — parts are assembled via src/sim/manifest.js (shared scope). |
 | `src/sim/physics/port.js` | 59 |  |
 | `src/sim/physics/step_engine.js` | 774 |  ⚠️>300 |
-| `src/sim/plan_wizard.js` | 630 |  ⚠️>300 |
+| `src/sim/plan_wizard.js` | 650 |  ⚠️>300 |
 | `src/sim/rigging.js` | 6 |  |
 | `src/sim/rigging/draw_update.js` | 867 | Slack cable morphology is solved by a persistent material-aware XPBD chain. ⚠️>300 |
 | `src/sim/rigging/hook_pool.js` | 3118 |  ⚠️>300 |
@@ -247,7 +247,7 @@ Tổng: 250 file, 73949 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/session.js` | 6 |  |
 | `src/sim/session/prelift_reset.js` | 1151 |  ⚠️>300 |
 | `src/sim/session/presets_events.js` | 3563 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
-| `src/sim/session/ui_units_bom.js` | 1906 | --- 12. UI EVENT BINDINGS & COLLAPSIBLE PANELS --- ⚠️>300 |
+| `src/sim/session/ui_units_bom.js` | 1953 | --- 12. UI EVENT BINDINGS & COLLAPSIBLE PANELS --- ⚠️>300 |
 | `src/sim/state.js` | 605 | Floor cribbing removed: static cargo rests flush on the quay / ground plane. ⚠️>300 |
 | `src/sim/telemetry.js` | 1106 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
 | `src/sim/ui-layout.js` | 241 |  |

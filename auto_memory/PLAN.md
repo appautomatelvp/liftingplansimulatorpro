@@ -81,7 +81,7 @@
 ---
 
 ### Bước 4: Thêm Bảng Chọn Liên Kết Trên & Dưới Trong Giao Diện (`index.html`, `ui_units_bom.js`, `presets_events.js`, `plan_wizard.js`)
-- [ ] **Trạng thái:** Chưa làm
+- [x] **Trạng thái:** Hoàn tất (`index.html`, `src/sim/session/ui_units_bom.js`, `src/sim/plan_wizard.js`; `architecture:gate` + `vite build` xanh)
 - **Mục tiêu:** Cung cấp nút bấm trực quan ngay khi người dùng chọn `Lifting Beam` (và trong Wizard) để chuyển qua lại tức thì giữa:
   - Phía trên: **Bắt trực tiếp Hook Link** ↔ **Dùng 2 cáp / xích lên Hook**
   - Phía dưới: **Dùng 4 cáp / xích từ 4 góc** ↔ **Gắp trực tiếp vào Container**

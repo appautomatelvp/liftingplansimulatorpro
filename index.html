@@ -1217,6 +1217,32 @@
                             <div class="text-[8.5px] text-slate-500 leading-snug pl-6">Bật: đổi một bên thì bên kia theo. Tắt: chỉnh ngáng hoặc container <b class="text-sky-300/90">độc lập</b>, cái còn lại giữ nguyên.</div>
                         </div>
 
+                        <!-- H-Style Lifting Beam: Top (Hook Link / 2 Slings) & Bottom (4 Slings / Twistlock) -->
+                        <div id="lifting-beam-mode-panel" class="hidden flex-col gap-2 bg-slate-950/70 p-2 rounded-lg border border-sky-500/40">
+                            <div class="text-[9px] text-sky-300 uppercase font-bold tracking-wide">Liên kết phía trên (Với Móc Cẩu)</div>
+                            <div class="grid grid-cols-2 gap-1.5">
+                                <button type="button" class="btn-lb-top rounded-md border border-slate-700 bg-slate-950/90 px-2 py-1.5 text-left transition" data-lb-top="direct_hook">
+                                    <div class="text-[10px] font-bold text-white">🔗 Bắt trực tiếp Hook Link</div>
+                                    <div class="text-[8px] text-slate-400">Tai giữa dầm móc vào link</div>
+                                </button>
+                                <button type="button" class="btn-lb-top rounded-md border border-amber-500/80 bg-amber-950/50 px-2 py-1.5 text-left transition" data-lb-top="bridle2">
+                                    <div class="text-[10px] font-bold text-amber-200">⛓️ Dùng 2 cáp / xích</div>
+                                    <div class="text-[8px] text-slate-400">2 nhánh lên link → hook</div>
+                                </button>
+                            </div>
+                            <div class="text-[9px] text-sky-300 uppercase font-bold tracking-wide mt-0.5">Liên kết phía dưới (4 góc chữ H)</div>
+                            <div class="grid grid-cols-2 gap-1.5">
+                                <button type="button" class="btn-lb-bot rounded-md border border-amber-500/80 bg-amber-950/50 px-2 py-1.5 text-left transition" data-lb-bot="cable">
+                                    <div class="text-[10px] font-bold text-amber-200">⛓️ Dùng 4 cáp / xích</div>
+                                    <div class="text-[8px] text-slate-400">4 sợi từ 4 góc thanh ngang</div>
+                                </button>
+                                <button type="button" class="btn-lb-bot rounded-md border border-slate-700 bg-slate-950/90 px-2 py-1.5 text-left transition" data-lb-bot="direct">
+                                    <div class="text-[10px] font-bold text-white">🔒 Gắp trực tiếp Container</div>
+                                    <div class="text-[8px] text-slate-400">4 chốt gù Twistlock tại 4 góc</div>
+                                </button>
+                            </div>
+                        </div>
+
                         <!-- Generic beam length controls (hidden for STS) -->
                         <div id="generic-beam-dim-panel" class="flex flex-col gap-2">
                             <div class="flex justify-between items-center text-slate-300">
