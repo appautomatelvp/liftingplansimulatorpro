@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 20:44 | Nhánh: feat/horizon-clouds | Commit cuối: a8a5be3 docs: log Jobsite 3D visuals, Flat Rack lashing and Follow camera (20 minutes ago)
-Tổng: 263 file, 76479 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 20:47 | Nhánh: feat/horizon-clouds | Commit cuối: 436210b step 1: flush lashing tie-in, SWL >= 12 MT default, and multi-select sync (3 minutes ago)
+Tổng: 263 file, 76513 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -28,18 +28,18 @@ Tổng: 263 file, 76479 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/gear/editor.js (3562 dòng)
 - src/sim/library/core.js (641 dòng)
 - src/sim/library/parsers.js (654 dòng)
-- src/sim/library/reconstruction_export.js (2124 dòng)
+- src/sim/library/reconstruction_export.js (2116 dòng)
 - src/sim/physics/beams_seed.js (2955 dòng)
 - src/sim/physics/cables_break.js (1553 dòng)
 - src/sim/physics/flatrack_payload.js (657 dòng)
 - src/sim/physics/footprint_rig.js (838 dòng)
-- src/sim/physics/hoist_contacts.js (1074 dòng)
+- src/sim/physics/hoist_contacts.js (1072 dòng)
 - src/sim/physics/step_engine.js (779 dòng)
 - src/sim/plan_wizard.js (650 dòng)
 - src/sim/rigging/draw_update.js (837 dòng)
 - src/sim/rigging/hook_pool.js (3118 dòng)
 - src/sim/scene.js (1982 dòng)
-- src/sim/session/prelift_reset.js (1030 dòng)
+- src/sim/session/prelift_reset.js (1074 dòng)
 - src/sim/session/presets_events.js (3577 dòng)
 - src/sim/session/ui_units_bom.js (1953 dòng)
 - src/sim/state.js (606 dòng)
@@ -238,14 +238,14 @@ Tổng: 263 file, 76479 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/library.js` | 6 |  |
 | `src/sim/library/core.js` | 641 |  ⚠️>300 |
 | `src/sim/library/parsers.js` | 654 | --- HIGH-SPEED BINARY & ASCII .STL / .OBJ / .GLB PARSERS --- ⚠️>300 |
-| `src/sim/library/reconstruction_export.js` | 2124 | --- 2D IMAGE TO 3D CONTOUR & RELIEF RECONSTRUCTION ENGINE --- ⚠️>300 |
+| `src/sim/library/reconstruction_export.js` | 2116 | --- 2D IMAGE TO 3D CONTOUR & RELIEF RECONSTRUCTION ENGINE --- ⚠️>300 |
 | `src/sim/manifest.js` | 39 |  |
 | `src/sim/physics.js` | 6 |  |
 | `src/sim/physics/beams_seed.js` | 2955 |  ⚠️>300 |
 | `src/sim/physics/cables_break.js` | 1553 |  ⚠️>300 |
 | `src/sim/physics/flatrack_payload.js` | 657 | --- FLAT RACK LASHING RUPTURE, DECK SLIDING & FALLING PAYLOAD PHYSICS --- ⚠️>300 |
 | `src/sim/physics/footprint_rig.js` | 838 |  ⚠️>300 |
-| `src/sim/physics/hoist_contacts.js` | 1074 |  ⚠️>300 |
+| `src/sim/physics/hoist_contacts.js` | 1072 |  ⚠️>300 |
 | `src/sim/physics/index.js` | 9 | Bounded context index — parts are assembled via src/sim/manifest.js (shared scope). |
 | `src/sim/physics/port.js` | 59 |  |
 | `src/sim/physics/step_engine.js` | 779 |  ⚠️>300 |
@@ -255,7 +255,7 @@ Tổng: 263 file, 76479 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/rigging/hook_pool.js` | 3118 |  ⚠️>300 |
 | `src/sim/scene.js` | 1982 |  ⚠️>300 |
 | `src/sim/session.js` | 6 |  |
-| `src/sim/session/prelift_reset.js` | 1030 |  ⚠️>300 |
+| `src/sim/session/prelift_reset.js` | 1074 |  ⚠️>300 |
 | `src/sim/session/presets_events.js` | 3577 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
 | `src/sim/session/ui_units_bom.js` | 1953 | --- 12. UI EVENT BINDINGS & COLLAPSIBLE PANELS --- ⚠️>300 |
 | `src/sim/state.js` | 606 | Floor cribbing removed: static cargo rests flush on the quay / ground plane. ⚠️>300 |

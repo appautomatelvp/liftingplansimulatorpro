@@ -181,27 +181,25 @@
             // the hook / spreader until they kiss the cargo roof (3D solid clamp).
             // Old code returned here and made Hạ useless whenever clearance ≈ 0.
             const aabbClr = (typeof cargoAabbClearance === 'function') ? cargoAabbClearance() : (phy.groundClearance || 0);
-            const groundedNow = (phy.groundClearance || 0) < 0.04 && aabbClr < 0.04;
+            const curClr = Math.max(phy.groundClearance || 0, aabbClr);
+            const settleTol = phy._setDownActive ? 0.018 : 0.035;
+            const groundedNow = curClr < settleTol && Math.abs(phy.cargoVel?.y || 0) < 0.14;
             if (groundedNow && lowering && !rising) {
                 if (phy.cargoVel) phy.cargoVel.set(0, 0, 0);
                 if (phy.cargoOmega) phy.cargoOmega.set(0, 0, 0);
                 if (phy._setDownActive && typeof finishSmoothSetDown === 'function') {
-                    // Hạ đất finished — stop this frame. Continuing the winch after
-                    // parkHookSlack was snatching the cargo back up a few cm.
                     finishSmoothSetDown();
                     return;
                 }
-                // Operator Hạ while cargo is already on the quay: keep cargo seated,
-                // but fall through so the hook/spreader can still settle onto the roof.
+                // Manual Hạ at quay: damp cargo gently without snapping quaternion or teleporting
                 phy._setDownActive = false;
-                state.poseLock = true;
                 phy.groundClearance = 0;
-                if (typeof applyLockedPose === 'function') applyLockedPose();
-                if (typeof syncPoseLockUI === 'function') syncPoseLockUI();
             }
-            // One shared cargo-hoist ceiling for hook and STS spreader (up == down).
             if (!dragging) {
                 maxWinch = Math.min(maxWinch, rising ? rates.up : rates.down);
+                if (phy._setDownActive && lowering && !rising && curClr < 0.45) {
+                    maxWinch = Math.min(maxWinch, Math.max(0.14, 0.14 + curClr * 1.55));
+                }
             }
 
             // ASME B30.9 & OSHA Hard-coded safety trigger: Horizontal angle < 30° strictly blocks lifting

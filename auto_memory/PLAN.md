@@ -26,7 +26,7 @@ Nhánh Git: feat/horizon-clouds
   3. `src/sim/gear/editor.js` (`renderGearFields`, `renderSlingInspector`): khi multi-select (`sel.length > 1`), gom các thiết bị cùng `kind` thành nhóm chỉnh đồng bộ truyền thẳng mảng `groupItems` (và `Tăng đơ ΔL` ghi cho mọi nhánh `leg` trong `sel`), đổi thông số là cập nhật đồng loạt ngay lập tức.
 - **Kiểm tra:** `npx vitest run test/jobsite_lashing_follow_regression.test.js test/custom_slings.test.js` + `npm run architecture:gate` + `npm run build`.
 
-### [ ] Bước 2: Hạ / Hạ đất êm chính xác & Camera Góc xoay mượt khi đang nâng/hạ
+### [x] Bước 2: Hạ / Hạ đất êm chính xác & Camera Góc xoay mượt khi đang nâng/hạ
 - **File sửa (3 file):**
   1. `src/sim/session/prelift_reset.js` (`finishSmoothSetDown`): khi hạ đất xong, dập tắt vận tốc êm tại chỗ dựa trên tiếp xúc thực tế thay vì gọi `resetToInitialPreLiftState()` giật kiện về `0°` và hất móc lên.
   2. `src/sim/physics/hoist_contacts.js` (`advanceHook`): làm mượt ngưỡng chạm đất (`< 0.018m`) và giảm tốc tời êm khi hạ/hạ đất, không giật snap `applyLockedPose()` giữa chừng.

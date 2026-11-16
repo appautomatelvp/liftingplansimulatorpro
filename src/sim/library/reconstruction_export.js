@@ -1453,34 +1453,15 @@
             if (opts && opts.apply === false) return offset;
             if (!camera || !controls) return offset;
 
-            const fromPos = camera.position.clone();
-            const fromTarget = controls.target.clone();
-            let toTarget = focus.clone();
-            let toPos = toTarget.clone().add(offset);
-
-            const savePos = camera.position.clone();
-            const saveTarget = controls.target.clone();
-            camera.position.copy(toPos);
-            controls.target.copy(toTarget);
-            camera.lookAt(toTarget);
-            camera.updateMatrixWorld(true);
-            const pan = panVectorToPlaceWorldAtNdc(focus, getUiSafeNdcCenter());
-            toPos.add(pan);
-            toTarget.add(pan);
-            camera.position.copy(savePos);
-            controls.target.copy(saveTarget);
-            camera.updateMatrixWorld(true);
-
-            camCinema = {
+            const curOff = camera.position.clone().sub(controls.target);
+            if (curOff.lengthSq() < 1e-6) curOff.copy(offset);
+            cf.angleBlend = {
+                fromOffset: curOff,
+                toOffset: offset.clone(),
                 t: 0,
-                dur: (opts && opts.duration != null) ? opts.duration : 0.65,
-                fromPos,
-                fromTarget,
-                toPos,
-                toTarget
+                dur: Math.max(0.25, (opts && opts.duration != null) ? opts.duration : 0.55)
             };
-            cf.paused = true;
-            prevFollowWorldPos = null;
+            cf.paused = false;
             return offset;
         }
 
@@ -1927,17 +1908,28 @@
             // Framed look-at = subject + stable UI bias (bias only changes on explicit reframe)
             _camV2.copy(worldTarget).add(bias);
 
-            // --- Góc: track subject at locked cinematic angle ---
+            // --- Góc: smoothly rotate around LIVE moving subject without freezing/jerking during hoist ---
             if (cf.behavior === 'angleCycle' || cf.behavior === 'holdAngle') {
                 if (!cf.lockedOffset || cf.lockedOffset.lengthSq() < 1e-6) {
                     cycleCargoAngleShot({ apply: false, advance: false });
                 }
-                const kT = 1 - Math.exp(-(editing ? 4.2 : 2.6) * dtClamped);
-                const kP = 1 - Math.exp(-(editing ? 3.4 : 2.2) * dtClamped);
+                if (cf.angleBlend) {
+                    cf.angleBlend.t += dtClamped;
+                    const u = Math.min(1, cf.angleBlend.t / cf.angleBlend.dur);
+                    const e = u * u * u * (u * (u * 6 - 15) + 10);
+                    const lenA = Math.max(1e-4, cf.angleBlend.fromOffset.length());
+                    const lenB = Math.max(1e-4, cf.angleBlend.toOffset.length());
+                    _camOffset.copy(cf.angleBlend.fromOffset).normalize().lerp(
+                        _camV1.copy(cf.angleBlend.toOffset).normalize(), e
+                    ).normalize().multiplyScalar(THREE.MathUtils.lerp(lenA, lenB, e));
+                    cf.lockedOffset.copy(_camOffset);
+                    if (u >= 1) cf.angleBlend = null;
+                }
+                if (!prevFollowWorldPos) prevFollowWorldPos = worldTarget.clone();
+                // Track live moving worldTarget delta + smooth settle onto target
+                const kT = 1 - Math.exp(-8.5 * dtClamped);
                 controls.target.lerp(_camV2, kT);
-                _camDesPos.copy(controls.target).add(cf.lockedOffset);
-                camera.position.lerp(_camDesPos, kP);
-                if (!prevFollowWorldPos) prevFollowWorldPos = new THREE.Vector3();
+                camera.position.copy(controls.target).add(cf.lockedOffset);
                 prevFollowWorldPos.copy(worldTarget);
                 return;
             }

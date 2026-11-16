@@ -106,7 +106,51 @@
             phy._trialLiftActive = false;
             phy.autoHoistActive = false;
             phy.hoistSpeed = 0;
-            resetToInitialPreLiftState();
+            if (phy.hookVel) phy.hookVel.set(0, 0, 0);
+            if (phy.cargoVel) phy.cargoVel.set(0, 0, 0);
+            if (phy.cargoOmega) phy.cargoOmega.set(0, 0, 0);
+            if (Array.isArray(phy.beams)) {
+                phy.beams.forEach(b => {
+                    if (b.v) b.v.set(0, 0, 0);
+                    if (b.w) b.w.set(0, 0, 0);
+                    if (typeof clampBeamAboveCargoRoof === 'function') clampBeamAboveCargoRoof(b);
+                });
+            }
+            if (phy.hookPos) phy.hookTarget.copy(phy.hookPos);
+            // Settle smoothly in-place without teleporting cargo yaw/tilt back to factory 0°
+            state.holdCableLength = false;
+            state.heldCableL0 = null;
+            state.poseLock = true;
+            phy.groundClearance = 0;
+            if (typeof syncPoseLockUI === 'function') syncPoseLockUI();
+            if (state.beamType === 'basket') {
+                if (typeof alignBasketBars === 'function') alignBasketBars();
+                if (typeof attachWorld === 'function' && Array.isArray(phy.cables)) {
+                    phy.cables.forEach(c => {
+                        if (typeof cableIsBroken === 'function' && cableIsBroken(c)) return;
+                        const span = attachWorld(c.a).distanceTo(attachWorld(c.b));
+                        c.slack = span < (c.L0 || 1) - 0.02;
+                        c.tensionT = 0;
+                    });
+                }
+                phy._nhomFreezeSpreader = false;
+            } else {
+                if (typeof attachWorld === 'function' && Array.isArray(phy.cables)) {
+                    phy.cables.forEach(c => {
+                        if (typeof cableIsBroken === 'function' && cableIsBroken(c)) return;
+                        const span = attachWorld(c.a).distanceTo(attachWorld(c.b));
+                        const slack = Math.min(0.28, Math.max(0.08, span * 0.03));
+                        c.L0 = Math.max(0.08, span + slack);
+                        c.designL0 = c.L0;
+                        c.slack = true;
+                        c.tensionT = 0;
+                    });
+                }
+                phy._nhomFreezeSpreader = true;
+            }
+            phy.legSlacks = [true, true, true, true, true, true, true, true];
+            phy.legTensions = [0, 0, 0, 0, 0, 0, 0, 0];
+            phy.upperTensions = [0, 0, 0, 0, 0, 0, 0, 0];
         }
         if (typeof window !== 'undefined') {
             window.beginSmoothSetDown = beginSmoothSetDown;
