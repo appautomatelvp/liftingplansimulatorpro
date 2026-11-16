@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 21:01 | Nhánh: feat/horizon-clouds | Commit cuối: ece05fb step 5: wire ElevationRulerTool, stabilize lower/dunnage, add 7-point regression test (6 minutes ago)
+Cập nhật: 2026-11-16 21:03 | Nhánh: feat/horizon-clouds | Commit cuối: b6fa36d fix: keep upper bridle length locked during rising overstretch relief (2 minutes ago)
 Tổng: 265 file, 77007 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
