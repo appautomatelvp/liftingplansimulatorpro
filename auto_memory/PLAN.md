@@ -31,7 +31,7 @@ Nhánh Git: feat/horizon-clouds
   3. `src/sim/physics/hoist_contacts.js`: khi đang `holdLower` / `_setDownActive` ở STS Direct, bám `hookTarget.y` và `kinTarget.y` mượt theo vận tốc tời `rates.down`, tránh xung đột dừng/kéo với `kinHold`.
 - **Kiểm tra:** `npx vitest run test/unified_hoist_and_sts_realism.test.js test/sts_spreader_realistic.test.js` + `npm run architecture:gate` + `npm run build`.
 
-### [ ] Bước 2: Mở khóa chỉnh tự do chiều dài & thông số cáp/công cụ sau F5
+### [x] Bước 2: Mở khóa chỉnh tự do chiều dài & thông số cáp/công cụ sau F5
 - **File sửa (3 file):**
   1. `src/sim/physics/beams_seed.js` (`syncCableRest`): đảm bảo `customLength` (do người dùng chủ động chỉnh tay `item.userSet && item.lengthM != null`) luôn được tôn trọng khi `item.userSet` mới cập nhật, không để `heldCableL0` cũ khóa chết.
   2. `src/sim/gear/editor.js`: trong `renderSlingInspector` & `commitGearField`, mọi thao tác sửa chiều dài (`lenRow`) phải cập nhật/xóa `state.heldCableL0[role][index]` tương ứng, gọi `syncCableRest(false)` + `applyBeamVisuals()` + cập nhật móc nếu cần; giữ trạng thái chỉnh thông số cáp/ma ní/dầm ổn định không tự reset về mặc định ngoài ý muốn.
@@ -57,3 +57,9 @@ Nhánh Git: feat/horizon-clouds
   1. `src/sim/gear/editor.js`: cho phép nắm kéo tay cầm `'ruler'` của Cây thước 3D trên mặt sàn XZ mượt mà (`controls.enabled = false` khi đang kéo, trả lại khi nhả chuột).
   2. `src/sim/library/reconstruction_export.js`: truyền đầy đủ `targets` và `segmentSources` (`hookGroup`, `spreaderRootGroup`, `phy.beamGroups`, `sling3DPool`, `hwMeshes`, `padEyeMeshes`, `cargoRootGroup`, `dunnageGroup`) vào `phy._elevationRuler.updateHover` + truyền danh sách mesh kéo của thước nếu cần.
   3. Tạo `test/v3_ruler_drag_hoist_sts_gear_regression.test.js` kiểm chứng cả 6 yêu cầu + chạy trọn bộ: `npx vitest run`, `npm run architecture:gate`, `npm run build`, `npm run check:dist`, `./scripts/auto_check.ps1`, `./scripts/auto_log.ps1`.
+
+### [ ] Bước 6: Nâng cấp `Ghi / Xem / Dừng` ghi & phát lại TOÀN BỘ trạng thái mô phỏng
+- **File tạo/sửa (3 file):**
+  1. Tạo `src/sim/library/ReplayRecorder.js` (`< 240` dòng, `@purpose:`): bộ ghi & phát lại toàn trạng thái (Hook + Dầm/Ngáng `beams[]` + Kiện + Từng sợi cáp `L0/tensionT/slack/broken/break tips` + Góc quay cẩu `craneAngleDeg` + Khóa `poseLock` & `groundClearance`), lưu snapshot ban đầu khi bấm `Ghi`, khôi phục sạch khi `Dừng`.
+  2. `src/sim/library/reconstruction_export.js`: ủy quyền `pushReplaySample()` và `stepReplay()` sang `ReplayRecorder` (`<= 18` dòng).
+  3. `src/sim/session/presets_events.js` & `test/v3_ruler_drag_hoist_sts_gear_regression.test.js`: nối nút `Ghi`/`Xem`/`Dừng` với ReplayRecorder và bổ sung kiểm thử hồi quy cho toàn bộ, rồi chạy kiểm tra toàn bộ dự án (`npx vitest run`, `npm run architecture:gate`, `npm run build`, `npm run check:dist`, `./scripts/auto_check.ps1`, `./scripts/auto_log.ps1`).

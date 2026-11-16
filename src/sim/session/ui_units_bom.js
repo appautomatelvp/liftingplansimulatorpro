@@ -1663,8 +1663,21 @@
                 if (source === 'number' && inpSel) inpSel.value = clampedVal.toFixed(2);
 
                 const lenM = fromInputLen(clampedVal);
-                rec.lengthM = lenM;
-                rec.userSet = true;
+                const matchingSlings = (state.gear && state.gear.selection)
+                    ? state.gear.selection.filter(s => s.kind === 'sling' && s.role === sel.role)
+                    : [sel];
+                (matchingSlings.length ? matchingSlings : [sel]).forEach(s => {
+                    const r = (typeof gearRecord === 'function') ? gearRecord(s) : null;
+                    if (r) {
+                        r.lengthM = lenM;
+                        r.userSet = true;
+                        r._nhomAutoLen = false;
+                        r._manualLengthOverride = true;
+                    }
+                    if (state.heldCableL0 && s.role && state.heldCableL0[s.role]) {
+                        state.heldCableL0[s.role][s.index] = null;
+                    }
+                });
                 state.slingUserSet = true;
 
                 if (sel.role === 'upper') {
@@ -1675,14 +1688,14 @@
                     state.hangerSlingLength = lenM;
                     if (state.gear && state.gear.hangers) {
                         state.gear.hangers.forEach(h => {
-                            if (h) { h.lengthM = lenM; h.userSet = true; }
+                            if (h) { h.lengthM = lenM; h.userSet = true; h._manualLengthOverride = true; }
                         });
                     }
                 }
                 markCableAdjustMode();
 
-                if (typeof syncHookToRigTaut === 'function') syncHookToRigTaut();
                 if (typeof syncCableRest === 'function') syncCableRest(false);
+                if (typeof syncHookToRigTaut === 'function') syncHookToRigTaut();
                 rebuildCargoAndRig(false);
                 if (typeof renderGearFields === 'function') renderGearFields();
                 syncSlingSlidersFromState();

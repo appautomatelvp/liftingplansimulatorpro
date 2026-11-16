@@ -202,15 +202,17 @@
                 const turn = c.role === 'leg' ? (state.legDeltaL[c.index] || 0) : 0;
                 const held = state.holdCableLength && state.heldCableL0 && state.heldCableL0[c.role] ? state.heldCableL0[c.role][c.index] : null;
                 const customLength = hasExplicitCableLength(item, c.role);
+                const userEditedAfterHold = !!(customLength && item && item.userSet && !item._nhomAutoLen && item._manualLengthOverride);
                 if (captureDesign && c.role === 'hanger' && held == null && !customLength) {
                     c.designL0 = Math.max(0.15, attachWorld(c.a).distanceTo(attachWorld(c.b)));
                 }
                 const isLbDirectTopPin = c.role === 'upper' && state.beamType === 'lifting_beam' && state.liftingBeamTopMode === 'direct_hook';
                 const isLbDirectBotPin = c.role === 'leg' && state.beamType === 'lifting_beam' && state.liftingBeamBottomMode === 'direct';
                 let nominal;
-                // Nhớm / hold: live held L0 wins so design lengthM cannot re-stretch cables.
+                // User-edited manual length overrides temporary held snapshot; Nhớm hold still wins for unedited cables.
                 if (isLbDirectTopPin) nominal = 0.04;
                 else if (isLbDirectBotPin) nominal = 0.12;
+                else if (userEditedAfterHold) nominal = item.lengthM;
                 else if (held != null) nominal = held;
                 else if (customLength) nominal = item.lengthM;
                 else if (c.role === 'upper') nominal = spec.topLeg;

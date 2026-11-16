@@ -1755,6 +1755,33 @@
             const lenDisplayVal = isImp ? (activeL0 * 3.28084) : activeL0;
             const lenUnit = isImp ? 'ft' : 'm';
             const lenStep = isImp ? 0.5 : 0.1;
+            const applyInspectorCableLengths = (meters, refreshPanel) => {
+                sel.forEach(s => {
+                    const r = gearRecord(s);
+                    if (r) {
+                        r.lengthM = meters;
+                        r.userSet = true;
+                        r._nhomAutoLen = false;
+                        r._manualLengthOverride = true;
+                    }
+                    if (state.heldCableL0 && s.role && state.heldCableL0[s.role]) {
+                        state.heldCableL0[s.role][s.index] = null;
+                    }
+                });
+                state.slingUserSet = true;
+                if (sel.every(s => s.role === 'upper')) state.upperSlingLength = meters;
+                else if (sel.every(s => s.role === 'leg')) state.lowerSlingLength = meters;
+                else if (sel.every(s => s.role === 'hanger')) state.hangerSlingLength = meters;
+                syncCableRest(false);
+                if (state.poseLock && typeof syncHookToRigTaut === 'function') syncHookToRigTaut();
+                if (typeof applyBeamVisuals === 'function') applyBeamVisuals();
+                if (typeof syncCableControlsSelection === 'function') syncCableControlsSelection();
+                if (typeof syncSlingSlidersFromState === 'function') syncSlingSlidersFromState();
+                if (refreshPanel) {
+                    computeRiggingMassBreakdown();
+                    renderGearFields();
+                }
+            };
             const lenRow = createSliderRow({
                 label: `Chiều dài làm việc${!isManualLen ? ' · Auto' : ''}`,
                 value: lenDisplayVal,
@@ -1766,23 +1793,11 @@
                 accent: isManualLen ? 'amber' : 'sky',
                 onInput: (newVal) => {
                     const meters = isImp ? (newVal / 3.28084) : newVal;
-                    sel.forEach(s => {
-                        const r = gearRecord(s);
-                        if (r) { r.lengthM = meters; r.userSet = true; }
-                    });
-                    syncCableRest(false);
-                    if (typeof syncCableControlsSelection === 'function') syncCableControlsSelection();
+                    applyInspectorCableLengths(meters, false);
                 },
                 onChange: (newVal) => {
                     const meters = isImp ? (newVal / 3.28084) : newVal;
-                    sel.forEach(s => {
-                        const r = gearRecord(s);
-                        if (r) { r.lengthM = meters; r.userSet = true; }
-                    });
-                    syncCableRest(false);
-                    if (typeof syncCableControlsSelection === 'function') syncCableControlsSelection();
-                    computeRiggingMassBreakdown();
-                    renderGearFields();
+                    applyInspectorCableLengths(meters, true);
                 }
             });
             grid2.appendChild(lenRow.wrap);
@@ -1893,7 +1908,10 @@
                             if (s.role !== 'leg') return;
                             while (state.legDeltaL.length <= s.index) state.legDeltaL.push(0);
                             state.legDeltaL[s.index] = clamped;
+                            if (state.heldCableL0 && state.heldCableL0.leg) state.heldCableL0.leg[s.index] = null;
                         });
+                        syncCableRest(false);
+                        if (typeof applyBeamVisuals === 'function') applyBeamVisuals();
                     },
                     onChange: (newTurn) => {
                         const clamped = THREE.MathUtils.clamp(newTurn, -1.5, 2.5);
@@ -1901,7 +1919,11 @@
                             if (s.role !== 'leg') return;
                             while (state.legDeltaL.length <= s.index) state.legDeltaL.push(0);
                             state.legDeltaL[s.index] = clamped;
+                            if (state.heldCableL0 && state.heldCableL0.leg) state.heldCableL0.leg[s.index] = null;
                         });
+                        syncCableRest(false);
+                        if (typeof applyBeamVisuals === 'function') applyBeamVisuals();
+                        if (typeof syncCableControlsSelection === 'function') syncCableControlsSelection();
                     }
                 });
                 grid2.appendChild(turnRow.wrap);
@@ -2213,8 +2235,12 @@
                 const rec = gearRecord(sel);
                 if (!rec) return;
                 rec[key] = value;
-                if (key === 'lengthM' && (sel.role === 'extra' || sel.kind === 'sling')) rec.userSet = value != null;
-                if (key === 'lengthM' && value == null && state.heldCableL0 && state.heldCableL0[sel.role]) {
+                if (key === 'lengthM' && (sel.role === 'extra' || sel.kind === 'sling')) {
+                    rec.userSet = value != null;
+                    rec._nhomAutoLen = false;
+                    rec._manualLengthOverride = value != null;
+                }
+                if (key === 'lengthM' && sel.role && state.heldCableL0 && state.heldCableL0[sel.role]) {
                     state.heldCableL0[sel.role][sel.index] = null;
                 }
             });
