@@ -135,7 +135,7 @@
                 slingObj._ropeSimCargoKey = cargoKey;
             }
             const result = slingObj.ropeSim.step(1 / 60, A, B, {
-                iterations: 6,
+                iterations: 14,
                 collide: (point, index, radius) => collide(point, slingObj.ropeSim.previous[index], radius)
             });
             result[0].copy(A);

@@ -17,15 +17,15 @@ export const CABLE_MATERIAL_PROFILES = Object.freeze({
     youngsModulusPa: 200e9,
     densityFactor: 0.9,
     bendRadiusDiameters: 0,
-    bendCompliance: 0.08,
-    airDamping: 0.32
+    bendCompliance: 0.14,
+    airDamping: 0.25
   }),
   web: Object.freeze({
     youngsModulusPa: 5e9,
     densityFactor: 0.08,
-    bendRadiusDiameters: 2,
-    bendCompliance: 0.05,
-    airDamping: 1.8
+    bendRadiusDiameters: 1.5,
+    bendCompliance: 0.08,
+    airDamping: 1.4
   })
 });
 

@@ -141,7 +141,9 @@ describe('Nhớm Cáp (pretensionRig) — Grounded Cargo + Full Real-Length Taut
     sim.rebuildCargoAndRig(true);
 
     for (const testHookY of [8.5, 9.6, 10.6]) {
-      s.poseLock = false;
+      s.poseLock = true;
+      phy._nhomFreezeSpreader = false;
+      phy.hoistSpeed = -0.3;
       phy.hookPos.y = testHookY;
       phy.hookTarget.y = testHookY;
       sim.stepSim(20);
@@ -154,6 +156,9 @@ describe('Nhớm Cáp (pretensionRig) — Grounded Cargo + Full Real-Length Taut
             const span = sim.attachWorld(u.a).distanceTo(sim.attachWorld(u.b));
             expect(span, `hookY=${testHookY} bar=${b.id}`).toBeGreaterThanOrEqual(u.L0 - 0.04);
           }
+        }
+        if (testHookY <= 9.6) {
+          expect(Math.abs(b.x.x), `hookY=${testHookY} bar should swing inward under gravity`).toBeLessThan(2.0);
         }
       }
     }

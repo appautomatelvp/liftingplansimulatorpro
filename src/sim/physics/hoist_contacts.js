@@ -874,7 +874,13 @@
             const legLoad = (phy.cables || []).some(c =>
                 c.role === 'leg' && !cableIsBroken(c) && ((c.tensionT || 0) > 0.12 || (!c.slack && (c._j || 0) > 1e-4))
             );
-            const takingUp = isGrounded && (
+            const loweringNow = !!(
+                (phy.hoistSpeed || 0) < -0.01
+                || phy._setDownActive
+                || (phy.hookTarget && phy.hookPos && phy.hookTarget.y < phy.hookPos.y - 0.02)
+            );
+            const nhomTaut = !!(phy && phy._nhomFreezeSpreader && state.poseLock);
+            const takingUp = !loweringNow && isGrounded && (
                 (phy.hoistSpeed || 0) > 0.015
                 || !!phy.autoHoistActive
                 || legLoad
@@ -955,6 +961,7 @@
                 const r2 = dLowAx + 0.14;
                 const distFree = freeHang.distanceTo(eMid);
 
+                const plumbVec = sideXZ.clone().multiplyScalar(freeSep).add(new THREE.Vector3(0, -(dropUpFree + 0.14), 0));
                 if (!cargoAirborne && distFree <= r2 + 0.02) {
                     // Lower sling has zero tension → gravity holds steel bar straight down under hook (or on roof).
                     b.x.copy(freeHang);
@@ -972,6 +979,20 @@
                     b.x.copy(master).addScaledVector(u, a).addScaledVector(vDown, h);
                 } else {
                     b.x.copy(freeHang);
+                }
+
+                // Khi hạ móc (không Nhớm, không kéo hàng rời đất): thanh thép 450kg rũ dần vào trong trên cung bán kính r1
+                if (!cargoAirborne && !nhomTaut && (!takingUp || loweringNow) && dist < r1 + r2) {
+                    const deficit = Math.max(0, (r1 + r2) - dist);
+                    const swingIn = THREE.MathUtils.clamp(deficit / 0.85, 0, 1);
+                    if (swingIn > 0.001) {
+                        const hangDir = b.x.clone().sub(master);
+                        if (hangDir.lengthSq() > 1e-6) hangDir.normalize();
+                        else hangDir.copy(plumbVec).normalize();
+                        const freeDir = plumbVec.clone().normalize();
+                        const swingDir = hangDir.lerp(freeDir, swingIn).normalize();
+                        b.x.copy(master).addScaledVector(swingDir, r1);
+                    }
                 }
 
                 // Seat on TRUE cargo roof when grounded so steel bar rests heavily on cargo lid.
