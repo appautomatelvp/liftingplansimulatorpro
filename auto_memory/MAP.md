@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 20:55 | Nhánh: feat/horizon-clouds | Commit cuối: efcd0e6 step 4: add ElevationRulerTool 3D altitude gauge and Display toggle (2 minutes ago)
-Tổng: 265 file, 77005 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 21:01 | Nhánh: feat/horizon-clouds | Commit cuối: ece05fb step 5: wire ElevationRulerTool, stabilize lower/dunnage, add 7-point regression test (6 minutes ago)
+Tổng: 265 file, 77007 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -30,7 +30,7 @@ Tổng: 265 file, 77005 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/library/parsers.js (654 dòng)
 - src/sim/library/reconstruction_export.js (2133 dòng)
 - src/sim/physics/beams_seed.js (2961 dòng)
-- src/sim/physics/cables_break.js (1553 dòng)
+- src/sim/physics/cables_break.js (1555 dòng)
 - src/sim/physics/flatrack_payload.js (657 dòng)
 - src/sim/physics/footprint_rig.js (838 dòng)
 - src/sim/physics/hoist_contacts.js (1072 dòng)
@@ -243,7 +243,7 @@ Tổng: 265 file, 77005 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/manifest.js` | 39 |  |
 | `src/sim/physics.js` | 6 |  |
 | `src/sim/physics/beams_seed.js` | 2961 |  ⚠️>300 |
-| `src/sim/physics/cables_break.js` | 1553 |  ⚠️>300 |
+| `src/sim/physics/cables_break.js` | 1555 |  ⚠️>300 |
 | `src/sim/physics/flatrack_payload.js` | 657 | --- FLAT RACK LASHING RUPTURE, DECK SLIDING & FALLING PAYLOAD PHYSICS --- ⚠️>300 |
 | `src/sim/physics/footprint_rig.js` | 838 |  ⚠️>300 |
 | `src/sim/physics/hoist_contacts.js` | 1072 |  ⚠️>300 |

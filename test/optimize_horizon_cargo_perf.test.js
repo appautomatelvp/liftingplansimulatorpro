@@ -235,7 +235,7 @@ describe('Runtime & Asset performance helpers', () => {
       st.poseLock = false;
       phy.hoistSpeed = UNIFIED_BASE_HOIST_SPEED_MPS;
       let maxVelY = 0;
-      for (let i = 0; i < 420 && (phy.groundClearance || 0) < 0.25; i++) {
+      for (let i = 0; i < 600 && (phy.groundClearance || 0) < 0.25; i++) {
         sim.stepPhysicsEngine(1 / 60);
         maxVelY = Math.max(maxVelY, Math.abs(phy.cargoVel?.y || 0));
       }

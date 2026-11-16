@@ -383,6 +383,8 @@
             const trigger = opts.trigger != null ? opts.trigger : 0.035;
             (phy.cables || []).forEach(c => {
                 if (!c || (typeof cableIsBroken === 'function' && cableIsBroken(c))) return;
+                // Upper bridle lifts the beam off the cargo roof; paying it out while rising stalls the beam & catapults later
+                if (opts.rising && c.role === 'upper') return;
                 const span = attachWorld(c.a).distanceTo(attachWorld(c.b));
                 if (!(span > 0.05)) return;
                 const L0 = c.L0 || 0;
