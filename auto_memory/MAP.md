@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 19:00 | Nhánh: feat/horizon-clouds | Commit cuối: 34d21ac docs: log horizon gradient and solid cargo sealing fix (12 minutes ago)
+Cập nhật: 2026-11-16 19:01 | Nhánh: feat/horizon-clouds | Commit cuối: 365ac3b feat: fix blocky wind/cloud quads, add night sky dithering, and add game brightness/contrast sliders (37 seconds ago)
 Tổng: 259 file, 75631 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)

@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-16 19:00 [feat] Sua vo hinh may gio bay (loai bo gradient cham canh o vuong, thu gon hat suong va them luong gio windStreaks + khu bac mau troi dem bang dither) va bo sung thanh chinh Do sang (Brightness) / Tuong phan (Contrast) kieu game trong Graphics
+- Nhánh: feat/horizon-clouds | Commit trước đó: 365ac3b
+- File: src/graphics/GraphicsToneHelper.js,src/graphics/HorizonSkyDome.js,src/graphics/SceneRenderer.js,src/graphics/index.js,src/sim/weather_fx.js,index.html,src/sim/session/presets_events.js,test/optimize_horizon_cargo_perf.test.js
+
 ## 2026-11-16 18:48 [fix] Bit kin loi/day rong va bat DoubleSide + kinh toi dac cho xe buyt 3D/container (SolidShellSealer.js) va dong bo he mau HorizonSkyDome khop tuyet doi voi suong mu fog_fragment de chan troi chuyen mau muot khong chia 2 mang
 - Nhánh: feat/horizon-clouds | Commit trước đó: e588b0f
 - File: src/graphics/SolidShellSealer.js,src/graphics/HorizonSkyDome.js,src/graphics/index.js,src/sim/scene.js,src/sim/library/parsers.js,src/sim/cargo/specialty_meshes.js,test/optimize_horizon_cargo_perf.test.js
