@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 18:22 | Nhánh: feat/horizon-clouds | Commit cuối: 7217f82 step 3: deduplicate URL fetches, skip heavy CAD edge generation, non-reset bus upgrade (2 minutes ago)
-Tổng: 256 file, 75106 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 18:23 | Nhánh: feat/horizon-clouds | Commit cuối: 84b010c step 4: settled XPBD slack cache, scratch vector reuse, and cargo cache LRU dispose (42 seconds ago)
+Tổng: 256 file, 75115 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -42,7 +42,7 @@ Tổng: 256 file, 75106 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/session/presets_events.js (3573 dòng)
 - src/sim/session/ui_units_bom.js (1953 dòng)
 - src/sim/state.js (606 dòng)
-- src/sim/telemetry.js (1106 dòng)
+- src/sim/telemetry.js (1115 dòng)
 - src/sim/weather_fx.js (572 dòng)
 - test/cable_morphology_and_deformation.test.js (426 dòng)
 - test/custom_slings.test.js (712 dòng)
@@ -253,7 +253,7 @@ Tổng: 256 file, 75106 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/session/presets_events.js` | 3573 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
 | `src/sim/session/ui_units_bom.js` | 1953 | --- 12. UI EVENT BINDINGS & COLLAPSIBLE PANELS --- ⚠️>300 |
 | `src/sim/state.js` | 606 | Floor cribbing removed: static cargo rests flush on the quay / ground plane. ⚠️>300 |
-| `src/sim/telemetry.js` | 1106 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
+| `src/sim/telemetry.js` | 1115 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
 | `src/sim/ui-layout.js` | 241 |  |
 | `src/sim/weather_fx.js` | 572 |  ⚠️>300 |
 | `src/simulation/destruction-manager/DestructionSolver.js` | 147 |  |

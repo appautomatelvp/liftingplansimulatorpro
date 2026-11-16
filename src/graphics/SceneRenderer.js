@@ -24,7 +24,7 @@ export const QUALITY_TIERS = {
     },
     // Default interactive tier — 1080p ~60 FPS + native MSAA
     high: {
-        id: 'high', name: 'High (1080p / Cân bằng)', shadowMapSize: 4096, shadowType: 'pcf',
+        id: 'high', name: 'High (1080p / Cân bằng)', shadowMapSize: 2048, shadowType: 'pcf',
         aoEnabled: false, aoType: 'gtao', bloomEnabled: false, smaaEnabled: false,
         antialias: true, msaaSamples: 0, maxDPR: 1.0, bypassComposer: true
     },

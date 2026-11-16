@@ -54,7 +54,7 @@ Nhánh thực hiện: feat/horizon-clouds (đã sao lưu an toàn vào `_BACKUPS
 - **File CẤM đụng:** Toàn bộ `[LOCKED]`.
 - **Kiểm tra:** `npm run architecture:gate; npm run build`
 
-### [ ] Bước 5: Tối ưu ghi DOM HUD 60Hz & độ phân giải Shadow mặc định (2 files)
+### [x] Bước 5: Tối ưu ghi DOM HUD 60Hz & độ phân giải Shadow mặc định (2 files)
 - **File được sửa / tạo:**
   1. `src/sim/telemetry.js` *(sửa `≤ 22` dòng)*: Cache chuỗi text, `className` và tọa độ màn hình `left/top/opacity` trong `projectToScreen` / `lbl-t*` / `lbl-hook` / `lbl-ground-angle` — chỉ ghi DOM khi giá trị thực sự thay đổi, cắt giảm tối đa style/layout thrash ở 60Hz.
   2. `src/graphics/SceneRenderer.js` *(sửa `1–3` dòng tại `QUALITY_TIERS.high`)*: Hạ `high.shadowMapSize` từ `4096` xuống `2048` (mức `ultra` giữ nguyên `4096`) giúp dựng bóng mượt 60 FPS trên GPU tầm trung.
