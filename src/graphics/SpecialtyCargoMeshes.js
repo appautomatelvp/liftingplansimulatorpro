@@ -84,42 +84,62 @@ export function buildSteelPipeCargoMesh(THREE, L = 12.0, W = 2.2, H = 2.2, mats 
  * Builds a coach bus proxy matching `bus.obj` scale and teal-green palette so
  * selecting Vehicle never flips from a small red sedan to a large teal coach bus.
  */
-export function buildProceduralCoachBusMesh(THREE, L = 9.0, W = 2.38, H = 2.80, mats = {}) {
-  const group = new THREE.Group();
-  group.name = 'Vehicle_Coach_Bus';
+export function buildProceduralCoachBusMesh(THREE, L = 9.0, W = 2.38, H = 2.80, mats = {}, targetGroup = null) {
+  const group = targetGroup || new THREE.Group();
+  if (!targetGroup) group.name = 'Vehicle_Coach_Bus';
   const bodyMat = new THREE.MeshStandardMaterial({ color: 0x2c8c8a, roughness: 0.42, metalness: 0.22 });
   const roofMat = new THREE.MeshStandardMaterial({ color: 0xdbeafe, roughness: 0.5, metalness: 0.1 });
   const glassMat = pickMat(THREE, mats, 'glassDark', { color: 0x0f172a, roughness: 0.15, metalness: 0.7 });
   const tireMat = pickMat(THREE, mats, 'rubberTire', { color: 0x18181b, roughness: 0.88, metalness: 0.05 });
   const rimMat = pickMat(THREE, mats, 'darkSteel', { color: 0xcbd5e1, roughness: 0.3, metalness: 0.8 });
+  const lampMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.2, metalness: 0.1 });
+  const tailMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.25, metalness: 0.2 });
 
   const wheelR = Math.min(0.46, H * 0.165);
   const bodyH = H - wheelR * 0.72;
   const bodyY = -H * 0.5 + wheelR * 0.72 + bodyH * 0.5;
 
-  // Lower skirt & main coach body
   const hull = new THREE.Mesh(new THREE.BoxGeometry(L * 0.98, bodyH, W * 0.98), bodyMat);
   hull.position.set(0, bodyY, 0);
   hull.castShadow = true;
   hull.receiveShadow = true;
   group.add(hull);
 
-  // Side & front panoramic window belt
   const sideGlass = new THREE.Mesh(new THREE.BoxGeometry(L * 0.90, bodyH * 0.34, W + 0.015), glassMat);
   sideGlass.position.set(L * 0.01, bodyY + bodyH * 0.16, 0);
-  group.add(sideGlass);
-
   const windshield = new THREE.Mesh(new THREE.BoxGeometry(0.06, bodyH * 0.42, W * 0.88), glassMat);
   windshield.position.set(L * 0.49, bodyY + bodyH * 0.14, 0);
-  group.add(windshield);
+  const rearGlass = new THREE.Mesh(new THREE.BoxGeometry(0.06, bodyH * 0.30, W * 0.82), glassMat);
+  rearGlass.position.set(-L * 0.49, bodyY + bodyH * 0.18, 0);
+  group.add(sideGlass, windshield, rearGlass);
 
-  // Roof HVAC unit
-  const hvac = new THREE.Mesh(new THREE.BoxGeometry(L * 0.28, 0.14, W * 0.56), roofMat);
-  hvac.position.set(0, H * 0.5 - 0.05, 0);
-  hvac.castShadow = true;
-  group.add(hvac);
+  [-L * 0.16, L * 0.16].forEach((hx) => {
+    const hvac = new THREE.Mesh(new THREE.BoxGeometry(L * 0.20, 0.14, W * 0.54), roofMat);
+    hvac.position.set(hx, H * 0.5 - 0.05, 0);
+    hvac.castShadow = true;
+    group.add(hvac);
+  });
 
-  // 4 dual coach wheels
+  [-L * 0.495, L * 0.495].forEach((bx) => {
+    const bumper = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.20, W * 0.98), rimMat);
+    bumper.position.set(bx, -H * 0.5 + wheelR * 0.85, 0);
+    group.add(bumper);
+  });
+
+  [-W * 0.34, W * 0.34].forEach((lz) => {
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.14, 0.24), lampMat);
+    head.position.set(L * 0.495, -H * 0.5 + wheelR * 1.25, lz);
+    const tail = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.16, 0.22), tailMat);
+    tail.position.set(-L * 0.495, -H * 0.5 + wheelR * 1.30, lz);
+    group.add(head, tail);
+  });
+
+  [-W * 0.53, W * 0.53].forEach((mz) => {
+    const mirror = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.24, 0.08), tireMat);
+    mirror.position.set(L * 0.46, bodyY + bodyH * 0.08, mz);
+    group.add(mirror);
+  });
+
   const wheelW = 0.28;
   [-L * 0.30, L * 0.31].forEach((wx) => {
     [-W * 0.46, W * 0.46].forEach((wz) => {
@@ -127,12 +147,10 @@ export function buildProceduralCoachBusMesh(THREE, L = 9.0, W = 2.38, H = 2.80, 
       tire.rotation.x = Math.PI / 2;
       tire.position.set(wx, -H * 0.5 + wheelR, wz);
       tire.castShadow = true;
-      group.add(tire);
-
       const hub = new THREE.Mesh(new THREE.CylinderGeometry(wheelR * 0.55, wheelR * 0.55, wheelW + 0.015, 14), rimMat);
       hub.rotation.x = Math.PI / 2;
       hub.position.copy(tire.position);
-      group.add(hub);
+      group.add(tire, hub);
     });
   });
 

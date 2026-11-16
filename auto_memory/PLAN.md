@@ -1,5 +1,5 @@
 # KẾ HOẠCH TỐI ƯU TỔNG THỂ HỆ THỐNG & SỬA LỖI (PLAN V7)
-Trạng thái: ACTIVE
+Trạng thái: DONE
 Nhánh thực hiện: feat/horizon-clouds (đã sao lưu an toàn vào `_BACKUPS_LOCAL`)
 
 ## 1. Mục tiêu
@@ -61,7 +61,7 @@ Nhánh thực hiện: feat/horizon-clouds (đã sao lưu an toàn vào `_BACKUPS
 - **File CẤM đụng:** Toàn bộ `[LOCKED]`, `draw_update.js`.
 - **Kiểm tra:** `npm run architecture:gate; npm run build`
 
-### [ ] Bước 6: Kiểm thử tự động (Vitest) & Nghiệm thu toàn hệ thống (1 file + full gates)
+### [x] Bước 6: Kiểm thử tự động (Vitest) & Nghiệm thu toàn hệ thống (1 file + full gates)
 - **File được tạo:**
   1. `test/optimize_horizon_cargo_perf.test.js` *(FILE MỚI, `< 150` dòng, `@purpose:`)*: Kiểm thử:
      - `HorizonSkyDome` bật `toneMapped: true`, có `#include <tonemapping_fragment>` trước `#include <colorspace_fragment>` và không bắt đầu blend bầu trời sớm dưới `y = 0`.

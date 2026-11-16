@@ -1159,7 +1159,7 @@
 
             } else if (type === 'car') {
                 if (typeof GFX !== 'undefined' && GFX.buildProceduralCoachBusMesh) {
-                    group.add(GFX.buildProceduralCoachBusMesh(THREE, L, W, H, MATS));
+                    GFX.buildProceduralCoachBusMesh(THREE, L, W, H, MATS, group);
                 } else {
                     addRealisticCar(group, L, W, H);
                 }

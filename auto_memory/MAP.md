@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 18:23 | Nhánh: feat/horizon-clouds | Commit cuối: 84b010c step 4: settled XPBD slack cache, scratch vector reuse, and cargo cache LRU dispose (42 seconds ago)
-Tổng: 256 file, 75115 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 18:30 | Nhánh: feat/horizon-clouds | Commit cuối: 7b2d8c1 step 5: dirty-check HUD DOM updates and set high shadow map to 2048 (7 minutes ago)
+Tổng: 257 file, 75272 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -165,7 +165,7 @@ Tổng: 256 file, 75115 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/graphics/pbr/StressPBRMaterials.js` | 146 | Tạo bản đồ PBR thép sơn công nghiệp, thép rèn mạ kẽm và màu ứng suất căng cơ học thời gian thực |
 | `src/graphics/PBRMaterialFactory.js` | 244 | Nhà máy tạo vật liệu PBR chuẩn công nghiệp hàng hải và đồng bộ không gian màu Three.js r170+ |
 | `src/graphics/SceneRenderer.js` | 294 |  ⚠️>250 |
-| `src/graphics/SpecialtyCargoMeshes.js` | 140 | Dựng khối 3D ống thép siêu trường Steel Pipe (OOG) và xe buýt procedural đồng bộ CAD |
+| `src/graphics/SpecialtyCargoMeshes.js` | 158 | Dựng khối 3D ống thép siêu trường Steel Pipe (OOG) và xe buýt procedural đồng bộ CAD |
 | `src/i18n/cargo_labels.js` | 48 |  |
 | `src/i18n/cms_keys.js` | 137 | Bộ từ điển song ngữ VI/EN chuyên biệt cho hệ thống CMS Enterprise Command Center |
 | `src/i18n/contact_keys.js` | 73 | Bộ từ điển song ngữ VI/EN chuẩn công nghiệp cho hộp thoại Hỗ trợ kỹ thuật & Góp ý |
@@ -292,6 +292,7 @@ Tổng: 256 file, 75115 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/i18n_keys.test.js` | 56 |  |
 | `test/inclined_lashing_slide.test.js` | 67 |  |
 | `test/liftplan.test.js` | 153 |  |
+| `test/optimize_horizon_cargo_perf.test.js` | 139 | Kiểm thử tự động cho hòa chân trời, 3D Steel Pipe / Vehicle, cache CAD và tối ưu hiệu năng |
 | `test/phase1_core_safety.test.js` | 208 |  |
 | `test/physics_destruction.test.js` | 69 |  |
 | `test/physics_master_blueprint.test.js` | 524 |  ⚠️>300 |
