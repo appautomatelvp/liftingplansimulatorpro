@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 14:37 | Nhánh: feat/horizon-clouds | Commit cuối: 7bb8855 ui: remove Cascaded Spreader System, Spreader Beam (Truss), and Equalizer Beam options (11 minutes ago)
-Tổng: 249 file, 73700 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 14:47 | Nhánh: feat/horizon-clouds | Commit cuối: 9a94f2a Snapshot 143716112026 (test): truoc khi lam h-shape-lifting-beam-upgrade (9 minutes ago)
+Tổng: 250 file, 73889 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -176,7 +176,8 @@ Tổng: 249 file, 73700 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/constraints/CornerProtectorModel.js` | 51 |  |
 | `src/rigging/constraints/HardwareConstraint.js` | 236 |  |
 | `src/rigging/constraints/UnilateralCableConstraint.js` | 151 |  |
-| `src/rigging/index.js` | 17 | src/rigging/index.js |
+| `src/rigging/HStyleLiftingBeam.js` | 188 | Cấu tạo 3D và thông số khớp nối H-Style Lifting Beam (tùy chọn trên Direct Hook/2-Cáp và dưới 4-Cáp/Twistlock) |
+| `src/rigging/index.js` | 18 | src/rigging/index.js |
 | `src/rigging/riggingConstants.js` | 69 | src/rigging/riggingConstants.js |
 | `src/rigging/RiggingPhysicsSolver.js` | 682 | src/rigging/RiggingPhysicsSolver.js ⚠️>300 |
 | `src/rigging/riggingUIStore.js` | 100 | src/rigging/riggingUIStore.js |

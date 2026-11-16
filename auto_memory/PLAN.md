@@ -32,7 +32,7 @@
 ## 3. CÁC BƯỚC THỰC THI CHI TIẾT (CHẠY MỘT MẠCH TỪ BƯỚC 1 ĐẾN BƯỚC 5)
 
 ### Bước 1: Tạo Module Dựng Hình & Thông Số Kỹ Thuật H-Style Lifting Beam (`src/rigging/HStyleLiftingBeam.js`, `src/rigging/index.js`)
-- [ ] **Trạng thái:** Chưa làm
+- [x] **Trạng thái:** Hoàn tất (`188` dòng, `architecture:gate` & `vite build` xanh)
 - **Mục tiêu:** Đóng gói toàn bộ logic hình học 3D và thông số kích thước/khớp nối của Dầm nâng chữ H mới vào một module sạch `< 240` dòng.
 - **File được phép tạo/sửa (tối đa 2 file):**
   1. `src/rigging/HStyleLiftingBeam.js` *(tạo mới, `< 240` dòng, có dòng đầu `// @purpose: Cấu tạo 3D và thông số khớp nối H-Style Lifting Beam (tùy chọn liên kết trên Direct Hook/2-Cáp và dưới 4-Cáp/Twistlock)`)*:
