@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-16 16:19 [fix] Giữ cố định chiều dài cáp dưới r2 cho 2 thanh ngáng Basket khi hạ móc (alignBasketBars), bỏ cơ chế trượt vào tâm làm giãn cáp và bổ sung test bảo toàn chiều dài cáp (test/pretension_nhom_cap.test.js)
+- Nhánh: feat/horizon-clouds | Commit trước đó: d4193a6
+- File: src/sim/physics/hoist_contacts.js,test/pretension_nhom_cap.test.js,auto_memory/CONTEXT.md
+
 ## 2026-11-16 16:07 [fix] Sửa 2 thanh ngáng Basket tự rũ vào trong kéo trĩu cáp trên khi hạ móc (alignBasketBars) và tăng độ mềm mại tự nhiên cho xích/cáp chùng (draw_update.js, BrokenCableWhipXPBD.js)
 - Nhánh: feat/horizon-clouds | Commit trước đó: d7a91f7
 - File: src/sim/physics/hoist_contacts.js,src/sim/rigging/draw_update.js,src/rigging/BrokenCableWhipXPBD.js,test/pretension_nhom_cap.test.js,auto_memory/CONTEXT.md

@@ -947,7 +947,7 @@
                 const floorFree = cargoCeilingUnderBeam(freeHang.x, freeHang.z, spec, b);
                 if (!cargoAirborne && freeHang.y < floorFree) freeHang.y = floorFree;
 
-                // --- True 2-link equilibrium under gravity: never float outward with slack upper/lower ---
+                // --- True 2-link equilibrium under gravity: strictly conserve both upper (r1) and lower (r2) lengths ---
                 const toMid = eMid.clone().sub(master);
                 const dist = Math.max(1e-4, toMid.length());
                 const u = toMid.clone().multiplyScalar(1 / dist);
@@ -960,39 +960,41 @@
                 const r1 = (legABroken || legBBroken) ? (dUpAx + 0.55) : (dUpAx + 0.14);
                 const r2 = dLowAx + 0.14;
                 const distFree = freeHang.distanceTo(eMid);
+                const floorAtLugSide = cargoCeilingUnderBeam(eMid.x, eMid.z, spec, b);
+                const dyRoof = floorAtLugSide - eMid.y;
+                const dxLowRoof = (r2 > Math.abs(dyRoof))
+                    ? Math.sqrt(Math.max(0.01, r2 * r2 - dyRoof * dyRoof))
+                    : 0.05;
+                const distXZ = Math.hypot(eMid.x - master.x, eMid.z - master.z);
+                const roofTethered = eMid.clone().addScaledVector(sideXZ, -Math.min(dxLowRoof, Math.max(0, distXZ - 0.14)));
+                roofTethered.y = cargoCeilingUnderBeam(roofTethered.x, roofTethered.z, spec, b);
 
-                const plumbVec = sideXZ.clone().multiplyScalar(freeSep).add(new THREE.Vector3(0, -(dropUpFree + 0.14), 0));
                 if (!cargoAirborne && distFree <= r2 + 0.02) {
-                    // Lower sling has zero tension → gravity holds steel bar straight down under hook (or on roof).
+                    // Lower sling is long enough to remain slack at plumb hang → gravity holds bar vertically under hook.
                     b.x.copy(freeHang);
                 } else if (cargoAirborne || dist >= r1 + r2 - 1e-4) {
                     const maxReach = (legABroken || legBBroken) ? (dUpAx + 0.55) : r1;
                     b.x.copy(master).addScaledVector(u, Math.min(maxReach, dist));
                 } else if (dist > Math.abs(r1 - r2) + 1e-4) {
-                    // Gravity pulls steel bar to lower circle intersection so BOTH upper and lower stay taut.
+                    // Gravity pulls steel bar to lower circle intersection so upper (r1) & lower (r2) NEVER stretch.
                     const down = new THREE.Vector3(0, -1, 0);
                     const vDown = down.clone().addScaledVector(u, -down.dot(u));
                     if (vDown.lengthSq() > 1e-6) vDown.normalize();
                     else vDown.copy(sideXZ);
                     const a = (r1 * r1 - r2 * r2 + dist * dist) / (2 * dist);
                     const h = Math.sqrt(Math.max(0, r1 * r1 - a * a));
-                    b.x.copy(master).addScaledVector(u, a).addScaledVector(vDown, h);
-                } else {
-                    b.x.copy(freeHang);
-                }
-
-                // Khi hạ móc (không Nhớm, không kéo hàng rời đất): thanh thép 450kg rũ dần vào trong trên cung bán kính r1
-                if (!cargoAirborne && !nhomTaut && (!takingUp || loweringNow) && dist < r1 + r2) {
-                    const deficit = Math.max(0, (r1 + r2) - dist);
-                    const swingIn = THREE.MathUtils.clamp(deficit / 0.85, 0, 1);
-                    if (swingIn > 0.001) {
-                        const hangDir = b.x.clone().sub(master);
-                        if (hangDir.lengthSq() > 1e-6) hangDir.normalize();
-                        else hangDir.copy(plumbVec).normalize();
-                        const freeDir = plumbVec.clone().normalize();
-                        const swingDir = hangDir.lerp(freeDir, swingIn).normalize();
-                        b.x.copy(master).addScaledVector(swingDir, r1);
+                    const pInt = master.clone().addScaledVector(u, a).addScaledVector(vDown, h);
+                    const floorInt = cargoCeilingUnderBeam(pInt.x, pInt.z, spec, b);
+                    if (!cargoAirborne && pInt.y < floorInt) {
+                        // Bar has landed on cargo roof: lower cable tethers bar at roofTethered (≤ r2 from lug),
+                        // so bar never slides to cargo center or off cargo ends, and upper cable drapes slack under gravity.
+                        b.x.copy(roofTethered.distanceTo(master) <= r1 + 0.02 ? roofTethered : pInt);
+                    } else {
+                        b.x.copy(pInt);
                     }
+                } else {
+                    // Very low hook (dist <= |r1 - r2|): keep bar on roof within lower cable radius r2 of lug.
+                    b.x.copy(roofTethered);
                 }
 
                 // Seat on TRUE cargo roof when grounded so steel bar rests heavily on cargo lid.

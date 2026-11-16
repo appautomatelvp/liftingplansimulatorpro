@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 16:07 | Nhánh: feat/horizon-clouds | Commit cuối: d7a91f7 fix: enforce real gravity equilibrium on Basket spreader bars so steel bars pull upper cables taut instead of levitating (14 minutes ago)
-Tổng: 253 file, 74602 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 16:19 | Nhánh: feat/horizon-clouds | Commit cuối: d4193a6 fix: swing Basket bars inward under gravity on hoist lowering and soften slack cable drape (12 minutes ago)
+Tổng: 253 file, 74609 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -32,7 +32,7 @@ Tổng: 253 file, 74602 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/physics/cables_break.js (1557 dòng)
 - src/sim/physics/flatrack_payload.js (629 dòng)
 - src/sim/physics/footprint_rig.js (840 dòng)
-- src/sim/physics/hoist_contacts.js (1047 dòng)
+- src/sim/physics/hoist_contacts.js (1049 dòng)
 - src/sim/physics/step_engine.js (782 dòng)
 - src/sim/plan_wizard.js (650 dòng)
 - src/sim/rigging/draw_update.js (875 dòng)
@@ -236,7 +236,7 @@ Tổng: 253 file, 74602 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/physics/cables_break.js` | 1557 |  ⚠️>300 |
 | `src/sim/physics/flatrack_payload.js` | 629 | --- FLAT RACK LASHING RUPTURE, DECK SLIDING & FALLING PAYLOAD PHYSICS --- ⚠️>300 |
 | `src/sim/physics/footprint_rig.js` | 840 |  ⚠️>300 |
-| `src/sim/physics/hoist_contacts.js` | 1047 |  ⚠️>300 |
+| `src/sim/physics/hoist_contacts.js` | 1049 |  ⚠️>300 |
 | `src/sim/physics/index.js` | 9 | Bounded context index — parts are assembled via src/sim/manifest.js (shared scope). |
 | `src/sim/physics/port.js` | 59 |  |
 | `src/sim/physics/step_engine.js` | 782 |  ⚠️>300 |
@@ -293,7 +293,7 @@ Tổng: 253 file, 74602 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/physics_destruction.test.js` | 69 |  |
 | `test/physics_master_blueprint.test.js` | 524 |  ⚠️>300 |
 | `test/pipeline.test.js` | 232 |  |
-| `test/pretension_nhom_cap.test.js` | 166 | Kiểm thử vàng nút Nhớm Cáp (pretensionRig): kiện chạm đất 0.00m và toàn bộ hệ cáp căng đúng chiều dài thực |
+| `test/pretension_nhom_cap.test.js` | 171 | Kiểm thử vàng nút Nhớm Cáp (pretensionRig): kiện chạm đất 0.00m và toàn bộ hệ cáp căng đúng chiều dài thực |
 | `test/rigging.test.js` | 1367 |  ⚠️>300 |
 | `test/rigging_alarms_and_tolerances.test.js` | 216 |  |
 | `test/rigging_groups_and_dynamics.test.js` | 84 |  |

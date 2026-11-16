@@ -140,7 +140,7 @@ describe('Nhớm Cáp (pretensionRig) — Grounded Cargo + Full Real-Length Taut
     s.slingUserSet = true;
     sim.rebuildCargoAndRig(true);
 
-    for (const testHookY of [8.5, 9.6, 10.6]) {
+    for (const testHookY of [6.0, 8.5, 9.6, 10.6]) {
       s.poseLock = true;
       phy._nhomFreezeSpreader = false;
       phy.hoistSpeed = -0.3;
@@ -154,12 +154,17 @@ describe('Nhớm Cáp (pretensionRig) — Grounded Cargo + Full Real-Length Taut
           const ups = phy.cables.filter((c) => c.role === 'upper' && c.b.body === b);
           for (const u of ups) {
             const span = sim.attachWorld(u.a).distanceTo(sim.attachWorld(u.b));
-            expect(span, `hookY=${testHookY} bar=${b.id}`).toBeGreaterThanOrEqual(u.L0 - 0.04);
+            expect(span, `hookY=${testHookY} bar=${b.id} upper taut`).toBeGreaterThanOrEqual(u.L0 - 0.04);
           }
         }
-        if (testHookY <= 9.6) {
-          expect(Math.abs(b.x.x), `hookY=${testHookY} bar should swing inward under gravity`).toBeLessThan(2.0);
+        // Conservation of cable length: lower & upper slings must NEVER stretch past L0
+        // and bars stay tethered near container ends rather than sliding to the middle.
+        const barCables = phy.cables.filter((c) => c.a.body === b || c.b.body === b);
+        for (const c of barCables) {
+          const span = sim.attachWorld(c.a).distanceTo(sim.attachWorld(c.b));
+          expect(span, `hookY=${testHookY} ${c.role}[${c.index}] no stretch`).toBeLessThanOrEqual(c.L0 + 0.06);
         }
+        expect(Math.abs(b.x.x), `hookY=${testHookY} bar=${b.id} held by lower sling near cargo end`).toBeGreaterThan(3.5);
       }
     }
   });
