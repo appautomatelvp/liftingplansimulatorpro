@@ -1,12 +1,30 @@
 /* @purpose: Hiệu ứng nền công nghiệp 2K Cinematic Zoom-In & màn trập Fade-in Đen mở dần hệ thống 3D */
-#app-loading-screen { overflow: hidden; isolation: isolate; background: #07111b; }
+#canvas-container {
+  opacity: 0;
+  transition: opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+}
+body.app-ready #canvas-container {
+  opacity: 1;
+}
+#app-loading-screen {
+  overflow: hidden;
+  isolation: isolate;
+  background: #02050b !important;
+  transition: opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.85s ease-out !important;
+}
 #app-loading-screen::after {
   content: ""; position: absolute; inset: 0; z-index: -2;
   background: url('/brand/industrial-lifting-bg.png?v=2k') center / cover no-repeat;
   transform-origin: 68% 48%;
-  will-change: transform;
+  will-change: transform, opacity;
   backface-visibility: hidden;
+  transition: opacity 0.38s ease-out;
   animation: industrial-cinematic-zoom 28s cubic-bezier(0.37, 0, 0.22, 1) infinite alternate;
+}
+#app-loading-screen.loaded::after,
+#app-loading-screen.loaded .loader-box {
+  opacity: 0;
+  transition: opacity 0.32s ease-out;
 }
 @keyframes industrial-cinematic-zoom {
   0% { transform: scale(1) translateZ(0); filter: contrast(1.04) saturate(1.05); }
@@ -39,27 +57,25 @@
 
 .saas-cinema-curtain {
   position: fixed; inset: 0; z-index: 1250000; pointer-events: none;
-  background: radial-gradient(circle at 50% 50%, #050a14 0%, #010307 100%);
-  animation: saas-cinema-reveal 2.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  opacity: 1;
+  background: radial-gradient(circle at 50% 50%, #040913 0%, #010307 100%);
+  transition: opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1);
 }
-@keyframes saas-cinema-reveal {
-  0% { opacity: 0; }
-  24% { opacity: 1; }
-  45% { opacity: 1; }
-  100% { opacity: 0; }
+.saas-cinema-curtain.is-revealing {
+  opacity: 0;
 }
 body.saas-cinema-entering #canvas-container {
-  animation: saas-viewport-emerge 2.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: saas-viewport-emerge 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 body.saas-cinema-entering #top-bar,
 body.saas-cinema-entering #ui-layer {
-  animation: saas-hud-emerge 2.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: saas-hud-emerge 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 @keyframes saas-viewport-emerge {
-  0%, 32% { filter: brightness(0.12) saturate(0.85); transform: scale(1.02); }
+  0% { filter: brightness(0.18) saturate(0.88); transform: scale(1.018); }
   100% { filter: brightness(1) saturate(1); transform: scale(1); }
 }
 @keyframes saas-hud-emerge {
-  0%, 40% { opacity: 0; transform: translateY(6px); }
+  0% { opacity: 0; transform: translateY(6px); }
   100% { opacity: 1; transform: translateY(0); }
 }

@@ -30,14 +30,35 @@ export function playCinemaWorkspaceReveal() {
   curtain.id = 'saas-cinema-curtain';
   curtain.className = 'saas-cinema-curtain';
   curtain.setAttribute('aria-hidden', 'true');
-  document.body.classList.add('saas-cinema-entering');
   document.body.append(curtain);
-  const cleanup = () => {
-    curtain.remove();
-    document.body?.classList.remove('saas-cinema-entering');
+
+  let revealed = false;
+  let observer = null;
+  const startReveal = () => {
+    if (revealed) return;
+    revealed = true;
+    observer?.disconnect();
+    document.body.classList.add('saas-cinema-entering');
+    requestAnimationFrame(() => {
+      curtain.classList.add('is-revealing');
+    });
+    setTimeout(() => {
+      curtain.remove();
+      document.body?.classList.remove('saas-cinema-entering');
+    }, 900);
   };
-  curtain.addEventListener('animationend', cleanup, { once: true });
-  setTimeout(cleanup, 1900);
+
+  if (document.body.classList.contains('app-ready')) {
+    setTimeout(startReveal, 220);
+  } else if (typeof MutationObserver !== 'undefined') {
+    observer = new MutationObserver(() => {
+      if (document.body.classList.contains('app-ready')) startReveal();
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    setTimeout(startReveal, 1600);
+  } else {
+    setTimeout(startReveal, 900);
+  }
 }
 
 export function escapeHtml(value) {

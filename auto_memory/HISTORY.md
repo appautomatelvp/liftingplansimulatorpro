@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-16 10:54 [fix] Sua triet de loi nhay man hinh 3D truoc UI (hien -> an den -> hien lai): giu #app-loading-screen cho toi khi onAuthStateChanged va bootSimulator hoan tat, khoa #canvas-container opacity 0 cho toi khi body.app-ready san sang, va dong bo man trap den chi mo ra 1 lan duy nhat.
+- Nhánh: feat/hide-dev-contact-antispam | Commit trước đó: 24cf4e4
+- File: src/styles/brand_splash.css,src/saas/session_ui_bindings.js,src/saas/session.js
+
 ## 2026-11-16 10:48 [feat] Nang cap do phan giai hinh nen len 2K (2048x1142) voi bo loc khu nhieu JPEG Bilateral + lam sac canh Vector Clamp-Guided, bo pre-stretch inset -4% va tinh chinh duong cong Cinematic Dolly Zoom-In 28s muot ma.
 - Nhánh: feat/hide-dev-contact-antispam | Commit trước đó: 5cf993e
 - File: public/brand/industrial-lifting-bg.png,src/styles/brand_splash.css,src/saas/saas.css
