@@ -1,6 +1,14 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-16 13:42 [feat] Hoàn tất 6/6 bước nâng cấp tiếp xúc bề mặt 3D thực (0mm khe hở), dầm chữ H uốn đồng bộ không lòi gân đen, chuẩn hóa ngáng STS ISO 668/1161 và sửa vật lý đứt cáp không bắn tia đỏ
+- Nhánh: feat/horizon-clouds | Commit trước đó: 942f433
+- File: src/rigging/TrueMeshSurfaceContact.js,src/rigging/StsSpreaderRealism.js,src/rigging/BrokenCableWhipXPBD.js,src/rigging/RigidInertialDynamics.js,src/sim/cargo/shell_rebuild.js,src/sim/cargo/specialty_meshes.js,src/sim/rigging/hook_pool.js,src/sim/rigging/draw_update.js,src/sim/physics/beams_seed.js,test/rigging_realism_sts_contact.test.js
+
+## 2026-11-16 13:24 [docs] Lập kế hoạch 6 bước nâng cấp chuyên sâu tiếp xúc bề mặt 3D thực (0mm khe hở), sửa dầm chữ H lòi thanh đen, chuẩn hóa ngáng STS ISO 668/1161 và sửa lỗi cắt cáp bắn tia đỏ lên trời
+- Nhánh: feat/horizon-clouds | Commit trước đó: aa8244a
+- File: auto_memory/PLAN.md,STATE.md,auto_memory/CONTEXT.md
+
 ## 2026-11-16 12:20 [feat] Hoàn tất 6/6 bước nâng cấp Hyper-Realistic Rigging Simulator: Va chạm CCD & ma sát/độ nảy vật liệu, chống xuyên cáp đa sợi, quật cáp XPBD khi đứt, quán tính lệch tâm Steiner & vật liệu PBR hiển thị ứng suất SWL (43/43 file, 326/326 test xanh)
 - Nhánh: feat/horizon-clouds | Commit trước đó: d5bce77
 - File: src/rigging/CollisionMaterialSolver.js,src/rigging/BrokenCableWhipXPBD.js,src/rigging/CableDynamicsXPBD.js,src/rigging/RigidInertialDynamics.js,src/graphics/pbr/StressPBRMaterials.js,src/graphics/PBRMaterialFactory.js,src/sim/physics/cables_break.js,src/sim/rigging/draw_update.js,test/hyper_realistic_physics_pbr.test.js

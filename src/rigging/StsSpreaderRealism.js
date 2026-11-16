@@ -142,7 +142,7 @@ export function solveStsDirectTwistlockPose({
   const W = Math.max(1.5, cargoDims?.W || 2.438);
   const tipPad = 0.34;
   const groundCargoCenterY = floorY + H * 0.5;
-  const minBeamY = groundCargoCenterY + tipPad;
+  const minBeamY = floorY + H + tipPad;
 
   const rawBeamY = beamPos ? beamPos.y : minBeamY;
   const clampedBeamY = Math.max(minBeamY, rawBeamY);

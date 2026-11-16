@@ -1,6 +1,6 @@
-# KẾ HOẠCH NÂNG CẤP CHUYÊN SÂU: TIẾP XÚC BỀ MẶT 3D THẬT (0MM KHE HỞ), KẾT CẤU DẦM CHỮ H, CHUẨN HÓA NGÁNG CẨU STS ISO 1161/668 & VẬT LÝ ĐỨT CÁP THỰC TẾ (ACTIVE)
+# KẾ HOẠCH NÂNG CẤP CHUYÊN SÂU: TIẾP XÚC BỀ MẶT 3D THẬT (0MM KHE HỞ), KẾT CẤU DẦM CHỮ H, CHUẨN HÓA NGÁNG CẨU STS ISO 1161/668 & VẬT LÝ ĐỨT CÁP THỰC TẾ (DONE)
 
-- **Trạng thái:** `ACTIVE`
+- **Trạng thái:** `DONE`
 - **Ngày lập:** 2026-04-20
 - **Phân loại:** **VIỆC LỚN** (nâng cấp chuyên sâu 6 vấn đề cốt lõi về hình học 3D, va chạm tiếp xúc bề mặt cong/mesh thực, biến dạng kết cấu dầm nâng, kích thước & cơ chế vận hành ngáng cẩu cảng STS theo chuẩn quốc tế ISO 668 / ISO 1161, và động lực học cáp/xích khi cắt).
 - **Nhánh thực thi:** `feat/true-rigging-sts-contact-upgrade` (tự tạo bởi `scripts/auto_backup.ps1`).
@@ -145,7 +145,7 @@
 ---
 
 ### Bước 6: Kiểm thử Vàng Toàn diện 6 Vấn đề Thực tế & Nghiệm thu (`test/rigging_realism_sts_contact.test.js`)
-- [ ] **Trạng thái:** Chưa làm
+- [x] **Trạng thái:** Hoàn tất (5/5 Golden Tests mới + toàn bộ test suite & `vite build` xanh)
 - **Mục tiêu:** Viết bộ kiểm thử tự động (Vitest) xác minh bằng con số toán học cả 6 yêu cầu nâng cấp của Founder.
 - **File được phép tạo/sửa (tối đa 3 file):**
   1. `test/rigging_realism_sts_contact.test.js` *(tạo mới, `< 240` dòng, có dòng đầu `// @purpose: Bộ kiểm thử vàng xác minh tiếp xúc bề mặt 3D thực (0mm khe hở), kích thước STS chuẩn ISO 668/1161 và vật lý đứt cáp`)*:

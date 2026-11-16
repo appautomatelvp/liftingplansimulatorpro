@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 13:40 | Nhánh: feat/horizon-clouds | Commit cuối: 46bd29b step 4: fix broken cable stub anchor and eliminate upward whip spikes (2 minutes ago)
-Tổng: 248 file, 73520 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 13:43 | Nhánh: feat/horizon-clouds | Commit cuối: 942f433 step 5: calibrate STS ISO 668/1161 spreader dimensions and hoisting dynamics (3 minutes ago)
+Tổng: 249 file, 73700 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -170,7 +170,7 @@ Tổng: 248 file, 73520 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/i18n/index.js` | 131 |  |
 | `src/i18n/keys.js` | 598 |  ⚠️>300 |
 | `src/main.js` | 66 |  |
-| `src/rigging/BrokenCableWhipXPBD.js` | 250 | Mô phỏng XPBD sóng quật, thu hồi năng lượng đàn hồi và va chạm CCD cho hai nửa cáp đứt hoặc cáp tháo chốt |
+| `src/rigging/BrokenCableWhipXPBD.js` | 252 | Mô phỏng XPBD sóng quật, thu hồi năng lượng đàn hồi và va chạm CCD cho hai nửa cáp đứt hoặc cáp tháo chốt ⚠️>250 |
 | `src/rigging/CableDynamicsXPBD.js` | 264 | Bộ giải động lực học cáp/xích XPBD chịu kéo, tự va chạm và đứt thu hồi đàn hồi ⚠️>250 |
 | `src/rigging/CollisionMaterialSolver.js` | 247 | Bộ giải va chạm liên tục (CCD), ma sát cặp vật liệu, độ nảy theo khối lượng và chống xuyên giữa các sợi cáp/xích |
 | `src/rigging/constraints/CornerProtectorModel.js` | 51 |  |
@@ -294,6 +294,7 @@ Tổng: 248 file, 73520 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/rigging_alarms_and_tolerances.test.js` | 216 |  |
 | `test/rigging_groups_and_dynamics.test.js` | 84 |  |
 | `test/rigging_physics_and_alarms.test.js` | 306 | test/rigging_physics_and_alarms.test.js ⚠️>300 |
+| `test/rigging_realism_sts_contact.test.js` | 178 | Bộ kiểm thử vàng xác minh tiếp xúc bề mặt 3D thực (0mm khe hở), dầm chữ H, kích thước STS ISO 668/1161 và vật lý đứt cáp |
 | `test/runtime_flags.test.js` | 96 |  |
 | `test/saas_access.test.js` | 55 |  |
 | `test/security_headers.test.js` | 44 |  |

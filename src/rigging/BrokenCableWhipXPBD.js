@@ -210,8 +210,10 @@ export class BrokenCableWhipSimulator {
         maxRecoilSpeedMps: this.material === 'chain' ? 1.2 : 3.6
       });
       const pull = Math.min(this.material === 'chain' ? 1.2 : 3.6, recoil.recoilSpeedMps * 0.25);
+      const sideBias = dir.y > 0.35 ? new THREE.Vector3(anchorPos.x >= 0 ? 0.9 : -0.9, 0, anchorPos.z >= 0 ? 0.5 : -0.5) : new THREE.Vector3();
       for (let i = 1; i <= this.segmentsPerHalf; i++) {
-        const w = dir.clone().multiplyScalar(-pull * (i / this.segmentsPerHalf));
+        const frac = i / this.segmentsPerHalf;
+        const w = dir.clone().multiplyScalar(-pull * frac).addScaledVector(sideBias, Math.sin(Math.PI * 0.5 * frac));
         this.singleStub.previous[i].copy(this.singleStub.positions[i]).addScaledVector(w, -1 / 60);
       }
       this.age = 0;
