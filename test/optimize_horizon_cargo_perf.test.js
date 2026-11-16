@@ -182,11 +182,16 @@ describe('Runtime & Asset performance helpers', () => {
     expect(mockCanvas.style.filter).toBe('brightness(1.30) contrast(1.20)');
   });
 
-  it('adds dark-sky dithering and zero-clipped wind smoke texture', () => {
+  it('adds dark-sky dithering, organic drifting clouds without sticks, and multi-scale concrete maps', () => {
     const domeSrc = fs.readFileSync(path.resolve('src/graphics/HorizonSkyDome.js'), 'utf8');
     const wxSrc = fs.readFileSync(path.resolve('src/sim/weather_fx.js'), 'utf8');
+    const texSrc = fs.readFileSync(path.resolve('src/graphics/pbr/ProceduralTextures.js'), 'utf8');
+    const pbrSrc = fs.readFileSync(path.resolve('src/graphics/PBRMaterialFactory.js'), 'utf8');
     expect(domeSrc).toContain('dither');
-    expect(wxSrc).toContain('windStreaks');
+    expect(wxSrc).toContain('destination-in');
+    expect(wxSrc).not.toContain('windStreaks');
     expect(wxSrc).not.toContain('size * 0.42');
+    expect(texSrc).toContain('drawTileableBlotch');
+    expect(pbrSrc).toContain('options.includeJoints !== false');
   });
 });

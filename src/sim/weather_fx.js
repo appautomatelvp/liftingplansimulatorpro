@@ -3,27 +3,51 @@
  * Physics loads live in dynamics.js; this is visual only.
  */
         const WEATHER_RAIN_MAX = 3200;
-        const WEATHER_WIND_MAX = 24; // sleek wind ribbons & subtle mist motes
-        const WEATHER_FX_VERSION = 5; // bump to force rebuild when FX design changes
+        const WEATHER_WIND_MAX = 26; // volumetric drifting cumulus puffs near wind zone
+        const WEATHER_FX_VERSION = 6; // bump to force rebuild when FX design changes
 
         function makeWindSmokeTexture() {
-            const size = 128;
+            const size = 256;
             const c = document.createElement('canvas');
             c.width = size;
             c.height = size;
             const g = c.getContext('2d');
             const half = size * 0.5;
-            // Strict padding (radius = 0.38 * size < 0.5) guarantees exact alpha=0 before canvas edge
-            const grd = g.createRadialGradient(half, half, 0, half, half, size * 0.38);
-            grd.addColorStop(0.0, 'rgba(224, 242, 254, 0.34)');
-            grd.addColorStop(0.32, 'rgba(186, 230, 253, 0.16)');
-            grd.addColorStop(0.68, 'rgba(125, 211, 252, 0.04)');
-            grd.addColorStop(1.0, 'rgba(125, 211, 252, 0.0)');
             g.clearRect(0, 0, size, size);
-            g.fillStyle = grd;
-            g.beginPath();
-            g.arc(half, half, size * 0.40, 0, Math.PI * 2);
-            g.fill();
+
+            // Multi-lobed organic cumulus cluster drawn at full opacity (no 8-bit banding!)
+            // Keep all lobes well inside 0.34*size so outer circular fade hits exact zero before border.
+            const lobes = [
+                [0.0, 0.0, 0.25, 0.95],
+                [-0.14, 0.03, 0.18, 0.85],
+                [0.14, 0.02, 0.19, 0.85],
+                [-0.06, -0.10, 0.16, 0.82],
+                [0.07, -0.09, 0.17, 0.82],
+                [-0.19, 0.06, 0.12, 0.65],
+                [0.19, 0.05, 0.13, 0.65]
+            ];
+            for (const [ox, oy, rad, alpha] of lobes) {
+                const cx = half + ox * size;
+                const cy = half + oy * size;
+                const r = rad * size;
+                const grd = g.createRadialGradient(cx, cy, r * 0.08, cx, cy, r);
+                grd.addColorStop(0.0, `rgba(255, 255, 255, ${alpha})`);
+                grd.addColorStop(0.45, `rgba(248, 250, 252, ${alpha * 0.55})`);
+                grd.addColorStop(1.0, 'rgba(241, 245, 249, 0.0)');
+                g.fillStyle = grd;
+                g.beginPath();
+                g.arc(cx, cy, r, 0, Math.PI * 2);
+                g.fill();
+            }
+            // Enforce smooth radial zero-edge boundary strictly inside 0.43 * size (zero square border!)
+            g.globalCompositeOperation = 'destination-in';
+            const mask = g.createRadialGradient(half, half, size * 0.14, half, half, size * 0.43);
+            mask.addColorStop(0.0, 'rgba(255, 255, 255, 1.0)');
+            mask.addColorStop(0.65, 'rgba(255, 255, 255, 0.65)');
+            mask.addColorStop(1.0, 'rgba(255, 255, 255, 0.0)');
+            g.fillStyle = mask;
+            g.fillRect(0, 0, size, size);
+            g.globalCompositeOperation = 'source-over';
             const tex = new THREE.CanvasTexture(c);
             tex.needsUpdate = true;
             return tex;
@@ -72,45 +96,31 @@
             for (let i = 0; i < WEATHER_WIND_MAX; i++) {
                 const mat = new THREE.SpriteMaterial({
                     map: smokeTex,
-                    color: 0xe0f2fe,
+                    color: 0xffffff,
                     transparent: true,
                     opacity: 0,
                     depthWrite: false,
-                    alphaTest: 0.004,
+                    alphaTest: 0.003,
                     fog: true,
+                    toneMapped: true,
                     blending: THREE.NormalBlending
                 });
                 const spr = new THREE.Sprite(mat);
                 spr.visible = false;
-                spr.scale.set(1.2, 0.55, 1);
+                spr.scale.set(2.4, 1.3, 1);
                 windSmoke.add(spr);
                 windWisps.push({
                     spr,
                     x: 0, y: 0, z: 0,
                     vx: 0, vy: 0, vz: 0,
                     age: 0,
-                    life: 2.2,
-                    scale: 0.7,
+                    life: 3.4,
+                    scale: 2.2,
                     stretch: 1.8,
+                    rot: (Math.random() - 0.5) * 0.25,
                     phase: Math.random() * Math.PI * 2
                 });
             }
-            // Crisp aerodynamic wind streamline streaks (zero billboard box clipping!)
-            const windStreakPos = new Float32Array(WEATHER_WIND_MAX * 2 * 3);
-            const windStreakGeo = new THREE.BufferGeometry();
-            windStreakGeo.setAttribute('position', new THREE.BufferAttribute(windStreakPos, 3));
-            windStreakGeo.setDrawRange(0, 0);
-            const windStreakMat = new THREE.LineBasicMaterial({
-                color: 0xbae6fd,
-                transparent: true,
-                opacity: 0.42,
-                depthWrite: false,
-                fog: true
-            });
-            const windStreaks = new THREE.LineSegments(windStreakGeo, windStreakMat);
-            windStreaks.frustumCulled = false;
-            windStreaks.renderOrder = 39;
-            windSmoke.add(windStreaks);
 
             // Lightning bolt polyline (rebuilt each flash)
             const boltPos = new Float32Array(WEATHER_BOLT_MAX * 2 * 3);
@@ -156,8 +166,6 @@
                 rainCount: 0,
                 windSmoke,
                 windWisps,
-                windStreaks,
-                windStreakPos,
                 windCount: 0,
                 smokeTex,
                 bolt,
@@ -266,9 +274,10 @@
             w.vy = 0.2 + Math.random() * 0.4;
             w.vz = dz * spd + (Math.random() - 0.5) * 0.25;
             w.age = 0;
-            w.life = 1.8 + Math.random() * 1.8;
-            w.scale = 0.65 + Math.random() * 0.75; // compact subtle wisps — zero giant square clouds
-            w.stretch = 1.8 + Math.random() * 1.2;
+            w.life = 3.2 + Math.random() * 2.8;
+            w.scale = 1.6 + Math.random() * 1.6; // organic drifting clouds around wind corridor
+            w.stretch = 1.65 + Math.random() * 0.7;
+            w.rot = (Math.random() - 0.5) * 0.25;
             w.phase = Math.random() * Math.PI * 2;
             w.spr.visible = true;
             w.spr.material.opacity = 0;
@@ -458,7 +467,6 @@
                     if (phy._weatherFx.arrow) phy._weatherFx.arrow.visible = false;
                     if (phy._weatherFx.flashLight) phy._weatherFx.flashLight.intensity = 0;
                     if (phy._weatherFx.boltMat) phy._weatherFx.boltMat.opacity = 0;
-                    if (phy._weatherFx.windStreaks) phy._weatherFx.windStreaks.visible = false;
                     if (phy._weatherFx.windWisps) {
                         for (const w of phy._weatherFx.windWisps) if (w.spr) w.spr.visible = false;
                     }
@@ -532,51 +540,37 @@
                 if (w && w.spr) w.spr.visible = false;
             }
             fx.windCount = wantWind;
-            const peakOp = THREE.MathUtils.clamp(0.06 + windSpd / 120, 0.06, 0.14);
-            const minSmokeY = windAnchor.y - 1.2;
-            const streakScale = THREE.MathUtils.clamp(0.85 + windSpd * 0.14, 0.9, 3.2);
+            const peakOp = THREE.MathUtils.clamp(0.18 + windSpd / 75, 0.18, 0.34);
+            const minSmokeY = windAnchor.y - 0.9;
+            const cloudTint = (scene && scene.fog && scene.fog.color)
+                ? scene.fog.color.clone().lerp(new THREE.Color(0xffffff), 0.58)
+                : new THREE.Color(0xf8fafc);
             for (let i = 0; i < fx.windCount; i++) {
                 const w = fx.windWisps[i];
                 if (!w) continue;
                 w.age += step;
-                const bob = Math.sin(w.age * 1.1 + w.phase) * 0.18;
-                const sway = Math.sin(w.age * 0.7 + w.phase * 1.3) * 0.24;
+                const bob = Math.sin(w.age * 0.8 + w.phase) * 0.16;
+                const sway = Math.sin(w.age * 0.5 + w.phase * 1.3) * 0.22;
                 w.x += w.vx * step + sway * step;
                 w.y += (w.vy + bob * 0.12) * step;
                 w.z += w.vz * step;
                 if (w.y < minSmokeY) w.y = minSmokeY + Math.random() * 0.4;
                 const t = w.age / Math.max(1e-3, w.life);
-                const grow = 1 + t * 0.65;
-                const fade = Math.sin(Math.min(1, t) * Math.PI);
+                const grow = 1 + t * 0.55;
+                const fade = Math.pow(Math.sin(Math.min(1, t) * Math.PI), 1.15);
                 w.spr.position.set(w.x, w.y, w.z);
-                w.spr.scale.set(w.scale * w.stretch * grow, w.scale * grow * 0.55, 1);
+                w.spr.scale.set(w.scale * w.stretch * grow, w.scale * grow * 0.68, 1);
+                w.spr.material.rotation = w.rot + bob * 0.12;
+                w.spr.material.color.copy(cloudTint);
                 w.spr.material.opacity = peakOp * fade;
-                w.spr.visible = fade > 0.04;
-                if (fx.windStreakPos) {
-                    const spd = Math.hypot(w.vx, w.vz) || 1;
-                    const dirX = w.vx / spd;
-                    const dirZ = w.vz / spd;
-                    const len = streakScale * (0.45 + 0.55 * fade);
-                    const o = i * 6;
-                    fx.windStreakPos[o] = w.x - dirX * len * 0.5;
-                    fx.windStreakPos[o + 1] = w.y;
-                    fx.windStreakPos[o + 2] = w.z - dirZ * len * 0.5;
-                    fx.windStreakPos[o + 3] = w.x + dirX * len * 0.5;
-                    fx.windStreakPos[o + 4] = w.y + bob * 0.15;
-                    fx.windStreakPos[o + 5] = w.z + dirZ * len * 0.5;
-                }
+                w.spr.visible = fade > 0.03;
 
                 if (t >= 1
-                    || Math.abs(w.x - windAnchor.x) > 16
-                    || Math.abs(w.z - windAnchor.z) > 16
-                    || w.y > windAnchor.y + 8) {
+                    || Math.abs(w.x - windAnchor.x) > 18
+                    || Math.abs(w.z - windAnchor.z) > 18
+                    || w.y > windAnchor.y + 8.5) {
                     seedWindWisp(fx, i, windAnchor, windLive);
                 }
-            }
-            if (fx.windStreaks) {
-                fx.windStreaks.geometry.attributes.position.needsUpdate = true;
-                fx.windStreaks.geometry.setDrawRange(0, fx.windCount * 2);
-                fx.windStreaks.visible = wantWind > 0;
             }
             if (fx.windSmoke) fx.windSmoke.visible = wantWind > 0;
 

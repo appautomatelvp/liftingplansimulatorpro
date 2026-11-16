@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 19:01 | Nhánh: feat/horizon-clouds | Commit cuối: 365ac3b feat: fix blocky wind/cloud quads, add night sky dithering, and add game brightness/contrast sliders (37 seconds ago)
-Tổng: 259 file, 75631 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 19:31 | Nhánh: feat/horizon-clouds | Commit cuối: 326f232 docs: log wind FX fix and game brightness/contrast controls (30 minutes ago)
+Tổng: 259 file, 75710 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -44,7 +44,7 @@ Tổng: 259 file, 75631 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/session/ui_units_bom.js (1953 dòng)
 - src/sim/state.js (606 dòng)
 - src/sim/telemetry.js (1115 dòng)
-- src/sim/weather_fx.js (602 dòng)
+- src/sim/weather_fx.js (596 dòng)
 - test/cable_morphology_and_deformation.test.js (426 dòng)
 - test/custom_slings.test.js (712 dòng)
 - test/engineering.test.js (410 dòng)
@@ -163,7 +163,7 @@ Tổng: 259 file, 75631 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/graphics/GroundHorizonFade.js` | 46 | Hòa mượt mép ngoài đĩa mặt đất vào màu sương mù chân trời không lộ đường cắt |
 | `src/graphics/HorizonSkyDome.js` | 282 | Dựng vòm bầu trời HorizonSkyDome với mây chân trời 3D Gradient Quintic mềm mại và màu khí quyển thực tế ⚠️>250 |
 | `src/graphics/index.js` | 22 |  |
-| `src/graphics/pbr/ProceduralTextures.js` | 196 | Vẽ texture canvas thủ công (bê tông cảng, cáp thép, xích, sling, mặt nước, vạch cảnh báo) |
+| `src/graphics/pbr/ProceduralTextures.js` | 276 | Vẽ texture canvas thủ công (bê tông cảng, cáp thép, xích, sling, mặt nước, vạch cảnh báo) ⚠️>250 |
 | `src/graphics/pbr/StressPBRMaterials.js` | 146 | Tạo bản đồ PBR thép sơn công nghiệp, thép rèn mạ kẽm và màu ứng suất căng cơ học thời gian thực |
 | `src/graphics/PBRMaterialFactory.js` | 244 | Nhà máy tạo vật liệu PBR chuẩn công nghiệp hàng hải và đồng bộ không gian màu Three.js r170+ |
 | `src/graphics/SceneRenderer.js` | 308 |  ⚠️>300 |
@@ -258,7 +258,7 @@ Tổng: 259 file, 75631 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/state.js` | 606 | Floor cribbing removed: static cargo rests flush on the quay / ground plane. ⚠️>300 |
 | `src/sim/telemetry.js` | 1115 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
 | `src/sim/ui-layout.js` | 241 |  |
-| `src/sim/weather_fx.js` | 602 |  ⚠️>300 |
+| `src/sim/weather_fx.js` | 596 |  ⚠️>300 |
 | `src/simulation/destruction-manager/DestructionSolver.js` | 147 |  |
 | `src/styles/app.css` | 1018 |  |
 | `src/styles/brand_splash.css` | 81 | Hiệu ứng nền công nghiệp 2K Cinematic Zoom-In & màn trập Fade-in Đen mở dần hệ thống 3D |
@@ -295,7 +295,7 @@ Tổng: 259 file, 75631 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/i18n_keys.test.js` | 56 |  |
 | `test/inclined_lashing_slide.test.js` | 67 |  |
 | `test/liftplan.test.js` | 153 |  |
-| `test/optimize_horizon_cargo_perf.test.js` | 192 | Kiểm thử tự động cho hòa chân trời, 3D Steel Pipe / Vehicle, cache CAD và tối ưu hiệu năng |
+| `test/optimize_horizon_cargo_perf.test.js` | 197 | Kiểm thử tự động cho hòa chân trời, 3D Steel Pipe / Vehicle, cache CAD và tối ưu hiệu năng |
 | `test/phase1_core_safety.test.js` | 208 |  |
 | `test/physics_destruction.test.js` | 69 |  |
 | `test/physics_master_blueprint.test.js` | 524 |  ⚠️>300 |

@@ -76,15 +76,15 @@ export class PBRMaterialFactory {
     const cacheKey = 'quay_concrete_pbr';
     if (this.cachedMaterials.has(cacheKey)) return this.cachedMaterials.get(cacheKey);
 
-    const { cvsBase, cvsNorm, cvsRough, cvsAO } = drawQuayConcreteMaps(1024, Boolean(options.includeJoints));
-    const rx = options.repeatX || 30;
-    const ry = options.repeatY || 30;
+    const { cvsBase, cvsNorm, cvsRough, cvsAO } = drawQuayConcreteMaps(1024, options.includeJoints !== false);
+    const rx = options.repeatX || 18;
+    const ry = options.repeatY || 18;
     const material = new THREE.MeshStandardMaterial({
       map: this._buildRepeatTexture(cvsBase, true, rx, ry, true),
       normalMap: this._buildRepeatTexture(cvsNorm, false, rx, ry, true),
-      normalScale: new THREE.Vector2(0.85, 0.85),
+      normalScale: new THREE.Vector2(1.15, 1.15),
       roughnessMap: this._buildRepeatTexture(cvsRough, false, rx, ry, false),
-      roughness: 0.92,
+      roughness: 0.90,
       metalness: 0.08,
       aoMap: this._buildRepeatTexture(cvsAO, false, rx, ry, false),
       aoMapIntensity: 0.95
