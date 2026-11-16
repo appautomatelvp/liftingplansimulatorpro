@@ -22,12 +22,12 @@ export function computeTightStrapGeometry({ cL, cW, cH, offsetX, offsetZ, cargoB
       wallZ,
       anchorZ: clampedZ,
       ratchetY: cargoBottomY + cH * 0.24,
-      sideBottomY: Math.max(deckTopY + 0.03, cargoBottomY + 0.02),
+      sideBottomY: Math.max(deckTopY + 0.025, cargoBottomY + 0.008),
       strapTopY: cargoTopY + 0.020
     };
   });
 
-  return { sx, outerFaceOffset, strapTopY: cargoTopY + 0.020, topSpanW: cW + 0.072, sides };
+  return { sx, outerFaceOffset, strapTopY: cargoTopY + 0.020, topSpanW: outerFaceOffset * 2 + 0.014, sides };
 }
 
 /** Compute per-strap normalized failure thresholds (0.42..1.05) with natural random asymmetry. */
@@ -80,17 +80,23 @@ export function buildTightFlatRackLashingVisuals({ THREE, oogGroup, group, MATS,
       sideStrap.castShadow = true;
       intactNode.add(sideStrap);
 
-      // Diagonal tie-down leg strictly from cargo corner down inside deck rail D-ring
-      const dz = anchorZ - wallZ;
-      const dy = (deckTopY + 0.018) - sideBottomY;
-      const legLen = Math.max(0.08, Math.hypot(dz, dy));
+      // Diagonal tie-down leg strictly inward from crate bottom corner into deck D-ring
+      const anchorY = deckTopY + 0.018;
+      const dxVec = new THREE.Vector3(0, anchorY - sideBottomY, anchorZ - wallZ);
+      const legLen = Math.max(0.05, dxVec.length());
       const tieLeg = new THREE.Mesh(new THREE.BoxGeometry(0.052, legLen, 0.014), strapMat);
-      tieLeg.position.set(geo.sx, (sideBottomY + deckTopY + 0.018) * 0.5, (wallZ + anchorZ) * 0.5);
-      tieLeg.rotation.x = Math.atan2(dz, -dy);
+      tieLeg.position.set(geo.sx, (sideBottomY + anchorY) * 0.5, (wallZ + anchorZ) * 0.5);
+      if (legLen > 1e-4) {
+        tieLeg.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dxVec.clone().normalize());
+      }
       intactNode.add(tieLeg);
 
+      const cornerPad = new THREE.Mesh(new THREE.BoxGeometry(0.068, 0.022, 0.024), MATS.galvSteel);
+      cornerPad.position.set(geo.sx, sideBottomY, wallZ);
+      intactNode.add(cornerPad);
+
       const dRing = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.032, 0.045), MATS.galvSteel);
-      dRing.position.set(geo.sx, deckTopY + 0.016, anchorZ);
+      dRing.position.set(geo.sx, anchorY, anchorZ);
       intactNode.add(dRing);
 
       const ratchet = new THREE.Mesh(new THREE.BoxGeometry(0.085, 0.13, 0.038), MATS.galvSteel);

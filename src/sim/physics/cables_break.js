@@ -282,8 +282,11 @@
                 ? (W / nLegs) / sinB
                 : (W / nLegs);
 
-            const wllLeg = evenTon((Tleg * margin) / hitch, 2);
-            const wllUpper = evenTon((Tupper * margin) / hitch, 2);
+            const minDefaultSwl = opts.allowSmallSwl ? 2 : 12;
+            const wllLegRaw = evenTon((Tleg * margin) / hitch, 2);
+            const wllUpperRaw = evenTon((Tupper * margin) / hitch, 2);
+            const wllLeg = Math.max(minDefaultSwl, wllLegRaw);
+            const wllUpper = Math.max(minDefaultSwl, wllUpperRaw);
             // Cascaded 2-4-4 hangers: 4 V-legs; each ~W/4 with cos from half-span
             const nHanger = (state.beamType === 'cascaded' || state.beamType === 'modular_truss') ? 4
                 : ((state.beamType === 'inline4' || state.beamType === 'inline8' || state.beamType === 'spatial8') ? 2 : 2);
@@ -291,7 +294,8 @@
             const hangerLM = Math.max(halfZH + 0.5, state.hangerSlingLength || 2);
             const cosHanger = Math.max(0.30, Math.sqrt(Math.max(0.05, 1 - Math.pow(halfZH / hangerLM, 2))));
             const Thanger = (W / Math.max(1, nHanger)) / cosHanger;
-            const wllHanger = evenTon((Thanger * margin) / hitch, 2);
+            const wllHangerRaw = evenTon((Thanger * margin) / hitch, 2);
+            const wllHanger = Math.max(minDefaultSwl, wllHangerRaw);
             const wllBeam = evenTon(W * margin, 4);
             const wllShackle = evenTon(Math.max(wllLeg, wllUpper, wllHanger), 4);
             const wllHook = evenTon(W * margin * 1.25, 8);
@@ -300,7 +304,7 @@
             const getSpec = (typeof CAE !== 'undefined' && CAE.getSlingPhysicalSpec)
                 || (typeof window !== 'undefined' && window.CAE && window.CAE.getSlingPhysicalSpec);
 
-            const paint = (rec, wllT, fallbackType) => {
+            const paint = (rec, wllT, sizeRefWllT, fallbackType) => {
                 if (!rec) return;
                 const type = (typeof effectiveSlingType === 'function')
                     ? (effectiveSlingType(rec) || fallbackType || globalType)
@@ -310,15 +314,15 @@
                 rec.sf = sf;
                 rec.mblT = evenTon(wllT * sf, wllT * sf);
                 if (getSpec) {
-                    const spec = getSpec(type, wllT, null, rec.grade || '');
+                    const spec = getSpec(type, sizeRefWllT, null, rec.grade || '');
                     if (spec && spec.diaMm) rec.diaMm = evenMm(spec.diaMm, type === 'web' ? 30 : 8);
                 }
             };
 
             if (state.gear) {
-                (state.gear.legs || []).forEach(l => paint(l, wllLeg, globalType));
-                (state.gear.uppers || []).forEach(u => paint(u, wllUpper, globalType));
-                (state.gear.hangers || []).forEach(h => paint(h, wllHanger, globalType));
+                (state.gear.legs || []).forEach(l => paint(l, wllLeg, wllLegRaw, globalType));
+                (state.gear.uppers || []).forEach(u => paint(u, wllUpper, wllUpperRaw, globalType));
+                (state.gear.hangers || []).forEach(h => paint(h, wllHanger, wllHangerRaw, globalType));
                 if (state.gear.beam) {
                     state.gear.beam.swlT = wllBeam;
                     state.gear.beam.sf = state.gear.beam.sf || 4;

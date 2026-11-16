@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 20:24 | Nhánh: feat/horizon-clouds | Commit cuối: c6cee28 fix: tune staggered Flat Rack strap cascade timing (4 seconds ago)
-Tổng: 263 file, 76446 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 20:44 | Nhánh: feat/horizon-clouds | Commit cuối: a8a5be3 docs: log Jobsite 3D visuals, Flat Rack lashing and Follow camera (20 minutes ago)
+Tổng: 263 file, 76479 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -25,12 +25,12 @@ Tổng: 263 file, 76446 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/cargo/specialty_meshes.js (2512 dòng)
 - src/sim/compliance.js (625 dòng)
 - src/sim/dynamics.js (848 dòng)
-- src/sim/gear/editor.js (3539 dòng)
+- src/sim/gear/editor.js (3562 dòng)
 - src/sim/library/core.js (641 dòng)
 - src/sim/library/parsers.js (654 dòng)
 - src/sim/library/reconstruction_export.js (2124 dòng)
 - src/sim/physics/beams_seed.js (2955 dòng)
-- src/sim/physics/cables_break.js (1549 dòng)
+- src/sim/physics/cables_break.js (1553 dòng)
 - src/sim/physics/flatrack_payload.js (657 dòng)
 - src/sim/physics/footprint_rig.js (838 dòng)
 - src/sim/physics/hoist_contacts.js (1074 dòng)
@@ -182,7 +182,7 @@ Tổng: 263 file, 76446 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/constraints/CornerProtectorModel.js` | 51 |  |
 | `src/rigging/constraints/HardwareConstraint.js` | 236 |  |
 | `src/rigging/constraints/UnilateralCableConstraint.js` | 151 |  |
-| `src/rigging/FlatRackLashingPhysics.js` | 228 | Dựng dây chằng Flat Rack ôm khít kiện hàng (không lòi ngang) và mô phỏng đứt tuần tự tự nhiên theo vật lý. |
+| `src/rigging/FlatRackLashingPhysics.js` | 234 | Dựng dây chằng Flat Rack ôm khít kiện hàng (không lòi ngang) và mô phỏng đứt tuần tự tự nhiên theo vật lý. |
 | `src/rigging/HStyleLiftingBeam.js` | 188 | Cấu tạo 3D và thông số khớp nối H-Style Lifting Beam (tùy chọn trên Direct Hook/2-Cáp và dưới 4-Cáp/Twistlock) |
 | `src/rigging/index.js` | 22 | src/rigging/index.js |
 | `src/rigging/PretensionSolver.js` | 296 | Giải cao độ móc cẩu và dầm ngáng tại trạng thái Nhớm Cáp (kiện chạm đất, toàn bộ cáp căng đúng chiều dài thực) ⚠️>250 |
@@ -233,7 +233,7 @@ Tổng: 263 file, 76446 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/compliance.js` | 625 |  ⚠️>300 |
 | `src/sim/dynamics.js` | 848 |  ⚠️>300 |
 | `src/sim/gear.js` | 6 |  |
-| `src/sim/gear/editor.js` | 3539 |  ⚠️>300 |
+| `src/sim/gear/editor.js` | 3562 |  ⚠️>300 |
 | `src/sim/gear/park_apply.js` | 81 |  |
 | `src/sim/library.js` | 6 |  |
 | `src/sim/library/core.js` | 641 |  ⚠️>300 |
@@ -242,7 +242,7 @@ Tổng: 263 file, 76446 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/manifest.js` | 39 |  |
 | `src/sim/physics.js` | 6 |  |
 | `src/sim/physics/beams_seed.js` | 2955 |  ⚠️>300 |
-| `src/sim/physics/cables_break.js` | 1549 |  ⚠️>300 |
+| `src/sim/physics/cables_break.js` | 1553 |  ⚠️>300 |
 | `src/sim/physics/flatrack_payload.js` | 657 | --- FLAT RACK LASHING RUPTURE, DECK SLIDING & FALLING PAYLOAD PHYSICS --- ⚠️>300 |
 | `src/sim/physics/footprint_rig.js` | 838 |  ⚠️>300 |
 | `src/sim/physics/hoist_contacts.js` | 1074 |  ⚠️>300 |

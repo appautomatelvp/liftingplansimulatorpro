@@ -1888,12 +1888,20 @@
                     unit: ' m',
                     accent: 'sky',
                     onInput: (newTurn) => {
-                        while (state.legDeltaL.length <= primary.index) state.legDeltaL.push(0);
-                        state.legDeltaL[primary.index] = THREE.MathUtils.clamp(newTurn, -1.5, 2.5);
+                        const clamped = THREE.MathUtils.clamp(newTurn, -1.5, 2.5);
+                        sel.forEach(s => {
+                            if (s.role !== 'leg') return;
+                            while (state.legDeltaL.length <= s.index) state.legDeltaL.push(0);
+                            state.legDeltaL[s.index] = clamped;
+                        });
                     },
                     onChange: (newTurn) => {
-                        while (state.legDeltaL.length <= primary.index) state.legDeltaL.push(0);
-                        state.legDeltaL[primary.index] = THREE.MathUtils.clamp(newTurn, -1.5, 2.5);
+                        const clamped = THREE.MathUtils.clamp(newTurn, -1.5, 2.5);
+                        sel.forEach(s => {
+                            if (s.role !== 'leg') return;
+                            while (state.legDeltaL.length <= s.index) state.legDeltaL.push(0);
+                            state.legDeltaL[s.index] = clamped;
+                        });
                     }
                 });
                 grid2.appendChild(turnRow.wrap);
@@ -2103,31 +2111,46 @@
             box.innerHTML = '';
             if (!sel || !sel.length) return;
 
-            // Multi-select: stack one scrollable card per object (left panel)
+            // Multi-select: group similar kinds together so editing any spec updates all selected peers at once
             if (sel.length > 1) {
+                const groups = [];
+                const groupMap = new Map();
+                sel.forEach(item => {
+                    const gk = item.kind || 'other';
+                    if (!groupMap.has(gk)) {
+                        const bucket = [];
+                        groupMap.set(gk, bucket);
+                        groups.push({ kind: gk, items: bucket });
+                    }
+                    groupMap.get(gk).push(item);
+                });
+
                 const hint = document.createElement('div');
-                hint.className = 'text-[10px] text-slate-400 mb-1.5 px-0.5';
+                hint.className = 'text-[10px] text-emerald-300/90 mb-1.5 px-1 py-1 rounded bg-emerald-950/40 border border-emerald-500/30';
                 hint.textContent = L(
-                    'Ctrl+drag a box to multi-select. Scroll to edit each part below.',
-                    'Giữ Ctrl + kéo khung để chọn nhiều. Cuộn xuống để chỉnh từng thiết bị.'
+                    `Selected ${sel.length} items — changing a setting updates all matching items simultaneously.`,
+                    `Đang chọn ${sel.length} thiết bị — chỉnh thông số sẽ tự động áp dụng đồng thời cho các thiết bị cùng loại.`
                 );
                 box.appendChild(hint);
 
-                sel.forEach((item) => {
+                groups.forEach(({ kind, items }) => {
                     const card = document.createElement('section');
                     card.className = 'gear-item-card mb-2.5';
                     const head = document.createElement('div');
                     head.className = 'gear-item-card-head';
                     const title = document.createElement('div');
                     title.className = 'text-[11px] font-bold text-sky-300 uppercase tracking-wide';
-                    title.textContent = gearItemLabel(item);
+                    title.textContent = items.length > 1
+                        ? `${gearItemLabel(items[0]).replace(/\s*#?\d+$/, '')} (×${items.length} đồng bộ)`
+                        : gearItemLabel(items[0]);
                     const rm = document.createElement('button');
                     rm.type = 'button';
                     rm.className = 'text-slate-400 hover:text-rose-300 text-[11px] px-1';
-                    rm.title = L('Remove from selection', 'Bỏ khỏi lựa chọn');
+                    rm.title = L('Remove group from selection', 'Bỏ nhóm khỏi lựa chọn');
                     rm.textContent = '✕';
                     rm.addEventListener('click', () => {
-                        state.gear.selection = state.gear.selection.filter(s => gearItemKey(s) !== gearItemKey(item));
+                        const rmKeys = new Set(items.map(gearItemKey));
+                        state.gear.selection = state.gear.selection.filter(s => !rmKeys.has(gearItemKey(s)));
                         if (!state.gear.selection.length) closeGearEditor();
                         else {
                             openGearEditor();
@@ -2139,8 +2162,8 @@
                     card.appendChild(head);
                     const body = document.createElement('div');
                     body.className = 'gear-item-card-body';
-                    if (item.kind === 'sling') renderSlingInspector(body, [item]);
-                    else renderGenericGearFields(body, [item]);
+                    if (kind === 'sling') renderSlingInspector(body, items);
+                    else renderGenericGearFields(body, items);
                     card.appendChild(body);
                     box.appendChild(card);
                 });
