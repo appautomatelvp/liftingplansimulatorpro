@@ -197,6 +197,9 @@ export class SceneRenderer {
         if (!force && typeof document !== 'undefined' && (document.body?.classList?.contains('saas-locked') || document.getElementById('saas-workspace-backdrop'))) {
             return;
         }
+        if (this.envManager && typeof this.envManager.syncFrameAtmosphere === 'function') {
+            this.envManager.syncFrameAtmosphere(dt);
+        }
         const quality = QUALITY_TIERS[this.currentQuality] || QUALITY_TIERS.high;
         const useComposer = Boolean(this.composer && !quality.bypassComposer);
         const needGizmoMask = Boolean(useComposer && quality.aoEnabled);

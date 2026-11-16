@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-16 11:47 [feat] Nang cap mau sac chan troi theo 5 anh tham khao (xanh bien ban ngay & cam vang hoang hon), bo sung shader may xa da tang (Cumulus + Cirrus) troi nhe va khoa chong weather_fx ghi de mau xam suong mu.
+- Nhánh: feat/horizon-clouds | Commit trước đó: bcde67b
+- File: src/graphics/HorizonSkyDome.js,src/graphics/EnvironmentManager.js,src/graphics/SceneRenderer.js,test/graphics.test.js
+
 ## 2026-11-16 11:10 [feat] Chuyen ngon ngu khoi dong mac dinh sang Tieng Anh (en), tu dong migrate safelift3d.lang cu va dong bo song ngu 2 chieu EN-VI giua Splash, Auth, CMS, Workspace, Contact Dialog va 3D Simulator.
 - Nhánh: feat/hide-dev-contact-antispam | Commit trước đó: de6e794
 - File: public/loading-screen-init.js,src/i18n/index.js,src/i18n/cargo_labels.js,src/saas/i18n.js,src/saas/feature_access_ui.js,src/saas/admin_panels.js,src/saas/workspace_dashboard.js,src/saas/contact_dialog.js,src/main.js,test/i18n_keys.test.js

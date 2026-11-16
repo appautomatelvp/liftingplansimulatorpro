@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 11:27 | Nhánh: feat/default-en-clean | Commit cuối: 47ab30e feat: default startup language to English and synchronize EN/VI across all layers (14 minutes ago)
-Tổng: 241 file, 71870 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 11:48 | Nhánh: feat/horizon-clouds | Commit cuối: bcde67b Merge pull request #3 from appautomatelvp/feat/default-en-clean (11 minutes ago)
+Tổng: 241 file, 72003 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -158,12 +158,12 @@ Tổng: 241 file, 71870 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/domain/rigging/types.js` | 25 | Rigging domain vocabulary (pure). |
 | `src/domain/site/types.js` | 9 | Site / quay domain vocabulary (pure). |
 | `src/domain/standards/index.js` | 26 |  |
-| `src/graphics/EnvironmentManager.js` | 258 | Quản lý ánh sáng IBL, sương mù chân trời, HDR và đồng bộ thời gian thực cho cảnh 3D ⚠️>250 |
-| `src/graphics/HorizonSkyDome.js` | 179 | Dựng vòm bầu trời HorizonSkyDome, preset ánh sáng và cấu hình khí quyển theo giờ Việt Nam |
+| `src/graphics/EnvironmentManager.js` | 280 | Quản lý ánh sáng IBL, sương mù chân trời, HDR và đồng bộ thời gian thực cho cảnh 3D ⚠️>250 |
+| `src/graphics/HorizonSkyDome.js` | 265 | Dựng vòm bầu trời HorizonSkyDome với mây chân trời đa tầng (Cumulus + Cirrus) và màu khí quyển thực tế ⚠️>250 |
 | `src/graphics/index.js` | 10 |  |
 | `src/graphics/pbr/ProceduralTextures.js` | 196 | Vẽ texture canvas thủ công (bê tông cảng, cáp thép, xích, sling, mặt nước, vạch cảnh báo) |
 | `src/graphics/PBRMaterialFactory.js` | 199 | Nhà máy tạo vật liệu PBR chuẩn công nghiệp hàng hải và đồng bộ không gian màu Three.js r170+ |
-| `src/graphics/SceneRenderer.js` | 291 |  ⚠️>250 |
+| `src/graphics/SceneRenderer.js` | 294 |  ⚠️>250 |
 | `src/i18n/cargo_labels.js` | 48 |  |
 | `src/i18n/cms_keys.js` | 137 | Bộ từ điển song ngữ VI/EN chuyên biệt cho hệ thống CMS Enterprise Command Center |
 | `src/i18n/contact_keys.js` | 73 | Bộ từ điển song ngữ VI/EN chuẩn công nghiệp cho hộp thoại Hỗ trợ kỹ thuật & Góp ý |
@@ -276,7 +276,7 @@ Tổng: 241 file, 71870 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/engineering.test.js` | 410 |  ⚠️>300 |
 | `test/feedback_mailto.test.js` | 144 |  |
 | `test/firestore-rules-emulator.mjs` | 351 |  |
-| `test/graphics.test.js` | 91 |  |
+| `test/graphics.test.js` | 113 |  |
 | `test/i18n_keys.test.js` | 56 |  |
 | `test/inclined_lashing_slide.test.js` | 67 |  |
 | `test/liftplan.test.js` | 153 |  |
