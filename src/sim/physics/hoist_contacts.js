@@ -271,10 +271,14 @@
             // Hold Kéo/Hạ / Hạ đất: maintain a smooth directional lead without micro-stuttering
             const holdLower = phy.hoistSpeed < -0.01 || !!phy._setDownActive;
             const holdRaise = phy.hoistSpeed > 0.01;
+            const isStsDirectNow = state.beamType === 'container_spreader'
+                && typeof isStsDirectAttach === 'function'
+                && isStsDirectAttach();
             if (holdLower || holdRaise) {
                 if (holdLower) {
+                    const lowerLead = isStsDirectNow ? Math.max(0.08, rates.down * dt * 2.5) : 0.05;
                     if (phy.hookTarget.y > kinHold.y - 0.02) {
-                        phy.hookTarget.y = kinHold.y - 0.05;
+                        phy.hookTarget.y = kinHold.y - lowerLead;
                     }
                 } else {
                     const maxLead = 0.04;
@@ -289,7 +293,7 @@
             // prior suspended stretch would otherwise raise kinTarget above the
             // current drum and yank a snug grounded rig into the air.
             if (holdLower && kinTarget.y > hoist.kin.y) {
-                kinTarget.y = hoist.kin.y - 0.02;
+                kinTarget.y = hoist.kin.y - (isStsDirectNow ? Math.max(0.05, rates.down * dt * 2.0) : 0.02);
             }
             const to = new THREE.Vector3().subVectors(kinTarget, hoist.kin);
             const dist = to.length();

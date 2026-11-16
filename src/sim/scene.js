@@ -780,20 +780,11 @@
 
             if (type === 'hook_only') {
                 // 1. PURE OVERHEAD HOOK & HOIST MODE (Zero crane clutter — 360° unobstructed rigging view)
+                // Keep only an invisible overhead anchor point at crownY = 24.0 so hoist ropes draw cleanly
+                // without any floating black winch box or sheave cylinders in mid-air.
                 const sheaveCrownGroup = new THREE.Group();
                 const crownY = 24.0;
                 sheaveCrownGroup.position.set(0, crownY, 0);
-
-                const crownBeam = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.28, 0.68), MATS.darkSteel);
-                crownBeam.position.y = 0.22;
-                sheaveCrownGroup.add(crownBeam);
-
-                [-0.18, 0.18].forEach(sx => {
-                    const upperSheave = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.14, 24), MATS.gunmetal);
-                    upperSheave.rotation.z = Math.PI / 2;
-                    upperSheave.position.set(sx, 0.02, 0);
-                    sheaveCrownGroup.add(upperSheave);
-                });
 
                 craneVehicleGroup.add(sheaveCrownGroup);
                 craneDynamicParts = {

@@ -2313,25 +2313,38 @@
             const vCom = phy.cargoVel.clone().add(new THREE.Vector3().crossVectors(phy.cargoOmega, rCog0));
             const omega = phy.cargoOmega.clone();
 
+            const stsDirectControlled = state.beamType === 'container_spreader'
+                && typeof isStsDirectAttach === 'function'
+                && isStsDirectAttach()
+                && cargoHasIntactLoadLegs();
+
             for (let step = 0; step < substeps; step++) {
                 advanceHook(dt);
 
                 const rCog = new THREE.Vector3(slideCogX, cogY, slideCogZ).applyQuaternion(phy.cargoQuat);
                 const com = phy.cargoPos.clone().add(rCog);
-                vCom.y -= G_EARTH * dt;
-                // Aerodynamics: relative-wind drag per exposed face, pressure-centre
-                // torque on an eccentric CoG, and quadratic rotational air damping.
-                applyCargoAerodynamics(dt, vCom, omega, invMass, invI, rCog);
-                // Euler gyroscopic coupling  I·ω̇ = −ω × (I·ω)  (implicit, stable)
-                applyGyroscopicTerm(omega, phy.cargoQuat, invI, dt);
-                const wLen = omega.length();
-                if (wLen > 1e-7) phy.cargoQuat.premultiply(new THREE.Quaternion().setFromAxisAngle(omega.clone().multiplyScalar(1 / wLen), wLen * dt)).normalize();
-                com.addScaledVector(vCom, dt);
-                writeCargoCom(com);
+                if (stsDirectControlled && !state.poseLock) {
+                    // STS Direct is driven smoothly by the headblock & twistlock coupler after XPBD.
+                    // Skipping free-fall gravity integration avoids cargo dropping below the spreader every substep
+                    // only to be snapped back upward at end-of-frame (giật cục khi Hạ).
+                    vCom.set(0, 0, 0);
+                    omega.set(0, 0, 0);
+                } else {
+                    vCom.y -= G_EARTH * dt;
+                    // Aerodynamics: relative-wind drag per exposed face, pressure-centre
+                    // torque on an eccentric CoG, and quadratic rotational air damping.
+                    applyCargoAerodynamics(dt, vCom, omega, invMass, invI, rCog);
+                    // Euler gyroscopic coupling  I·ω̇ = −ω × (I·ω)  (implicit, stable)
+                    applyGyroscopicTerm(omega, phy.cargoQuat, invI, dt);
+                    const wLen = omega.length();
+                    if (wLen > 1e-7) phy.cargoQuat.premultiply(new THREE.Quaternion().setFromAxisAngle(omega.clone().multiplyScalar(1 / wLen), wLen * dt)).normalize();
+                    com.addScaledVector(vCom, dt);
+                    writeCargoCom(com);
+                }
 
                 if (basketUsesKinematicPose()) {
                     alignBasketBars();
-                } else if (state.beamType === 'container_spreader' && typeof isStsDirectAttach === 'function' && isStsDirectAttach() && cargoHasIntactLoadLegs()) {
+                } else if (stsDirectControlled) {
                     // STS Direct headblock & twistlocks track trolley deterministically at unified hoist rate
                     (phy.beams || []).forEach(b => { b.v.y = 0; });
                 } else {

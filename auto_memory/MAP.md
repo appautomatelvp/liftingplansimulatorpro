@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 21:03 | Nhánh: feat/horizon-clouds | Commit cuối: b6fa36d fix: keep upper bridle length locked during rising overstretch relief (2 minutes ago)
-Tổng: 265 file, 77007 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-16 21:24 | Nhánh: feat/horizon-clouds | Commit cuối: 8cb2e15 docs: log 7 UX & 3D physics improvements and ElevationRulerTool (21 minutes ago)
+Tổng: 265 file, 77015 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -29,16 +29,16 @@ Tổng: 265 file, 77007 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/library/core.js (641 dòng)
 - src/sim/library/parsers.js (654 dòng)
 - src/sim/library/reconstruction_export.js (2133 dòng)
-- src/sim/physics/beams_seed.js (2961 dòng)
+- src/sim/physics/beams_seed.js (2974 dòng)
 - src/sim/physics/cables_break.js (1555 dòng)
 - src/sim/physics/flatrack_payload.js (657 dòng)
 - src/sim/physics/footprint_rig.js (838 dòng)
-- src/sim/physics/hoist_contacts.js (1072 dòng)
+- src/sim/physics/hoist_contacts.js (1076 dòng)
 - src/sim/physics/step_engine.js (779 dòng)
 - src/sim/plan_wizard.js (650 dòng)
 - src/sim/rigging/draw_update.js (837 dòng)
 - src/sim/rigging/hook_pool.js (3118 dòng)
-- src/sim/scene.js (1989 dòng)
+- src/sim/scene.js (1980 dòng)
 - src/sim/session/prelift_reset.js (1074 dòng)
 - src/sim/session/presets_events.js (3576 dòng)
 - src/sim/session/ui_units_bom.js (1953 dòng)
@@ -242,11 +242,11 @@ Tổng: 265 file, 77007 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/library/reconstruction_export.js` | 2133 | --- 2D IMAGE TO 3D CONTOUR & RELIEF RECONSTRUCTION ENGINE --- ⚠️>300 |
 | `src/sim/manifest.js` | 39 |  |
 | `src/sim/physics.js` | 6 |  |
-| `src/sim/physics/beams_seed.js` | 2961 |  ⚠️>300 |
+| `src/sim/physics/beams_seed.js` | 2974 |  ⚠️>300 |
 | `src/sim/physics/cables_break.js` | 1555 |  ⚠️>300 |
 | `src/sim/physics/flatrack_payload.js` | 657 | --- FLAT RACK LASHING RUPTURE, DECK SLIDING & FALLING PAYLOAD PHYSICS --- ⚠️>300 |
 | `src/sim/physics/footprint_rig.js` | 838 |  ⚠️>300 |
-| `src/sim/physics/hoist_contacts.js` | 1072 |  ⚠️>300 |
+| `src/sim/physics/hoist_contacts.js` | 1076 |  ⚠️>300 |
 | `src/sim/physics/index.js` | 9 | Bounded context index — parts are assembled via src/sim/manifest.js (shared scope). |
 | `src/sim/physics/port.js` | 59 |  |
 | `src/sim/physics/step_engine.js` | 779 |  ⚠️>300 |
@@ -254,7 +254,7 @@ Tổng: 265 file, 77007 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/rigging.js` | 6 |  |
 | `src/sim/rigging/draw_update.js` | 837 | Slack cable morphology is solved by a persistent material-aware XPBD chain. ⚠️>300 |
 | `src/sim/rigging/hook_pool.js` | 3118 |  ⚠️>300 |
-| `src/sim/scene.js` | 1989 |  ⚠️>300 |
+| `src/sim/scene.js` | 1980 |  ⚠️>300 |
 | `src/sim/session.js` | 6 |  |
 | `src/sim/session/prelift_reset.js` | 1074 |  ⚠️>300 |
 | `src/sim/session/presets_events.js` | 3576 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
