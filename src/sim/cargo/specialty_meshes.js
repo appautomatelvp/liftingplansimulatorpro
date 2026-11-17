@@ -2502,6 +2502,9 @@
                 }
                 spreaderRootGroup.add(customB);
             }
+            if (typeof GFX !== 'undefined' && GFX.stampSpreaderBrandDecals) {
+                GFX.stampSpreaderBrandDecals(THREE, spreaderRootGroup, beamType, spanX);
+            }
 
             computeRiggingMassBreakdown();
             spreaderRootGroup.userData.gearKind = 'beam';

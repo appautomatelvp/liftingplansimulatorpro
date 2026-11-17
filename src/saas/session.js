@@ -16,6 +16,7 @@ import { isMaintenance, loadFlagsOnce } from './runtime_flags.js';
 import { mountWorkspaceDashboard } from './workspace_dashboard.js';
 import { mountTrialCountdownBanner } from './trial_banner.js';
 import { subscribeFeatureLocks } from './feature_locks_cms.js';
+import { syncViewportWatermark } from './viewport_watermark.js';
 import { openDeveloperContact } from './contact_dialog.js';
 import { clearAppSplash, ensureSaasRoot, installSessionShellUI, mountAccountWidget, playCinemaWorkspaceReveal } from './session_ui_bindings.js';
 
@@ -141,6 +142,7 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
         getProfile: () => window.SafeLift?.saas?.profile,
         onExpired: (expiredProfile) => {
           featureAccess.setProfile(expiredProfile);
+          syncViewportWatermark(expiredProfile);
           onProfileChange?.(expiredProfile, authUser);
           window.dispatchEvent(new CustomEvent('safelift:trial-expired', { detail: { uid: expiredProfile?.uid } }));
         },
@@ -149,6 +151,7 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
     } else {
       trialBanner.sync();
     }
+    syncViewportWatermark(profile);
     if (!workspaceStarted) {
       workspaceStarted = true;
       onWorkspaceAuthorized?.({ profile, authUser, db: firebase.db, auth: firebase.auth, featureAccess });
@@ -171,6 +174,7 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
     accountWidget = null;
     trialBanner?.dispose();
     trialBanner = null;
+    syncViewportWatermark(null);
     workspaceDashboard?.dispose();
     workspaceDashboard = null;
     window.SafeLift.saas.profile = null;

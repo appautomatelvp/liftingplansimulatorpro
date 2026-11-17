@@ -67,7 +67,7 @@ Người lập kế hoạch: Model cao nhất (CHƯA viết code ở bước nà
 - **Tạo test:** `test/feature_locks_cms.test.js` kiểm tra normalize 3 trạng thái, priority rule (`upgrading` chặn cả Pro/Trial, `tier_locked` mở cho Trial/Pro), và DOM badge/tooltip UI; kiểm tra lại `test/runtime_flags.test.js`.
 - **Kiểm tra:** `npx vitest run test/feature_locks_cms.test.js test/runtime_flags.test.js test/cms_data.test.js` + `npm run architecture:gate`.
 
-### [ ] Bước 4: Module 3 (3D + Viewport) — Stencil Decal Bản Quyền 3D & Watermark Bảo Vệ Màn Hình
+### [x] Bước 4: Module 3 (3D + Viewport) — Stencil Decal Bản Quyền 3D & Watermark Bảo Vệ Màn Hình
 - **Tạo mới:**
   - `src/graphics/BrandDecalHelper.js` (< 210 dòng, `@purpose: Tạo texture decal công nghiệp cache 1 lần (CanvasTexture) và gắn tem bản quyền 3D lên Cần cẩu, Móc cẩu, Dầm/Spreader và Kiện hàng mà không ảnh hưởng FPS`):
     - `createBrandDecalTexture(THREE, options)` dùng HTML5 Canvas vẽ chữ stencil sắc nét `SAFELIFT3D.COM • DEV BY LÊ VIỆT PHƯƠNG (+84968051697)` trên nền tấm tem công nghiệp có đinh tán/viền cảnh báo, cache chung `THREE.CanvasTexture` + `MeshStandardMaterial` (`polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2`, `SRGBColorSpace`).

@@ -472,7 +472,12 @@
                     sling3DPool.forEach(s => { s.ropeSim = null; });
                 }
             }
-            if (cargoRootGroup) cargoRootGroup.userData.gearKind = 'cargo';
+            if (cargoRootGroup) {
+                cargoRootGroup.userData.gearKind = 'cargo';
+                if (typeof GFX !== 'undefined' && GFX.stampCargoBrandPlate) {
+                    GFX.stampCargoBrandPlate(THREE, cargoRootGroup, { L, W, H });
+                }
+            }
             if (activeCargoVisual) {
                 activeCargoVisual.userData.gearKind = 'cargo';
                 activeCargoVisual.traverse(o => {

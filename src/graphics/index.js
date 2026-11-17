@@ -37,3 +37,12 @@ export { classifySlingAngleZone, computeSlingAngleArcData, createSlingAngleGizmo
 export { computeVectorLength, classifyForceColorHex, getSlingAngleTooltip, createForceVectorField } from './ForceVectorField.js';
 export { createCoGAxisHandles, buildCogDragPlane, applyCogDragDelta, syncCogDragShiftMode } from './CoGGizmoHelper.js';
 export { createCogFaceProjectionGroup, updateCogFaceProjections } from './CoGFaceProjection.js';
+export {
+  resolveBrandStencilText,
+  getOrCreateBrandDecalTexture,
+  getOrCreateBrandDecalMaterial,
+  stampCraneBrandDecals,
+  stampHookBrandDecals,
+  stampSpreaderBrandDecals,
+  stampCargoBrandPlate
+} from './BrandDecalHelper.js';

@@ -220,6 +220,9 @@
                 plate.receiveShadow = true;
                 hookAssemblyGroup.add(plate);
             });
+            if (typeof GFX !== 'undefined' && GFX.stampHookBrandDecals) {
+                GFX.stampHookBrandDecals(THREE, hookAssemblyGroup);
+            }
 
             // Swivel crosshead trunnion block between the cheek plates
             const trunnion = new THREE.Mesh(new THREE.CylinderGeometry(0.064, 0.064, 0.092, 20), MATS.darkSteel);

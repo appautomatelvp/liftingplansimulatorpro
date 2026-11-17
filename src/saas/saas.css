@@ -291,3 +291,5 @@ body.saas-locked #labels-container { pointer-events: none !important; }
 .saas-cms-state-btn.is-active-state.is-selected { border-color: #10b981; background: rgba(6, 78, 59, .55); color: #6ee7b7; }
 .saas-cms-state-btn.is-tier-state.is-selected { border-color: #38bdf8; background: rgba(12, 74, 110, .55); color: #7dd3fc; }
 .saas-cms-state-btn.is-upgrading-state.is-selected { border-color: #f59e0b; background: rgba(120, 53, 15, .55); color: #fde68a; }
+
+.saas-viewport-watermark { position: fixed; inset: 0; z-index: 4; pointer-events: none; background-repeat: repeat; background-size: 380px 220px; }

@@ -1123,6 +1123,9 @@
             if (typeof GFX !== 'undefined' && GFX.syncCraneOutriggerMats3D) {
                 GFX.syncCraneOutriggerMats3D({ THREE, craneVehicleGroup, presetId: state.craneMatPresetId || 'steel_mat_2x2', MATS });
             }
+            if (typeof GFX !== 'undefined' && GFX.stampCraneBrandDecals) {
+                GFX.stampCraneBrandDecals(THREE, craneVehicleGroup, craneDynamicParts, type);
+            }
             if (pbrFactory) pbrFactory.enforcePBRMaterials(craneVehicleGroup);
             applyCADFeatureEdges(craneVehicleGroup, false);
 
