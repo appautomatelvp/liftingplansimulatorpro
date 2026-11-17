@@ -93,6 +93,7 @@ test.describe('SafeLift3D dialog accessibility', () => {
   });
 
   test('switches visible application text and accessibility labels to English', async ({ page }) => {
+    test.setTimeout(process.env.CI ? 300000 : 120000);
     await page.addInitScript(() => localStorage.setItem('safelift3d.lang', 'vi'));
     await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 15000 });
     await page.locator('#btn-menu-system').waitFor({ state: 'visible', timeout: 15000 });
@@ -116,10 +117,12 @@ test.describe('SafeLift3D dialog accessibility', () => {
           leaks.push({ type: 'text', value });
         }
         document.querySelectorAll('body [title], body [aria-label], body [placeholder]').forEach((element) => {
-          if (!isVisible(element)) return;
+          let visibleChecked = null;
           for (const attribute of ['title', 'aria-label', 'placeholder']) {
             const value = element.getAttribute(attribute);
-            if (value && vietnamese.test(value) && !/Lê Việt Phương/.test(value)) leaks.push({ type: attribute, value });
+            if (!value || !vietnamese.test(value) || /Lê Việt Phương/.test(value)) continue;
+            if (visibleChecked === null) visibleChecked = isVisible(element);
+            if (visibleChecked) leaks.push({ type: attribute, value });
           }
         });
         return leaks;

@@ -45,8 +45,8 @@
 ---
 
 ## 4. CÔNG VIỆC ĐANG LÀM DỞ (ONGOING WORK)
-- **Mục tiêu hiện tại:** Hoàn tất 11/11 bước nâng cấp **5 Trụ cột Vật lý & Kỹ thuật Nâng hạ (DNV-ST-N001 / ASME B30)** trên nhánh `feat/horizon-clouds`: (1) Nguồn chân lý chia tải 4 điểm DNV (`DnvFourPointLift.js`) + ứng suất cục bộ Pin/Bow (`LocalizedHardwareStress.js`, `HardwareBearingTracker.js`); (2) Gizmo góc 3D + tooltip song ngữ (`SlingAngleGizmo.js`) + véc-tơ lực CoG/điểm nối (`ForceVectorField.js`); (3) Collider hợp chất SAT/CCD <1 mm (`CompoundColliders.js`); (4) Động lực học XPBD theo vật liệu + gió + giật ngược (`CableMaterialBehavior.js`); (5) Rơi tự do g=-9.81, mô-men đỡ & uốn Euler–Bernoulli cho mọi dầm (`LoadPathGravity.js`) + `ReplayRecorder` 60s. Toàn bộ `57/57` file / `408/408` test Vitest, `4/4` Playwright `fhd-1080p`, `architecture:gate`, `vite build` & `check:dist` đều xanh 100%.
-- **Bước tiếp theo:** Theo dõi PR gộp về `master` trên GitHub và kiểm tra tự động build trên Cloudflare Pages.
+- **Mục tiêu hiện tại:** Hoàn tất 6/6 bước **Gói Dùng Thử 24h Pro, Ma Trận Khóa CMS Realtime (`system_config/feature_locks`), Tem Bản Quyền 3D (`BrandDecalHelper.js`), Watermark Màn Hình & Báo Cáo JSA/HSE Risk Assessment PDF (`RiskAssessmentReport.js`)** trên nhánh `feat/horizon-clouds`.
+- **Bước tiếp theo:** Founder kiểm tra thực tế trên trình duyệt (thanh đếm ngược 24h, tab Khóa Tính Năng trong `/admin`, tem 3D trên cần/móc/dầm/hàng, xuất PDF kiểm tra JSA/HSE & watermark); khi muốn đẩy lên GitHub/deploy thì báo AI cho phép `git push`.
 
 ---
 
@@ -54,4 +54,4 @@
 - [x] Tất cả các file mới/vừa tách đều dưới 300 dòng, có `@purpose`, không sinh ra file `patch*.js` hay `fix.js` nào.
 - [x] Không vi phạm Physics Quarantine (`/src/core/` không import DOM/Three.js) và qua `npm run architecture:gate`.
 - [x] Đã chạy `./scripts/auto_check.ps1` và `./scripts/auto_log.ps1` để cập nhật `auto_memory/HISTORY.md` + `auto_memory/MAP.md`.
-- [x] Toàn bộ 57 file / 408 test (`npm test`), 4/4 Playwright `fhd-1080p`, Golden Test (`@test`) và `npm run build` chạy khớp 100%.
+- [x] Toàn bộ 60 file test (`npm test`), Playwright `fhd-1080p`, Golden Test (`@test`) và `npm run build` chạy khớp 100%.

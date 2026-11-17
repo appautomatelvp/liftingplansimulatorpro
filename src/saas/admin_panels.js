@@ -137,12 +137,12 @@ export function renderUsersAndFlagsSections(props) {
 }
 
 export function renderAdminShell({
-  tr, profile, status, error, usersSection = '', catalogSection = '', kpiSection = '',
+  tr, profile, status, error, usersSection = '', catalogSection = '', locksSection = '', kpiSection = '',
   activeSection = 'all', flags = null, envLabel = 'development', canViewUsersAudit = true, canEditCatalog = true,
   modalHtml = ''
 }) {
   const navItems = [{ id: 'all', label: tr('cmsNavAll') }];
-  if (canViewUsersAudit) navItems.push({ id: 'users', label: tr('cmsNavUsers') }, { id: 'config', label: tr('cmsNavConfig') }, { id: 'audit', label: tr('cmsNavAudit') });
+  if (canViewUsersAudit) navItems.push({ id: 'users', label: tr('cmsNavUsers') }, { id: 'locks', label: tr('cmsMatrixNav') }, { id: 'config', label: tr('cmsNavConfig') }, { id: 'audit', label: tr('cmsNavAudit') });
   if (canEditCatalog) navItems.push({ id: 'catalog', label: tr('cmsNavCatalog') });
   const maint = Boolean(flags?.maintenanceMode);
   const kpiHtml = kpiSection || renderKpiRibbon({ tr, kpi: computeAdminKpiSummary({ flags: flags || {} }) });
@@ -154,6 +154,6 @@ export function renderAdminShell({
     <nav class="saas-cms-nav">${navItems.map((n) => `<button type="button" class="saas-cms-nav-btn ${activeSection === n.id ? 'is-active' : ''}" data-nav-section="${n.id}">${n.label}</button>`).join('')}</nav>
   </header>
   ${status ? `<div class="saas-admin-notice ${error ? 'is-error' : ''}" role="status">${escapeHtml(status)}</div>` : ''}
-  <div class="saas-cms-container">${kpiHtml}${usersSection}${catalogSection}</div>
+  <div class="saas-cms-container">${kpiHtml}${usersSection}${locksSection}${catalogSection}</div>
   ${modalHtml}`;
 }

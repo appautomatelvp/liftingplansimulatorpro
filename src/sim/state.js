@@ -116,8 +116,9 @@
             // Granular Technical Display Options (Bật/tắt tùy ý theo yêu cầu người dùng)
             // Khởi động: tạm ẩn các thông số trên kiện, chỉ để lại trọng tâm CoG và góc nền
             displayOptions: {
-                showForces: false,         // Lực căng từng nhánh cáp (Tạm ẩn)
-                showSlingAngles: false,    // Góc giữa các cáp (Tạm ẩn)
+                showForces: false,         // Lực căng từng nhánh cáp (Tạm ẩn cho gọn viewport)
+                showSlingAngles: false,    // Nhãn chữ góc trên từng nhánh (Tạm ẩn)
+                showSlingAngleGizmo: 'always', // Quạt cung góc 3D mặc định luôn bật
                 showGroundAngle: true,     // Góc nền, vạch vàng & đỏ, số độ to (HIỂN THỊ)
                 showHookLoad: false,       // Chịu lực móc cẩu & cao độ Y (Tạm ẩn)
                 showShackleLoads: false,   // Chịu lực ma ní & tai cẩu LP (Tạm ẩn)

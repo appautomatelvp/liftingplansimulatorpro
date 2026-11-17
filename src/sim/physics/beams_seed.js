@@ -174,6 +174,10 @@
         function syncCableRest(captureDesign) {
             const spec = getRigSpec();
             if (captureDesign) phy._stsPinsSnug = false;
+            if (typeof RIG !== 'undefined' && RIG.assignHierarchicalNames && phy.cables) {
+                RIG.assignHierarchicalNames(phy.cables, { bodies: phy.beams });
+                RIG.syncHierarchicalNamesToGear(phy.cables, state);
+            }
             (phy.cables || []).forEach(c => {
                 if (c.role === 'extra') {
                     const ex = (state.gear.extraCables || [])[c.index];
@@ -2480,7 +2484,10 @@
                         if (rawStretch > (phy.solverMaxOverrun || 0)) phy.solverMaxOverrun = rawStretch;
                         // Pure Split-Impulse Inextensible Cable Solver:
                         // 1) Velocity impulse ONLY resolves relative separating velocity (zero velocity injection from stretch!)
-                        const wSum = Math.max(1e-8, endCompliance(c.a, n, invMass, invI) + endCompliance(c.b, n.clone().negate(), invMass, invI));
+                        const xpbdAlpha = (typeof RIG !== 'undefined' && RIG.computeXpbdCableCompliance)
+                            ? RIG.computeXpbdCableCompliance(c, state, dt)
+                            : 0;
+                        const wSum = Math.max(1e-8, endCompliance(c.a, n, invMass, invI) + endCompliance(c.b, n.clone().negate(), invMass, invI) + xpbdAlpha);
                         let j = (sep * 0.96) / wSum;
                         const cap = Math.min(axialImpulseCap(c.a, n), axialImpulseCap(c.b, n.clone().negate()));
                         if (j > cap) j = cap;
@@ -2511,7 +2518,7 @@
                                 const dl = corr / Math.max(1e-8, endCompliancePos(c.a, n, invMass, invI));
                                 pushEnd(c.a, n, dl, invMass, invI);
                             } else {
-                                const wPos = Math.max(1e-8, endCompliancePos(c.a, n, invMass, invI) + endCompliancePos(c.b, n.clone().negate(), invMass, invI));
+                                const wPos = Math.max(1e-8, endCompliancePos(c.a, n, invMass, invI) + endCompliancePos(c.b, n.clone().negate(), invMass, invI) + xpbdAlpha);
                                 const dl = corr / wPos;
                                 pushEnd(c.a, n, dl, invMass, invI);
                                 pushEnd(c.b, n, -dl, invMass, invI);

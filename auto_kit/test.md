@@ -18,6 +18,7 @@ Trong phần mềm kỹ thuật và vận hành, **F12 không báo đỏ KHÔNG 
 | :--- | :--- | :--- | :--- | :--- |
 | **SafeLift3D (`RiggingRuleEngine`)** | `resolveSling()` | `{ slingType: 'wire', diaMm: 22, parts: 2, angleDeg: 60 }` | `sf >= 5.0`, hệ số góc `cos(30°) = 0.866`, trạng thái `SAFE` | `± 0.01` |
 | **SafeLift3D (`DnvFourPointLift`)** | `resolveFourLegDiagonalLoad()` | `{ totalLoadT: 20, cogOffsetXZ: {x:0,z:0}, skl: 1.25, isRigid: true }` | `activeDiagonal: [0,2]`, `tensionsT: [12.5, 0, 12.5, 0]`, `sklUsed: 1.25` | `± 0.01` |
+| **SafeLift3D (`HierarchicalNaming`)** | `assignHierarchicalNames()` | Spreader 2 uppers (`-3m`, `+3m`) + 4 legs (2/end) | Uppers `LP1, LP2`; Left legs `LP11, LP12` (`parentName: 'LP1'`); Right legs `LP21, LP22` (`parentName: 'LP2'`) | Exact match |
 | **CARBOOK (`fuelEconomy.js`)** | `computeFuelMetrics()` | `{ prevOdo: 12000, currOdo: 12500, liters: 35, price: 21000 }` | `distanceKm: 500`, `litersPer100Km: 7.0`, `vndPerKm: 1470` | `± 0.05` |
 | **CMIT Weighing (`useWeighing.js`)** | `calculateResult()` | `{ weight1: "28,5", weight2: "28.5", tare: 3.8 }` | `gross1: 28.5`, `gross2: 28.5`, `netWeight: 24.7` | `± 0.01` |
 | **CMIT Shift (`boeLogic.js`)** | `computeBoeMetrics()` | `{ totalMoves: 1200, netHours: 8, cranes: 4 }` | `gmpH: 37.5` | `± 0.05` |

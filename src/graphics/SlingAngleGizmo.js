@@ -32,8 +32,9 @@ export function computeSlingAngleArcData(pointA, pointB, radiusM = 1.15) {
   if (len < 1e-4) return null;
 
   const horizLen = Math.hypot(dx, dz);
-  const rad = Math.atan2(Math.max(0, dy), Math.max(1e-6, horizLen));
-  const angleDeg = (rad * 180) / Math.PI;
+  const ratio = Math.max(0, Math.min(1, Math.abs(dy) / len));
+  const rad = Math.asin(ratio);
+  const angleDeg = Math.max(0, Math.min(90, Math.round((rad * 180 / Math.PI) * 1e6) / 1e6));
   const r = Math.min(Math.max(0.45, radiusM), len * 0.55);
 
   // Horizontal unit direction in XZ; fallback +X when sling is strictly vertical (90°)

@@ -1,5 +1,6 @@
-// @purpose: Thuật toán chia tải siêu tĩnh DNV-ST-N001 cho cẩu 4 nhánh (nguồn chân lý duy nhất: 2 nhánh chéo gánh 100% × SKL [1.25..1.5])
+// @purpose: Thuật toán chia tải 4 nhánh kết hợp độ mềm xoắn dầm Saint-Venant (GJ) + độ giãn trục cáp (EA)
 import { DNV_4LEG } from './riggingConstants.js';
+import { solveElasticFourPointDistribution } from './ElasticFourPointSolver.js';
 
 function inverseDistanceWeights(lugs, cogXZ) {
   const cx = Number(cogXZ?.x) || 0;
@@ -46,7 +47,12 @@ export function resolveFourLegDiagonalLoad({
   stretchStrainPerT = 0,
   skl = DNV_4LEG.SKL_DEFAULT,
   isEqualizer = false,
-  isRigid = true
+  isRigid = true,
+  elasticTorsion = true,
+  beamGJ = 3.2e7,
+  cableEA = 2.2e7,
+  beamSpanM = 6.0,
+  lugWidthM = 2.2
 } = {}) {
   const W = Math.max(0, Number(totalLoadT) || 0);
   const baseShares = Array.isArray(cogLoadShares) && cogLoadShares.length === 4
@@ -73,6 +79,19 @@ export function resolveFourLegDiagonalLoad({
       hasSkewRisk: false,
       reasons
     };
+  }
+
+  if (elasticTorsion && (beamGJ > 0 || cableEA > 0)) {
+    return solveElasticFourPointDistribution({
+      totalLoadT: W,
+      normShares,
+      legLengthsM,
+      toleranceFrac,
+      beamGJ,
+      cableEA,
+      beamSpanM,
+      lugWidthM
+    });
   }
 
   const sklUsed = computeAdaptiveSKL({ toleranceFrac, stretchStrainPerT, totalLoadT: W, legLengthsM, skl });

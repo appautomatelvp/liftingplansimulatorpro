@@ -28,9 +28,11 @@ service cloud.firestore {
     }
 
     function allowedSlot(uid, itemId) {
+      let userData = get(userPath(uid)).data;
+      let hasPro = userData.tier in ['premium', 'pro', 'enterprise']
+        || (userData.keys().hasAll(['trialEndsAt']) && userData.trialEndsAt is timestamp && request.time < userData.trialEndsAt);
       return itemId.matches('^([1-9]|1[0-9]|20)$')
-        || (get(userPath(uid)).data.tier == 'premium'
-          && itemId.matches('^([1-9]|[1-9][0-9]|1[0-9][0-9]|200)$'));
+        || (hasPro && itemId.matches('^([1-9]|[1-9][0-9]|1[0-9][0-9]|200)$'));
     }
 
     function validUsageDoc() {
@@ -149,7 +151,8 @@ service cloud.firestore {
           'uid', 'email', 'displayName', 'role', 'tier', 'createdAt', 'lastLogin', 'status'
         ])
         && request.resource.data.keys().hasOnly([
-          'uid', 'email', 'displayName', 'role', 'tier', 'createdAt', 'lastLogin', 'status'
+          'uid', 'email', 'displayName', 'role', 'tier', 'createdAt', 'lastLogin', 'status',
+          'trialStartedAt', 'trialEndsAt', 'deviceFingerprint', 'trialGranted'
         ])
         && request.resource.data.uid == uid
         && request.auth.token.email_verified == true
@@ -158,7 +161,24 @@ service cloud.firestore {
         && request.resource.data.tier == 'free'
         && request.resource.data.status == 'active'
         && request.resource.data.createdAt == request.time
-        && request.resource.data.lastLogin == request.time;
+        && request.resource.data.lastLogin == request.time
+        && (
+          !request.resource.data.keys().hasAny(['trialStartedAt', 'trialEndsAt', 'trialGranted'])
+          || (
+            request.resource.data.trialGranted == false
+            && request.resource.data.trialEndsAt is timestamp
+            && request.resource.data.trialEndsAt <= request.time
+          )
+          || (
+            request.resource.data.trialStartedAt == request.time
+            && request.resource.data.trialEndsAt is timestamp
+            && request.resource.data.trialEndsAt <= request.time + duration.value(24, 'h')
+            && request.resource.data.deviceFingerprint is string
+            && request.resource.data.deviceFingerprint.size() >= 8
+            && request.resource.data.deviceFingerprint.size() <= 128
+            && !exists(/databases/$(database)/documents/trial_devices/$(request.resource.data.deviceFingerprint))
+          )
+        );
 
       // Account holders can only change their sign-in metadata. They cannot grant themselves access.
       allow update: if signedIn()
@@ -170,7 +190,7 @@ service cloud.firestore {
       allow update: if activeAdmin()
         && request.auth.uid != uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['tier', 'status'])
-        && request.resource.data.tier in ['free', 'premium']
+        && request.resource.data.tier in ['free', 'premium', 'pro', 'enterprise']
         && request.resource.data.status in ['active', 'locked', 'banned'];
 
       allow delete: if false;
@@ -214,6 +234,26 @@ service cloud.firestore {
       allow get: if signedIn() && docId == 'featureFlags';
       allow list: if false;
       allow create, update: if activeAdmin() && docId == 'featureFlags' && validFeatureFlags();
+      allow delete: if false;
+    }
+
+    match /trial_devices/{fpHash} {
+      allow get: if signedIn() && fpHash.size() >= 8 && fpHash.size() <= 128;
+      allow list: if false;
+      allow create: if signedIn()
+        && request.auth.token.email_verified == true
+        && !exists(/databases/$(database)/documents/trial_devices/$(fpHash))
+        && request.resource.data.keys().hasAll(['uid', 'claimedAt'])
+        && request.resource.data.keys().hasOnly(['uid', 'claimedAt', 'trialEndsAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.claimedAt == request.time;
+      allow update, delete: if false;
+    }
+
+    match /system_config/{docId} {
+      allow get: if signedIn() && docId == 'feature_locks';
+      allow list: if false;
+      allow create, update: if activeAdmin() && docId == 'feature_locks';
       allow delete: if false;
     }
 

@@ -196,8 +196,15 @@ export function createElevationRulerTool({ THREE, scene }) {
 
   let hoverWorld = null;
   let customPos = null;
+  let defaultOffset = { x: 3.4, z: 0.85 };
   const raycaster = new THREE.Raycaster();
   const pointerNdc = new THREE.Vector2();
+
+  const setDefaultOffset = (x, z) => {
+    if (Number.isFinite(Number(x))) defaultOffset.x = Number(x);
+    if (Number.isFinite(Number(z))) defaultOffset.z = Number(z);
+  };
+  const getDefaultOffset = () => ({ ...defaultOffset });
 
   const setCustomPosition = (x, z) => {
     if (!Number.isFinite(x) || !Number.isFinite(z)) return;
@@ -235,8 +242,10 @@ export function createElevationRulerTool({ THREE, scene }) {
     } else {
       const cx = phy?.cargoPos ? phy.cargoPos.x : 0;
       const cz = phy?.cargoPos ? phy.cargoPos.z : 0;
-      rx = cx + Math.max(2.4, (state?.L || 6) * 0.5) + 1.55;
-      rz = cz - Math.max(0.8, (state?.W || 2.4) * 0.25);
+      const offX = Number.isFinite(Number(state?.rulerOffsetX)) ? Number(state.rulerOffsetX) : defaultOffset.x;
+      const offZ = Number.isFinite(Number(state?.rulerOffsetZ)) ? Number(state.rulerOffsetZ) : defaultOffset.z;
+      rx = cx + Math.max(2.6, (state?.L || 6) * 0.5) + offX;
+      rz = cz - Math.max(0.8, (state?.W || 2.4) * 0.5) - offZ;
     }
     rulerGroup.position.set(rx, 0, rz);
 
@@ -283,6 +292,8 @@ export function createElevationRulerTool({ THREE, scene }) {
     setCustomPosition,
     getCustomPosition,
     clearCustomPosition,
+    setDefaultOffset,
+    getDefaultOffset,
     update,
     updateHover,
     clearHover: () => { hoverWorld = null; }

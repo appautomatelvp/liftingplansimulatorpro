@@ -119,6 +119,10 @@ export function captureReplayFrame({ replay, state, phy, activeCargoVisual, nowS
       return {
         role: c.role,
         index: c.index,
+        name: c.name || c.hierarchicalName || null,
+        parentId: c.parentId || null,
+        parentName: c.parentName || null,
+        tier: c.tier || null,
         L0: Number(c.L0 || 1),
         tensionT: Number(c.tensionT || 0),
         slack: !!c.slack,
@@ -222,6 +226,13 @@ export function applyReplayFrame({ THREE, replay, state, phy, activeCargoVisual,
       const cb = (end.cables && end.cables[idx]) || ca;
       if (!ca || !c) return;
       c.L0 = THREE.MathUtils.lerp(ca.L0 || 1, cb.L0 || 1, t);
+      if (ca.name || cb.name) {
+        const nm = t < 0.5 ? (ca.name || cb.name) : (cb.name || ca.name);
+        c.name = nm; c.hierarchicalName = nm;
+        c.parentId = (t < 0.5 ? ca.parentId : cb.parentId) || c.parentId;
+        c.parentName = (t < 0.5 ? ca.parentName : cb.parentName) || c.parentName;
+        c.tier = (t < 0.5 ? ca.tier : cb.tier) || c.tier;
+      }
       c.tensionT = THREE.MathUtils.lerp(ca.tensionT || 0, cb.tensionT || 0, t);
       c.slack = t < 0.5 ? !!ca.slack : !!cb.slack;
       const brokenNow = t < 0.5 ? !!ca.broken : !!cb.broken;

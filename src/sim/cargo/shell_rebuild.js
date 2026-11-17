@@ -444,13 +444,9 @@
                         ? buildStsTwinTwentyVisual(H || 2.591)
                         : buildCargoMesh(cargoType, L, W, H);
                     activeCargoVisual.userData.meshKey = meshKey;
-                    // Keep authored MTL / CAD materials on Realistic V2 containers, reefers, vehicles
+                    // Keep glossy automotive paint only on vehicle models; enrich ISO/industrial CAD assets with weathered PBR maps
                     const cadProto = customCargoMeshes && customCargoMeshes[cargoType];
-                    const keepCadMaterials = !!(cadProto && (
-                        cargoType === 'car'
-                        || cadProto.userData?.keepMaterials
-                        || cadProto.userData?.isoRealisticV2
-                    ));
+                    const keepCadMaterials = Boolean(cadProto && cargoType === 'car');
                     if (pbrFactory && !keepCadMaterials) pbrFactory.enforcePBRMaterials(activeCargoVisual);
                     if (state.xrayCargo) applyXRayToCargo(activeCargoVisual, true);
                     if (typeof applyCADFeatureEdges === 'function' && !activeCargoVisual.userData?._cadEdgesApplied) {
@@ -476,7 +472,12 @@
                     sling3DPool.forEach(s => { s.ropeSim = null; });
                 }
             }
-            if (cargoRootGroup) cargoRootGroup.userData.gearKind = 'cargo';
+            if (cargoRootGroup) {
+                cargoRootGroup.userData.gearKind = 'cargo';
+                if (typeof GFX !== 'undefined' && GFX.stampCargoBrandPlate) {
+                    GFX.stampCargoBrandPlate(THREE, cargoRootGroup, { L, W, H });
+                }
+            }
             if (activeCargoVisual) {
                 activeCargoVisual.userData.gearKind = 'cargo';
                 activeCargoVisual.traverse(o => {
@@ -527,6 +528,9 @@
             rebuildDunnageBlocks();
 
             cogIndicatorGroup.position.set(cogX, cogY, cogZ);
+            if (typeof GFX !== 'undefined' && GFX.updateCogFaceProjections) {
+                GFX.updateCogFaceProjections(cogIndicatorGroup, { L, W, H, cogX, cogY, cogZ, activeDrag: Boolean(state._cogDragMode) });
+            }
 
             state.lugs.forEach((pos, i) => {
                 if (!pos) return;

@@ -16,6 +16,7 @@ import {
   T_TO_KN
 } from './riggingConstants.js';
 import { resolveFourLegDiagonalLoad } from './DnvFourPointLift.js';
+import { computeCableAxialStiffness } from './ElasticFourPointSolver.js';
 
 export {
   TOPOLOGY,
@@ -39,20 +40,21 @@ export function computeSlingAngle3D(topPoint, bottomPoint) {
   if (!topPoint || !bottomPoint) {
     return { angleDeg: 90.0, horizDist: 0.0, vertDist: 0.0 };
   }
-  const dx = (topPoint.x || 0) - (bottomPoint.x || 0);
-  const dz = (topPoint.z || 0) - (bottomPoint.z || 0);
-  const horizDist = Math.sqrt(dx * dx + dz * dz);
-  const vertDist = Math.abs((topPoint.y || 0) - (bottomPoint.y || 0));
+  const dx = (Number(topPoint.x) || 0) - (Number(bottomPoint.x) || 0);
+  const dz = (Number(topPoint.z) || 0) - (Number(bottomPoint.z) || 0);
+  const horizDist = Math.hypot(dx, dz);
+  const vertDist = Math.abs((Number(topPoint.y) || 0) - (Number(bottomPoint.y) || 0));
+  const length = Math.hypot(dx, vertDist, dz);
 
-  if (horizDist < 1e-4) {
+  if (length < 1e-6 || horizDist < 1e-4) {
     return { angleDeg: 90.0, horizDist: 0.0, vertDist };
   }
   if (vertDist < 1e-4) {
     return { angleDeg: 0.0, horizDist, vertDist: 0.0 };
   }
 
-  const angleRad = Math.atan2(vertDist, horizDist);
-  const angleDeg = angleRad * (180.0 / Math.PI);
+  const ratio = Math.max(0, Math.min(1, vertDist / length));
+  const angleDeg = Math.max(0, Math.min(90, Math.asin(ratio) * (180.0 / Math.PI)));
   return {
     angleDeg: Number(angleDeg.toFixed(2)),
     horizDist: Number(horizDist.toFixed(4)),
@@ -251,7 +253,7 @@ export function solveCoGMomentEquilibrium(lugs, cogWorld = { x: 0, y: 0, z: 0 },
  * @param {number} SKL - Skew Load Factor (default 1.25)
  * @returns {number[]} dnvShares - multipliers/fractions per leg
  */
-export function applyDNV4LegSkewRule(legs4, cogLoadShares = [0.25, 0.25, 0.25, 0.25], SKL = DNV_4LEG.SKL_DEFAULT) {
+export function applyDNV4LegSkewRule(legs4, cogLoadShares = [0.25, 0.25, 0.25, 0.25], SKL = DNV_4LEG.SKL_DEFAULT, elasticOpts = {}) {
   const legLengthsM = Array.isArray(legs4) ? legs4.map((c) => (c && c.L0) || 0) : null;
   const res = resolveFourLegDiagonalLoad({
     totalLoadT: 1.0,
@@ -259,7 +261,12 @@ export function applyDNV4LegSkewRule(legs4, cogLoadShares = [0.25, 0.25, 0.25, 0
     legLengthsM,
     skl: SKL,
     isRigid: true,
-    isEqualizer: false
+    isEqualizer: false,
+    elasticTorsion: elasticOpts.elasticTorsion !== false,
+    beamGJ: elasticOpts.beamGJ ?? 3.2e7,
+    cableEA: elasticOpts.cableEA ?? 2.2e7,
+    beamSpanM: elasticOpts.beamSpanM ?? 6.0,
+    lugWidthM: elasticOpts.lugWidthM ?? 2.2
   });
   const dnvShares = [...res.shares];
   dnvShares.activeDiagonal = res.activeDiagonal;
@@ -267,7 +274,10 @@ export function applyDNV4LegSkewRule(legs4, cogLoadShares = [0.25, 0.25, 0.25, 0
   dnvShares.sklUsed = res.sklUsed;
   dnvShares.heavyPairSharePct = res.heavyPairSharePct;
   dnvShares.hasSkewRisk = res.hasSkewRisk;
-  dnvShares.dnvNotice = `DNV-ST-N001: 4-leg statically indeterminate lift. Active diagonal carries 100% load * SKL (${res.sklUsed}x). Passive legs carry 0t.`;
+  dnvShares.elasticTorsionActive = Boolean(res.elasticTorsionActive);
+  dnvShares.dnvNotice = res.elasticTorsionActive
+    ? `Elastic 4-Leg Torsion (EA + GJ): primary diagonal ${(res.heavyPairSharePct || 70).toFixed(1)}%, secondary diagonal taut under beam twist.`
+    : `DNV-ST-N001: 4-leg statically indeterminate lift. Active diagonal carries 100% load * SKL (${res.sklUsed}x). Passive legs carry 0t.`;
   return dnvShares;
 }
 
@@ -507,7 +517,17 @@ export function evaluate(phy, state, deps = {}) {
     };
     const cogShares = solveCoGMomentEquilibrium(lugs, cogWorld, payloadWeightT);
     const skl = (state.rigSolver && state.rigSolver.skl) || DNV_4LEG.SKL_DEFAULT;
-    dnvShares = applyDNV4LegSkewRule(legCables, cogShares, skl);
+    const beamSpanM = Math.max(1.5, Number(state.beamLength) || 6.0);
+    const beamSwlT = Math.max(10, Number(state.gear?.beam?.swlT) || 30);
+    const beamGJ = 79.3e9 * Math.max(3.8e-4, beamSpanM * beamSpanM * beamSwlT * 2.0e-7);
+    const cableEA = computeCableAxialStiffness({ material: state.slingType || 'wire', diameterMm: state.slingDiameterMm || 22, lengthM: state.slingLength || 4 }).eaN;
+    dnvShares = applyDNV4LegSkewRule(legCables, cogShares, skl, {
+      elasticTorsion: state.rigSolver?.elasticTorsion !== false,
+      beamGJ,
+      cableEA,
+      beamSpanM,
+      lugWidthM: Math.max(1.0, Number(state.W) || 2.2)
+    });
     dnvNotice = dnvShares.dnvNotice;
   }
 

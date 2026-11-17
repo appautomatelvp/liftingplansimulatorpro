@@ -1,0 +1,12 @@
+title = "SafeLift3D Gitleaks Configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Public localStorage key constants (non-secret)"
+regexTarget = "secret"
+regexes = [
+  '''^safelift_trial_claimed_v1$''',
+  '''^safelift_device_fp_v1$'''
+]

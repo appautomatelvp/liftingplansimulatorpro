@@ -137,7 +137,14 @@ export const EXTRA_UI_EN = {
   'Góc ngang của dây (α): Góc tạo bởi nhánh dây cáp và mặt phẳng nằm ngang.': 'Horizontal Sling Angle (α): The angle between the sling leg and the horizontal plane.',
   'Hiện cung góc': 'Angle Gizmo',
   'Mũi tên lực': 'Force Vectors',
-  'Ứng suất phụ kiện': 'Hardware Stress'
+  'Ứng suất phụ kiện': 'Hardware Stress',
+  'Góc': 'Angle',
+  'Lực căng': 'Tension',
+  'Thước': 'Ruler',
+  'Bật/tắt nhanh cung góc Sling 3D': 'Toggle 3D Sling Angle Gizmo',
+  'Bật/tắt nhanh nhãn lực căng cáp': 'Toggle Sling Tension Labels',
+  'Bật/tắt nhanh thước đo độ cao 3D': 'Toggle 3D Elevation Ruler',
+  'Bật/tắt nhanh trục trọng tâm CoG': 'Toggle Center of Gravity (CoG) Gizmo'
 };
 
 const BADGE_PAIRS = [

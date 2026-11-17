@@ -1,10 +1,10 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 08:30 | Nhánh: feat/horizon-clouds | Commit cuối: 3469696 step 10: extend ReplayRecorder for SKL/whip/freeFall/bending and add Angle Gizmo display toggle (4 minutes ago)
-Tổng: 286 file, 80472 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 14:10 | Nhánh: feat/horizon-clouds | Commit cuối: ab519be ci: use singular [allowlist] syntax for gitleaks v8.24.3 (35 minutes ago)
+Tổng: 310 file, 84152 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
-- index.html (3170 dòng)
+- index.html (3186 dòng)
 - scripts/generate_port_assets.js (477 dòng)
 - src/core/AssemblyEngine.js (433 dòng)
 - src/core/AssetManager.js (325 dòng)
@@ -13,44 +13,46 @@ Tổng: 286 file, 80472 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/core/ElasticSlingEngine.js (450 dòng)
 - src/core/EngineeringEngine.js (661 dòng)
 - src/core/HullOptimizer.js (322 dòng)
-- src/core/LiftPlanModel.js (1073 dòng)
+- src/core/LiftPlanModel.js (1084 dòng)
 - src/core/RiggingDictionary.js (434 dòng)
 - src/core/SimulationEngine.js (560 dòng)
+- src/graphics/ElevationRulerTool.js (301 dòng)
 - src/graphics/SceneRenderer.js (313 dòng)
 - src/i18n/keys.js (598 dòng)
-- src/rigging/RiggingPhysicsSolver.js (680 dòng)
+- src/rigging/ReplayRecorder.js (302 dòng)
+- src/rigging/RiggingPhysicsSolver.js (700 dòng)
 - src/sim/audio.js (725 dòng)
 - src/sim/cargo/containers_iso.js (1453 dòng)
-- src/sim/cargo/shell_rebuild.js (573 dòng)
-- src/sim/cargo/specialty_meshes.js (2512 dòng)
-- src/sim/compliance.js (625 dòng)
+- src/sim/cargo/shell_rebuild.js (577 dòng)
+- src/sim/cargo/specialty_meshes.js (2515 dòng)
+- src/sim/compliance.js (635 dòng)
 - src/sim/dynamics.js (848 dòng)
-- src/sim/gear/editor.js (3614 dòng)
+- src/sim/gear/editor.js (3664 dòng)
 - src/sim/library/core.js (641 dòng)
-- src/sim/library/parsers.js (654 dòng)
-- src/sim/library/reconstruction_export.js (2137 dòng)
-- src/sim/physics/beams_seed.js (2997 dòng)
-- src/sim/physics/cables_break.js (1573 dòng)
+- src/sim/library/parsers.js (660 dòng)
+- src/sim/library/reconstruction_export.js (2142 dòng)
+- src/sim/physics/beams_seed.js (3004 dòng)
+- src/sim/physics/cables_break.js (1593 dòng)
 - src/sim/physics/flatrack_payload.js (657 dòng)
 - src/sim/physics/footprint_rig.js (838 dòng)
-- src/sim/physics/hoist_contacts.js (1110 dòng)
-- src/sim/physics/step_engine.js (808 dòng)
+- src/sim/physics/hoist_contacts.js (1118 dòng)
+- src/sim/physics/step_engine.js (809 dòng)
 - src/sim/plan_wizard.js (650 dòng)
 - src/sim/rigging/draw_update.js (853 dòng)
-- src/sim/rigging/hook_pool.js (3126 dòng)
-- src/sim/scene.js (1983 dòng)
+- src/sim/rigging/hook_pool.js (3136 dòng)
+- src/sim/scene.js (2011 dòng)
 - src/sim/session/prelift_reset.js (1142 dòng)
-- src/sim/session/presets_events.js (3626 dòng)
+- src/sim/session/presets_events.js (3639 dòng)
 - src/sim/session/ui_units_bom.js (1967 dòng)
-- src/sim/state.js (607 dòng)
-- src/sim/telemetry.js (1154 dòng)
+- src/sim/state.js (608 dòng)
+- src/sim/telemetry.js (1157 dòng)
 - src/sim/weather_fx.js (596 dòng)
 - test/cable_morphology_and_deformation.test.js (426 dòng)
 - test/custom_slings.test.js (712 dòng)
 - test/engineering.test.js (410 dòng)
 - test/physics_master_blueprint.test.js (524 dòng)
 - test/rigging.test.js (1370 dòng)
-- test/rigging_physics_and_alarms.test.js (306 dòng)
+- test/rigging_physics_and_alarms.test.js (305 dòng)
 - test/v3_ruler_drag_hoist_sts_gear_regression.test.js (449 dòng)
 
 ## 🔒 File đã khóa [LOCKED]
@@ -80,11 +82,11 @@ Tổng: 286 file, 80472 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `e2e/cms-roles.spec.js` | 106 |  |
 | `e2e/emulator_helpers.js` | 65 |  |
 | `e2e/layout.spec.js` | 313 | Check that an element is actually visible and not clipped or covered. ⚠️>300 |
-| `e2e/saas-accessibility.spec.js` | 148 |  |
+| `e2e/saas-accessibility.spec.js` | 151 |  |
 | `eslint.config.js` | 23 | Flat ESLint config — architecture gates for app/domain layers (optional eslint install). |
 | `firebase.json` | 29 |  |
-| `firestore.rules` | 239 |  |
-| `index.html` | 3170 |  ⚠️>300 |
+| `firestore.rules` | 279 |  |
+| `index.html` | 3186 |  ⚠️>300 |
 | `jsconfig.json` | 19 |  |
 | `package.json` | 42 |  |
 | `playwright.auth.config.js` | 28 |  |
@@ -128,7 +130,7 @@ Tổng: 286 file, 80472 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/core/GroundPressureEngine.js` | 238 |  |
 | `src/core/HullOptimizer.js` | 322 |  ⚠️>300 |
 | `src/core/index.js` | 83 |  |
-| `src/core/LiftPlanModel.js` | 1073 |  ⚠️>300 |
+| `src/core/LiftPlanModel.js` | 1084 |  ⚠️>300 |
 | `src/core/LocalizedHardwareStress.js` | 100 | Phân tích ứng suất cục bộ phụ kiện (Pin vs Bow) bọc ngoài standards/hardware.js theo ASME B30.26 |
 | `src/core/PhysicalCableSolver.js` | 199 |  |
 | `src/core/physics-world/CannonBackend.js` | 185 |  |
@@ -143,6 +145,7 @@ Tổng: 286 file, 80472 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/core/RiggingDictionary.js` | 434 |  ⚠️>300 |
 | `src/core/RiggingEquipmentCatalog.js` | 55 |  |
 | `src/core/RiggingPlanner.js` | 218 |  |
+| `src/core/RiskAssessmentReport.js` | 194 | Danh gia ma tran rui ro JSA/HSE dong (Dat nen, Goc Sling, Lech CoG, Gio, Kiem dinh) & Header/Footer/Watermark xuat PDF |
 | `src/core/RopeConstraint.js` | 115 |  |
 | `src/core/SimulationEngine.js` | 560 |  ⚠️>300 |
 | `src/core/standards/belowTheHook.js` | 141 |  |
@@ -160,20 +163,25 @@ Tổng: 286 file, 80472 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/domain/rigging/types.js` | 25 | Rigging domain vocabulary (pure). |
 | `src/domain/site/types.js` | 9 | Site / quay domain vocabulary (pure). |
 | `src/domain/standards/index.js` | 26 |  |
+| `src/graphics/BrandDecalHelper.js` | 172 | Tạo CanvasTexture tem bản quyền công nghiệp cache 1 lần và gắn decal 3D lên Cần cẩu, Móc cẩu, Dầm/Spreader & Kiện hàng |
+| `src/graphics/CoGFaceProjection.js` | 126 | Tạo và cập nhật 6 dấu cắt chữ thập của Trọng Tâm (CoG) chiếu lên 6 mặt ngoài kiện hàng theo thời gian thực |
+| `src/graphics/CoGGizmoHelper.js` | 238 | Tay cầm kéo thả 3 trục X/Y/Z cho Gizmo Trọng Tâm (CoG), auto X-Ray và logic kéo màn hình / giữ Shift chỉnh độ sâu theo camera |
 | `src/graphics/ElevationRulerMath.js` | 117 | Thuật toán bắt điểm 3D cho thước đo cao độ (lưới khối + dây cáp mảnh + ma ní) |
-| `src/graphics/ElevationRulerTool.js` | 290 | Vẽ cây thước đo cao độ 3D so với mặt đất, cho phép kéo đặt vị trí và điểm đỏ rà chuột mọi chi tiết. ⚠️>250 |
-| `src/graphics/EnvironmentManager.js` | 280 | Quản lý ánh sáng IBL, sương mù chân trời, HDR và đồng bộ thời gian thực cho cảnh 3D ⚠️>250 |
+| `src/graphics/ElevationRulerTool.js` | 301 | Vẽ cây thước đo cao độ 3D so với mặt đất, cho phép kéo đặt vị trí và điểm đỏ rà chuột mọi chi tiết. ⚠️>300 |
+| `src/graphics/EnvironmentManager.js` | 291 | Quản lý ánh sáng IBL, sương mù chân trời, HDR và đồng bộ thời gian thực cho cảnh 3D ⚠️>250 |
 | `src/graphics/ForceVectorField.js` | 122 | Trường mũi tên véc-tơ lực 3D thời gian thực từ CoG & các điểm nối (tái sử dụng pool, không cấp phát mỗi khung hình) |
 | `src/graphics/GraphicsToneHelper.js` | 114 | Điều chỉnh và lưu độ sáng tối (Brightness) và tương phản (Contrast) cho khung hình 3D như game |
 | `src/graphics/GroundHorizonFade.js` | 46 | Hòa mượt mép ngoài đĩa mặt đất vào màu sương mù chân trời không lộ đường cắt |
 | `src/graphics/HorizonSkyDome.js` | 286 | Dựng vòm bầu trời HorizonSkyDome với mây chân trời 3D Gradient Quintic mềm mại và màu khí quyển thực tế ⚠️>250 |
-| `src/graphics/index.js` | 37 |  |
-| `src/graphics/JobsiteSiteVisuals.js` | 289 | Dựng và đồng bộ hình khối 3D cho đà kê gỗ, đệm địa chất độ dốc và tấm lót chân chống cẩu ở Tab 6. ⚠️>250 |
-| `src/graphics/pbr/ProceduralTextures.js` | 290 | Vẽ texture canvas thủ công (bê tông cảng, cáp thép, xích, sling, mặt nước, vạch cảnh báo) ⚠️>250 |
-| `src/graphics/pbr/StressPBRMaterials.js` | 146 | Tạo bản đồ PBR thép sơn công nghiệp, thép rèn mạ kẽm và màu ứng suất căng cơ học thời gian thực |
-| `src/graphics/PBRMaterialFactory.js` | 244 | Nhà máy tạo vật liệu PBR chuẩn công nghiệp hàng hải và đồng bộ không gian màu Three.js r170+ |
+| `src/graphics/index.js` | 48 |  |
+| `src/graphics/JobsiteSiteVisuals.js` | 297 | Dựng và đồng bộ hình khối 3D cho đà kê gỗ, đệm địa chất độ dốc và tấm lót chân chống cẩu ở Tab 6. ⚠️>250 |
+| `src/graphics/pbr/IndustrialWearPBR.js` | 249 | Sinh bản đồ PBR hao mòn công nghiệp mềm mại (radial gradient loang tự nhiên, không ô vuông thô) |
+| `src/graphics/pbr/ProceduralTextures.js` | 296 | Vẽ texture canvas thủ công (bê tông cảng, cáp thép, xích, sling, mặt nước, vạch cảnh báo) ⚠️>250 |
+| `src/graphics/pbr/StressPBRMaterials.js` | 177 | Tạo bản đồ PBR thép sơn công nghiệp, thép rèn mạ kẽm và màu ứng suất căng cơ học thời gian thực |
+| `src/graphics/pbr/SurfacePBRUpgrader.js` | 169 | Phủ bản đồ PBR và tạo UV triplanar cho model tải bất đồng bộ và các bề mặt công nghiệp tránh bị trơn nhựa |
+| `src/graphics/PBRMaterialFactory.js` | 288 | Nhà máy tạo vật liệu PBR chuẩn công nghiệp hàng hải và đồng bộ không gian màu Three.js r170+ ⚠️>250 |
 | `src/graphics/SceneRenderer.js` | 313 |  ⚠️>300 |
-| `src/graphics/SlingAngleGizmo.js` | 199 | Gizmo 3D cung góc dây cáp tương tác (hover/chọn): đường ngang đứt nét, vector dây, quạt cung xanh/vàng/đỏ, nhãn độ |
+| `src/graphics/SlingAngleGizmo.js` | 200 | Gizmo 3D cung góc dây cáp tương tác (hover/chọn): đường ngang đứt nét, vector dây, quạt cung xanh/vàng/đỏ, nhãn độ |
 | `src/graphics/SolidShellSealer.js` | 109 | Bịt kín lõi/đáy rỗng và bật hai mặt vật liệu cho xe 3D và kiện hàng tránh nhìn xuyên |
 | `src/graphics/SpecialtyCargoMeshes.js` | 158 | Dựng khối 3D ống thép siêu trường Steel Pipe (OOG) và xe buýt procedural đồng bộ CAD |
 | `src/i18n/cargo_labels.js` | 48 |  |
@@ -181,26 +189,30 @@ Tổng: 286 file, 80472 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/i18n/contact_keys.js` | 73 | Bộ từ điển song ngữ VI/EN chuẩn công nghiệp cho hộp thoại Hỗ trợ kỹ thuật & Góp ý |
 | `src/i18n/index.js` | 134 |  |
 | `src/i18n/keys.js` | 598 |  ⚠️>300 |
-| `src/i18n/sim_ui_phrases.js` | 170 | Bảng từ điển bổ sung & chuyển đổi badge động song ngữ Việt–Anh cho mô phỏng 3D và bảng thiết bị |
+| `src/i18n/sim_ui_phrases.js` | 177 | Bảng từ điển bổ sung & chuyển đổi badge động song ngữ Việt–Anh cho mô phỏng 3D và bảng thiết bị |
+| `src/i18n/trial_cms_keys.js` | 47 | Từ điển song ngữ VI/EN cho 24h Trial Banner, Modal hết hạn Pro và Dynamic CMS Feature Locks |
 | `src/main.js` | 67 |  |
 | `src/rigging/BrokenCableWhipXPBD.js` | 252 | Mô phỏng XPBD sóng quật, thu hồi năng lượng đàn hồi và va chạm CCD cho hai nửa cáp đứt hoặc cáp tháo chốt ⚠️>250 |
 | `src/rigging/CableDynamicsXPBD.js` | 271 | Bộ giải động lực học cáp/xích XPBD chịu kéo, tự va chạm và đứt thu hồi đàn hồi ⚠️>250 |
 | `src/rigging/CableMaterialBehavior.js` | 121 | Hành vi vật liệu XPBD (uốn cáp/xích/vải, lực cản gió ½ρCdAv²) và trạng thái bật giật hồi đàn hồi (whipPhase) khi đứt cáp |
+| `src/rigging/CableTelemetryMapper.js` | 166 | Chuẩn hóa dữ liệu telemetry từng nhánh cáp theo node.id/node.name cây phân cấp và công thức góc ngang [0°..90°] |
 | `src/rigging/CollisionMaterialSolver.js` | 252 | Bộ giải va chạm liên tục (CCD), ma sát cặp vật liệu, độ nảy theo khối lượng và chống xuyên giữa các sợi cáp/xích ⚠️>250 |
 | `src/rigging/CompoundColliders.js` | 219 | Bộ collider hợp chất (sub-OBB + Convex vertices), lọc thô AABB và va chạm tinh SAT/CCD chống xuyên tuyệt đối |
 | `src/rigging/constraints/CornerProtectorModel.js` | 51 |  |
 | `src/rigging/constraints/HardwareConstraint.js` | 236 |  |
 | `src/rigging/constraints/UnilateralCableConstraint.js` | 151 |  |
-| `src/rigging/DnvFourPointLift.js` | 118 | Thuật toán chia tải siêu tĩnh DNV-ST-N001 cho cẩu 4 nhánh (nguồn chân lý duy nhất: 2 nhánh chéo gánh 100% × SKL [1.25..1.5]) |
+| `src/rigging/DnvFourPointLift.js` | 137 | Thuật toán chia tải 4 nhánh kết hợp độ mềm xoắn dầm Saint-Venant (GJ) + độ giãn trục cáp (EA) |
+| `src/rigging/ElasticFourPointSolver.js` | 133 | Giải phân bố lực đàn hồi 4 điểm dựa trên độ cứng kéo dọc trục cáp (EA) và độ cứng xoắn Saint-Venant của dầm (GJ) |
 | `src/rigging/FlatRackLashingPhysics.js` | 234 | Dựng dây chằng Flat Rack ôm khít kiện hàng (không lòi ngang) và mô phỏng đứt tuần tự tự nhiên theo vật lý. |
 | `src/rigging/HardwareBearingTracker.js` | 64 | Truy vết vị trí dây tựa thực tế trên ma ní (Pin vs Bow) và góc tải lệch bên (side-loading angle) theo ASME B30.26 |
+| `src/rigging/HierarchicalNaming.js` | 177 | Thuật toán đệ quy đặt tên cáp & phụ kiện theo Cây Phân Cấp (LP1 -> LP11, LP12 -> LP111...) truy xuất nguồn gốc lực |
 | `src/rigging/HStyleLiftingBeam.js` | 188 | Cấu tạo 3D và thông số khớp nối H-Style Lifting Beam (tùy chọn trên Direct Hook/2-Cáp và dưới 4-Cáp/Twistlock) |
-| `src/rigging/index.js` | 29 | src/rigging/index.js |
+| `src/rigging/index.js` | 32 | src/rigging/index.js |
 | `src/rigging/LoadPathGravity.js` | 163 | Kết nối đường tải trọng lực (rơi tự do g=-9.81 khi mất cáp), mô-men lật τ=r×mg trên mặt đỡ và võng uốn dầm Euler-Bernoulli |
 | `src/rigging/PretensionSolver.js` | 297 | Giải cao độ móc cẩu và dầm ngáng tại trạng thái Nhớm Cáp (kiện chạm đất, toàn bộ cáp căng đúng chiều dài thực) ⚠️>250 |
-| `src/rigging/ReplayRecorder.js` | 291 | Ghi và phát lại toàn bộ trạng thái mô phỏng (Hook, Ngáng dầm, Kiện, Cáp đứt/chùng, Lashing/OOG rơi, Cẩu) tối đa 60 giây. ⚠️>250 |
+| `src/rigging/ReplayRecorder.js` | 302 | Ghi và phát lại toàn bộ trạng thái mô phỏng (Hook, Ngáng dầm, Kiện, Cáp đứt/chùng, Lashing/OOG rơi, Cẩu) tối đa 60 giây. ⚠️>300 |
 | `src/rigging/riggingConstants.js` | 69 | src/rigging/riggingConstants.js |
-| `src/rigging/RiggingPhysicsSolver.js` | 680 | src/rigging/RiggingPhysicsSolver.js ⚠️>300 |
+| `src/rigging/RiggingPhysicsSolver.js` | 700 | src/rigging/RiggingPhysicsSolver.js ⚠️>300 |
 | `src/rigging/riggingUIStore.js` | 100 | src/rigging/riggingUIStore.js |
 | `src/rigging/RigidInertialDynamics.js` | 212 | Động lực học vật rắn lệch tâm (Steiner-Huygens Inertia Tensor), mô-men xoắn/nghiêng khi cẩu và rơi tự do 9.81 m/s² |
 | `src/rigging/SlingPerfHelper.js` | 167 | Tái sử dụng biến toán học scratch và bộ đệm nghỉ XPBD để giảm giật lag vòng lặp cáp 3D |
@@ -208,10 +220,11 @@ Tổng: 286 file, 80472 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/TrueMeshSurfaceContact.js` | 230 | Bộ giải tiếp xúc bề mặt 3D thực (0mm khe hở, không xuyên thủng) cho cáp và xích ôm sát kiện hàng 3D |
 | `src/rigging/UnifiedHoistProfile.js` | 65 | Quy chuẩn tốc độ nâng/hạ kiện hàng đồng nhất (0.85 m/s * scale) và chống giật bắn cho mọi phương án cáp & STS Spreader |
 | `src/rigging/WebbingSlingMeshBuilder.js` | 242 | Dựng lưới 3D liền mạch chuẩn EN 1492-1 cho cáp bẹ dẹt 2 lớp (Webbing Sling), đầu khuyên thuôn bọc bạt chống mài mòn, chỉ may chữ X/zig-zag và tem xanh/trắng |
-| `src/saas/access.js` | 48 |  |
+| `src/saas/access.js` | 64 |  |
 | `src/saas/admin_catalog_audit_panels.js` | 89 | Dựng giao diện phân hệ Catalog thiết bị 3 cột, Nhật ký Kiểm toán Diff và Modal chi tiết người dùng |
 | `src/saas/admin_cms.css` | 170 | Giao diện CSS chuẩn Enterprise Command Center cho CMS Quản trị (/admin) |
-| `src/saas/admin_dashboard.js` | 250 |  |
+| `src/saas/admin_dashboard.js` | 283 |  ⚠️>250 |
+| `src/saas/admin_feature_locks_panel.js` | 51 | Giao diện tab "Feature & 3D Asset Matrix" trong /admin để Admin bật/khóa/bảo trì 3 trạng thái tức thì |
 | `src/saas/admin_helpers.js` | 194 | Các hằng số cấu hình và hàm thuần tính KPI, lọc đa chiều, công tắc module, mẫu Catalog và xuất CSV cho CMS |
 | `src/saas/admin_panels.js` | 159 | Các hàm dựng HTML giao diện Enterprise Command Center và đọc dữ liệu form cho bảng quản trị CMS |
 | `src/saas/app_check_config.js` | 15 |  |
@@ -223,17 +236,21 @@ Tổng: 286 file, 80472 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/saas/contact_dialog.js` | 267 | Hộp thoại Liên hệ & Góp ý kỹ thuật chuẩn Enterprise với khóa trượt xác nhận hành vi chống bot ⚠️>250 |
 | `src/saas/deployment_environment.js` | 22 |  |
 | `src/saas/dialog_accessibility.js` | 45 |  |
-| `src/saas/feature_access_ui.js` | 194 |  |
+| `src/saas/feature_access_ui.js` | 256 |  ⚠️>250 |
+| `src/saas/feature_locks_cms.js` | 114 | Danh mục Asset 3D & Tính năng CMS, đồng bộ realtime system_config/feature_locks với 3 trạng thái Active / Tier Locked / Under Upgrade |
 | `src/saas/feedback.js` | 194 | Giải mã động địa chỉ nhận góp ý và xác thực hành vi thao tác chống bot/spam đa lớp |
 | `src/saas/firebase.js` | 95 |  |
-| `src/saas/firebase_data.js` | 82 |  |
-| `src/saas/i18n.js` | 15 | Định dạng khóa ngôn ngữ SaaS và hộp thoại góp ý theo ngôn ngữ hiện tại |
+| `src/saas/firebase_data.js` | 118 |  |
+| `src/saas/i18n.js` | 16 | Định dạng khóa ngôn ngữ SaaS và hộp thoại góp ý theo ngôn ngữ hiện tại |
 | `src/saas/plan_snapshot.js` | 170 | Chuẩn hóa dữ liệu thiết bị và đóng gói/giải mã/di trú snapshot phương án nâng hạ |
 | `src/saas/runtime_flags.js` | 63 |  |
-| `src/saas/saas.css` | 267 | saas-root[hidden] { display: none !important; } |
-| `src/saas/session.js` | 262 |  ⚠️>250 |
+| `src/saas/saas.css` | 295 | saas-root[hidden] { display: none !important; } |
+| `src/saas/session.js` | 299 |  ⚠️>250 |
 | `src/saas/session_ui_bindings.js` | 157 | Gắn kết giao diện header, widget tài khoản, banner bảo trì và hộp thoại liên hệ SaaS |
 | `src/saas/telemetry_usage.js` | 143 |  |
+| `src/saas/trial_access.js` | 139 | Quản lý dùng thử Pro 24h, dấu vân tay thiết bị chống lạm dụng nhiều Gmail và hàm hasProAccess(user) |
+| `src/saas/trial_banner.js` | 160 | Hiển thị thanh đếm ngược 24h Pro Trial (HH:MM:SS + progress bar) và modal thông báo khi hết hạn về Free |
+| `src/saas/viewport_watermark.js` | 41 | Lớp phủ SVG pattern chéo bán trong suốt (pointer-events: none) bảo vệ viewport 3D cho tài khoản Free & 24h Trial |
 | `src/saas/workspace_dashboard.js` | 260 |  ⚠️>250 |
 | `src/saas/workspace_data.js` | 228 |  |
 | `src/saas/workspace_views.js` | 184 | Các hàm dựng HTML, hộp thoại chọn phụ trợ và di trú dữ liệu rig cũ cho Workspace SaaS |
@@ -242,38 +259,38 @@ Tổng: 286 file, 80472 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/audio.js` | 725 |  ⚠️>300 |
 | `src/sim/cargo.js` | 6 |  |
 | `src/sim/cargo/containers_iso.js` | 1453 |  ⚠️>300 |
-| `src/sim/cargo/shell_rebuild.js` | 573 | --- 6B. SHELL CONTACT — pad-eyes weld to the real mesh, not the bounding box --- ⚠️>300 |
-| `src/sim/cargo/specialty_meshes.js` | 2512 | --- HIGH-FIDELITY 3D REFRIGERATION MACHINERY UNIT (CARRIER TRANSICOLD / THERMO KING) --- ⚠️>300 |
-| `src/sim/compliance.js` | 625 |  ⚠️>300 |
+| `src/sim/cargo/shell_rebuild.js` | 577 | --- 6B. SHELL CONTACT — pad-eyes weld to the real mesh, not the bounding box --- ⚠️>300 |
+| `src/sim/cargo/specialty_meshes.js` | 2515 | --- HIGH-FIDELITY 3D REFRIGERATION MACHINERY UNIT (CARRIER TRANSICOLD / THERMO KING) --- ⚠️>300 |
+| `src/sim/compliance.js` | 635 |  ⚠️>300 |
 | `src/sim/dynamics.js` | 848 |  ⚠️>300 |
 | `src/sim/gear.js` | 6 |  |
-| `src/sim/gear/editor.js` | 3614 |  ⚠️>300 |
+| `src/sim/gear/editor.js` | 3664 |  ⚠️>300 |
 | `src/sim/gear/park_apply.js` | 81 |  |
 | `src/sim/library.js` | 6 |  |
 | `src/sim/library/core.js` | 641 |  ⚠️>300 |
-| `src/sim/library/parsers.js` | 654 | --- HIGH-SPEED BINARY & ASCII .STL / .OBJ / .GLB PARSERS --- ⚠️>300 |
-| `src/sim/library/reconstruction_export.js` | 2137 | --- 2D IMAGE TO 3D CONTOUR & RELIEF RECONSTRUCTION ENGINE --- ⚠️>300 |
+| `src/sim/library/parsers.js` | 660 | --- HIGH-SPEED BINARY & ASCII .STL / .OBJ / .GLB PARSERS --- ⚠️>300 |
+| `src/sim/library/reconstruction_export.js` | 2142 | --- 2D IMAGE TO 3D CONTOUR & RELIEF RECONSTRUCTION ENGINE --- ⚠️>300 |
 | `src/sim/manifest.js` | 39 |  |
 | `src/sim/physics.js` | 6 |  |
-| `src/sim/physics/beams_seed.js` | 2997 |  ⚠️>300 |
-| `src/sim/physics/cables_break.js` | 1573 |  ⚠️>300 |
+| `src/sim/physics/beams_seed.js` | 3004 |  ⚠️>300 |
+| `src/sim/physics/cables_break.js` | 1593 |  ⚠️>300 |
 | `src/sim/physics/flatrack_payload.js` | 657 | --- FLAT RACK LASHING RUPTURE, DECK SLIDING & FALLING PAYLOAD PHYSICS --- ⚠️>300 |
 | `src/sim/physics/footprint_rig.js` | 838 |  ⚠️>300 |
-| `src/sim/physics/hoist_contacts.js` | 1110 |  ⚠️>300 |
+| `src/sim/physics/hoist_contacts.js` | 1118 |  ⚠️>300 |
 | `src/sim/physics/index.js` | 9 | Bounded context index — parts are assembled via src/sim/manifest.js (shared scope). |
 | `src/sim/physics/port.js` | 59 |  |
-| `src/sim/physics/step_engine.js` | 808 |  ⚠️>300 |
+| `src/sim/physics/step_engine.js` | 809 |  ⚠️>300 |
 | `src/sim/plan_wizard.js` | 650 |  ⚠️>300 |
 | `src/sim/rigging.js` | 6 |  |
 | `src/sim/rigging/draw_update.js` | 853 | Slack cable morphology is solved by a persistent material-aware XPBD chain. ⚠️>300 |
-| `src/sim/rigging/hook_pool.js` | 3126 |  ⚠️>300 |
-| `src/sim/scene.js` | 1983 |  ⚠️>300 |
+| `src/sim/rigging/hook_pool.js` | 3136 |  ⚠️>300 |
+| `src/sim/scene.js` | 2011 |  ⚠️>300 |
 | `src/sim/session.js` | 6 |  |
 | `src/sim/session/prelift_reset.js` | 1142 |  ⚠️>300 |
-| `src/sim/session/presets_events.js` | 3626 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
+| `src/sim/session/presets_events.js` | 3639 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
 | `src/sim/session/ui_units_bom.js` | 1967 | --- 12. UI EVENT BINDINGS & COLLAPSIBLE PANELS --- ⚠️>300 |
-| `src/sim/state.js` | 607 | Floor cribbing removed: static cargo rests flush on the quay / ground plane. ⚠️>300 |
-| `src/sim/telemetry.js` | 1154 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
+| `src/sim/state.js` | 608 | Floor cribbing removed: static cargo rests flush on the quay / ground plane. ⚠️>300 |
+| `src/sim/telemetry.js` | 1157 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
 | `src/sim/ui-layout.js` | 241 |  |
 | `src/sim/weather_fx.js` | 596 |  ⚠️>300 |
 | `src/simulation/destruction-manager/DestructionSolver.js` | 147 |  |
@@ -296,26 +313,33 @@ Tổng: 286 file, 80472 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/assembly.test.js` | 172 |  |
 | `test/audio.test.js` | 265 |  ⚠️>250 |
 | `test/auth_screen.test.js` | 56 |  |
+| `test/brand_decal_and_watermark.test.js` | 86 | Tests cho BrandDecalHelper (shared cached CanvasTexture + decal 3D) và Viewport Watermark cho Free/Trial vs Pro |
 | `test/cable_dynamics_xpbd.test.js` | 107 |  |
 | `test/cable_morphology_and_deformation.test.js` | 426 |  ⚠️>300 |
 | `test/cable_whip_recoil.test.js` | 92 |  |
 | `test/cargo_labels.test.js` | 63 |  |
 | `test/catalog_client.test.js` | 94 |  |
 | `test/cms_data.test.js` | 187 |  |
+| `test/cog_gizmo_drag.test.js` | 131 |  |
 | `test/cog_tilt_stability.test.js` | 231 |  |
 | `test/compound_collider_zero_penetration.test.js` | 67 |  |
 | `test/custom_slings.test.js` | 712 |  ⚠️>300 |
 | `test/deployment_environment.test.js` | 21 |  |
-| `test/dnv_four_point_lift.test.js` | 80 |  |
+| `test/dnv_four_point_lift.test.js` | 93 |  |
+| `test/elastic_four_point_torsion.test.js` | 79 |  |
 | `test/engineering.test.js` | 410 |  ⚠️>300 |
+| `test/feature_locks_cms.test.js` | 63 | Tests cho Dynamic CMS Feature & 3D Asset Locks (system_config/feature_locks 3-state resolution & matrix HTML) |
 | `test/feedback_mailto.test.js` | 144 |  |
 | `test/firestore-rules-emulator.mjs` | 351 |  |
+| `test/firestore-rules-trial-cms.mjs` | 55 | Emulator test bo sung cho rules 24h trial_devices anti-abuse va system_config/feature_locks |
 | `test/force_vector_field.test.js` | 54 |  |
 | `test/graphics.test.js` | 113 |  |
 | `test/h_style_lifting_beam.test.js` | 191 | Kiểm thử vàng cấu tạo H-Style Lifting Beam 4 góc và 4 tổ hợp liên kết Trên/Dưới |
+| `test/hierarchical_naming.test.js` | 168 |  |
 | `test/hyper_realistic_physics_pbr.test.js` | 184 | Kiểm thử Vàng 3 trụ cột: Va chạm CCD & Ma sát, Cẩu 20 tấn lệch tâm + Cắt cáp quật XPBD, và Vật liệu PBR Ứng suất |
 | `test/i18n_keys.test.js` | 56 |  |
 | `test/inclined_lashing_slide.test.js` | 67 |  |
+| `test/industrial_pbr_materials.test.js` | 63 |  |
 | `test/jobsite_lashing_follow_regression.test.js` | 160 | Kiểm thử hồi quy 3D đà gỗ/độ dốc/tấm lót Tab 6, dây chằng Flat Rack ôm sát & đứt tự nhiên, và Camera Follow. |
 | `test/liftplan.test.js` | 153 |  |
 | `test/load_path_gravity.test.js` | 62 |  |
@@ -327,12 +351,13 @@ Tổng: 286 file, 80472 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/pipeline.test.js` | 232 |  |
 | `test/pretension_nhom_cap.test.js` | 238 | Kiểm thử vàng nút Nhớm Cáp (pretensionRig): kiện chạm đất 0.00m và toàn bộ hệ cáp căng đúng chiều dài thực |
 | `test/rigging.test.js` | 1370 |  ⚠️>300 |
-| `test/rigging_alarms_and_tolerances.test.js` | 216 |  |
+| `test/rigging_alarms_and_tolerances.test.js` | 213 |  |
 | `test/rigging_groups_and_dynamics.test.js` | 84 |  |
-| `test/rigging_physics_and_alarms.test.js` | 306 | test/rigging_physics_and_alarms.test.js ⚠️>300 |
+| `test/rigging_physics_and_alarms.test.js` | 305 | test/rigging_physics_and_alarms.test.js ⚠️>300 |
 | `test/rigging_realism_sts_contact.test.js` | 186 | Bộ kiểm thử vàng xác minh tiếp xúc bề mặt 3D thực (0mm khe hở), dầm chữ H, kích thước STS ISO 668/1161 và vật lý đứt cáp |
+| `test/risk_assessment_pdf.test.js` | 65 | Tests cho Dynamic JSA/HSE Risk Assessment Matrix & PDF Branding/Watermark (Trial do dam vs Pro thanh manh) |
 | `test/runtime_flags.test.js` | 96 |  |
-| `test/saas_access.test.js` | 55 |  |
+| `test/saas_access.test.js` | 59 |  |
 | `test/security_headers.test.js` | 44 |  |
 | `test/sim_test_harness.js` | 210 |  |
 | `test/simulation.test.js` | 93 |  |
@@ -342,6 +367,7 @@ Tổng: 286 file, 80472 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/standards_compliance_engine.test.js` | 281 |  ⚠️>250 |
 | `test/sts_twin_cable_flare.test.js` | 106 |  |
 | `test/telemetry_usage.test.js` | 50 |  |
+| `test/trial_access.test.js` | 146 | Unit tests cho trial_access (24h Pro trial, device fingerprint anti-abuse, countdown & expiry) |
 | `test/v2_ux_dunnage_ruler_regression.test.js` | 151 | Kiểm thử hồi quy 7 tính năng mới: Lashing khít đáy, SWL >= 12MT, Chỉnh đồng bộ, Hạ êm, Góc xoay mượt, Gỗ kê đỡ/nghiêng kiện, Thước cao độ 3D + Điểm đỏ. |
 | `test/v3_ruler_drag_hoist_sts_gear_regression.test.js` | 449 | Kiểm thử hồi quy 6 nâng cấp mới: bỏ cục tời khi tắt cẩu 3D, kéo đặt thước 3D & bắt Điểm Đỏ cáp/ma ní, dblclick Hạ/Kéo, mở khóa chỉnh cáp, hết giật STS Direct. ⚠️>300 |
 | `test/workspace_data.test.js` | 155 |  |

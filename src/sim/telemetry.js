@@ -103,8 +103,10 @@
 
             let maxAngleVertDeg = 0;
             const noteSlingAngle = (from, to) => {
-                const vec = new THREE.Vector3().subVectors(from, to);
-                const ang = Math.atan2(Math.hypot(vec.x, vec.z), Math.max(0.1, vec.y)) * (180 / Math.PI);
+                const horiz = (typeof RIG !== 'undefined' && RIG.computeHorizontalSlingAngleDeg)
+                    ? RIG.computeHorizontalSlingAngleDeg(from, to)
+                    : Math.max(0, Math.min(90, Math.asin(THREE.MathUtils.clamp(Math.abs(from.y - to.y) / Math.max(1e-6, from.distanceTo(to)), 0, 1)) * (180 / Math.PI)));
+                const ang = Math.max(0, Math.min(90, 90 - horiz));
                 if (ang > maxAngleVertDeg) maxAngleVertDeg = ang;
             };
 
@@ -211,8 +213,10 @@
                 updateGearSelectionRings();
             }
 
-            const tautHoriz = phy.legAngleDeg.filter((_, i) => state.gear.legs[i] && !phy.legSlacks[i] && !state.gear.legs[i].broken);
-            phy.maxAngleVert = tautHoriz.length ? (90 - Math.min(...tautHoriz)) : maxAngleVertDeg;
+            const tautHoriz = phy.legAngleDeg
+                .filter((_, i) => state.gear.legs[i] && !phy.legSlacks[i] && !state.gear.legs[i].broken)
+                .map(deg => Math.max(0, Math.min(90, Number(deg) || 0)));
+            phy.maxAngleVert = tautHoriz.length ? Math.max(0, Math.min(90, 90 - Math.min(...tautHoriz))) : Math.max(0, Math.min(90, maxAngleVertDeg));
 
             // Update 3D Floor Compass Rose & Pulling Direction Vector Arrow
             if (pullCompassGroup) {
@@ -306,8 +310,8 @@
             const hookOver = (weight + phy.gearWeight) > (state.gear.hook.swlT || 9999);
             const beamOver = state.beamType !== 'none' && phy.legTensions.reduce((a, b) => a + b, 0) > (state.gear.beam.swlT || 9999);
 
-            const vertAng = phy.maxAngleVert;
-            const horizAng = Math.max(0, 90 - vertAng);
+            const vertAng = Math.max(0, Math.min(90, phy.maxAngleVert || 0));
+            const horizAng = Math.max(0, Math.min(90, 90 - vertAng));
             const elVert = document.getElementById('out-angle-vert');
             elVert.textContent = vertAng.toFixed(1) + '°';
             document.getElementById('out-angle-horiz').textContent = L(`Horiz β: ${horizAng.toFixed(1)}°`, `Ngang β: ${horizAng.toFixed(1)}°`);
@@ -348,7 +352,9 @@
             if (hudLoad) {
                 const hookSwl = Math.max(0.1, state.gear.hook.swlT || 65);
                 const hookUtil = totalHookLoad / hookSwl * 100;
-                const tautAngles = phy.legAngleDeg.filter((deg, i) => !state.gear.legs[i].broken && !phy.legSlacks[i]);
+                const tautAngles = phy.legAngleDeg
+                    .filter((deg, i) => !state.gear.legs[i].broken && !phy.legSlacks[i])
+                    .map(deg => Math.max(0, Math.min(90, Number(deg) || 0)));
                 const beta = tautAngles.length ? Math.min(...tautAngles) : 90;
                 const tf = 1 / Math.max(0.5, Math.sin(beta * Math.PI / 180));
                 let mblMin = Infinity;
@@ -538,77 +544,71 @@
                 advice.textContent = L('The lift is within limits: sling angle under 45° from vertical, the cargo is level, and the four leg tensions are inside the WLL.', 'Phương án nâng hạ đạt chuẩn an toàn: góc nâng α < 45°, kiện hàng thăng bằng và lực căng 4 nhánh nằm trong giới hạn WLL.');
             }
 
+            const hierTree = (typeof RIG !== 'undefined' && RIG.buildHierarchicalCableSnapshots)
+                ? RIG.buildHierarchicalCableSnapshots(phy, state, { attachWorldFn: typeof attachWorld === 'function' ? attachWorld : null, legSwlFn: legSwl, upperSwlFn: upperSwl })
+                : { list: [], byId: {}, byName: {} };
+            const dOpt = state.displayOptions || { showForces: true, showSlingAngles: true, showGroundAngle: true, showHookLoad: true, showShackleLoads: true, showSlingLengths: true, showCoG: true, showVectors: false, showCADEdges: true, showHUD: true };
+            const anyLPInfo = dOpt.showForces || dOpt.showSlingAngles || dOpt.showShackleLoads || dOpt.showSlingLengths;
+            const cornerTags = ['+X+Z', '-X+Z', '-X-Z', '+X-Z'];
+
             for (let i = 0; i < 4; i++) {
-                const t = phy.legTensions[i];
-                const swl = Math.max(0.05, legSwl(i));
+                const snap = hierTree.byId[`leg:${i}`] || null;
+                const t = snap ? snap.tensionT : phy.legTensions[i];
+                const swl = snap ? snap.swlT : Math.max(0.05, legSwl(i));
+                const broken = snap ? snap.broken : Boolean(state.gear.legs[i]?.broken);
                 const pct = Math.min(100, (t / swl) * 100);
+                const legLblEl = document.getElementById(`leg-lbl-${i}`);
+                if (legLblEl && snap?.name) legLblEl.textContent = `${snap.name} (${cornerTags[i] || ''}):`;
                 const bar = document.getElementById(`bar-t${i}`);
                 const val = document.getElementById(`val-t${i}`);
-                bar.style.width = pct + '%';
-                val.textContent = state.gear.legs[i].broken ? L('PARTED', 'ĐỨT') : (t.toFixed(2) + ' T');
+                if (bar) bar.style.width = pct + '%';
+                if (val) val.textContent = broken ? L('PARTED', 'ĐỨT') : (t.toFixed(2) + ' T');
 
-                const colorClass = state.gear.legs[i].broken || t > swl ? 'text-red-400' : (t > swl * 0.8 ? 'text-amber-400' : 'text-emerald-400');
-                const barColor = state.gear.legs[i].broken || t > swl ? 'bg-red-500' : (t > swl * 0.8 ? 'bg-amber-400' : 'bg-emerald-400');
-                bar.className = `${barColor} h-full transition-all duration-75`;
-                val.className = `font-mono font-bold text-[10px] w-14 text-right ${colorClass}`;
+                const colorClass = broken || t > swl ? 'text-red-400' : (t > swl * 0.8 ? 'text-amber-400' : 'text-emerald-400');
+                const barColor = broken || t > swl ? 'bg-red-500' : (t > swl * 0.8 ? 'bg-amber-400' : 'bg-emerald-400');
+                if (bar) bar.className = `${barColor} h-full transition-all duration-75`;
+                if (val) val.className = `font-mono font-bold text-[10px] w-14 text-right ${colorClass}`;
 
-                const dOpt = state.displayOptions || {
-                    showForces: true,
-                    showSlingAngles: true,
-                    showGroundAngle: true,
-                    showHookLoad: true,
-                    showShackleLoads: true,
-                    showSlingLengths: true,
-                    showCoG: true,
-                    showVectors: false,
-                    showCADEdges: true,
-                    showHUD: true
-                };
-
-                const anyLPInfo = dOpt.showForces || dOpt.showSlingAngles || dOpt.showShackleLoads || dOpt.showSlingLengths;
                 const lbl = document.getElementById(`lbl-t${i}`);
                 if (lbl) {
                     if (anyLPInfo) {
                         const rig = rigNow || computeRigPose();
                         const anchor = (state.beamType === 'none') ? masterLinkWorld : slingAnchorWorld(i, rig);
-                        const midPt = hwWorldPos[i].clone().lerp(anchor, 0.42);
-                        projectToScreen(midPt, lbl);
-                        if (state.gear.legs[i].broken) {
-                            _setElemTextCached(lbl, `LP${i + 1}: ${L('PARTED', 'ĐỨT')}`, 'label-3d text-red-400 border-red-500/60 font-bold');
-                        } else {
-                            const parts = [`LP${i + 1}`];
-                            if (dOpt.showForces) {
-                                parts.push(phy.legSlacks[i] ? '0.0T' : `${t.toFixed(1)}T`);
-                            }
-                            if (dOpt.showSlingAngles) {
-                                parts.push(`${Math.round(phy.legAngleDeg[i] || 60)}°`);
-                            }
-                            let hwOver = false;
-                            if (dOpt.showShackleLoads) {
-                                const legCable = (phy.cables || []).find(c => c.role === 'leg' && c.index === i);
-                                const hwS = legCable && legCable._hardwareStress;
-                                if (hwS) {
-                                    const gov = hwS.governing === 'pin' ? 'Pin' : 'Bow';
-                                    parts.push(`${state.lang === 'en' ? 'SH' : 'MN'}(${gov}): ${Math.round(hwS.utilizationPct || 0)}%`);
-                                    hwOver = Boolean(hwS.isOverloaded);
-                                } else {
-                                    parts.push(`${state.lang === 'en' ? 'SH' : 'MN'}: ${Math.round(pct)}%`);
-                                }
-                            }
-                            if (dOpt.showSlingLengths) {
-                                const turn = state.legDeltaL[i] || 0;
-                                const turnStr = Math.abs(turn) > 0.01 ? ` (${turn > 0 ? '+' : ''}${turn.toFixed(2)}m)` : '';
-                                parts.push(`L: ${state.slingLength.toFixed(1)}m${turnStr}`);
-                            }
-                            _setElemTextCached(lbl, parts.join(' · '), `label-3d ${hwOver ? 'text-red-400' : colorClass}`);
-                        }
+                        projectToScreen(hwWorldPos[i].clone().lerp(anchor, 0.42), lbl);
+                        const legSnap = snap || {
+                            id: `leg:${i}`,
+                            name: (typeof RIG !== 'undefined' && RIG.resolveCableLabel) ? RIG.resolveCableLabel('leg', i, state, phy) : `LP${i + 1}`,
+                            tensionT: t, angleDeg: Math.max(0, Math.min(90, phy.legAngleDeg[i] || 60)),
+                            lengthM: state.slingLength, deltaLM: state.legDeltaL[i] || 0,
+                            pctSWL: pct, slack: phy.legSlacks[i], broken, overloaded: t > swl
+                        };
+                        const txt = (typeof RIG !== 'undefined' && RIG.formatSlingHudLabel)
+                            ? RIG.formatSlingHudLabel({ snapshot: legSnap, dOpt, lang: state.lang || 'vi' })
+                            : `${legSnap.name}: ${t.toFixed(1)}T`;
+                        const cls = broken || legSnap.overloaded ? 'label-3d text-red-400 border-red-500/60 font-bold' : `label-3d ${colorClass}`;
+                        _setElemTextCached(lbl, txt, cls);
                     } else {
                         _setElemPosCached(lbl, 0, 0, '0');
                     }
                 }
             }
-
-            const dOpt = state.displayOptions || {};
+            const lblBox = document.getElementById('labels-container');
+            const showHierTop = Boolean(lblBox && state.beamType && state.beamType !== 'none' && anyLPInfo);
+            const topSnaps = showHierTop ? hierTree.list.filter(s => s.role === 'upper' || s.role === 'hanger') : [];
+            const topPool = updateSceneAndTelemetry._hierTopPool || (updateSceneAndTelemetry._hierTopPool = []);
+            topSnaps.forEach((snap, ti) => {
+                let el = topPool[ti];
+                if (!el && lblBox) { el = document.createElement('div'); el.className = 'label-3d text-sky-300'; lblBox.appendChild(el); topPool.push(el); }
+                const tc = (phy.cables || []).find(c => c && (c.id === snap.id || (c.role === snap.role && c.index === snap.index)));
+                if (!el || !tc || typeof attachWorld !== 'function') return;
+                projectToScreen(attachWorld(tc.a).clone().lerp(attachWorld(tc.b), 0.55), el);
+                const txt = (typeof RIG !== 'undefined' && RIG.formatSlingHudLabel)
+                    ? RIG.formatSlingHudLabel({ snapshot: snap, dOpt, lang: state.lang || 'vi' })
+                    : `${snap.name}: ${snap.tensionT.toFixed(1)}T`;
+                const cls = (snap.broken || snap.overloaded) ? 'label-3d text-red-400 border-red-500/60 font-bold' : 'label-3d text-sky-300';
+                _setElemTextCached(el, txt, cls);
+            });
+            for (let k = topSnaps.length; k < topPool.length; k++) _setElemPosCached(topPool[k], 0, 0, '0');
             const lblHook = document.getElementById('lbl-hook');
             const lblCog = document.getElementById('lbl-cog');
 
@@ -673,7 +673,10 @@
                     const cogWorld = new THREE.Vector3();
                     cogIndicatorGroup.getWorldPosition(cogWorld);
                     projectToScreen(cogWorld, lblCog);
-                    lblCog.textContent = `🎯 CoG (${state.cogX.toFixed(2)}, ${state.cogY.toFixed(2)}, ${state.cogZ.toFixed(2)})`;
+                    const cogHint = state._cogDragMode === 'depth'
+                        ? ' · [Shift: Độ sâu]'
+                        : (state._cogDragMode === 'screen' ? ' · [Giữ Shift = Độ sâu]' : '');
+                    lblCog.textContent = `🎯 CoG (${state.cogX.toFixed(2)}, ${state.cogY.toFixed(2)}, ${state.cogZ.toFixed(2)})${cogHint}`;
                     lblCog.style.opacity = '1';
                 } else {
                     lblCog.style.opacity = '0';

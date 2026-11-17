@@ -823,6 +823,9 @@
             hangers.forEach(h => { if (h.parent) h.parent.remove(h); });
             const plan = beamRecipe();
             appendUserCables(plan);
+            if (typeof RIG !== 'undefined' && RIG.assignHierarchicalNames) {
+                RIG.assignHierarchicalNames(plan.cables, { bodies: plan.bodies });
+            }
             const dyn = plan.bodies.map(b => {
                 const mass = Math.max(60, b.mass, (state.weight || 10) * 35);
                 return {
@@ -875,9 +878,14 @@
             };
             phy.cables = plan.cables.map(c => ({
                 role: c.role, index: c.index, a: resolve(c.a), b: resolve(c.b),
+                id: c.id, name: c.name, hierarchicalName: c.hierarchicalName,
+                parentId: c.parentId, parentName: c.parentName, tier: c.tier,
                 L0: 1, designL0: 1, tensionT: 0, slack: true, n: new THREE.Vector3(0, 1, 0),
                 _lam: 0, _sum: 0, _n: 0, break: null
             }));
+            if (typeof RIG !== 'undefined' && RIG.syncHierarchicalNamesToGear) {
+                RIG.syncHierarchicalNamesToGear(phy.cables, state);
+            }
             syncCableRest(true);
             seedBeamsFromKinematic();
             syncCableRest(false);

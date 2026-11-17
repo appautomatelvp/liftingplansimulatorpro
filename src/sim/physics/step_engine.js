@@ -776,10 +776,11 @@
             });
 
             if (worstCable && minBeta < 45.0) {
-                const roleNamesVi = { upper: 'cáp trên', leg: 'cáp nhánh', hanger: 'cáp treo', extra: 'cáp phụ' };
-                const roleNamesEn = { upper: 'upper sling', leg: 'sling leg', hanger: 'hanger', extra: 'extra sling' };
-                const cNameVi = `${roleNamesVi[worstCable.role] || 'nhánh cáp'} ${worstCable.index + 1}`;
-                const cNameEn = `${roleNamesEn[worstCable.role] || 'sling leg'} ${worstCable.index + 1}`;
+                const hierName = (typeof RIG !== 'undefined' && RIG.resolveCableLabel)
+                    ? RIG.resolveCableLabel(worstCable, worstCable.index, state, phy)
+                    : `LP${(worstCable.index || 0) + 1}`;
+                const cNameVi = `cáp ${hierName}`;
+                const cNameEn = `sling ${hierName}`;
 
                 banner.style.display = 'block';
 

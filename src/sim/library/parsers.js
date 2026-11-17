@@ -512,6 +512,9 @@
                 });
                 child.material = Array.isArray(child.material) ? upgraded : upgraded[0];
             });
+            if (pbrFactory && pbrFactory.enforcePBRMaterials) {
+                pbrFactory.enforcePBRMaterials(root);
+            }
             root.userData.isNormalizedAsset = true;
             root.userData.keepMaterials = true;
             root.userData.isoRealisticV2 = true;
@@ -611,6 +614,9 @@
                                 else if (isSteel) child.material = (MATS.stsGreyBox || MATS.darkSteel || MATS.gunmetal).clone();
                                 else child.material = (MATS.spreaderYellow || MATS.craneYellow || MATS.yellowHazard).clone();
                             });
+                            if (pbrFactory && pbrFactory.enforcePBRMaterials) {
+                                pbrFactory.enforcePBRMaterials(res.root);
+                            }
                             res.root.userData.isNormalizedAsset = true;
                             res.root.userData.stsCad = true;
                             customBeamMeshes[target.key] = res.root;

@@ -2829,6 +2829,14 @@
                 setChk('chk-disp-cad', dOpt.showCADEdges);
                 setChk('chk-disp-hud', dOpt.showHUD);
                 setChk('chk-disp-ruler', dOpt.showRuler);
+                const syncQt = (id, on) => {
+                    const b = document.getElementById(id);
+                    if (b) b.className = `pendant-btn !py-0.5 !px-1.5 text-[10px] font-bold whitespace-nowrap ${on ? 'emerald active' : 'text-slate-400 opacity-75'}`;
+                };
+                syncQt('btn-qt-angle', dOpt.showSlingAngleGizmo !== 'off');
+                syncQt('btn-qt-tension', Boolean(dOpt.showForces));
+                syncQt('btn-qt-ruler', Boolean(dOpt.showRuler));
+                syncQt('btn-qt-cog', dOpt.showCoG !== false);
                 if (typeof window !== 'undefined' && window.SafeLift?.localDataStore?.safeWriteLocalStore) {
                     window.SafeLift.localDataStore.safeWriteLocalStore('safelift_display_opts_v1', dOpt);
                 }
@@ -2989,12 +2997,12 @@
 
             // Quick "All" and "None" buttons
             document.getElementById('btn-display-all')?.addEventListener('click', () => {
-                Object.keys(state.displayOptions).forEach(k => { state.displayOptions[k] = true; });
+                Object.keys(state.displayOptions).forEach(k => { state.displayOptions[k] = k === 'showSlingAngleGizmo' ? 'always' : true; });
                 syncDisplayOptionsUI();
             });
 
             document.getElementById('btn-display-none')?.addEventListener('click', () => {
-                Object.keys(state.displayOptions).forEach(k => { state.displayOptions[k] = false; });
+                Object.keys(state.displayOptions).forEach(k => { state.displayOptions[k] = k === 'showSlingAngleGizmo' ? 'off' : false; });
                 syncDisplayOptionsUI();
             });
 
@@ -3018,12 +3026,17 @@
             bindChk('chk-disp-cog', 'showCoG');
             bindChk('chk-disp-vectors', 'showVectors');
             document.getElementById('chk-disp-angle-gizmo')?.addEventListener('change', (e) => {
-                state.displayOptions.showSlingAngleGizmo = e.target.checked ? 'hover' : 'off';
+                state.displayOptions.showSlingAngleGizmo = e.target.checked ? 'always' : 'off';
                 syncDisplayOptionsUI();
             });
             bindChk('chk-disp-cad', 'showCADEdges');
             bindChk('chk-disp-hud', 'showHUD');
             bindChk('chk-disp-ruler', 'showRuler');
+            const bindQt = (id, fn) => document.getElementById(id)?.addEventListener('click', (e) => { e.stopPropagation(); fn(); syncDisplayOptionsUI(); });
+            bindQt('btn-qt-angle', () => { state.displayOptions.showSlingAngleGizmo = state.displayOptions.showSlingAngleGizmo === 'off' ? 'always' : 'off'; });
+            bindQt('btn-qt-tension', () => { state.displayOptions.showForces = !state.displayOptions.showForces; });
+            bindQt('btn-qt-ruler', () => { state.displayOptions.showRuler = !state.displayOptions.showRuler; });
+            bindQt('btn-qt-cog', () => { state.displayOptions.showCoG = !(state.displayOptions.showCoG !== false); });
 
             // Top toolbar buttons
             document.getElementById('btn-toggle-cad-edges')?.addEventListener('click', () => {

@@ -1,6 +1,30 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-17 11:56 [feat] Hoan tat 6/6 buoc: Dung thu 24h Pro Trial + chong lap Gmail (trial_devices), Ma tran khoa CMS realtime (system_config/feature_locks), Tem ban quyen 3D (BrandDecalHelper), Watermark man hinh Free/Trial va Trang Risk Assessment JSA/HSE dong khi xuat PDF.
+- Nhánh: feat/horizon-clouds | Commit trước đó: 0d1a7ad
+- File: src/saas/trial_access.js,src/saas/trial_banner.js,src/saas/feature_locks_cms.js,src/saas/admin_feature_locks_panel.js,src/graphics/BrandDecalHelper.js,src/saas/viewport_watermark.js,src/core/RiskAssessmentReport.js,firestore.rules
+
+## 2026-11-17 10:33 [fix] Hoan tat Hotfix: dong bo UI theo cay phan cap (CableTelemetryMapper.js), parity day du thong so cho cap tang tren, sua goc ngang [0..90] xoa loi 96 do va chia tai dan hoi 4 diem theo EA + GJ XPBD (ElasticFourPointSolver.js)
+- Nhánh: feat/horizon-clouds | Commit trước đó: 0b2c234
+- File: src/rigging/CableTelemetryMapper.js,src/rigging/ElasticFourPointSolver.js,src/rigging/DnvFourPointLift.js,src/rigging/RiggingPhysicsSolver.js,src/graphics/SlingAngleGizmo.js,src/sim/physics/cables_break.js,src/sim/physics/beams_seed.js,src/sim/telemetry.js,test/elastic_four_point_torsion.test.js
+
+## 2026-11-17 10:06 [fix] Bo sung 6 dau chu thap & tia laser chieu CoG len 6 mat kien hang; lam mem hoa loang lo PBR bang radial gradient tu nhien thay vi khoi vuong
+- Nhánh: feat/horizon-clouds | Commit trước đó: 1f1a4ee
+- File: src/graphics/CoGFaceProjection.js,src/graphics/index.js,src/sim/rigging/hook_pool.js,src/sim/cargo/shell_rebuild.js,src/sim/gear/editor.js,src/graphics/pbr/IndustrialWearPBR.js,src/graphics/pbr/StressPBRMaterials.js,src/graphics/pbr/ProceduralTextures.js,src/graphics/pbr/SurfacePBRUpgrader.js,test/cog_gizmo_drag.test.js
+
+## 2026-11-17 09:53 [fix] Tu dong bat X-Ray + thanh truc X/Y/Z khi giu keo CoG va giu Shift keo do sau logic theo camera; giu nguyen ban do PBR khi model OBJ/CAD tai xong va nang cap vat lieu go/thep/nen be tong tu nhien hon
+- Nhánh: feat/horizon-clouds | Commit trước đó: 8a9d856
+- File: src/graphics/CoGGizmoHelper.js,src/sim/gear/editor.js,src/sim/telemetry.js,src/graphics/pbr/SurfacePBRUpgrader.js,src/graphics/pbr/IndustrialWearPBR.js,src/graphics/pbr/StressPBRMaterials.js,src/graphics/PBRMaterialFactory.js,src/sim/library/parsers.js,src/sim/cargo/shell_rebuild.js,src/sim/scene.js,src/graphics/JobsiteSiteVisuals.js
+
+## 2026-11-17 09:22 [feat] Hoan tat toi uu UI/UX Viewport sach, keo tha CoG 3 truc, 4 Quick Toggles taskbar va nang cap PBR hao mon cong nghiep (CoGGizmoHelper, IndustrialWearPBR, ElevationRulerTool, Angle Gizmo always-on, IBL bai cang).
+- Nhánh: feat/horizon-clouds | Commit trước đó: 0c51cd1
+- File: CoGGizmoHelper.js,IndustrialWearPBR.js,PBRMaterialFactory.js,EnvironmentManager.js,ElevationRulerTool.js,hook_pool.js,editor.js,state.js,presets_events.js,reconstruction_export.js,scene.js,index.html
+
+## 2026-11-17 09:01 [feat] Hoan tat Cay Dinh Danh Phan Cap (HierarchicalNaming.js): gan ten de quy tu Moc Cau (LP1, LP2 -> LP11, LP12 / LP21, LP22 -> LP111...), dong bo nhan 3D, Inspector, canh bao goc, dut cap, Compliance va ReplayRecorder 60s.
+- Nhánh: feat/horizon-clouds | Commit trước đó: b8fde5b
+- File: src/rigging/HierarchicalNaming.js,src/rigging/index.js,src/sim/physics/hoist_contacts.js,src/sim/physics/beams_seed.js,src/sim/telemetry.js,src/sim/gear/editor.js,src/sim/physics/step_engine.js,src/sim/physics/cables_break.js,src/sim/compliance.js,src/rigging/ReplayRecorder.js,test/hierarchical_naming.test.js
+
 ## 2026-11-17 08:30 [feat] Hoan tat ke hoach 11 buoc 5 Tru cot Vat ly & Ky thuat Nang ha (DNV-ST-N001 / ASME B30): DNV 4 diem thong nhat, Pin vs Bow stress, Gizmo goc 3D + mui ten luc, Compound/CCD <1mm, XPBD gio & whip, roi tu do & uon dam Euler-Bernoulli, ReplayRecorder 60s.
 - Nhánh: feat/horizon-clouds | Commit trước đó: 3469696
 - File: DnvFourPointLift.js,LocalizedHardwareStress.js,HardwareBearingTracker.js,SlingAngleGizmo.js,ForceVectorField.js,CompoundColliders.js,CableMaterialBehavior.js,LoadPathGravity.js,ReplayRecorder.js
