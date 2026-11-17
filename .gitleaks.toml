@@ -3,7 +3,10 @@ title = "SafeLift3D Gitleaks Configuration"
 [extend]
 useDefault = true
 
-[[allowlists]]
+[allowlist]
 description = "Public localStorage key constants (non-secret)"
-paths = ['''^src/saas/trial_access\.js$''']
-regexes = ['''safelift_trial_claimed_v1''', '''safelift_device_fp_v1''']
+regexTarget = "secret"
+regexes = [
+  '''^safelift_trial_claimed_v1$''',
+  '''^safelift_device_fp_v1$'''
+]

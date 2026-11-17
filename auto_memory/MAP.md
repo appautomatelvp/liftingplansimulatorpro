@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 13:34 | Nhánh: feat/horizon-clouds | Commit cuối: 01eadc9 Merge remote-tracking branch 'origin/master' into feat/horizon-clouds (18 minutes ago)
+Cập nhật: 2026-11-17 13:35 | Nhánh: feat/horizon-clouds | Commit cuối: 2cb1355 ci: allowlist public localStorage key name in gitleaks config (2 minutes ago)
 Tổng: 310 file, 84149 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
