@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 10:21 | Nhánh: feat/horizon-clouds | Commit cuối: 2c75fcf step 1: hierarchical CableTelemetryMapper & clamped [0..90] sling angle math (3 minutes ago)
-Tổng: 295 file, 82233 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 10:23 | Nhánh: feat/horizon-clouds | Commit cuối: 1515ef4 step 2: clamp horizontal angles [0..90] and compute hardware stress for upper/hanger tiers (2 minutes ago)
+Tổng: 295 file, 82254 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -45,7 +45,7 @@ Tổng: 295 file, 82233 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/session/presets_events.js (3639 dòng)
 - src/sim/session/ui_units_bom.js (1967 dòng)
 - src/sim/state.js (608 dòng)
-- src/sim/telemetry.js (1174 dòng)
+- src/sim/telemetry.js (1157 dòng)
 - src/sim/weather_fx.js (596 dòng)
 - test/cable_morphology_and_deformation.test.js (426 dòng)
 - test/custom_slings.test.js (712 dòng)
@@ -281,7 +281,7 @@ Tổng: 295 file, 82233 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/session/presets_events.js` | 3639 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
 | `src/sim/session/ui_units_bom.js` | 1967 | --- 12. UI EVENT BINDINGS & COLLAPSIBLE PANELS --- ⚠️>300 |
 | `src/sim/state.js` | 608 | Floor cribbing removed: static cargo rests flush on the quay / ground plane. ⚠️>300 |
-| `src/sim/telemetry.js` | 1174 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
+| `src/sim/telemetry.js` | 1157 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
 | `src/sim/ui-layout.js` | 241 |  |
 | `src/sim/weather_fx.js` | 596 |  ⚠️>300 |
 | `src/simulation/destruction-manager/DestructionSolver.js` | 147 |  |
@@ -322,7 +322,7 @@ Tổng: 295 file, 82233 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/force_vector_field.test.js` | 54 |  |
 | `test/graphics.test.js` | 113 |  |
 | `test/h_style_lifting_beam.test.js` | 191 | Kiểm thử vàng cấu tạo H-Style Lifting Beam 4 góc và 4 tổ hợp liên kết Trên/Dưới |
-| `test/hierarchical_naming.test.js` | 130 |  |
+| `test/hierarchical_naming.test.js` | 168 |  |
 | `test/hyper_realistic_physics_pbr.test.js` | 184 | Kiểm thử Vàng 3 trụ cột: Va chạm CCD & Ma sát, Cẩu 20 tấn lệch tâm + Cắt cáp quật XPBD, và Vật liệu PBR Ứng suất |
 | `test/i18n_keys.test.js` | 56 |  |
 | `test/inclined_lashing_slide.test.js` | 67 |  |

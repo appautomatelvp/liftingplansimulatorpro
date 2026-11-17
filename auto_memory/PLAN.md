@@ -48,7 +48,7 @@ Người lập kế hoạch: Model cao nhất (CHƯA viết code ở bước nà
     - Trong `publishCableLoads()` (~dòng 1405 & 1455–1488): sửa lỗi thiếu `Math.abs` ở dòng 1405 (`horiz` luôn dương `[0, 90]`), tính luôn `phy.upperAngleDeg[i]` & kẹp `phy.maxAngleVert` trong `[0, 90]`.
 - **Kiểm tra:** `npx vitest run test/rigging.test.js test/custom_slings.test.js test/compliance*` (hoặc toàn bộ unit test liên quan) + `npm run architecture:gate`.
 
-### [ ] Bước 3: Khôi Phục Liên Kết Cây & UI Parity Đầy Đủ Cho Tầng Trên Trên Màn Hình 3D + Bảng HUD (FIX 1 + FIX 2 UI)
+### [x] Bước 3: Khôi Phục Liên Kết Cây & UI Parity Đầy Đủ Cho Tầng Trên Trên Màn Hình 3D + Bảng HUD (FIX 1 + FIX 2 UI)
 - **Sửa (≤ 25 dòng/file):**
   - `src/sim/telemetry.js`:
     - Trong `noteSlingAngle` (~dòng 105), dòng 214–215, 309–314, 351–353: dùng `computeHorizontalSlingAngleDeg` và kẹp `[0, 90]` ở mọi nơi hiển thị góc (`#hud-beta`, `#out-angle-vert`, `#out-angle-horiz`, `#lbl-hook`).

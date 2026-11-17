@@ -4,6 +4,11 @@ import {
   syncHierarchicalNamesToGear,
   resolveCableLabel
 } from '../src/rigging/HierarchicalNaming.js';
+import {
+  computeHorizontalSlingAngleDeg,
+  buildHierarchicalCableSnapshots,
+  formatSlingHudLabel
+} from '../src/rigging/CableTelemetryMapper.js';
 import { createHeadlessSim } from './sim_test_harness.js';
 
 const hookEnd = () => ({ kind: 'hook' });
@@ -126,5 +131,38 @@ describe('Hierarchical Rigging Naming Convention (Load Path Tree)', () => {
     sim.rebuildCargoAndRig(false);
     const casLegs = phy.cables.filter((c) => c.role === 'leg').map((c) => c.name).sort();
     expect(casLegs).toEqual(['LP111', 'LP121', 'LP211', 'LP221']);
+  });
+
+  it('(g) restores tree-bound upper/lower snapshots, upper UI parity, and clamps angles [0..90]', () => {
+    // Inverted anchor check (previously caused -6° -> 96° bug)
+    const invAngle = computeHorizontalSlingAngleDeg({ x: 0, y: 1.0, z: 0 }, { x: 0.5, y: 5.0, z: 0 });
+    expect(invAngle).toBeGreaterThanOrEqual(0);
+    expect(invAngle).toBeLessThanOrEqual(90);
+
+    const upper0 = {
+      role: 'upper', index: 0, L0: 8.0, angleDeg: 54, tensionT: 17.8,
+      _hardwareStress: { governing: 'bow', utilizationPct: 75 },
+      a: hookEnd(), b: bodyEnd('main', -3, 0.2, 0)
+    };
+    const leg1 = {
+      role: 'leg', index: 1, L0: 3.5, angleDeg: 90, tensionT: 8.9,
+      _hardwareStress: { governing: 'pin', utilizationPct: 44 },
+      a: bodyEnd('main', -3, -0.2, 0), b: cargoEnd(1)
+    };
+    const phy = {
+      cables: [upper0, leg1],
+      upperTensions: [17.8], upperAngleDeg: [54],
+      legTensions: [0, 8.9], legAngleDeg: [90, 90], legSlacks: [true, false]
+    };
+    const state = {
+      lang: 'en', slingLength: 99,
+      gear: { uppers: [{ swlT: 25 }], legs: [{}, { swlT: 20 }] },
+      legDeltaL: [0, 0]
+    };
+    const tree = buildHierarchicalCableSnapshots(phy, state);
+    expect(tree.byName['LP1'].id).toBe('upper:0');
+    expect(tree.byName['LP11'].lengthM).toBe(3.5);
+    const labelTop = formatSlingHudLabel({ snapshot: tree.byName['LP1'], lang: 'en' });
+    expect(labelTop).toBe('LP1: 17.8T · 54° · SH(Bow): 75% · L: 8.0m');
   });
 });
