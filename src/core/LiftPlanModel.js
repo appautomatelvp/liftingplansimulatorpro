@@ -7,6 +7,7 @@
  */
 
 import { EngineeringEngine } from './EngineeringEngine.js';
+import { buildPdfBrandingChrome, renderRiskAssessmentSectionHTML } from './RiskAssessmentReport.js';
 
 export class LiftPlanModel {
     constructor(customData = {}) {
@@ -32,7 +33,9 @@ export class LiftPlanModel {
             temperatureC: customData.temperatureC || 28,
             seaStateBeaufort: customData.seaStateBeaufort || 2,
             groundCondition: customData.groundCondition || 'Reinforced Concrete Apron',
-            allowableBearingPressureKPa: customData.allowableBearingPressureKPa || 350.0 // 35 t/m²
+            allowableBearingPressureKPa: customData.allowableBearingPressureKPa || 350.0, // 35 t/m²
+            actualGroundPressureKpa: customData.groundBearingKpa,
+            inspectionStatus: customData.inspectionStatus || 'VALID'
         };
 
         // 3. CARGO SPECIFICATIONS (VGM Certified per SOLAS VI/2 & ISO 668)
@@ -71,14 +74,15 @@ export class LiftPlanModel {
             spreaderType: customData.spreaderType || 'Modulift 40ft/20ft Telescopic Spreader',
             spreaderMassKg: customData.spreaderMassKg || 9500,
             spreaderWllT: customData.spreaderWllT || 50.0,
-            topBridle: customData.topBridle || {
+            topBridle: {
                 slingType: 'Steel Wire Rope 6x36 IWRC EIPS (EN 13414)',
                 diameterMm: 36,
                 lengthM: 6.5,
                 slingAngleDeg: 60.0, // Angle to horizontal (beta >= 30 deg ASME B30.9)
                 mblT: 145.0,
                 safetyFactor: 5.0,
-                wllT: 29.0
+                wllT: 29.0,
+                ...(customData.topBridle || {})
             },
             shackles: customData.shackles || {
                 model: 'Crosby G-2130 Bolt-Type Anchor Shackle',
@@ -776,9 +780,12 @@ export class LiftPlanModel {
      * Generates an executive, printable HTML engineering document complying with ASME P30.1.
      * Can be opened directly in a new window and printed to PDF (`window.print()`).
      * @param {string|null} [screenshotUrl] High-res 3D elevation data URL
+     * @param {object} [options] License watermark & branding flags ({ isTrialActive, isProUser })
      */
-    generatePrintableHTML(screenshotUrl = null) {
+    generatePrintableHTML(screenshotUrl = null, options = {}) {
         const audit = this.evaluateCompliance();
+        const branding = buildPdfBrandingChrome(options);
+        const jsaRiskPageHtml = renderRiskAssessmentSectionHTML(this, branding);
         const overallBadge = audit.isCompliant
             ? '<span style="background:#065f46;color:#34d399;padding:4px 10px;border-radius:6px;font-weight:bold;font-size:12px;border:1px solid #059669;">PASSED COMPLIANCE</span>'
             : '<span style="background:#881337;color:#f87171;padding:4px 10px;border-radius:6px;font-weight:bold;font-size:12px;border:1px solid #dc2626;">NON-COMPLIANT / REJECTED</span>';
@@ -845,9 +852,12 @@ export class LiftPlanModel {
         .data-val { font-size: 13px; font-weight: bold; color: #38bdf8; font-family: monospace; }
         .print-btn { background: #0284c7; color: white; border: none; padding: 8px 18px; border-radius: 6px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
         .print-btn:hover { background: #0369a1; }
+        ${branding.css}
     </style>
 </head>
 <body>
+    ${branding.watermarkHtml}
+    ${branding.headerStripHtml}
     <!-- Top Print & Action Controls -->
     <div class="no-print" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
         <div>
@@ -1063,10 +1073,11 @@ export class LiftPlanModel {
         ${this.generateSignOffBoxHTML()}
     </div>
 
+    <!-- MỤC 10: INTEGRATED JSA / HSE RISK ASSESSMENT PAGE -->
+    ${jsaRiskPageHtml}
+
     <!-- Document Footer -->
-    <div style="text-align: center; font-size: 10.5px; color: #64748b; margin-top: 16px;">
-        Xuất từ SafeLift3D (Industrial CAE Engine) · Developed by Lê Việt Phương · Tuân thủ ASME P30.1, ASME B30.9, ASME B30.20, OSHA 1926 &amp; DNV-ST-N001.
-    </div>
+    ${branding.footerHtml}
 </body>
 </html>`;
     }

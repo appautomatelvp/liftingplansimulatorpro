@@ -129,6 +129,11 @@ function initComplianceUI() {
  * Captures the current 3D viewport and opens the ASME P30.1 Lift Plan printable report / PDF export window.
  */
 function exportLiftPlanToPDF() {
+    if (window.SafeLift?.saas?.canAccessFeature && !window.SafeLift.saas.canAccessFeature('riskAssessmentGenerator')) {
+        const trigger = document.getElementById('btn-liftplan-print') || document.getElementById('btn-comp-hud-export');
+        trigger?.click();
+        return;
+    }
     activeLiftPlanModel = buildCurrentLiftPlanModel();
     let screenshot = null;
     const sr = window.sceneRenderer || sceneRenderer;
@@ -139,7 +144,8 @@ function exportLiftPlanToPDF() {
             console.warn('[Compliance] Screenshot capture error:', e);
         }
     }
-    const printableHtml = activeLiftPlanModel.generatePrintableHTML(screenshot);
+    const licenseOptions = window.SafeLift?.saas?.getPdfLicenseOptions?.() || { isTrialActive: true, isProUser: false };
+    const printableHtml = activeLiftPlanModel.generatePrintableHTML(screenshot, licenseOptions);
     const printWindow = window.open('', '_blank');
     if (printWindow) {
         printWindow.document.open();
@@ -395,8 +401,10 @@ function buildCurrentLiftPlanModel() {
             safetyFactor: 5.0,
             wllT: state.wllPerLeg || 15.0
         },
-        windSpeedMps: 2.0,
-        maxWindLimitMps: 12.0,
+        windSpeedMps: Number.isFinite(Number(state.windSpeedMps)) ? Number(state.windSpeedMps) : 3.5,
+        maxWindLimitMps: Number.isFinite(Number(state.maxWindLimitMps)) ? Number(state.maxWindLimitMps) : 13.8,
+        groundBearingKpa: (phy && Number.isFinite(Number(phy.groundBearingKpa))) ? Number(phy.groundBearingKpa) : undefined,
+        inspectionStatus: (state.gear && state.gear.inspectionStatus) || 'VALID',
         liveRiggingData
     });
 }

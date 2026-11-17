@@ -20,18 +20,20 @@ export function evaluateLiveRiskMatrix(planModel = {}) {
 
   const groundKpa = Number.isFinite(Number(planModel.groundBearingKpa))
     ? Number(planModel.groundBearingKpa)
-    : Number(env.actualGroundPressureKpa ?? Math.max(85, ((cargo.grossWeightKg || 16000) / 1000) * 8.2));
-  const groundLimitKpa = Number(env.soilBearingCapacityKpa || 250);
+    : Number(env.actualGroundPressureKpa ?? Math.max(85, ((cargo.grossWeightKg || 16000) / 1000) * 6.0));
+  const groundLimitKpa = Number(env.allowableBearingPressureKPa || env.soilBearingCapacityKpa || 250);
   const groundRatio = groundKpa / Math.max(1, groundLimitKpa);
   const groundScore = groundRatio >= 1.0 ? 4 : (groundRatio >= 0.85 ? 3 : (groundRatio >= 0.65 ? 2 : 1));
 
   const upperAngles = Array.isArray(rigging.upperCables) ? rigging.upperCables.map((c) => Number(c.angleDeg)).filter(Number.isFinite) : [];
   const lowerAngles = Array.isArray(rigging.lowerCables) ? rigging.lowerCables.map((c) => Number(c.angleDeg)).filter(Number.isFinite) : [];
+  const bridleAngle = Number(rigging.topBridle?.slingAngleDeg);
   const allAngles = [...upperAngles, ...lowerAngles];
+  if (!allAngles.length && Number.isFinite(bridleAngle)) allAngles.push(bridleAngle);
   const minSlingAngle = allAngles.length ? Math.min(...allAngles) : Number(planModel.workingSlingAngleDeg || 60);
   const angleScore = minSlingAngle < 30 ? 4 : (minSlingAngle < 45 ? 3 : (minSlingAngle < 55 ? 2 : 1));
 
-  const cogOffset = cargo.cogOffset || { x: 0, y: 0, z: 0 };
+  const cogOffset = cargo.cogOffsetM || cargo.cogOffset || { x: 0, y: 0, z: 0 };
   const cogEccM = Number.isFinite(Number(planModel.cogOffsetM))
     ? Number(planModel.cogOffsetM)
     : Math.hypot(Number(cogOffset.x || 0), Number(cogOffset.z || 0));
@@ -40,7 +42,7 @@ export function evaluateLiveRiskMatrix(planModel = {}) {
   const windMps = Number.isFinite(Number(planModel.windSpeedMps))
     ? Number(planModel.windSpeedMps)
     : Number(env.windSpeedMps ?? 3.5);
-  const windLimitMps = Number(env.windLimitMps || 13.8);
+  const windLimitMps = Number(env.maxWindLimitMps || env.windLimitMps || 12.0);
   const windRatio = windMps / Math.max(1, windLimitMps);
   const windScore = windRatio >= 1.0 ? 4 : (windRatio >= 0.8 ? 3 : (windRatio >= 0.55 ? 2 : 1));
 

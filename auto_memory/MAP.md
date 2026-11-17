@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 11:49 | Nhánh: feat/horizon-clouds | Commit cuối: 652f9d1 step 3: dynamic system_config/feature_locks CMS matrix & real-time 3-state UI (4 minutes ago)
-Tổng: 309 file, 84057 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 11:52 | Nhánh: feat/horizon-clouds | Commit cuối: 173fbde step 4: cached 3D CanvasTexture branding decals & free/trial viewport watermark (3 minutes ago)
+Tổng: 310 file, 84149 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -13,7 +13,7 @@ Tổng: 309 file, 84057 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/core/ElasticSlingEngine.js (450 dòng)
 - src/core/EngineeringEngine.js (661 dòng)
 - src/core/HullOptimizer.js (322 dòng)
-- src/core/LiftPlanModel.js (1073 dòng)
+- src/core/LiftPlanModel.js (1084 dòng)
 - src/core/RiggingDictionary.js (434 dòng)
 - src/core/SimulationEngine.js (560 dòng)
 - src/graphics/ElevationRulerTool.js (301 dòng)
@@ -25,7 +25,7 @@ Tổng: 309 file, 84057 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/cargo/containers_iso.js (1453 dòng)
 - src/sim/cargo/shell_rebuild.js (577 dòng)
 - src/sim/cargo/specialty_meshes.js (2515 dòng)
-- src/sim/compliance.js (627 dòng)
+- src/sim/compliance.js (635 dòng)
 - src/sim/dynamics.js (848 dòng)
 - src/sim/gear/editor.js (3664 dòng)
 - src/sim/library/core.js (641 dòng)
@@ -130,7 +130,7 @@ Tổng: 309 file, 84057 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/core/GroundPressureEngine.js` | 238 |  |
 | `src/core/HullOptimizer.js` | 322 |  ⚠️>300 |
 | `src/core/index.js` | 83 |  |
-| `src/core/LiftPlanModel.js` | 1073 |  ⚠️>300 |
+| `src/core/LiftPlanModel.js` | 1084 |  ⚠️>300 |
 | `src/core/LocalizedHardwareStress.js` | 100 | Phân tích ứng suất cục bộ phụ kiện (Pin vs Bow) bọc ngoài standards/hardware.js theo ASME B30.26 |
 | `src/core/PhysicalCableSolver.js` | 199 |  |
 | `src/core/physics-world/CannonBackend.js` | 185 |  |
@@ -145,7 +145,7 @@ Tổng: 309 file, 84057 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/core/RiggingDictionary.js` | 434 |  ⚠️>300 |
 | `src/core/RiggingEquipmentCatalog.js` | 55 |  |
 | `src/core/RiggingPlanner.js` | 218 |  |
-| `src/core/RiskAssessmentReport.js` | 192 | Danh gia ma tran rui ro JSA/HSE dong (Dat nen, Goc Sling, Lech CoG, Gio, Kiem dinh) & Header/Footer/Watermark xuat PDF |
+| `src/core/RiskAssessmentReport.js` | 194 | Danh gia ma tran rui ro JSA/HSE dong (Dat nen, Goc Sling, Lech CoG, Gio, Kiem dinh) & Header/Footer/Watermark xuat PDF |
 | `src/core/RopeConstraint.js` | 115 |  |
 | `src/core/SimulationEngine.js` | 560 |  ⚠️>300 |
 | `src/core/standards/belowTheHook.js` | 141 |  |
@@ -245,7 +245,7 @@ Tổng: 309 file, 84057 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/saas/plan_snapshot.js` | 170 | Chuẩn hóa dữ liệu thiết bị và đóng gói/giải mã/di trú snapshot phương án nâng hạ |
 | `src/saas/runtime_flags.js` | 63 |  |
 | `src/saas/saas.css` | 295 | saas-root[hidden] { display: none !important; } |
-| `src/saas/session.js` | 293 |  ⚠️>250 |
+| `src/saas/session.js` | 299 |  ⚠️>250 |
 | `src/saas/session_ui_bindings.js` | 157 | Gắn kết giao diện header, widget tài khoản, banner bảo trì và hộp thoại liên hệ SaaS |
 | `src/saas/telemetry_usage.js` | 143 |  |
 | `src/saas/trial_access.js` | 139 | Quản lý dùng thử Pro 24h, dấu vân tay thiết bị chống lạm dụng nhiều Gmail và hàm hasProAccess(user) |
@@ -261,7 +261,7 @@ Tổng: 309 file, 84057 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/cargo/containers_iso.js` | 1453 |  ⚠️>300 |
 | `src/sim/cargo/shell_rebuild.js` | 577 | --- 6B. SHELL CONTACT — pad-eyes weld to the real mesh, not the bounding box --- ⚠️>300 |
 | `src/sim/cargo/specialty_meshes.js` | 2515 | --- HIGH-FIDELITY 3D REFRIGERATION MACHINERY UNIT (CARRIER TRANSICOLD / THERMO KING) --- ⚠️>300 |
-| `src/sim/compliance.js` | 627 |  ⚠️>300 |
+| `src/sim/compliance.js` | 635 |  ⚠️>300 |
 | `src/sim/dynamics.js` | 848 |  ⚠️>300 |
 | `src/sim/gear.js` | 6 |  |
 | `src/sim/gear/editor.js` | 3664 |  ⚠️>300 |
@@ -355,6 +355,7 @@ Tổng: 309 file, 84057 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/rigging_groups_and_dynamics.test.js` | 84 |  |
 | `test/rigging_physics_and_alarms.test.js` | 305 | test/rigging_physics_and_alarms.test.js ⚠️>300 |
 | `test/rigging_realism_sts_contact.test.js` | 186 | Bộ kiểm thử vàng xác minh tiếp xúc bề mặt 3D thực (0mm khe hở), dầm chữ H, kích thước STS ISO 668/1161 và vật lý đứt cáp |
+| `test/risk_assessment_pdf.test.js` | 65 | Tests cho Dynamic JSA/HSE Risk Assessment Matrix & PDF Branding/Watermark (Trial do dam vs Pro thanh manh) |
 | `test/runtime_flags.test.js` | 96 |  |
 | `test/saas_access.test.js` | 59 |  |
 | `test/security_headers.test.js` | 44 |  |

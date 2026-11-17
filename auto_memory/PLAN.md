@@ -87,7 +87,7 @@ Người lập kế hoạch: Model cao nhất (CHƯA viết code ở bước nà
 - **Tạo test:** `test/brand_decal_and_watermark.test.js` kiểm tra tái sử dụng cache `CanvasTexture`, gắn đủ decal vào Hook / Boom / Spreader / Cargo và kiểm tra lớp phủ SVG watermark theo trạng thái `free` / `trial` / `pro` (và đảm bảo `test/auth_screen.test.js` vẫn xanh).
 - **Kiểm tra:** `npx vitest run test/brand_decal_and_watermark.test.js test/auth_screen.test.js test/graphics.test.js test/rigging.test.js` + `npm run architecture:gate`.
 
-### [ ] Bước 5: Module 3 (PDF) & Risk Assessment JSA/HSE Matrix Động Từ Thông Số 3D
+### [x] Bước 5: Module 3 (PDF) & Risk Assessment JSA/HSE Matrix Động Từ Thông Số 3D
 - **Tạo mới:**
   - `src/core/RiskAssessmentReport.js` (< 210 dòng, `@purpose: Đánh giá ma trận rủi ro JSA/HSE động (Đất nền, Góc Sling, Lệch CoG, Gió, Kiểm định thiết bị) và sinh Header/Footer + Watermark in PDF thuần không phụ thuộc DOM`):
     - `evaluateLiveRiskMatrix(planModel)`: nhận thông số vật lý thực (`workingRadiusM`, `groundBearingKpa`, `topBridle.slingAngleDeg`, `cogOffsetM`, `windSpeedMps / maxWindLimitMps`, `inspectionStatus`), chấm mức `LOW / MEDIUM / HIGH / CRITICAL`, xác suất/mức nghiêm trọng và biện pháp kiểm soát cụ thể.

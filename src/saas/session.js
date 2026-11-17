@@ -17,6 +17,7 @@ import { mountWorkspaceDashboard } from './workspace_dashboard.js';
 import { mountTrialCountdownBanner } from './trial_banner.js';
 import { subscribeFeatureLocks } from './feature_locks_cms.js';
 import { syncViewportWatermark } from './viewport_watermark.js';
+import { getTrialState, hasProAccess } from './trial_access.js';
 import { openDeveloperContact } from './contact_dialog.js';
 import { clearAppSplash, ensureSaasRoot, installSessionShellUI, mountAccountWidget, playCinemaWorkspaceReveal } from './session_ui_bindings.js';
 
@@ -109,6 +110,11 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
     lastProfileKey = profileKey;
     window.SafeLift.saas.profile = profile;
     window.SafeLift.saas.authUser = authUser;
+    window.SafeLift.saas.getPdfLicenseOptions = () => {
+      const p = window.SafeLift?.saas?.profile || profile;
+      const t = getTrialState(p);
+      return { isTrialActive: t.inTrial || !hasProAccess(p), isProUser: t.isPaidPro };
+    };
     featureAccess.setProfile(profile);
     onProfileChange?.(profile, authUser);
     if (onAdminRoute) {
