@@ -25,7 +25,7 @@ function fillQuadIndices(maxRings) {
   return indices;
 }
 
-export function createContinuousWebRibbonMesh(THREE, material, maxRings = 48) {
+export function createContinuousWebRibbonMesh(THREE, material, maxRings = 64) {
   const rings = Math.max(8, maxRings | 0);
   const vertCount = rings * RING_VERTS;
   const positions = new Float32Array(vertCount * 3);
@@ -60,49 +60,46 @@ export function createContinuousWebRibbonMesh(THREE, material, maxRings = 48) {
     rotQ: new THREE.Quaternion(),
     upY: new THREE.Vector3(0, 1, 0),
     pt: new THREE.Vector3(),
+    acc: new Float32Array(256),
     trimmed: Array.from({ length: rings }, () => new THREE.Vector3())
   };
   return mesh;
 }
 
-function buildTrimmedSplinePoints(rawPts, eyeInsetA, eyeInsetB, outPts, maxRings) {
-  const srcCount = Math.min(rawPts.length, maxRings);
+function buildTrimmedSplinePoints(rawPts, eyeInsetA, eyeInsetB, sc, maxRings) {
+  const srcCount = rawPts.length;
   if (srcCount < 2) return 0;
-  let total = 0;
-  for (let i = 1; i < srcCount; i++) total += rawPts[i].distanceTo(rawPts[i - 1]);
+  if (sc.acc.length < srcCount) sc.acc = new Float32Array(srcCount);
+  sc.acc[0] = 0;
+  for (let i = 1; i < srcCount; i++) sc.acc[i] = sc.acc[i - 1] + rawPts[i].distanceTo(rawPts[i - 1]);
+  const total = sc.acc[srcCount - 1];
   if (total < 1e-4) return 0;
 
   const startD = Math.min(total * 0.35, Math.max(0, eyeInsetA || 0));
   const endD = Math.max(startD + 0.02, total - Math.min(total * 0.35, Math.max(0, eyeInsetB || 0)));
   const spanD = endD - startD;
-  const ringCount = Math.max(6, Math.min(maxRings, Math.max(srcCount, 18)));
+  const ringCount = Math.max(6, Math.min(maxRings, Math.max(srcCount, 24)));
 
   let segIdx = 1;
-  let accPrev = 0;
-  let accCur = rawPts[1].distanceTo(rawPts[0]);
   for (let r = 0; r < ringCount; r++) {
     const targetD = startD + (r / (ringCount - 1)) * spanD;
-    while (segIdx < srcCount - 1 && accCur < targetD) {
-      accPrev = accCur;
-      segIdx++;
-      accCur += rawPts[segIdx].distanceTo(rawPts[segIdx - 1]);
-    }
-    const segLen = Math.max(1e-6, accCur - accPrev);
-    const alpha = Math.max(0, Math.min(1, (targetD - accPrev) / segLen));
-    outPts[r].copy(rawPts[segIdx - 1]).lerp(rawPts[segIdx], alpha);
+    while (segIdx < srcCount - 1 && sc.acc[segIdx] < targetD) segIdx++;
+    const segLen = Math.max(1e-6, sc.acc[segIdx] - sc.acc[segIdx - 1]);
+    const alpha = Math.max(0, Math.min(1, (targetD - sc.acc[segIdx - 1]) / segLen));
+    sc.trimmed[r].copy(rawPts[segIdx - 1]).lerp(rawPts[segIdx], alpha);
   }
   return ringCount;
 }
 
 export function updateWebRibbonMesh(THREE, mesh, rawPts, diaMm, opts = {}) {
   if (!mesh || !mesh.geometry || !rawPts || rawPts.length < 2) return false;
-  const maxRings = mesh.userData._maxRings || 48;
+  const maxRings = mesh.userData._maxRings || 64;
   const sc = mesh.userData._scratch;
   const ringCount = buildTrimmedSplinePoints(
     rawPts,
-    opts.hasEyeA ? (opts.eyeInsetM || 0.14) : 0,
-    opts.hasEyeB ? (opts.eyeInsetM || 0.14) : 0,
-    sc.trimmed,
+    opts.hasEyeA ? (opts.eyeInsetM || 0.125) : 0,
+    opts.hasEyeB ? (opts.eyeInsetM || 0.125) : 0,
+    sc,
     maxRings
   );
   if (ringCount < 2) return false;

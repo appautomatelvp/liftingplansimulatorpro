@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 07:17 | Nhánh: feat/horizon-clouds | Commit cuối: 34c587d feat: continuous EN 1492-1 duplex webbing ribbon, eye wear sleeve, weave PBR and basis fix (4 seconds ago)
-Tổng: 271 file, 78578 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 07:47 | Nhánh: feat/horizon-clouds | Commit cuối: df24d66 docs: log EN 1492-1 continuous webbing sling upgrade (30 minutes ago)
+Tổng: 271 file, 78610 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -33,7 +33,7 @@ Tổng: 271 file, 78578 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/physics/cables_break.js (1555 dòng)
 - src/sim/physics/flatrack_payload.js (657 dòng)
 - src/sim/physics/footprint_rig.js (838 dòng)
-- src/sim/physics/hoist_contacts.js (1108 dòng)
+- src/sim/physics/hoist_contacts.js (1110 dòng)
 - src/sim/physics/step_engine.js (792 dòng)
 - src/sim/plan_wizard.js (650 dòng)
 - src/sim/rigging/draw_update.js (852 dòng)
@@ -41,7 +41,7 @@ Tổng: 271 file, 78578 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/scene.js (1980 dòng)
 - src/sim/session/prelift_reset.js (1142 dòng)
 - src/sim/session/presets_events.js (3618 dòng)
-- src/sim/session/ui_units_bom.js (1966 dòng)
+- src/sim/session/ui_units_bom.js (1967 dòng)
 - src/sim/state.js (607 dòng)
 - src/sim/telemetry.js (1121 dòng)
 - src/sim/weather_fx.js (596 dòng)
@@ -51,7 +51,7 @@ Tổng: 271 file, 78578 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - test/physics_master_blueprint.test.js (524 dòng)
 - test/rigging.test.js (1370 dòng)
 - test/rigging_physics_and_alarms.test.js (306 dòng)
-- test/v3_ruler_drag_hoist_sts_gear_regression.test.js (336 dòng)
+- test/v3_ruler_drag_hoist_sts_gear_regression.test.js (368 dòng)
 
 ## 🔒 File đã khóa [LOCKED]
 - src/utils/firestoreSanitize.js
@@ -199,7 +199,7 @@ Tổng: 271 file, 78578 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/StsSpreaderRealism.js` | 174 | Chuẩn hóa kích thước ISO 668/1161, hệ cáp tời 8 nhánh và cơ học nâng hạ thực tế cho Ngáng cẩu Container STS |
 | `src/rigging/TrueMeshSurfaceContact.js` | 230 | Bộ giải tiếp xúc bề mặt 3D thực (0mm khe hở, không xuyên thủng) cho cáp và xích ôm sát kiện hàng 3D |
 | `src/rigging/UnifiedHoistProfile.js` | 65 | Quy chuẩn tốc độ nâng/hạ kiện hàng đồng nhất (0.85 m/s * scale) và chống giật bắn cho mọi phương án cáp & STS Spreader |
-| `src/rigging/WebbingSlingMeshBuilder.js` | 245 | Dựng lưới 3D liền mạch chuẩn EN 1492-1 cho cáp bẹ dẹt 2 lớp (Webbing Sling), đầu khuyên thuôn bọc bạt chống mài mòn, chỉ may chữ X/zig-zag và tem xanh/trắng |
+| `src/rigging/WebbingSlingMeshBuilder.js` | 242 | Dựng lưới 3D liền mạch chuẩn EN 1492-1 cho cáp bẹ dẹt 2 lớp (Webbing Sling), đầu khuyên thuôn bọc bạt chống mài mòn, chỉ may chữ X/zig-zag và tem xanh/trắng |
 | `src/saas/access.js` | 48 |  |
 | `src/saas/admin_catalog_audit_panels.js` | 89 | Dựng giao diện phân hệ Catalog thiết bị 3 cột, Nhật ký Kiểm toán Diff và Modal chi tiết người dùng |
 | `src/saas/admin_cms.css` | 170 | Giao diện CSS chuẩn Enterprise Command Center cho CMS Quản trị (/admin) |
@@ -251,7 +251,7 @@ Tổng: 271 file, 78578 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/physics/cables_break.js` | 1555 |  ⚠️>300 |
 | `src/sim/physics/flatrack_payload.js` | 657 | --- FLAT RACK LASHING RUPTURE, DECK SLIDING & FALLING PAYLOAD PHYSICS --- ⚠️>300 |
 | `src/sim/physics/footprint_rig.js` | 838 |  ⚠️>300 |
-| `src/sim/physics/hoist_contacts.js` | 1108 |  ⚠️>300 |
+| `src/sim/physics/hoist_contacts.js` | 1110 |  ⚠️>300 |
 | `src/sim/physics/index.js` | 9 | Bounded context index — parts are assembled via src/sim/manifest.js (shared scope). |
 | `src/sim/physics/port.js` | 59 |  |
 | `src/sim/physics/step_engine.js` | 792 |  ⚠️>300 |
@@ -263,7 +263,7 @@ Tổng: 271 file, 78578 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/session.js` | 6 |  |
 | `src/sim/session/prelift_reset.js` | 1142 |  ⚠️>300 |
 | `src/sim/session/presets_events.js` | 3618 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
-| `src/sim/session/ui_units_bom.js` | 1966 | --- 12. UI EVENT BINDINGS & COLLAPSIBLE PANELS --- ⚠️>300 |
+| `src/sim/session/ui_units_bom.js` | 1967 | --- 12. UI EVENT BINDINGS & COLLAPSIBLE PANELS --- ⚠️>300 |
 | `src/sim/state.js` | 607 | Floor cribbing removed: static cargo rests flush on the quay / ground plane. ⚠️>300 |
 | `src/sim/telemetry.js` | 1121 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
 | `src/sim/ui-layout.js` | 241 |  |
@@ -328,6 +328,6 @@ Tổng: 271 file, 78578 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/sts_twin_cable_flare.test.js` | 106 |  |
 | `test/telemetry_usage.test.js` | 50 |  |
 | `test/v2_ux_dunnage_ruler_regression.test.js` | 151 | Kiểm thử hồi quy 7 tính năng mới: Lashing khít đáy, SWL >= 12MT, Chỉnh đồng bộ, Hạ êm, Góc xoay mượt, Gỗ kê đỡ/nghiêng kiện, Thước cao độ 3D + Điểm đỏ. |
-| `test/v3_ruler_drag_hoist_sts_gear_regression.test.js` | 336 | Kiểm thử hồi quy 6 nâng cấp mới: bỏ cục tời khi tắt cẩu 3D, kéo đặt thước 3D & bắt Điểm Đỏ cáp/ma ní, dblclick Hạ/Kéo, mở khóa chỉnh cáp, hết giật STS Direct. ⚠️>300 |
+| `test/v3_ruler_drag_hoist_sts_gear_regression.test.js` | 368 | Kiểm thử hồi quy 6 nâng cấp mới: bỏ cục tời khi tắt cẩu 3D, kéo đặt thước 3D & bắt Điểm Đỏ cáp/ma ní, dblclick Hạ/Kéo, mở khóa chỉnh cáp, hết giật STS Direct. ⚠️>300 |
 | `test/workspace_data.test.js` | 155 |  |
 | `vite.config.js` | 115 |  |

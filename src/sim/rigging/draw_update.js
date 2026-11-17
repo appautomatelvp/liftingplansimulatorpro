@@ -679,7 +679,7 @@
                     slingObj.webRibbon.visible = RIG.updateWebRibbonMesh(THREE, slingObj.webRibbon, pts, dia, {
                         hasEyeA: showWebEye,
                         hasEyeB: showWebEye && reached,
-                        eyeInsetM: showWebEye ? (0.145 * webSz.eyeScaleY) : 0,
+                        eyeInsetM: showWebEye ? (0.128 * webSz.eyeScaleY) : 0,
                         slackRatio: Math.min(1, chord / Math.max(0.05, workLen))
                     });
                 } else {

@@ -1354,7 +1354,7 @@
             linkInstances.frustumCulled = false;
             group.add(linkInstances);
             const webRibbon = (typeof RIG !== 'undefined' && RIG.createContinuousWebRibbonMesh)
-                ? RIG.createContinuousWebRibbonMesh(THREE, MATS.webGreen, 48)
+                ? RIG.createContinuousWebRibbonMesh(THREE, MATS.webGreen, 64)
                 : null;
             if (webRibbon) group.add(webRibbon);
             return {

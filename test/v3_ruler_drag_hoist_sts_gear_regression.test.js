@@ -333,4 +333,36 @@ describe('V3 UX & Physics Upgrades Regression', () => {
     expect(names).toContain('Web_Wear_Sleeve');
     expect(names).toContain('Web_Cuff');
   });
+
+  it('12. Continuous webbing ribbon keeps all 49 spline points seamless inside collar and Lifting Beam length resize moves all cables', () => {
+    const mat = new THREE.MeshStandardMaterial({ color: 0xea580c, roughness: 0.95, metalness: 0 });
+    const ribbon = createContinuousWebRibbonMesh(THREE, mat, 64);
+    const pts49 = Array.from({ length: 49 }, (_, i) => new THREE.Vector3(0, 8 * (1 - i / 48), 0));
+    const inset = 0.13;
+    const ok = updateWebRibbonMesh(THREE, ribbon, pts49, 300, { hasEyeA: true, hasEyeB: true, eyeInsetM: inset, slackRatio: 1 });
+    expect(ok).toBe(true);
+    const pos = ribbon.geometry.attributes.position.array;
+    const sc = ribbon.userData._scratch;
+    // End ring (r = 48) must stay within exact eyeInsetM of pts49[48] — never chopped by 48-ring cap
+    expect(sc.trimmed[48].distanceTo(pts49[48])).toBeCloseTo(inset, 2);
+    expect(sc.trimmed[0].distanceTo(pts49[0])).toBeCloseTo(inset, 2);
+    expect(Number.isFinite(pos[0])).toBe(true);
+
+    const sim = createHeadlessSim();
+    const st = sim.getState();
+    const phy = sim.getPhy();
+    st.beamType = 'lifting_beam';
+    st.liftingBeamTopMode = 'bridle2';
+    st.liftingBeamBottomMode = 'cable';
+    st.gear.members = st.gear.members || {};
+    st.gear.members.main = { lengthM: 5.95, aM: null, bM: null, swlT: null, massT: null };
+    st.customBeamLengthMode = true;
+    sim.rebuildCargoAndRig(false);
+    const uppers = (phy.cables || []).filter(c => c.role === 'upper');
+    const legs = (phy.cables || []).filter(c => c.role === 'leg');
+    expect(uppers.length).toBe(2);
+    expect(legs.length).toBe(4);
+    uppers.forEach(c => expect(Math.abs(c.b.local.x)).toBeCloseTo(5.95 * 0.5, 2));
+    legs.forEach(c => expect(Math.abs(c.a.local.x)).toBeCloseTo(5.95 * 0.5, 2));
+  });
 });
