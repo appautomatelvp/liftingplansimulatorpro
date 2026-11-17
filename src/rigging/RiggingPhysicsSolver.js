@@ -15,6 +15,7 @@ import {
   GRAVITY,
   T_TO_KN
 } from './riggingConstants.js';
+import { resolveFourLegDiagonalLoad } from './DnvFourPointLift.js';
 
 export {
   TOPOLOGY,
@@ -251,34 +252,22 @@ export function solveCoGMomentEquilibrium(lugs, cogWorld = { x: 0, y: 0, z: 0 },
  * @returns {number[]} dnvShares - multipliers/fractions per leg
  */
 export function applyDNV4LegSkewRule(legs4, cogLoadShares = [0.25, 0.25, 0.25, 0.25], SKL = DNV_4LEG.SKL_DEFAULT) {
-  const sklFactor = Math.max(DNV_4LEG.SKL_MIN, Math.min(DNV_4LEG.SKL_MAX, Number(SKL) || DNV_4LEG.SKL_DEFAULT));
-  
-  // Diagonal pair A = [0, 2], Diagonal pair B = [1, 3]
-  const dnvShares = [0, 0, 0, 0];
-  
-  // Calculate load preference: select diagonal with higher CoG load share
-  const shareA = (cogLoadShares[0] || 0) + (cogLoadShares[2] || 0);
-  const shareB = (cogLoadShares[1] || 0) + (cogLoadShares[3] || 0);
-
-  let activeIndices = [0, 2];
-  let passiveIndices = [1, 3];
-  if (shareB > shareA + 0.05) {
-    activeIndices = [1, 3];
-    passiveIndices = [0, 2];
-  }
-
-  const activeSum = (cogLoadShares[activeIndices[0]] || 0.25) + (cogLoadShares[activeIndices[1]] || 0.25);
-  const ratio0 = (cogLoadShares[activeIndices[0]] || 0.25) / Math.max(1e-4, activeSum);
-  const ratio1 = (cogLoadShares[activeIndices[1]] || 0.25) / Math.max(1e-4, activeSum);
-
-  // Each active leg carries its proportion of total load * SKL
-  // For symmetric load: each carries 0.5 * SKL
-  dnvShares[activeIndices[0]] = Number((ratio0 * sklFactor).toFixed(4));
-  dnvShares[activeIndices[1]] = Number((ratio1 * sklFactor).toFixed(4));
-  dnvShares[passiveIndices[0]] = 0.0;
-  dnvShares[passiveIndices[1]] = 0.0;
-
-  dnvShares.dnvNotice = `DNV-ST-N001: 4-leg statically indeterminate lift. Active diagonal carries 100% load * SKL (${sklFactor}x). Passive legs carry 0t.`;
+  const legLengthsM = Array.isArray(legs4) ? legs4.map((c) => (c && c.L0) || 0) : null;
+  const res = resolveFourLegDiagonalLoad({
+    totalLoadT: 1.0,
+    cogLoadShares,
+    legLengthsM,
+    skl: SKL,
+    isRigid: true,
+    isEqualizer: false
+  });
+  const dnvShares = [...res.shares];
+  dnvShares.activeDiagonal = res.activeDiagonal;
+  dnvShares.passiveDiagonal = res.passiveDiagonal;
+  dnvShares.sklUsed = res.sklUsed;
+  dnvShares.heavyPairSharePct = res.heavyPairSharePct;
+  dnvShares.hasSkewRisk = res.hasSkewRisk;
+  dnvShares.dnvNotice = `DNV-ST-N001: 4-leg statically indeterminate lift. Active diagonal carries 100% load * SKL (${res.sklUsed}x). Passive legs carry 0t.`;
   return dnvShares;
 }
 
@@ -674,6 +663,13 @@ export function evaluate(phy, state, deps = {}) {
     angleCritical,
     dnvNotice,
     dnvShares: dnvShares ? Array.from(dnvShares) : null,
+    dnvMeta: dnvShares && dnvShares.sklUsed ? {
+      activeDiagonal: dnvShares.activeDiagonal,
+      passiveDiagonal: dnvShares.passiveDiagonal,
+      sklUsed: dnvShares.sklUsed,
+      heavyPairSharePct: dnvShares.heavyPairSharePct,
+      hasSkewRisk: dnvShares.hasSkewRisk
+    } : null,
     Kdyn,
     cascadeEvents,
     beamMetric,

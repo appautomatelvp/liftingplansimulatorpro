@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 07:56 | Nhánh: feat/horizon-clouds | Commit cuối: b97bbea feat: full EN 1492-1 1T-12T+ color & black stripe progression on 3D webbing slings (3 seconds ago)
-Tổng: 271 file, 78644 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 08:07 | Nhánh: feat/horizon-clouds | Commit cuối: 92ef299 docs: log EN 1492-1 webbing color and stripe progression fix (11 minutes ago)
+Tổng: 272 file, 78759 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -18,7 +18,7 @@ Tổng: 271 file, 78644 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/core/SimulationEngine.js (560 dòng)
 - src/graphics/SceneRenderer.js (313 dòng)
 - src/i18n/keys.js (598 dòng)
-- src/rigging/RiggingPhysicsSolver.js (684 dòng)
+- src/rigging/RiggingPhysicsSolver.js (680 dòng)
 - src/sim/audio.js (725 dòng)
 - src/sim/cargo/containers_iso.js (1453 dòng)
 - src/sim/cargo/shell_rebuild.js (573 dòng)
@@ -186,13 +186,14 @@ Tổng: 271 file, 78644 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/constraints/CornerProtectorModel.js` | 51 |  |
 | `src/rigging/constraints/HardwareConstraint.js` | 236 |  |
 | `src/rigging/constraints/UnilateralCableConstraint.js` | 151 |  |
+| `src/rigging/DnvFourPointLift.js` | 118 | Thuật toán chia tải siêu tĩnh DNV-ST-N001 cho cẩu 4 nhánh (nguồn chân lý duy nhất: 2 nhánh chéo gánh 100% × SKL [1.25..1.5]) |
 | `src/rigging/FlatRackLashingPhysics.js` | 234 | Dựng dây chằng Flat Rack ôm khít kiện hàng (không lòi ngang) và mô phỏng đứt tuần tự tự nhiên theo vật lý. |
 | `src/rigging/HStyleLiftingBeam.js` | 188 | Cấu tạo 3D và thông số khớp nối H-Style Lifting Beam (tùy chọn trên Direct Hook/2-Cáp và dưới 4-Cáp/Twistlock) |
-| `src/rigging/index.js` | 24 | src/rigging/index.js |
+| `src/rigging/index.js` | 25 | src/rigging/index.js |
 | `src/rigging/PretensionSolver.js` | 297 | Giải cao độ móc cẩu và dầm ngáng tại trạng thái Nhớm Cáp (kiện chạm đất, toàn bộ cáp căng đúng chiều dài thực) ⚠️>250 |
 | `src/rigging/ReplayRecorder.js` | 261 | Ghi và phát lại toàn bộ trạng thái mô phỏng (Hook, Ngáng dầm, Kiện, Cáp đứt/chùng, Lashing/OOG rơi, Cẩu) tối đa 60 giây. ⚠️>250 |
 | `src/rigging/riggingConstants.js` | 69 | src/rigging/riggingConstants.js |
-| `src/rigging/RiggingPhysicsSolver.js` | 684 | src/rigging/RiggingPhysicsSolver.js ⚠️>300 |
+| `src/rigging/RiggingPhysicsSolver.js` | 680 | src/rigging/RiggingPhysicsSolver.js ⚠️>300 |
 | `src/rigging/riggingUIStore.js` | 100 | src/rigging/riggingUIStore.js |
 | `src/rigging/RigidInertialDynamics.js` | 212 | Động lực học vật rắn lệch tâm (Steiner-Huygens Inertia Tensor), mô-men xoắn/nghiêng khi cẩu và rơi tự do 9.81 m/s² |
 | `src/rigging/SlingPerfHelper.js` | 167 | Tái sử dụng biến toán học scratch và bộ đệm nghỉ XPBD để giảm giật lag vòng lặp cáp 3D |
