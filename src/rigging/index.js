@@ -3,6 +3,7 @@ export * from './riggingConstants.js';
 export * from './DnvFourPointLift.js';
 export * from './HardwareBearingTracker.js';
 export * from './RiggingPhysicsSolver.js';
+export * from './CompoundColliders.js';
 export * from './CollisionMaterialSolver.js';
 export * from './BrokenCableWhipXPBD.js';
 export * from './RigidInertialDynamics.js';

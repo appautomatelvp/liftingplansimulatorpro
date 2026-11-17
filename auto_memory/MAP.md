@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 08:16 | Nhánh: feat/horizon-clouds | Commit cuối: b30b055 step 5: add interactive 3D SlingAngleGizmo with green/yellow/red arc and zero leaks (2 minutes ago)
-Tổng: 280 file, 79610 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 08:18 | Nhánh: feat/horizon-clouds | Commit cuối: 38cfc9c step 6: add ForceVectorField from CoG and connection points plus bilingual angle tooltip (89 seconds ago)
+Tổng: 282 file, 79911 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -29,7 +29,7 @@ Tổng: 280 file, 79610 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/library/core.js (641 dòng)
 - src/sim/library/parsers.js (654 dòng)
 - src/sim/library/reconstruction_export.js (2137 dòng)
-- src/sim/physics/beams_seed.js (2987 dòng)
+- src/sim/physics/beams_seed.js (2996 dòng)
 - src/sim/physics/cables_break.js (1565 dòng)
 - src/sim/physics/flatrack_payload.js (657 dòng)
 - src/sim/physics/footprint_rig.js (838 dòng)
@@ -185,7 +185,8 @@ Tổng: 280 file, 79610 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/main.js` | 67 |  |
 | `src/rigging/BrokenCableWhipXPBD.js` | 252 | Mô phỏng XPBD sóng quật, thu hồi năng lượng đàn hồi và va chạm CCD cho hai nửa cáp đứt hoặc cáp tháo chốt ⚠️>250 |
 | `src/rigging/CableDynamicsXPBD.js` | 264 | Bộ giải động lực học cáp/xích XPBD chịu kéo, tự va chạm và đứt thu hồi đàn hồi ⚠️>250 |
-| `src/rigging/CollisionMaterialSolver.js` | 247 | Bộ giải va chạm liên tục (CCD), ma sát cặp vật liệu, độ nảy theo khối lượng và chống xuyên giữa các sợi cáp/xích |
+| `src/rigging/CollisionMaterialSolver.js` | 252 | Bộ giải va chạm liên tục (CCD), ma sát cặp vật liệu, độ nảy theo khối lượng và chống xuyên giữa các sợi cáp/xích ⚠️>250 |
+| `src/rigging/CompoundColliders.js` | 219 | Bộ collider hợp chất (sub-OBB + Convex vertices), lọc thô AABB và va chạm tinh SAT/CCD chống xuyên tuyệt đối |
 | `src/rigging/constraints/CornerProtectorModel.js` | 51 |  |
 | `src/rigging/constraints/HardwareConstraint.js` | 236 |  |
 | `src/rigging/constraints/UnilateralCableConstraint.js` | 151 |  |
@@ -193,7 +194,7 @@ Tổng: 280 file, 79610 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/FlatRackLashingPhysics.js` | 234 | Dựng dây chằng Flat Rack ôm khít kiện hàng (không lòi ngang) và mô phỏng đứt tuần tự tự nhiên theo vật lý. |
 | `src/rigging/HardwareBearingTracker.js` | 64 | Truy vết vị trí dây tựa thực tế trên ma ní (Pin vs Bow) và góc tải lệch bên (side-loading angle) theo ASME B30.26 |
 | `src/rigging/HStyleLiftingBeam.js` | 188 | Cấu tạo 3D và thông số khớp nối H-Style Lifting Beam (tùy chọn trên Direct Hook/2-Cáp và dưới 4-Cáp/Twistlock) |
-| `src/rigging/index.js` | 26 | src/rigging/index.js |
+| `src/rigging/index.js` | 27 | src/rigging/index.js |
 | `src/rigging/PretensionSolver.js` | 297 | Giải cao độ móc cẩu và dầm ngáng tại trạng thái Nhớm Cáp (kiện chạm đất, toàn bộ cáp căng đúng chiều dài thực) ⚠️>250 |
 | `src/rigging/ReplayRecorder.js` | 261 | Ghi và phát lại toàn bộ trạng thái mô phỏng (Hook, Ngáng dầm, Kiện, Cáp đứt/chùng, Lashing/OOG rơi, Cẩu) tối đa 60 giây. ⚠️>250 |
 | `src/rigging/riggingConstants.js` | 69 | src/rigging/riggingConstants.js |
@@ -252,7 +253,7 @@ Tổng: 280 file, 79610 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/library/reconstruction_export.js` | 2137 | --- 2D IMAGE TO 3D CONTOUR & RELIEF RECONSTRUCTION ENGINE --- ⚠️>300 |
 | `src/sim/manifest.js` | 39 |  |
 | `src/sim/physics.js` | 6 |  |
-| `src/sim/physics/beams_seed.js` | 2987 |  ⚠️>300 |
+| `src/sim/physics/beams_seed.js` | 2996 |  ⚠️>300 |
 | `src/sim/physics/cables_break.js` | 1565 |  ⚠️>300 |
 | `src/sim/physics/flatrack_payload.js` | 657 | --- FLAT RACK LASHING RUPTURE, DECK SLIDING & FALLING PAYLOAD PHYSICS --- ⚠️>300 |
 | `src/sim/physics/footprint_rig.js` | 838 |  ⚠️>300 |
@@ -299,6 +300,7 @@ Tổng: 280 file, 79610 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/catalog_client.test.js` | 94 |  |
 | `test/cms_data.test.js` | 187 |  |
 | `test/cog_tilt_stability.test.js` | 231 |  |
+| `test/compound_collider_zero_penetration.test.js` | 67 |  |
 | `test/custom_slings.test.js` | 712 |  ⚠️>300 |
 | `test/deployment_environment.test.js` | 21 |  |
 | `test/dnv_four_point_lift.test.js` | 80 |  |

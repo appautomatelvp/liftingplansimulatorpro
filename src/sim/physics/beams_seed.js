@@ -2074,6 +2074,15 @@
         // Multi-sample rigid depenetration: beam segment cannot occupy cargo volume
         function depenetrateBeamFromCargo(b, maxPasses) {
             if (!b || !activeCargoVisual) return false;
+            if (typeof RIG !== 'undefined' && RIG.buildCompoundBeamCollider && RIG.resolveCompoundContact && phy.cargoPos) {
+                const cargoCol = RIG.buildCompoundCargoCollider({ center: phy.cargoPos, quat: phy.cargoQuat, L: state.L || 6, W: state.W || 2.4, H: state.H || 2.6 });
+                const beamCol = RIG.buildCompoundBeamCollider({ center: b.x, quat: b.q, spanX: state.beamLength || 6, beamHeight: Math.max(0.28, beamCargoContactPad(b) * 2), isHBeam: state.beamType === 'hbeam' });
+                const satHit = RIG.resolveCompoundContact(beamCol, cargoCol);
+                if (satHit.collided && satHit.penetrationM > 0.0005) {
+                    b.x.addScaledVector(new THREE.Vector3(satHit.normal.x, satHit.normal.y, satHit.normal.z), satHit.penetrationM);
+                    if (b.v && b.w) stopClosing(b.v, b.w, b.x, satHit.point || b.x, new THREE.Vector3(satHit.normal.x, satHit.normal.y, satHit.normal.z), b.invMass, b.invI, b.q);
+                }
+            }
             // Roof seating uses structural tube radius — fat visualRadius left a visible air gap
             const restRad = beamCargoContactPad(b) + 0.006;
             const sideRad = Math.max(restRad, Math.min(beamCollisionRadius(b), restRad + 0.04) + 0.008);

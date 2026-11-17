@@ -69,7 +69,7 @@ Người lập kế hoạch: Model cao nhất (KHÔNG viết code ở bước n�
 - **Tạo test:** `test/force_vector_field.test.js` (độ dài tỉ lệ T, gốc tại CoG, tooltip có đủ 2 ngôn ngữ).
 - **Kiểm tra:** `npx vitest run test/force_vector_field.test.js test/i18n_keys.test.js`.
 
-### [ ] Bước 7: Va chạm tuyệt đối — Compound/Convex collider + CCD (Pillar 3)
+### [x] Bước 7: Va chạm tuyệt đối — Compound/Convex collider + CCD (Pillar 3)
 - **Tạo:** `src/rigging/CompoundColliders.js` (<250 dòng, hàm thuần): dựng collider hợp từ OBB con cho Spreader/H-beam/lug/mép kiện (hull đơn giản 8–12 đỉnh cho dầm; OBB cho cargo), broad-phase AABB → narrow-phase SAT; trả `{ penetrationM, normal, point }`.
 - **Sửa (≤25 dòng):** `src/rigging/CollisionMaterialSolver.js` (dùng collider hợp thay AABB trong `resolveSweptSphereObbCCD`; xích–xích: chồng bán kính mắt xích → đẩy trượt), `src/sim/physics/beams_seed.js` (chèn ≤25 dòng gọi `resolveCompoundContact` cạnh `depenetrateBeamFromCargo`).
 - **Tạo test:** `test/compound_collider_zero_penetration.test.js` (thả dầm nặng lên nóc container → nghỉ với `penetration < 1 mm`, ma sát giữ không trượt trên mặt phẳng nghiêng nhỏ; hai đoạn xích cắt nhau → tách ra, không xuyên).

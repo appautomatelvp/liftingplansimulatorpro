@@ -1,5 +1,7 @@
 // @purpose: Bộ giải va chạm liên tục (CCD), ma sát cặp vật liệu, độ nảy theo khối lượng và chống xuyên giữa các sợi cáp/xích
 import * as THREE from 'three';
+import { resolveCompoundContact } from './CompoundColliders.js';
+export { resolveCompoundContact };
 
 const GRAVITY = 9.81;
 
@@ -95,9 +97,12 @@ function pushOutSingleObb(point, radius, box, invQuatOut, bestNormal) {
 }
 
 /**
- * Swept-sphere continuous collision detection against OBB solids and the quay ground plane.
+ * Swept-sphere continuous collision detection against OBB / compound solids and the quay ground plane.
  */
-export function resolveSweptSphereObbCCD(prevPos, nextPos, radius = 0.02, obbBoxes = [], groundY = 0) {
+export function resolveSweptSphereObbCCD(prevPos, nextPos, radius = 0.02, obbBoxesOrCompound = [], groundY = 0) {
+  const obbBoxes = Array.isArray(obbBoxesOrCompound)
+    ? obbBoxesOrCompound
+    : (obbBoxesOrCompound && Array.isArray(obbBoxesOrCompound.obbs) ? obbBoxesOrCompound.obbs : []);
   const safeR = Math.max(0.004, radius);
   const start = prevPos ? prevPos.clone() : nextPos.clone();
   const target = nextPos.clone();
