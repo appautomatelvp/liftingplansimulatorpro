@@ -1216,6 +1216,9 @@
             'Các trang hiệu chỉnh': 'Adjustment panels'
         });
 
+        const _extraUiEn = (typeof window !== 'undefined' && window.SafeLift?.i18n?.extraUiEn) || null;
+        if (_extraUiEn) Object.assign(UI_EN, _extraUiEn);
+
         function libText(s) {
             if (!s) return '';
             if (state.lang !== 'en') return s;
@@ -1404,6 +1407,7 @@
             if (typeof updateUnitDisplayElements === 'function') updateUnitDisplayElements();
             if (typeof syncCableControlsSelection === 'function') syncCableControlsSelection();
             if (typeof syncSlingSlidersFromState === 'function') syncSlingSlidersFromState();
+            if (typeof computeRiggingMassBreakdown === 'function') computeRiggingMassBreakdown();
             syncDrawerHeaderLanguage();
         }
 

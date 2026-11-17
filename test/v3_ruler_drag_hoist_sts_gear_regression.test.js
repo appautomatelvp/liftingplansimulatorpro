@@ -6,6 +6,8 @@ import * as THREE from 'three';
 import { createElevationRulerTool } from '../src/graphics/ElevationRulerTool.js';
 import { pickBestElevationHoverPoint, buildRulerHoverInputs } from '../src/graphics/ElevationRulerMath.js';
 import { rebuildDunnageVisual3D, sampleDunnageContactPointsForCargo } from '../src/graphics/JobsiteSiteVisuals.js';
+import { computeWebSlingVisualSize, applySlingSegmentTransform } from '../src/rigging/SlingPerfHelper.js';
+import { EXTRA_UI_EN, translateBadge } from '../src/i18n/sim_ui_phrases.js';
 import {
   startReplayRecording,
   captureReplayFrame,
@@ -268,5 +270,33 @@ describe('V3 UX & Physics Upgrades Regression', () => {
     expect(tabletCss).toContain('touch-action: none');
     expect(tabletCss).toContain('#bottom-dock-bar');
     expect(tabletCss).toContain('#top-bar');
+  });
+
+  it('10. Web sling uses compact realistic width (never 30cm planks) and ElevationRuler + badges translate cleanly', () => {
+    const heavyWeb = computeWebSlingVisualSize(300);
+    const medWeb = computeWebSlingVisualSize(150);
+    const lightWeb = computeWebSlingVisualSize(60);
+    expect(lightWeb.widthM).toBeCloseTo(0.06, 3);
+    expect(medWeb.widthM).toBeGreaterThan(lightWeb.widthM);
+    expect(heavyWeb.widthM).toBeGreaterThan(medWeb.widthM);
+    expect(heavyWeb.widthM).toBeLessThanOrEqual(0.115);
+
+    const seg = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial());
+    applySlingSegmentTransform(THREE, seg, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 2, 0), new THREE.Vector3(0, 1, 0), 'web', 2, 300, 10, 15, 0, 4, 1);
+    expect(seg.scale.x).toBeLessThanOrEqual(0.115);
+    expect(seg.scale.x).toBeGreaterThan(seg.scale.z);
+
+    expect(EXTRA_UI_EN['🎗️ Cáp bẹ dẹt (Webbing · EN 1492-1)']).toBe('🎗️ Flat Webbing Sling (EN 1492-1)');
+    expect(EXTRA_UI_EN['Thước đo cao độ 3D (Điểm đỏ)']).toBe('3D Elevation Ruler (Hover Probe)');
+    expect(translateBadge('🚨 QUÁ TẢI CẨU', 'en')).toBe('🚨 CRANE OVERLOAD');
+    expect(translateBadge('🟢 ĐẠT CHUẨN NỀN', 'en')).toBe('🟢 GROUND SAFE');
+    expect(translateBadge('⚠️ CRITICAL LIFT', 'vi')).toBe('⚠️ NÂNG TỚI HẠN');
+
+    const rulerSrc = fs.readFileSync(path.resolve(import.meta.dirname, '../src/graphics/ElevationRulerTool.js'), 'utf8');
+    expect(rulerSrc).toContain("isVi ? 'Móc cẩu' : 'Hook'");
+    expect(rulerSrc).toContain("isVi ? 'Ngáng' : 'Spreader'");
+    expect(rulerSrc).toContain("isVi ? 'Đỉnh' : 'Top'");
+    expect(rulerSrc).toContain("isVi ? 'Đáy' : 'Bottom'");
+    expect(rulerSrc).toContain("isVi ? 'Điểm đỏ' : 'Probe'");
   });
 });

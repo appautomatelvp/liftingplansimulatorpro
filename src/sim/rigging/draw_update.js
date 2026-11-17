@@ -678,8 +678,9 @@
             if (slingObj.webEyeA && slingObj.webEyeB) {
                 slingObj.webEyeA.visible = showWebEye;
                 slingObj.webEyeB.visible = showWebEye && reached;
-                const webWidthM = Math.max(0.045, Math.min(0.30, dia / 1000));
-                const webEyeScale = THREE.MathUtils.clamp(webWidthM / 0.072, 0.7, 2.4);
+                const webSize = (typeof RIG !== 'undefined' && RIG.computeWebSlingVisualSize)
+                    ? RIG.computeWebSlingVisualSize(dia)
+                    : { eyeScaleX: THREE.MathUtils.clamp((dia / 1000) * 0.34 / 0.078, 0.42, 1.22), eyeScaleY: 0.9, eyeScaleZ: 0.55 };
                 const orientWebEye = (mesh, seat, leave) => {
                     const yAxis = leave.clone().normalize();
                     const side = new THREE.Vector3().crossVectors(yAxis, upY);
@@ -688,7 +689,7 @@
                     const nrm = new THREE.Vector3().crossVectors(yAxis, side).normalize();
                     mesh.position.copy(seat);
                     mesh.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(side, yAxis, nrm));
-                    mesh.scale.set(webEyeScale, webEyeScale, Math.max(0.55, webEyeScale * 0.35));
+                    mesh.scale.set(webSize.eyeScaleX, webSize.eyeScaleY, webSize.eyeScaleZ);
                     mesh.traverse(m => {
                         if (m.isMesh && (m.name === 'Web_Eye_Loop' || m.name === 'Web_Cuff')) m.material = mat;
                     });

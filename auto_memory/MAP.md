@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-16 22:49 | Nhánh: feat/horizon-clouds | Commit cuối: 913a7f0 fix: complete English translations for baseline/Follow hint and optimize sky shader hash (4 seconds ago)
-Tổng: 269 file, 78034 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 07:11 | Nhánh: feat/horizon-clouds | Commit cuối: e51b77c docs: update HISTORY and MAP after CI i18n and sky shader fix (8 hours ago)
+Tổng: 270 file, 78264 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -36,14 +36,14 @@ Tổng: 269 file, 78034 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/physics/hoist_contacts.js (1108 dòng)
 - src/sim/physics/step_engine.js (792 dòng)
 - src/sim/plan_wizard.js (650 dòng)
-- src/sim/rigging/draw_update.js (837 dòng)
+- src/sim/rigging/draw_update.js (838 dòng)
 - src/sim/rigging/hook_pool.js (3118 dòng)
 - src/sim/scene.js (1980 dòng)
 - src/sim/session/prelift_reset.js (1142 dòng)
-- src/sim/session/presets_events.js (3614 dòng)
+- src/sim/session/presets_events.js (3618 dòng)
 - src/sim/session/ui_units_bom.js (1966 dòng)
 - src/sim/state.js (607 dòng)
-- src/sim/telemetry.js (1114 dòng)
+- src/sim/telemetry.js (1121 dòng)
 - src/sim/weather_fx.js (596 dòng)
 - test/cable_morphology_and_deformation.test.js (426 dòng)
 - test/custom_slings.test.js (712 dòng)
@@ -51,6 +51,7 @@ Tổng: 269 file, 78034 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - test/physics_master_blueprint.test.js (524 dòng)
 - test/rigging.test.js (1370 dòng)
 - test/rigging_physics_and_alarms.test.js (306 dòng)
+- test/v3_ruler_drag_hoist_sts_gear_regression.test.js (302 dòng)
 
 ## 🔒 File đã khóa [LOCKED]
 - src/utils/firestoreSanitize.js
@@ -159,7 +160,7 @@ Tổng: 269 file, 78034 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/domain/site/types.js` | 9 | Site / quay domain vocabulary (pure). |
 | `src/domain/standards/index.js` | 26 |  |
 | `src/graphics/ElevationRulerMath.js` | 117 | Thuật toán bắt điểm 3D cho thước đo cao độ (lưới khối + dây cáp mảnh + ma ní) |
-| `src/graphics/ElevationRulerTool.js` | 289 | Vẽ cây thước đo cao độ 3D so với mặt đất, cho phép kéo đặt vị trí và điểm đỏ rà chuột mọi chi tiết. ⚠️>250 |
+| `src/graphics/ElevationRulerTool.js` | 290 | Vẽ cây thước đo cao độ 3D so với mặt đất, cho phép kéo đặt vị trí và điểm đỏ rà chuột mọi chi tiết. ⚠️>250 |
 | `src/graphics/EnvironmentManager.js` | 280 | Quản lý ánh sáng IBL, sương mù chân trời, HDR và đồng bộ thời gian thực cho cảnh 3D ⚠️>250 |
 | `src/graphics/GraphicsToneHelper.js` | 114 | Điều chỉnh và lưu độ sáng tối (Brightness) và tương phản (Contrast) cho khung hình 3D như game |
 | `src/graphics/GroundHorizonFade.js` | 46 | Hòa mượt mép ngoài đĩa mặt đất vào màu sương mù chân trời không lộ đường cắt |
@@ -175,8 +176,9 @@ Tổng: 269 file, 78034 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/i18n/cargo_labels.js` | 48 |  |
 | `src/i18n/cms_keys.js` | 137 | Bộ từ điển song ngữ VI/EN chuyên biệt cho hệ thống CMS Enterprise Command Center |
 | `src/i18n/contact_keys.js` | 73 | Bộ từ điển song ngữ VI/EN chuẩn công nghiệp cho hộp thoại Hỗ trợ kỹ thuật & Góp ý |
-| `src/i18n/index.js` | 131 |  |
+| `src/i18n/index.js` | 134 |  |
 | `src/i18n/keys.js` | 598 |  ⚠️>300 |
+| `src/i18n/sim_ui_phrases.js` | 166 | Bảng từ điển bổ sung & chuyển đổi badge động song ngữ Việt–Anh cho mô phỏng 3D và bảng thiết bị |
 | `src/main.js` | 67 |  |
 | `src/rigging/BrokenCableWhipXPBD.js` | 252 | Mô phỏng XPBD sóng quật, thu hồi năng lượng đàn hồi và va chạm CCD cho hai nửa cáp đứt hoặc cáp tháo chốt ⚠️>250 |
 | `src/rigging/CableDynamicsXPBD.js` | 264 | Bộ giải động lực học cáp/xích XPBD chịu kéo, tự va chạm và đứt thu hồi đàn hồi ⚠️>250 |
@@ -193,7 +195,7 @@ Tổng: 269 file, 78034 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/RiggingPhysicsSolver.js` | 684 | src/rigging/RiggingPhysicsSolver.js ⚠️>300 |
 | `src/rigging/riggingUIStore.js` | 100 | src/rigging/riggingUIStore.js |
 | `src/rigging/RigidInertialDynamics.js` | 212 | Động lực học vật rắn lệch tâm (Steiner-Huygens Inertia Tensor), mô-men xoắn/nghiêng khi cẩu và rơi tự do 9.81 m/s² |
-| `src/rigging/SlingPerfHelper.js` | 148 | Tái sử dụng biến toán học scratch và bộ đệm nghỉ XPBD để giảm giật lag vòng lặp cáp 3D |
+| `src/rigging/SlingPerfHelper.js` | 166 | Tái sử dụng biến toán học scratch và bộ đệm nghỉ XPBD để giảm giật lag vòng lặp cáp 3D |
 | `src/rigging/StsSpreaderRealism.js` | 174 | Chuẩn hóa kích thước ISO 668/1161, hệ cáp tời 8 nhánh và cơ học nâng hạ thực tế cho Ngáng cẩu Container STS |
 | `src/rigging/TrueMeshSurfaceContact.js` | 230 | Bộ giải tiếp xúc bề mặt 3D thực (0mm khe hở, không xuyên thủng) cho cáp và xích ôm sát kiện hàng 3D |
 | `src/rigging/UnifiedHoistProfile.js` | 65 | Quy chuẩn tốc độ nâng/hạ kiện hàng đồng nhất (0.85 m/s * scale) và chống giật bắn cho mọi phương án cáp & STS Spreader |
@@ -254,15 +256,15 @@ Tổng: 269 file, 78034 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/physics/step_engine.js` | 792 |  ⚠️>300 |
 | `src/sim/plan_wizard.js` | 650 |  ⚠️>300 |
 | `src/sim/rigging.js` | 6 |  |
-| `src/sim/rigging/draw_update.js` | 837 | Slack cable morphology is solved by a persistent material-aware XPBD chain. ⚠️>300 |
+| `src/sim/rigging/draw_update.js` | 838 | Slack cable morphology is solved by a persistent material-aware XPBD chain. ⚠️>300 |
 | `src/sim/rigging/hook_pool.js` | 3118 |  ⚠️>300 |
 | `src/sim/scene.js` | 1980 |  ⚠️>300 |
 | `src/sim/session.js` | 6 |  |
 | `src/sim/session/prelift_reset.js` | 1142 |  ⚠️>300 |
-| `src/sim/session/presets_events.js` | 3614 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
+| `src/sim/session/presets_events.js` | 3618 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
 | `src/sim/session/ui_units_bom.js` | 1966 | --- 12. UI EVENT BINDINGS & COLLAPSIBLE PANELS --- ⚠️>300 |
 | `src/sim/state.js` | 607 | Floor cribbing removed: static cargo rests flush on the quay / ground plane. ⚠️>300 |
-| `src/sim/telemetry.js` | 1114 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
+| `src/sim/telemetry.js` | 1121 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
 | `src/sim/ui-layout.js` | 241 |  |
 | `src/sim/weather_fx.js` | 596 |  ⚠️>300 |
 | `src/simulation/destruction-manager/DestructionSolver.js` | 147 |  |
@@ -325,6 +327,6 @@ Tổng: 269 file, 78034 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/sts_twin_cable_flare.test.js` | 106 |  |
 | `test/telemetry_usage.test.js` | 50 |  |
 | `test/v2_ux_dunnage_ruler_regression.test.js` | 151 | Kiểm thử hồi quy 7 tính năng mới: Lashing khít đáy, SWL >= 12MT, Chỉnh đồng bộ, Hạ êm, Góc xoay mượt, Gỗ kê đỡ/nghiêng kiện, Thước cao độ 3D + Điểm đỏ. |
-| `test/v3_ruler_drag_hoist_sts_gear_regression.test.js` | 272 | Kiểm thử hồi quy 6 nâng cấp mới: bỏ cục tời khi tắt cẩu 3D, kéo đặt thước 3D & bắt Điểm Đỏ cáp/ma ní, dblclick Hạ/Kéo, mở khóa chỉnh cáp, hết giật STS Direct. ⚠️>250 |
+| `test/v3_ruler_drag_hoist_sts_gear_regression.test.js` | 302 | Kiểm thử hồi quy 6 nâng cấp mới: bỏ cục tời khi tắt cẩu 3D, kéo đặt thước 3D & bắt Điểm Đỏ cáp/ma ní, dblclick Hạ/Kéo, mở khóa chỉnh cáp, hết giật STS Direct. ⚠️>300 |
 | `test/workspace_data.test.js` | 155 |  |
 | `vite.config.js` | 115 |  |

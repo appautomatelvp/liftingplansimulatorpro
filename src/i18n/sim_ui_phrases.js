@@ -1,0 +1,166 @@
+// @purpose: Bảng từ điển bổ sung & chuyển đổi badge động song ngữ Việt–Anh cho mô phỏng 3D và bảng thiết bị
+export const EXTRA_UI_EN = {
+  // Loading & Top/Bottom Bars + Tooltips
+  'Đang tải Physics Engine…': 'Loading Physics Engine…',
+  'Phát triển bởi Lê Việt Phương (Mr)': 'Developed by Le Viet Phuong (Mr)',
+  'Nhóm kiện hàng cho căng cáp: kiện vẫn nằm trên mặt đất nhưng các sợi cáp đã căng sẵn sàng nâng hạ': 'Snug all rigging cables while cargo remains grounded and ready to lift',
+  'Nhấc thử tải tĩnh và động lên không trung': 'Perform a static/dynamic trial lift off the ground',
+  'Tạo xung lực quán tính kiểm tra đong đưa kiện': 'Apply an inertial pulse to test cargo swing',
+  'Tự động cân bằng tăng đơ theo trọng tâm CoG': 'Automatically trim turnbuckles to match the CoG',
+  'Hạ kiện an toàn về nền đà kê': 'Lower cargo safely back onto timber dunnage',
+  'Thiết lập trạng thái ban đầu làm mốc để Reset': 'Save the current setup as the Home reset pose',
+  'Kéo cắt cáp: bật rồi bấm vào cáp/xích để cắt đúng chỗ': 'Cable cutter: enable then click any cable or chain to part it',
+  'Ghi lại chuyển động mô phỏng (quay cần, tời cáp, đong đưa)': 'Record simulation motion (slew, hoist, sway, cable cuts)',
+  'Xem lại chuyển động đã ghi': 'Replay recorded simulation sequence',
+  'Dừng ghi hoặc dừng xem lại': 'Stop recording or playback',
+  'Bấm/giữ để hạ móc cẩu': 'Click or hold to lower the crane hook (double-click to land slack)',
+  'Bấm/giữ để kéo móc cẩu': 'Click or hold to hoist the crane hook (double-click for 10.0 m)',
+  'Quay cần sang trái 5°': 'Slew crane left by 5°',
+  'Quay cần sang phải 5°': 'Slew crane right by 5°',
+  'Khi kiện nghiêng: tính lại chiều dài từng sợi cáp để cân bằng': 'When tilted: recalculate cable lengths to re-level cargo',
+  'Phối cảnh 3/4 — bao quát kiện + bộ treo': '3/4 perspective — cargo and rigging overview',
+  'Cận cảnh móc & cáp trên': 'Close-up of crane hook and upper bridle',
+  'Mặt đứng chính diện': 'Front elevation view',
+  'Mặt bên': 'Side elevation view',
+  'Mặt bằng — kiểm tra CoG / LP': 'Plan view — inspect CoG and lifting points',
+  'Toàn cảnh máy cẩu': 'Full crane overview',
+  'Bật nét CAD kỹ thuật': 'Toggle CAD edge outlines',
+  'Nhìn xuyên vỏ hàng': 'Toggle X-Ray cargo view',
+  'Mũi tên véc-tơ lực cáp': 'Toggle 3D sling force vectors',
+  'Đặt lại độ sáng tối và tương phản mặc định': 'Reset viewport brightness and contrast to defaults',
+  'Thước đo cao độ 3D (Điểm đỏ)': '3D Elevation Ruler (Hover Probe)',
+  '= flycam chuyên nghiệp, xoay liên tục quanh kiện. Điều khiển nhanh ở hàng': '= professional flycam orbiting continuously around the cargo. Quick controls in the row',
+  'Đứng': 'Front',
+  'Bên': 'Side',
+  'Bằng': 'Plan',
+  'Cẩu': 'Crane',
+  'Liên hệ nhà phát triển': 'Contact developer',
+  'Auto cân bằng (tính lại chiều dài cáp)': 'Auto-balance (recalc cable lengths)',
+  '⤓ Hạ': '⤓ Lower',
+  '⤒ Kéo': '⤒ Hoist',
+
+  // OOG Cargo & LP
+  '1.5 Kiện Hàng Quá Khổ (OOG) & Bạt Phủ': '1.5 Out-of-Gauge (OOG) Cargo & Tarp',
+  '📦 Có Hàng Trên Cont': '📦 Cargo On Deck',
+  '⛺ Phủ Vải Bạt Nóc': '⛺ Top Tarpaulin',
+  'Độ chênh so với khung ISO: dương = thò ra (OOG), âm = thụt vào trong khung. Có thể chỉ OH dương còn OW/OL = 0 hoặc âm.': 'Offset vs ISO frame: positive = protrusion (OOG), negative = inset. OH may be positive while OW/OL ≤ 0.',
+  'Tọa độ Dọc Lifting Point (X):': 'Longitudinal Lifting Point (X):',
+  'Tọa độ Ngang Lifting Point (Z):': 'Transverse Lifting Point (Z):',
+
+  // H-Beam & Spreader Controls
+  'Liên kết phía trên (Với Móc Cẩu)': 'Upper connection (to Crane Hook)',
+  '🔗 Bắt trực tiếp Hook Link': '🔗 Direct Hook Link',
+  'Tai giữa dầm móc vào link': 'Center lug pinned directly to hook link',
+  '⛓️ Dùng 2 cáp / xích': '⛓️ 2-Leg Cable / Chain Bridle',
+  '2 nhánh lên link → hook': '2 legs from beam to hook link',
+  'Liên kết phía dưới (4 góc chữ H)': 'Lower connection (4 H-frame corners)',
+  '⛓️ Dùng 4 cáp / xích': '⛓️ 4-Leg Cable / Chain Slings',
+  '4 sợi từ 4 góc thanh ngang': '4 legs from outer beam corners',
+  '🔒 Gắp trực tiếp Container': '🔒 Direct Twistlock Engage',
+  '4 chốt gù Twistlock tại 4 góc': '4 twistlocks at container corners',
+  'Tầng 1 (Top Bridle — Móc ➔ Dầm):': 'Tier 1 (Top Bridle — Hook ➔ Beam):',
+  'Tầng giữa (Hanger — Dầm chính ➔ Dầm phụ):': 'Mid Tier (Hangers — Main ➔ Sub-beams):',
+  'Tầng 2 (Lower Legs — Dầm ➔ Tai Cẩu):': 'Tier 2 (Lower Legs — Beam ➔ Lugs):',
+  '🟢 Thẳng đứng 90° (Zero Lateral Shear)': '🟢 Vertical 90° (Zero Lateral Shear)',
+  'Hệ Mét (m)': 'Metric (m)',
+  'Theo thông số chung': 'Following global setting',
+  'Cắt cáp': 'Cut rope',
+  'Nối lại': 'Reeve',
+
+  // Gear Editor (Sling / Shackle / Beam / Hook / Cargo)
+  'Chủng loại dây cẩu:': 'Sling type:',
+  '⛓️ Xích cẩu (Alloy Chain · G80/G100/G120)': '⛓️ Alloy Chain Sling (G80/G100/G120)',
+  '🔩 Cáp thép (Wire Rope · IWRC/FC)': '🔩 Steel Wire Rope (IWRC/FC)',
+  '🎗️ Cáp bẹ dẹt (Webbing · EN 1492-1)': '🎗️ Flat Webbing Sling (EN 1492-1)',
+  '⭕ Cáp vải tròn (Round · EN 1492-2)': '⭕ Round Sling (EN 1492-2)',
+  '🔄 Cáp vòng kín (Grommet IMCA)': '🔄 Endless Grommet (IMCA)',
+  'Cấp bền / Tiêu chuẩn:': 'Grade / Standard:',
+  'Grade 100 · Siêu cường (+25% WLL)': 'Grade 100 · High Tensile (+25% WLL)',
+  'Grade 120 · Cường lực (+50% WLL)': 'Grade 120 · Ultra Tensile (+50% WLL)',
+  'HMPE Dyneema siêu chịu tải': 'HMPE Dyneema High-Capacity',
+  'HMPE Dyneema Core · Siêu nhẹ': 'HMPE Dyneema Core · Ultra-Light',
+  'IWRC 2160 N/mm² · Siêu cường': 'IWRC 2160 N/mm² · Ultra-High Grade',
+  'IWRC 1960 N/mm² · Lõi thép': 'IWRC 1960 N/mm² · Steel Core',
+  'IWRC 2160 N/mm² · Cường độ cao': 'IWRC 2160 N/mm² · High Tensile',
+  'Fiber Core (FC) 1770 N/mm² · Lõi đay': 'Fiber Core (FC) 1770 N/mm²',
+  'Số sợi chập (Parts):': 'Multi-part falls (Parts):',
+  '1 sợi (Đơn - Single)': '1-Part (Single)',
+  '2 sợi (Chập đôi - 2-Part)': '2-Part (Doubled)',
+  '3 sợi (Chập 3 - 3-Part)': '3-Part (Tripled)',
+  '4 sợi (Chập 4 - 4-Part)': '4-Part (Quad)',
+  'Bản rộng W': 'Web Width W',
+  'Đường kính vỏ': 'Sleeve Dia',
+  'Đường kính ⌀': 'Diameter ⌀',
+  'Khối lượng ma ní': 'Shackle mass',
+  'Kích thước kiện': 'Cargo dimensions',
+  'Khung container ISO': 'ISO Container Frame',
+  'Chiều dài (L)': 'Length (L)',
+  'Chiều rộng (W)': 'Width (W)',
+  'Chiều cao (H)': 'Height (H)',
+  'Tổng trọng lượng (Gross)': 'Total weight (Gross)',
+  'Cắt thiết bị': 'Part gear',
+  'Cắt sợi cáp này': 'Part this sling',
+  'Nối lại các cáp đang chọn.': 'Reeve selected slings.',
+  'Cắt các cáp đang chọn.': 'Part selected slings.',
+  '🔗 Nối lại sợi cáp': '🔗 Reeve this sling',
+  '🔗 Nối lại các cáp đứt': '🔗 Reeve parted slings',
+  'Kéo cắt BẬT — đưa gần cáp/xích (đoạn đó nháy đỏ), rồi bấm để cắt. Esc để tắt.': 'Cutter ON — hover a cable/chain until it flashes red, then click to part. Esc to cancel.',
+  'Chiều dài làm việc': 'Working length',
+  'Đường kính / Bề rộng': 'Diameter / Width',
+  'Khối lượng': 'Mass',
+  'Hệ số an toàn MBL/SWL': 'Safety Factor MBL/SWL',
+  'Đường kính chốt': 'Pin diameter',
+  'Độ mở má': 'Jaw width',
+  'Hệ số an toàn': 'Safety Factor',
+  'Chiều rộng dầm': 'Beam width',
+  'Chiều cao tiết diện': 'Section depth',
+  'Tự trọng bộ dầm': 'Assembly self-weight',
+  'SWL móc': 'Hook SWL',
+  'Chiều dài': 'Length',
+  'Chiều rộng': 'Width',
+  'Chiều cao': 'Height',
+  'Tổng trọng lượng': 'Gross weight',
+  'Tare (khung rỗng)': 'Tare weight',
+  'Đầy 60s': '60s Full',
+  'Hết bản ghi': 'Playback ended',
+  '⚠️ Chưa đặt mốc ban đầu': '⚠️ Baseline not set',
+  '🧹 Đã Reset về mặc định': '🧹 Reset to defaults',
+  '⚖️ Auto cân bằng: đã tính lại chiều dài các sợi cáp theo kiện ngang': '⚖️ Auto-balanced: recalculated cable lengths for level cargo',
+  'Chiều dài thanh đang chọn (m)': 'Selected bar length (m)',
+  'Đường kính thanh đang chọn (mm)': 'Selected bar diameter (mm)',
+  'WLL thanh đang chọn (t)': 'Selected bar WLL (t)',
+  'Tự trọng thanh đang chọn (t)': 'Selected bar self-weight (t)',
+  'Bộ treo': 'Rigging',
+  'Auto cáp': 'Auto slings',
+  'Khối lượng riêng / Bền': 'Grade / Rating',
+  'Kích thước mặc định': 'Default dimensions'
+};
+
+const BADGE_PAIRS = [
+  ['🚨 QUÁ TẢI CẨU', '🚨 CRANE OVERLOAD'],
+  ['⚠️ NÂNG TỚI HẠN', '⚠️ CRITICAL LIFT'],
+  ['🟢 AN TOÀN', '🟢 SAFE'],
+  ['🟢 ĐẠT CHUẨN NỀN', '🟢 GROUND SAFE'],
+  ['🚨 LÚN SỤT NỀN', '🚨 GROUND BEARING FAIL'],
+  ['⚠️ NGUY CƠ LÚN NỀN', '⚠️ ELEVATED GROUND PRESSURE'],
+  ['⚠️ SỤT LÚN NỀN', '⚠️ SOIL BEARING FAILURE']
+];
+
+export function translateBadge(text, lang = 'en') {
+  if (!text) return '';
+  const targetEn = lang === 'en';
+  const norm = String(text).trim();
+  for (const [vi, en] of BADGE_PAIRS) {
+    if (norm === vi || norm === en) return targetEn ? en : vi;
+  }
+  if (norm.includes('LÚN') || norm.includes('BEARING')) {
+    return targetEn ? '🚨 GROUND BEARING RISK' : '🚨 NGUY CƠ SỤT LÚN NỀN';
+  }
+  if (norm.includes('QUÁ TẢI') || norm.includes('OVERLOAD')) {
+    return targetEn ? '🚨 CRANE OVERLOAD' : '🚨 QUÁ TẢI CẨU';
+  }
+  if (norm.includes('ĐẠT') || norm.includes('SAFE')) {
+    return targetEn ? '🟢 SAFE' : '🟢 AN TOÀN';
+  }
+  return text;
+}
