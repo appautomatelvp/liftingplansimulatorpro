@@ -1278,9 +1278,16 @@
                 relieveCableOverstretch({ rising: true, margin: 0.01 });
             }
             const grossLoadT = phy.massBreakdown ? phy.massBreakdown.grossCraneLoadT : (state.weight + (phy.gearWeight || 1.0));
+            const evalHwFn = (typeof CAE !== 'undefined' && CAE.evaluateShackleComponentLoad)
+                ? CAE.evaluateShackleComponentLoad : (typeof window !== 'undefined' && window.CAE && window.CAE.evaluateShackleComponentLoad);
             (phy.cables || []).forEach(c => {
                 const n = c.n || new THREE.Vector3(0, 1, 0);
-                const horiz = Math.abs(Math.asin(THREE.MathUtils.clamp(n.y, -1, 1)) * 180 / Math.PI);
+                const endA = c.a && typeof attachWorld === 'function' ? attachWorld(c.a) : null;
+                const endB = c.b && typeof attachWorld === 'function' ? attachWorld(c.b) : null;
+                const horiz = (endA && endB && typeof RIG !== 'undefined' && RIG.computeHorizontalSlingAngleDeg)
+                    ? RIG.computeHorizontalSlingAngleDeg(endA, endB)
+                    : Math.max(0, Math.min(90, Math.asin(THREE.MathUtils.clamp(Math.abs(n.y), 0, 1)) * 180 / Math.PI));
+                c.angleDeg = horiz;
                 const slack = !(c.tensionT > 0.02) || cableIsBroken(c);
                 if (c.role === 'leg' && c.index < 8 && state.gear.legs[c.index]) {
                     const leg = state.gear.legs[c.index];
@@ -1299,11 +1306,9 @@
                         : 1.0;
                     const swlEff = legSwl(c.index) * hitchF;
                     const shackleItem = state.gear && state.gear.shackles ? state.gear.shackles[c.index] : null;
-                    const evalHw = (typeof CAE !== 'undefined' && CAE.evaluateShackleComponentLoad)
-                        ? CAE.evaluateShackleComponentLoad : (typeof window !== 'undefined' && window.CAE && window.CAE.evaluateShackleComponentLoad);
-                    if (evalHw) {
+                    if (evalHwFn) {
                         const hwWll = (shackleItem && shackleItem.wllT) || state.shackleWll || Math.max(12, legSwl(c.index) * 1.1);
-                        c._hardwareStress = evalHw({
+                        c._hardwareStress = evalHwFn({
                             wllT: hwWll, pinMm: shackleItem && shackleItem.pinDiaMm, jawMm: shackleItem && shackleItem.jawMm,
                             loadT: slack ? 0 : seen, bearingOn: c._bearingOn || 'bow', sideAngleDeg: c._sideAngleDeg || 0, hwType: state.hwType || 'bow_shackle'
                         });
@@ -1345,6 +1350,10 @@
                     const physicalUT = Math.min(c.tensionT, maxPhysicalUpperT);
                     const seenU = slack ? 0 : physicalUT * shockU;
                     phy.upperTensions[c.index] = seenU;
+                    if (evalHwFn) {
+                        const hwWllU = state.shackleWll || Math.max(15, upperSwl(c.index) * 1.1);
+                        c._hardwareStress = evalHwFn({ wllT: hwWllU, loadT: slack ? 0 : seenU, bearingOn: c._bearingOn || 'bow', sideAngleDeg: c._sideAngleDeg || 0, hwType: state.hwType || 'bow_shackle' });
+                    }
                     const mbl = upperSwl(c.index) * Math.max(1.5, upper.sf || 5);
                     const liftClearU = (phy.groundClearance || 0) >= 0.12;
                     if (!slack && !upper.broken && seenU > mbl && liftClearU) phy.upperBreakHold[c.index] += 1;
@@ -1362,7 +1371,13 @@
                     const physicalHT = Math.min(c.tensionT, maxPhysicalHangerT);
                     const seenH = slack ? 0 : physicalHT * shockH;
                     if (!phy.hangerTensions) phy.hangerTensions = [];
+                    if (!phy.hangerAngleDeg) phy.hangerAngleDeg = [];
+                    phy.hangerAngleDeg[c.index] = horiz;
                     phy.hangerTensions[c.index] = seenH;
+                    if (evalHwFn) {
+                        const hwWllH = state.shackleWll || Math.max(15, (hItem.swlT || 25) * 1.1);
+                        c._hardwareStress = evalHwFn({ wllT: hwWllH, loadT: slack ? 0 : seenH, bearingOn: c._bearingOn || 'bow', sideAngleDeg: c._sideAngleDeg || 0, hwType: state.hwType || 'bow_shackle' });
+                    }
                     if (!phy.hangerBreakHold) phy.hangerBreakHold = [];
                     const mbl = (hItem.swlT || 25) * Math.max(1.5, hItem.sf || 5);
                     const liftClearH = (phy.groundClearance || 0) >= 0.12;
@@ -1379,8 +1394,8 @@
                 }
             });
             const taut = [];
-            for (let i = 0; i < state.lugs.length; i++) if (!phy.legSlacks[i]) taut.push(phy.legAngleDeg[i]);
-            if (taut.length) phy.maxAngleVert = 90 - Math.min.apply(null, taut);
+            for (let i = 0; i < state.lugs.length; i++) if (!phy.legSlacks[i]) taut.push(Math.max(0, Math.min(90, phy.legAngleDeg[i])));
+            if (taut.length) phy.maxAngleVert = Math.max(0, Math.min(90, 90 - Math.min.apply(null, taut)));
             // Slack → taut: spawn red force-flow along the load path
             if (typeof syncCableForceFlowTriggers === 'function') syncCableForceFlowTriggers();
         }
@@ -1402,7 +1417,7 @@
                 const dist = delta.length();
                 const L0 = legRestLength(i, rig.spec);
                 const n = dist > 1e-4 ? delta.multiplyScalar(1 / dist) : new THREE.Vector3(0, 1, 0);
-                const horiz = Math.asin(THREE.MathUtils.clamp(n.y, -1, 1)) * 180 / Math.PI;
+                const horiz = Math.max(0, Math.min(90, Math.asin(THREE.MathUtils.clamp(Math.abs(n.y), 0, 1)) * 180 / Math.PI));
                 phy.legAngleDeg[i] = horiz;
                 phy.legFactor[i] = 1 / Math.max(0.5, n.y);
                 const broken = !!state.gear.legs[i].broken;
@@ -1484,8 +1499,8 @@
                     if (status) status.textContent = `Cáp ${upLbl} đứt: sức căng vượt MBL ${mbl.toFixed(1)} t sau khi nhân hệ số góc.`;
                 }
             });
-            const tautHoriz = tautIdx.map(i => phy.legAngleDeg[i]);
-            if (tautHoriz.length) phy.maxAngleVert = 90 - Math.min(...tautHoriz);
+            const tautHoriz = tautIdx.map(i => Math.max(0, Math.min(90, phy.legAngleDeg[i])));
+            if (tautHoriz.length) phy.maxAngleVert = Math.max(0, Math.min(90, 90 - Math.min(...tautHoriz)));
         }
 
         function inertiaInverseAboutCog(mass, L, W, H, cx, cy, cz) {

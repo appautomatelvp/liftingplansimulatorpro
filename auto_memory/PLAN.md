@@ -41,7 +41,7 @@ Người lập kế hoạch: Model cao nhất (CHƯA viết code ở bước nà
   - `src/graphics/SlingAngleGizmo.js`: sửa `computeSlingAngleArcData` tính bằng `Math.asin(clamp(|dy| / len, 0, 1))` và kẹp `[0, 90]`.
 - **Kiểm tra:** `npx vitest run test/hierarchical_naming.test.js test/sling_angle_gizmo.test.js` + `npm run architecture:gate`.
 
-### [ ] Bước 2: Sửa Góc Ngang & Đánh Giá Ma Ní Đầy Đủ Cho Mọi Tầng Cáp Trong Physics Sync (FIX 2 + FIX 3 runtime)
+### [x] Bước 2: Sửa Góc Ngang & Đánh Giá Ma Ní Đầy Đủ Cho Mọi Tầng Cáp Trong Physics Sync (FIX 2 + FIX 3 runtime)
 - **Sửa (≤ 25 dòng/file):**
   - `src/sim/physics/cables_break.js`:
     - Trong `publishXpbdLoads()` (~dòng 1281–1385): tính `horiz` trực tiếp từ hai đầu `attachWorld(c.a)` và `attachWorld(c.b)` qua `computeHorizontalSlingAngleDeg` (lưu `c.angleDeg = horiz`, gán `phy.legAngleDeg`, `phy.upperAngleDeg`, `phy.hangerAngleDeg`); chạy `evaluateShackleComponentLoad` cho **cả `upper`, `hanger`, lẫn `leg`** để tầng trên luôn có `c._hardwareStress` (`Bow`/`Pin`, `%SWL`); kẹp `phy.maxAngleVert` chặt trong `[0, 90]`.

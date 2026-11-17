@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 10:18 | Nhánh: feat/horizon-clouds | Commit cuối: 3677c0c Snapshot 101417112026 (test): truoc khi lam hotfix-tree-angles-elastic-4point (4 minutes ago)
-Tổng: 295 file, 82218 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 10:21 | Nhánh: feat/horizon-clouds | Commit cuối: 2c75fcf step 1: hierarchical CableTelemetryMapper & clamped [0..90] sling angle math (3 minutes ago)
+Tổng: 295 file, 82233 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -32,7 +32,7 @@ Tổng: 295 file, 82218 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/library/parsers.js (660 dòng)
 - src/sim/library/reconstruction_export.js (2142 dòng)
 - src/sim/physics/beams_seed.js (3001 dòng)
-- src/sim/physics/cables_break.js (1578 dòng)
+- src/sim/physics/cables_break.js (1593 dòng)
 - src/sim/physics/flatrack_payload.js (657 dòng)
 - src/sim/physics/footprint_rig.js (838 dòng)
 - src/sim/physics/hoist_contacts.js (1118 dòng)
@@ -264,7 +264,7 @@ Tổng: 295 file, 82218 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/manifest.js` | 39 |  |
 | `src/sim/physics.js` | 6 |  |
 | `src/sim/physics/beams_seed.js` | 3001 |  ⚠️>300 |
-| `src/sim/physics/cables_break.js` | 1578 |  ⚠️>300 |
+| `src/sim/physics/cables_break.js` | 1593 |  ⚠️>300 |
 | `src/sim/physics/flatrack_payload.js` | 657 | --- FLAT RACK LASHING RUPTURE, DECK SLIDING & FALLING PAYLOAD PHYSICS --- ⚠️>300 |
 | `src/sim/physics/footprint_rig.js` | 838 |  ⚠️>300 |
 | `src/sim/physics/hoist_contacts.js` | 1118 |  ⚠️>300 |
