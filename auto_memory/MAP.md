@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 09:20 | Nhánh: feat/horizon-clouds | Commit cuối: 82f528b step 3: add 4 quick toggles (Angle/Tension/Ruler/CoG) to bottom taskbar (3 minutes ago)
+Cập nhật: 2026-11-17 09:24 | Nhánh: feat/horizon-clouds | Commit cuối: 0c51cd1 step 4: upgrade corrugated steel PBR wear/rust, greased wire, matte chain, and port IBL (4 minutes ago)
 Tổng: 292 file, 81294 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)

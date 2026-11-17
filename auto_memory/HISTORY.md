@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-17 09:22 [feat] Hoan tat toi uu UI/UX Viewport sach, keo tha CoG 3 truc, 4 Quick Toggles taskbar va nang cap PBR hao mon cong nghiep (CoGGizmoHelper, IndustrialWearPBR, ElevationRulerTool, Angle Gizmo always-on, IBL bai cang).
+- Nhánh: feat/horizon-clouds | Commit trước đó: 0c51cd1
+- File: CoGGizmoHelper.js,IndustrialWearPBR.js,PBRMaterialFactory.js,EnvironmentManager.js,ElevationRulerTool.js,hook_pool.js,editor.js,state.js,presets_events.js,reconstruction_export.js,scene.js,index.html
+
 ## 2026-11-17 09:01 [feat] Hoan tat Cay Dinh Danh Phan Cap (HierarchicalNaming.js): gan ten de quy tu Moc Cau (LP1, LP2 -> LP11, LP12 / LP21, LP22 -> LP111...), dong bo nhan 3D, Inspector, canh bao goc, dut cap, Compliance va ReplayRecorder 60s.
 - Nhánh: feat/horizon-clouds | Commit trước đó: b8fde5b
 - File: src/rigging/HierarchicalNaming.js,src/rigging/index.js,src/sim/physics/hoist_contacts.js,src/sim/physics/beams_seed.js,src/sim/telemetry.js,src/sim/gear/editor.js,src/sim/physics/step_engine.js,src/sim/physics/cables_break.js,src/sim/compliance.js,src/rigging/ReplayRecorder.js,test/hierarchical_naming.test.js

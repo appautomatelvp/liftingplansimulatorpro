@@ -45,8 +45,8 @@
 ---
 
 ## 4. CÔNG VIỆC ĐANG LÀM DỞ (ONGOING WORK)
-- **Mục tiêu hiện tại:** Hoàn tất nâng cấp **Cây Định Danh Phân Cấp (`HierarchicalNaming.js`)** trên nhánh `feat/horizon-clouds`: mọi nhánh cáp & ma ní tự động đặt tên kế thừa từ Móc Cẩu (`LP1, LP2 → LP11, LP12 / LP21, LP22 → LP111...`) kèm `parentId`/`parentName`, đồng bộ nhãn 3D, bảng thông số `editor.js`, cảnh báo góc `step_engine.js`, đứt cáp `cables_break.js`, `compliance.js` và `ReplayRecorder.js`.
-- **Bước tiếp theo:** Founder kiểm tra trực quan 3D trên trình duyệt (Spreader hiện `LP1/LP2` ở cáp trên & `LP11/LP12/LP21/LP22` ở cáp dưới), khi muốn đẩy lên GitHub thì gõ đồng ý cho AI push & merge.
+- **Mục tiêu hiện tại:** Hoàn tất nâng cấp **UI/UX Viewport Sạch, Kéo thả CoG 3 trục, 4 Quick Toggles & Vật liệu PBR Hao mòn Công nghiệp (`CoGGizmoHelper.js`, `IndustrialWearPBR.js`)** trên nhánh `feat/horizon-clouds`: sửa kéo thả Trọng tâm CoG 3D, dời Thước đo xa rìa kiện + bật sẵn Angle Gizmo, bổ sung 4 nút bật/tắt nhanh lên taskbar dưới, và nâng cấp bề mặt container/thép/cáp/xích chuẩn PBR bãi cảng.
+- **Bước tiếp theo:** Founder kiểm tra trực quan 3D trên trình duyệt (kéo trục X/Y/Z của CoG, bấm 4 nút nhanh dưới taskbar, kiểm tra bề mặt container & cáp/xích), khi muốn đẩy lên GitHub thì báo AI push & merge.
 
 ---
 
@@ -54,4 +54,4 @@
 - [x] Tất cả các file mới/vừa tách đều dưới 300 dòng, có `@purpose`, không sinh ra file `patch*.js` hay `fix.js` nào.
 - [x] Không vi phạm Physics Quarantine (`/src/core/` không import DOM/Three.js) và qua `npm run architecture:gate`.
 - [x] Đã chạy `./scripts/auto_check.ps1` và `./scripts/auto_log.ps1` để cập nhật `auto_memory/HISTORY.md` + `auto_memory/MAP.md`.
-- [x] Toàn bộ 58 file test (`npm test`), Playwright `fhd-1080p`, Golden Test (`@test`) và `npm run build` chạy khớp 100%.
+- [x] Toàn bộ 60 file test (`npm test`), Playwright `fhd-1080p`, Golden Test (`@test`) và `npm run build` chạy khớp 100%.

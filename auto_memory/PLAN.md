@@ -1,5 +1,5 @@
 # KẾ HOẠCH THỰC HIỆN (PLAN.md)
-Trạng thái: ACTIVE
+Trạng thái: DONE
 Tính năng: UI/UX OPTIMIZATION & PBR MATERIAL UPGRADE — Sửa kéo thả CoG 3D, Dời Thước đo độ cao & Viewport gọn sạch, Angle Gizmo Always-On, 4 Quick Toggles trên Taskbar, Vật liệu PBR công nghiệp chống nhựa (hao mòn, rỉ sét cạnh, dầu mỡ cáp)
 Nhánh Git: feat/horizon-clouds (backup: `_BACKUPS_LOCAL\LIFTING PLAN SIMULATOR PRO-090417112026 (test - ui-ux-pbr-cog).zip`)
 Người lập kế hoạch: Model cao nhất (KHÔNG viết code ở bước này). Gõ `làm tiếp` 1 lần để chạy một mạch Bước 1 → 5.
@@ -65,7 +65,7 @@ Người lập kế hoạch: Model cao nhất (KHÔNG viết code ở bước n�
 - **Tạo test:** `test/industrial_pbr_materials.test.js` kiểm tra mọi vật liệu có `MeshStandardMaterial`/`MeshPhysicalMaterial`, `roughnessMap`, `normalMap`, `wireRope` tối dầu & `chainDark` metalness cao + nhám.
 - **Kiểm tra:** `npx vitest run test/industrial_pbr_materials.test.js test/graphics.test.js` + `npm run architecture:gate` + `npm run build`.
 
-### [ ] Bước 5: Kiểm thử toàn diện & Nghiệm thu cuối
+### [x] Bước 5: Kiểm thử toàn diện & Nghiệm thu cuối
 - Chạy: `npx vitest run`, `npm run architecture:gate`, `npm run build`, `npm run check:dist`, `npx playwright test e2e/saas-accessibility.spec.js --project=fhd-1080p`, `./scripts/auto_check.ps1`.
 - Cập nhật `auto_memory/CONTEXT.md`, `STATE.md`, đặt `Trạng thái: DONE` trong `PLAN.md`, chạy `./scripts/auto_log.ps1 -Type feat ...`.
 - **KHÔNG tự `git push`/deploy** — chỉ commit sạch tại chỗ và báo Founder tự kiểm tra trước khi cho phép đẩy GitHub.
