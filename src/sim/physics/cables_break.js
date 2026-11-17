@@ -1330,7 +1330,8 @@
                     }
                     if (phy.breakHold[c.index] >= 36) {
                         phy.shock = Math.max(phy.shock || 1, 2.0);
-                        noteCableSnap(c, `Cáp LP${c.index + 1} đứt Zone-3: T=${seen.toFixed(1)} t ≥ MBL ${mbl.toFixed(1)} t (SWL_eff ${swlEff.toFixed(1)} t × SF ${leg.sf || 5}, α≈${horiz.toFixed(0)}°). Cascade shock ≥2.`);
+                        const legName = (typeof RIG !== 'undefined' && RIG.resolveCableLabel) ? RIG.resolveCableLabel(c, c.index, state, phy) : `LP${c.index + 1}`;
+                        noteCableSnap(c, `Cáp ${legName} đứt Zone-3: T=${seen.toFixed(1)} t ≥ MBL ${mbl.toFixed(1)} t (SWL_eff ${swlEff.toFixed(1)} t × SF ${leg.sf || 5}, α≈${horiz.toFixed(0)}°). Cascade shock ≥2.`);
                         phy.legTensions[c.index] = 0;
                         phy.legSlacks[c.index] = true;
                     }
@@ -1349,7 +1350,8 @@
                     if (!slack && !upper.broken && seenU > mbl && liftClearU) phy.upperBreakHold[c.index] += 1;
                     else phy.upperBreakHold[c.index] = 0;
                     if (phy.upperBreakHold[c.index] >= 36) {
-                        noteCableSnap(c, `Cáp treo dầm ${c.index + 1} đứt: sức căng ${seenU.toFixed(1)} t vượt MBL ${mbl.toFixed(1)} t.`);
+                        const upName = (typeof RIG !== 'undefined' && RIG.resolveCableLabel) ? RIG.resolveCableLabel(c, c.index, state, phy) : `LP${c.index + 1}`;
+                        noteCableSnap(c, `Cáp ${upName} đứt: sức căng ${seenU.toFixed(1)} t vượt MBL ${mbl.toFixed(1)} t.`);
                         phy.upperTensions[c.index] = 0;
                     }
                 }
@@ -1370,7 +1372,8 @@
                         phy.hangerBreakHold[c.index] = 0;
                     }
                     if (phy.hangerBreakHold[c.index] >= 36) {
-                        noteCableSnap(c, `Cáp treo tầng dầm ${c.index + 1} đứt: sức căng ${seenH.toFixed(1)} t vượt MBL ${mbl.toFixed(1)} t.`);
+                        const hName = (typeof RIG !== 'undefined' && RIG.resolveCableLabel) ? RIG.resolveCableLabel(c, c.index, state, phy) : `LP${c.index + 1}`;
+                        noteCableSnap(c, `Cáp ${hName} đứt: sức căng ${seenH.toFixed(1)} t vượt MBL ${mbl.toFixed(1)} t.`);
                         phy.hangerTensions[c.index] = 0;
                     }
                 }
@@ -1441,7 +1444,8 @@
                     phy.legTensions[i] = 0;
                     phy.legSlacks[i] = true;
                     const status = document.getElementById('sim-status-text');
-                    if (status) status.textContent = `Cáp LP${i + 1} đứt: sức căng ${targets[i].toFixed(1)} t vượt MBL ${mbl.toFixed(1)} t (SWL ${legSwl(i).toFixed(1)} t × ${leg.sf || 5}, góc ngang ${phy.legAngleDeg[i].toFixed(0)}°, hệ số ${phy.legFactor[i].toFixed(2)}).`;
+                    const legLbl = (typeof RIG !== 'undefined' && RIG.resolveCableLabel) ? RIG.resolveCableLabel('leg', i, state, phy) : `LP${i + 1}`;
+                    if (status) status.textContent = `Cáp ${legLbl} đứt: sức căng ${targets[i].toFixed(1)} t vượt MBL ${mbl.toFixed(1)} t (SWL ${legSwl(i).toFixed(1)} t × ${leg.sf || 5}, góc ngang ${phy.legAngleDeg[i].toFixed(0)}°, hệ số ${phy.legFactor[i].toFixed(2)}).`;
                 }
             }
 
@@ -1476,7 +1480,8 @@
                     upper.broken = true;
                     phy.upperTensions[i] = 0;
                     const status = document.getElementById('sim-status-text');
-                    if (status) status.textContent = `Cáp treo dầm ${i + 1} đứt: sức căng vượt MBL ${mbl.toFixed(1)} t sau khi nhân hệ số góc.`;
+                    const upLbl = (typeof RIG !== 'undefined' && RIG.resolveCableLabel) ? RIG.resolveCableLabel('upper', i, state, phy) : `LP${i + 1}`;
+                    if (status) status.textContent = `Cáp ${upLbl} đứt: sức căng vượt MBL ${mbl.toFixed(1)} t sau khi nhân hệ số góc.`;
                 }
             });
             const tautHoriz = tautIdx.map(i => phy.legAngleDeg[i]);

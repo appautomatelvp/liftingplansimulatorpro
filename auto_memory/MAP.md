@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 08:55 | Nhánh: feat/horizon-clouds | Commit cuối: 12e054f step 2: wire HierarchicalNaming into Physics Engine cable topology and gear store (72 seconds ago)
-Tổng: 288 file, 80786 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 08:57 | Nhánh: feat/horizon-clouds | Commit cuối: fa42d65 step 3: display hierarchical names LP1/LP2/LP11.. on 3D viewport labels (2 minutes ago)
+Tổng: 288 file, 80809 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -18,23 +18,24 @@ Tổng: 288 file, 80786 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/core/SimulationEngine.js (560 dòng)
 - src/graphics/SceneRenderer.js (313 dòng)
 - src/i18n/keys.js (598 dòng)
+- src/rigging/ReplayRecorder.js (302 dòng)
 - src/rigging/RiggingPhysicsSolver.js (680 dòng)
 - src/sim/audio.js (725 dòng)
 - src/sim/cargo/containers_iso.js (1453 dòng)
 - src/sim/cargo/shell_rebuild.js (573 dòng)
 - src/sim/cargo/specialty_meshes.js (2512 dòng)
-- src/sim/compliance.js (625 dòng)
+- src/sim/compliance.js (627 dòng)
 - src/sim/dynamics.js (848 dòng)
-- src/sim/gear/editor.js (3614 dòng)
+- src/sim/gear/editor.js (3618 dòng)
 - src/sim/library/core.js (641 dòng)
 - src/sim/library/parsers.js (654 dòng)
 - src/sim/library/reconstruction_export.js (2137 dòng)
 - src/sim/physics/beams_seed.js (3001 dòng)
-- src/sim/physics/cables_break.js (1573 dòng)
+- src/sim/physics/cables_break.js (1578 dòng)
 - src/sim/physics/flatrack_payload.js (657 dòng)
 - src/sim/physics/footprint_rig.js (838 dòng)
 - src/sim/physics/hoist_contacts.js (1118 dòng)
-- src/sim/physics/step_engine.js (808 dòng)
+- src/sim/physics/step_engine.js (809 dòng)
 - src/sim/plan_wizard.js (650 dòng)
 - src/sim/rigging/draw_update.js (853 dòng)
 - src/sim/rigging/hook_pool.js (3126 dòng)
@@ -199,7 +200,7 @@ Tổng: 288 file, 80786 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/index.js` | 30 | src/rigging/index.js |
 | `src/rigging/LoadPathGravity.js` | 163 | Kết nối đường tải trọng lực (rơi tự do g=-9.81 khi mất cáp), mô-men lật τ=r×mg trên mặt đỡ và võng uốn dầm Euler-Bernoulli |
 | `src/rigging/PretensionSolver.js` | 297 | Giải cao độ móc cẩu và dầm ngáng tại trạng thái Nhớm Cáp (kiện chạm đất, toàn bộ cáp căng đúng chiều dài thực) ⚠️>250 |
-| `src/rigging/ReplayRecorder.js` | 291 | Ghi và phát lại toàn bộ trạng thái mô phỏng (Hook, Ngáng dầm, Kiện, Cáp đứt/chùng, Lashing/OOG rơi, Cẩu) tối đa 60 giây. ⚠️>250 |
+| `src/rigging/ReplayRecorder.js` | 302 | Ghi và phát lại toàn bộ trạng thái mô phỏng (Hook, Ngáng dầm, Kiện, Cáp đứt/chùng, Lashing/OOG rơi, Cẩu) tối đa 60 giây. ⚠️>300 |
 | `src/rigging/riggingConstants.js` | 69 | src/rigging/riggingConstants.js |
 | `src/rigging/RiggingPhysicsSolver.js` | 680 | src/rigging/RiggingPhysicsSolver.js ⚠️>300 |
 | `src/rigging/riggingUIStore.js` | 100 | src/rigging/riggingUIStore.js |
@@ -245,10 +246,10 @@ Tổng: 288 file, 80786 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/cargo/containers_iso.js` | 1453 |  ⚠️>300 |
 | `src/sim/cargo/shell_rebuild.js` | 573 | --- 6B. SHELL CONTACT — pad-eyes weld to the real mesh, not the bounding box --- ⚠️>300 |
 | `src/sim/cargo/specialty_meshes.js` | 2512 | --- HIGH-FIDELITY 3D REFRIGERATION MACHINERY UNIT (CARRIER TRANSICOLD / THERMO KING) --- ⚠️>300 |
-| `src/sim/compliance.js` | 625 |  ⚠️>300 |
+| `src/sim/compliance.js` | 627 |  ⚠️>300 |
 | `src/sim/dynamics.js` | 848 |  ⚠️>300 |
 | `src/sim/gear.js` | 6 |  |
-| `src/sim/gear/editor.js` | 3614 |  ⚠️>300 |
+| `src/sim/gear/editor.js` | 3618 |  ⚠️>300 |
 | `src/sim/gear/park_apply.js` | 81 |  |
 | `src/sim/library.js` | 6 |  |
 | `src/sim/library/core.js` | 641 |  ⚠️>300 |
@@ -257,13 +258,13 @@ Tổng: 288 file, 80786 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/manifest.js` | 39 |  |
 | `src/sim/physics.js` | 6 |  |
 | `src/sim/physics/beams_seed.js` | 3001 |  ⚠️>300 |
-| `src/sim/physics/cables_break.js` | 1573 |  ⚠️>300 |
+| `src/sim/physics/cables_break.js` | 1578 |  ⚠️>300 |
 | `src/sim/physics/flatrack_payload.js` | 657 | --- FLAT RACK LASHING RUPTURE, DECK SLIDING & FALLING PAYLOAD PHYSICS --- ⚠️>300 |
 | `src/sim/physics/footprint_rig.js` | 838 |  ⚠️>300 |
 | `src/sim/physics/hoist_contacts.js` | 1118 |  ⚠️>300 |
 | `src/sim/physics/index.js` | 9 | Bounded context index — parts are assembled via src/sim/manifest.js (shared scope). |
 | `src/sim/physics/port.js` | 59 |  |
-| `src/sim/physics/step_engine.js` | 808 |  ⚠️>300 |
+| `src/sim/physics/step_engine.js` | 809 |  ⚠️>300 |
 | `src/sim/plan_wizard.js` | 650 |  ⚠️>300 |
 | `src/sim/rigging.js` | 6 |  |
 | `src/sim/rigging/draw_update.js` | 853 | Slack cable morphology is solved by a persistent material-aware XPBD chain. ⚠️>300 |

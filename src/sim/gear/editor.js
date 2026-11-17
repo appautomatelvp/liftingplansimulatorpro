@@ -60,11 +60,14 @@
                 const spec = memberSpec(s.memberId);
                 return spec ? bi(spec.nameKey) : bi('gearBeam');
             }
-            if (s.kind === 'sling' && s.role === 'extra') return L(`Extra rope ${s.index + 1}`, `Cáp thêm ${s.index + 1}`);
-            if (s.kind === 'sling' && s.role === 'upper') return L(`Upper sling ${s.index + 1}`, `Cáp treo dầm ${s.index + 1}`);
-            if (s.kind === 'sling' && s.role === 'hanger') return L(`Hanger ${s.index + 1}`, `Cáp treo tầng dầm ${s.index + 1}`);
-            if (s.kind === 'sling') return L(`Sling leg LP${s.index + 1}`, `Cáp nhánh LP${s.index + 1}`);
-            if (s.kind === 'shackle') return L(`Shackle LP${s.index + 1}`, `Ma ní LP${s.index + 1}`);
+            const hier = (typeof RIG !== 'undefined' && RIG.resolveCableLabel && (s.kind === 'sling' || s.kind === 'shackle'))
+                ? RIG.resolveCableLabel(s.kind === 'shackle' ? 'leg' : (s.role || 'leg'), s.index || 0, state, phy)
+                : `LP${(s.index || 0) + 1}`;
+            if (s.kind === 'sling' && s.role === 'extra') return L(`Extra rope ${hier}`, `Cáp thêm ${hier}`);
+            if (s.kind === 'sling' && s.role === 'upper') return L(`Upper sling ${hier}`, `Cáp treo ${hier}`);
+            if (s.kind === 'sling' && s.role === 'hanger') return L(`Hanger ${hier}`, `Cáp treo ${hier}`);
+            if (s.kind === 'sling') return L(`Sling leg ${hier}`, `Cáp nhánh ${hier}`);
+            if (s.kind === 'shackle') return L(`Shackle ${hier}`, `Ma ní ${hier}`);
             if (s.kind === 'beam') return bi('gearBeam');
             if (s.kind === 'cargo') return L('Cargo / Load', 'Kiện hàng');
             if (s.kind === 'hook') return bi('gearHook');
@@ -678,11 +681,9 @@
             const cable = (phy.cables || []).find(c => c.role === gearData.role && c.index === gearData.index);
             if (!cable || cableIsBroken(cable)) return false;
             const frac = cutFractionAlongCable(cable, hitPoint);
-            const label = gearData.role === 'upper'
-                ? `cáp tầng trên #${(gearData.index || 0) + 1}`
-                : (gearData.role === 'leg'
-                    ? `cáp nhánh LP${(gearData.index || 0) + 1}`
-                    : 'sợi cáp');
+            const label = (typeof RIG !== 'undefined' && RIG.resolveCableLabel)
+                ? `cáp ${RIG.resolveCableLabel(cable, cable.index, state, phy)}`
+                : `sợi cáp`;
             noteCableSnap(
                 cable,
                 `✂ Đã cắt ${label} tại ${(frac * 100).toFixed(0)}% chiều dài — hai nửa văng theo trọng lực.`,
@@ -2599,22 +2600,25 @@
             const panel = document.getElementById('gear-editor');
             if (!live || !panel || panel.style.display === 'none') return;
             const bits = state.gear.selection.map(s => {
+                const hier = (typeof RIG !== 'undefined' && RIG.resolveCableLabel && (s.kind === 'sling' || s.kind === 'shackle'))
+                    ? RIG.resolveCableLabel(s.kind === 'shackle' ? 'leg' : (s.role || 'leg'), s.index || 0, state, phy)
+                    : `LP${(s.index || 0) + 1}`;
                 if (s.kind === 'sling' && s.role === 'upper') {
                     const upItem = state.gear.uppers && state.gear.uppers[s.index];
-                    return (upItem && upItem.broken) ? `Treo ${s.index + 1} đứt` : `Treo ${s.index + 1} ${(phy.upperTensions[s.index] || 0).toFixed(2)} t`;
+                    return (upItem && upItem.broken) ? `${hier} đứt` : `${hier} ${(phy.upperTensions[s.index] || 0).toFixed(2)} t`;
                 }
                 if (s.kind === 'sling' && s.role === 'hanger') {
                     const hItem = state.gear.hangers && state.gear.hangers[s.index];
                     const t = (phy.hangerTensions && phy.hangerTensions[s.index]) || 0;
-                    return (hItem && hItem.broken) ? `Treo dầm ${s.index + 1} đứt` : `Treo dầm ${s.index + 1} ${t.toFixed(2)} t`;
+                    return (hItem && hItem.broken) ? `${hier} đứt` : `${hier} ${t.toFixed(2)} t`;
                 }
                 if (s.kind === 'sling' && s.role === 'extra') {
                     const ex = (state.gear.extraCables || [])[s.index];
-                    return (ex && ex.broken) ? `Thêm ${s.index + 1} đứt` : `Thêm ${s.index + 1}`;
+                    return (ex && ex.broken) ? `${hier} đứt` : hier;
                 }
                 if (s.kind === 'sling') {
                     const legItem = state.gear.legs && state.gear.legs[s.index];
-                    return (legItem && legItem.broken) ? `LP${s.index + 1} đứt` : `LP${s.index + 1} ${(phy.legTensions[s.index] || 0).toFixed(2)} t`;
+                    return (legItem && legItem.broken) ? `${hier} đứt` : `${hier} ${(phy.legTensions[s.index] || 0).toFixed(2)} t`;
                 }
                 if (s.kind === 'hook') return `${bi('gearHook')} SWL ${state.gear.hook.swlT} t`;
                 if (s.kind === 'member') {
@@ -2634,7 +2638,7 @@
                     }
                     return `${iso}Khung ${state.L.toFixed(2)}×${state.W.toFixed(2)}×${state.H.toFixed(2)} m${extra} · ${state.weight.toFixed(1)} t`;
                 }
-                return `Ma ní LP${s.index + 1} SWL ${state.gear.shackles[s.index].swlT} t`;
+                return `Ma ní ${hier} SWL ${state.gear.shackles[s.index].swlT} t`;
             });
             live.textContent = bits.join(' · ');
         }

@@ -208,11 +208,12 @@ function buildCurrentLiftPlanModel() {
         const wllT = (state.wllPerLeg || 15.0) * 1.5;
         const sf = wllT > 0 && tensionT > 0 ? ((wllT * 5.0) / tensionT) : 5.0;
         const utilPct = wllT > 0 ? (tensionT / wllT) * 100 : 0;
+        const hierId = (typeof RIG !== 'undefined' && RIG.resolveCableLabel) ? RIG.resolveCableLabel('upper', i, state, phy) : `LP${i + 1}`;
         return {
-            id: `L1-${i + 1}`,
+            id: hierId,
             role: 'upper',
             tierName: 'Tầng 1 (Móc ➔ Dầm)',
-            name: `Cáp treo dầm L1-${i + 1}`,
+            name: `Cáp ${hierId}`,
             lengthM: lenM,
             angleDeg: angleDeg,
             laf: laf,
@@ -241,11 +242,12 @@ function buildCurrentLiftPlanModel() {
         const wllT = typeof legSwl === 'function' ? legSwl(i) : (state.wllPerLeg || 15.0);
         const sf = wllT > 0 && tensionT > 0 ? ((wllT * 5.0) / tensionT) : 5.0;
         const utilPct = wllT > 0 ? (tensionT / wllT) * 100 : 0;
+        const legHierId = (typeof RIG !== 'undefined' && RIG.resolveCableLabel) ? RIG.resolveCableLabel('leg', i, state, phy) : `LP${i + 1}`;
         return {
-            id: `L2-${i + 1}`,
+            id: legHierId,
             role: 'leg',
             tierName: hasSpreader ? 'Tầng 2 (Dầm ➔ Tai Cẩu)' : 'Tầng 1 (Móc ➔ Tai Cẩu)',
-            name: `Cáp nâng hạ L2-${i + 1}`,
+            name: `Cáp ${legHierId}`,
             lengthM: lenM,
             angleDeg: angleDeg,
             laf: laf,

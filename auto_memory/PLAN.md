@@ -51,7 +51,7 @@ Người lập kế hoạch: Model cao nhất (KHÔNG viết code ở bước n�
   - Bổ sung cập nhật nhãn nổi cho các nhánh tầng trên (`upper`, `hanger`) qua pool `lbl-hier-*` tạo động một lần trong `#labels-container` khi có nhiều tầng (`state.beamType !== 'none'`), hiển thị tên `LP1`, `LP2`, `LP11`... tại trung điểm cáp và ẩn khi tắt hiển thị.
 - **Kiểm tra:** `npx vitest run test/hierarchical_naming.test.js test/v3_ruler_drag_hoist_sts_gear_regression.test.js` + `npm run architecture:gate`.
 
-### [ ] Bước 4: Đồng bộ UI Inspector, Cảnh báo góc, Đứt cáp, Compliance & Replay
+### [x] Bước 4: Đồng bộ UI Inspector, Cảnh báo góc, Đứt cáp, Compliance & Replay
 - **Sửa (≤25 dòng/file):**
   - `src/sim/gear/editor.js`: trong `gearItemLabel()` (~dòng 64) và `refreshGearLive()` (~dòng 2602), thay `Upper sling X` / `Treo X` / `Hanger X` / `LP{i+1}` bằng tên phân cấp (`LP1`, `LP2`, `LP11`...), đồng thời ma ní thừa kế tên dây cha (`Ma ní LP11` / `Shackle LP11`). Cập nhật cả `tierName` dòng ~1974.
   - `src/sim/physics/step_engine.js` (~dòng 779): banner cảnh báo góc kéo dưới màn hình dùng tên phân cấp (`worstCable.name`, VD: `Sling LP2 is 41.7°` thay vì `upper sling 2 is 41.7°`).
