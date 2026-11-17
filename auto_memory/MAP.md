@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 11:39 | Nhánh: feat/horizon-clouds | Commit cuối: a348e91 step 5: tune elastic XPBD compliance, update memory & finalize 4-point hotfix (67 minutes ago)
-Tổng: 300 file, 82884 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 11:42 | Nhánh: feat/horizon-clouds | Commit cuối: f6ec900 step 1: 24h pro trial, anti-abuse deviceFingerprint & firestore.rules (3 minutes ago)
+Tổng: 302 file, 83193 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -188,6 +188,7 @@ Tổng: 300 file, 82884 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/i18n/index.js` | 134 |  |
 | `src/i18n/keys.js` | 598 |  ⚠️>300 |
 | `src/i18n/sim_ui_phrases.js` | 177 | Bảng từ điển bổ sung & chuyển đổi badge động song ngữ Việt–Anh cho mô phỏng 3D và bảng thiết bị |
+| `src/i18n/trial_cms_keys.js` | 47 | Từ điển song ngữ VI/EN cho 24h Trial Banner, Modal hết hạn Pro và Dynamic CMS Feature Locks |
 | `src/main.js` | 67 |  |
 | `src/rigging/BrokenCableWhipXPBD.js` | 252 | Mô phỏng XPBD sóng quật, thu hồi năng lượng đàn hồi và va chạm CCD cho hai nửa cáp đứt hoặc cáp tháo chốt ⚠️>250 |
 | `src/rigging/CableDynamicsXPBD.js` | 271 | Bộ giải động lực học cáp/xích XPBD chịu kéo, tự va chạm và đứt thu hồi đàn hồi ⚠️>250 |
@@ -236,14 +237,15 @@ Tổng: 300 file, 82884 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/saas/feedback.js` | 194 | Giải mã động địa chỉ nhận góp ý và xác thực hành vi thao tác chống bot/spam đa lớp |
 | `src/saas/firebase.js` | 95 |  |
 | `src/saas/firebase_data.js` | 118 |  |
-| `src/saas/i18n.js` | 15 | Định dạng khóa ngôn ngữ SaaS và hộp thoại góp ý theo ngôn ngữ hiện tại |
+| `src/saas/i18n.js` | 16 | Định dạng khóa ngôn ngữ SaaS và hộp thoại góp ý theo ngôn ngữ hiện tại |
 | `src/saas/plan_snapshot.js` | 170 | Chuẩn hóa dữ liệu thiết bị và đóng gói/giải mã/di trú snapshot phương án nâng hạ |
 | `src/saas/runtime_flags.js` | 63 |  |
-| `src/saas/saas.css` | 267 | saas-root[hidden] { display: none !important; } |
-| `src/saas/session.js` | 262 |  ⚠️>250 |
+| `src/saas/saas.css` | 280 | saas-root[hidden] { display: none !important; } |
+| `src/saas/session.js` | 281 |  ⚠️>250 |
 | `src/saas/session_ui_bindings.js` | 157 | Gắn kết giao diện header, widget tài khoản, banner bảo trì và hộp thoại liên hệ SaaS |
 | `src/saas/telemetry_usage.js` | 143 |  |
 | `src/saas/trial_access.js` | 139 | Quản lý dùng thử Pro 24h, dấu vân tay thiết bị chống lạm dụng nhiều Gmail và hàm hasProAccess(user) |
+| `src/saas/trial_banner.js` | 160 | Hiển thị thanh đếm ngược 24h Pro Trial (HH:MM:SS + progress bar) và modal thông báo khi hết hạn về Free |
 | `src/saas/workspace_dashboard.js` | 260 |  ⚠️>250 |
 | `src/saas/workspace_data.js` | 228 |  |
 | `src/saas/workspace_views.js` | 184 | Các hàm dựng HTML, hộp thoại chọn phụ trợ và di trú dữ liệu rig cũ cho Workspace SaaS |
@@ -357,7 +359,7 @@ Tổng: 300 file, 82884 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/standards_compliance_engine.test.js` | 281 |  ⚠️>250 |
 | `test/sts_twin_cable_flare.test.js` | 106 |  |
 | `test/telemetry_usage.test.js` | 50 |  |
-| `test/trial_access.test.js` | 77 | Unit tests cho trial_access (24h Pro trial, device fingerprint anti-abuse, countdown & expiry) |
+| `test/trial_access.test.js` | 146 | Unit tests cho trial_access (24h Pro trial, device fingerprint anti-abuse, countdown & expiry) |
 | `test/v2_ux_dunnage_ruler_regression.test.js` | 151 | Kiểm thử hồi quy 7 tính năng mới: Lashing khít đáy, SWL >= 12MT, Chỉnh đồng bộ, Hạ êm, Góc xoay mượt, Gỗ kê đỡ/nghiêng kiện, Thước cao độ 3D + Điểm đỏ. |
 | `test/v3_ruler_drag_hoist_sts_gear_regression.test.js` | 449 | Kiểm thử hồi quy 6 nâng cấp mới: bỏ cục tời khi tắt cẩu 3D, kéo đặt thước 3D & bắt Điểm Đỏ cáp/ma ní, dblclick Hạ/Kéo, mở khóa chỉnh cáp, hết giật STS Direct. ⚠️>300 |
 | `test/workspace_data.test.js` | 155 |  |

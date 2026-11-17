@@ -43,7 +43,7 @@ Người lập kế hoạch: Model cao nhất (CHƯA viết code ở bước nà
 - **Tạo / cập nhật test:** `test/trial_access.test.js` (test `hasProAccess`, hết hạn đúng `24h`, chống tạo lại trial trên cùng `deviceFingerprint`), cập nhật `test/saas_access.test.js`.
 - **Kiểm tra:** `npx vitest run test/trial_access.test.js test/saas_access.test.js test/auth_screen.test.js` + `npm run architecture:gate`.
 
-### [ ] Bước 2: Module 1 (UI) — Thanh Đếm Ngược 24h Live & Hết Hạn Khóa Về Free
+### [x] Bước 2: Module 1 (UI) — Thanh Đếm Ngược 24h Live & Hết Hạn Khóa Về Free
 - **Tạo mới:** `src/saas/trial_banner.js` (< 190 dòng, `@purpose: Hiển thị thanh đếm ngược 24h Trial ở đầu workspace và modal thông báo khi hết hạn về Free`):
   - `mountTrialCountdownBanner({ getProfile, onExpired })`: tạo bar mượt `[HH:MM:SS]` kèm thanh progress tự tụt theo `%` thời gian còn lại trong 24h; hỗ trợ song ngữ EN/VN đúng câu lệnh (*"🎁 Trải nghiệm Full Tính Năng Pro miễn phí: Còn lại [HH:MM:SS] — Nâng cấp ngay để không bị gián đoạn."*).
   - Khi đồng hồ chạm `00:00:00`: tự động gọi `onExpired()` để làm mới `featureAccess.setProfile(...)` khóa ngay các tính năng Pro về `free`, gỡ banner countdown và mở modal thân thiện hướng dẫn nâng cấp Pro (kèm nút Liên hệ Kỹ sư / mở `openDeveloperContact`).

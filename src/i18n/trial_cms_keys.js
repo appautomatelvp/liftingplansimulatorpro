@@ -1,0 +1,47 @@
+// @purpose: Từ điển song ngữ VI/EN cho 24h Trial Banner, Modal hết hạn Pro và Dynamic CMS Feature Locks
+export const TRIAL_CMS_KEYS = {
+  vi: {
+    trialBannerText: '🎁 Trải nghiệm Full Tính Năng Pro miễn phí: Còn lại {hms} — Nâng cấp ngay để không bị gián đoạn.',
+    trialUpgradeBtn: 'Nâng cấp ngay',
+    trialExpiredTitle: 'Gói dùng thử 24h Pro đã kết thúc',
+    trialExpiredBody: 'Thời gian 24 giờ trải nghiệm toàn bộ tính năng Pro đã hết. Tài khoản của bạn đã tự động chuyển về gói Free tiêu chuẩn — toàn bộ dữ liệu dự án vẫn được giữ nguyên. Liên hệ Kỹ sư Lê Việt Phương để kích hoạt Pro / Enterprise không giới hạn.',
+    trialExpiredCta: 'Hướng dẫn nâng cấp Pro',
+    trialExpiredDismiss: 'Tiếp tục với gói Free',
+    cmsUpgradingBadge: '🛠️ Đang nâng cấp',
+    cmsUpgradingNotice: 'Khối 3D / Chức năng này đang được Kỹ sư Lê Việt Phương nâng cấp thuật toán vật lý. Vui lòng quay lại sau!',
+    cmsUpgradingTitle: 'Tính năng đang bảo trì & nâng cấp',
+    cmsMatrixNav: 'Khóa Tính Năng & Khối 3D',
+    cmsMatrixTitle: 'Ma trận Khóa Tính Năng & Khối 3D (Realtime)',
+    cmsMatrixDesc: 'Điều khiển tức thì 3 trạng thái cho từng khối thiết bị 3D và công cụ kỹ thuật qua system_config/feature_locks.',
+    cmsGroupAssets: 'Khối thiết bị & Tải trọng 3D',
+    cmsGroupFeatures: 'Tính năng mô phỏng & Xuất báo cáo',
+    cmsStateActive: 'Active (Mở)',
+    cmsStateTierLocked: 'Tier Locked (Gói Pro)',
+    cmsStateUpgrading: 'Under Upgrade (Bảo trì)',
+    cmsSaveLocks: 'Lưu ma trận khóa (Realtime)',
+    cmsLocksSaved: 'Đã cập nhật system_config/feature_locks realtime cho mọi người dùng.',
+    cmsLocksUpdatedAt: 'Cập nhật lúc: {time}'
+  },
+  en: {
+    trialBannerText: '🎁 Free Full Pro Trial: {hms} remaining — Upgrade now to avoid interruption.',
+    trialUpgradeBtn: 'Upgrade Now',
+    trialExpiredTitle: 'Your 24-Hour Pro Trial Has Ended',
+    trialExpiredBody: 'Your 24-hour all-access Pro trial has expired. Your account has reverted to standard Free limits — all saved lift plans remain safe. Contact Engineer Le Viet Phuong to activate unlimited Pro / Enterprise access.',
+    trialExpiredCta: 'Upgrade to Pro',
+    trialExpiredDismiss: 'Continue on Free Tier',
+    cmsUpgradingBadge: '🛠️ Upgrading...',
+    cmsUpgradingNotice: 'This 3D Asset / Feature is currently being upgraded by Engineer Le Viet Phuong for physics improvements. Please check back later!',
+    cmsUpgradingTitle: 'Under Physics & Feature Upgrade',
+    cmsMatrixNav: 'Feature & 3D Asset Matrix',
+    cmsMatrixTitle: 'Feature & 3D Asset Lock Matrix (Realtime)',
+    cmsMatrixDesc: 'Instantly switch 3-state access controls across 3D rigging modules and CAE tools via system_config/feature_locks.',
+    cmsGroupAssets: '3D Rigging & Cargo Assets',
+    cmsGroupFeatures: 'Simulation & Compliance Modules',
+    cmsStateActive: 'Active',
+    cmsStateTierLocked: 'Tier Locked (Pro)',
+    cmsStateUpgrading: 'Under Upgrade',
+    cmsSaveLocks: 'Publish Lock Matrix',
+    cmsLocksSaved: 'Published system_config/feature_locks in real time.',
+    cmsLocksUpdatedAt: 'Updated: {time}'
+  }
+};

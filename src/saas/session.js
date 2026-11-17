@@ -14,6 +14,8 @@ import { saasT } from './i18n.js';
 import { installBoundedErrorCounter, normalizeFeatureFlags, readFeatureFlags } from './telemetry_usage.js';
 import { isMaintenance, loadFlagsOnce } from './runtime_flags.js';
 import { mountWorkspaceDashboard } from './workspace_dashboard.js';
+import { mountTrialCountdownBanner } from './trial_banner.js';
+import { openDeveloperContact } from './contact_dialog.js';
 import { clearAppSplash, ensureSaasRoot, installSessionShellUI, mountAccountWidget, playCinemaWorkspaceReveal } from './session_ui_bindings.js';
 
 function createGoogleProvider() {
@@ -31,6 +33,7 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
   let adminScreen = null;
   let accountWidget = null;
   let workspaceDashboard = null;
+  let trialBanner = null;
   let unsubscribeAuth = null;
   let unsubscribeProfile = null;
   let currentUser = null;
@@ -128,6 +131,19 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
     });
     if (sessionFlags) syncFlagsToUI(profile, sessionFlags);
     else applyRuntimeFlags(profile);
+    if (!trialBanner) {
+      trialBanner = mountTrialCountdownBanner({
+        getProfile: () => window.SafeLift?.saas?.profile,
+        onExpired: (expiredProfile) => {
+          featureAccess.setProfile(expiredProfile);
+          onProfileChange?.(expiredProfile, authUser);
+          window.dispatchEvent(new CustomEvent('safelift:trial-expired', { detail: { uid: expiredProfile?.uid } }));
+        },
+        onUpgrade: () => openDeveloperContact({ category: 'enterprise', subject: 'Upgrade SafeLift3D Pro License' })
+      });
+    } else {
+      trialBanner.sync();
+    }
     if (!workspaceStarted) {
       workspaceStarted = true;
       onWorkspaceAuthorized?.({ profile, authUser, db: firebase.db, auth: firebase.auth, featureAccess });
@@ -146,6 +162,8 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
     featureAccess.setFlags(null);
     accountWidget?.dispose();
     accountWidget = null;
+    trialBanner?.dispose();
+    trialBanner = null;
     workspaceDashboard?.dispose();
     workspaceDashboard = null;
     window.SafeLift.saas.profile = null;
@@ -255,6 +273,7 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
       authScreen?.dispose();
       adminScreen?.dispose();
       accountWidget?.dispose();
+      trialBanner?.dispose();
       workspaceDashboard?.dispose();
       featureAccess.dispose();
     }
