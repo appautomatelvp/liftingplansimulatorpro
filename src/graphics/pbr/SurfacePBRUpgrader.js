@@ -76,22 +76,22 @@ export function resolveWearBundle(THREE, pbrFactory, kind) {
   let bundle = null;
   if (kind === 'timber') {
     const { cvsBase, cvsNorm, cvsRough } = drawTimberWoodMaps(256, '#d6c7b2');
-    bundle = { map: mk(cvsBase, true, 2, 2), normalMap: mk(cvsNorm, false, 2, 2), roughnessMap: mk(cvsRough, false, 2, 2), roughness: 1.0, metalness: 0.03, normalScale: 0.9 };
+    bundle = { map: mk(cvsBase, true, 2, 2), normalMap: mk(cvsNorm, false, 2, 2), roughnessMap: mk(cvsRough, false, 2, 2), roughness: 1.0, metalness: 0.03, normalScale: 0.65 };
   } else if (kind === 'steel_bare') {
     const { cvsNorm, cvsRough, cvsMetal } = drawForgedSteelMaps(256);
-    bundle = { normalMap: mk(cvsNorm, false, 2, 2), roughnessMap: mk(cvsRough, false, 2, 2), metalnessMap: mk(cvsMetal, false, 2, 2), roughness: 1.0, metalness: 1.0, normalScale: 0.75 };
+    bundle = { normalMap: mk(cvsNorm, false, 1, 1), roughnessMap: mk(cvsRough, false, 1, 1), metalnessMap: mk(cvsMetal, false, 1, 1), roughness: 1.0, metalness: 1.0, normalScale: 0.35 };
   } else if (kind === 'tarp') {
     const { cvsNorm, cvsRough } = drawCanvasTarpMaps(256, '#ffffff');
-    bundle = { normalMap: mk(cvsNorm, false, 3, 3), roughnessMap: mk(cvsRough, false, 3, 3), roughness: 1.0, metalness: 0.02, normalScale: 0.7 };
+    bundle = { normalMap: mk(cvsNorm, false, 2, 2), roughnessMap: mk(cvsRough, false, 2, 2), roughness: 1.0, metalness: 0.02, normalScale: 0.45 };
   } else if (kind === 'rubber') {
     const { cvsNorm, cvsRough } = drawCanvasTarpMaps(128, '#262626');
-    bundle = { normalMap: mk(cvsNorm, false, 4, 4), roughnessMap: mk(cvsRough, false, 4, 4), roughness: 0.95, metalness: 0.04, normalScale: 0.45 };
+    bundle = { normalMap: mk(cvsNorm, false, 3, 3), roughnessMap: mk(cvsRough, false, 3, 3), roughness: 0.95, metalness: 0.04, normalScale: 0.35 };
   } else if (kind === 'corrugated') {
     const { cvsNorm, cvsRough, cvsMetal } = drawCorrugatedContainerMaps(256, '#94a3b8');
-    bundle = { normalMap: mk(cvsNorm, false, 2, 1), roughnessMap: mk(cvsRough, false, 2, 1), metalnessMap: mk(cvsMetal, false, 2, 1), roughness: 1.0, metalness: 1.0, normalScale: 0.85 };
+    bundle = { normalMap: mk(cvsNorm, false, 2, 1), roughnessMap: mk(cvsRough, false, 2, 1), metalnessMap: mk(cvsMetal, false, 2, 1), roughness: 1.0, metalness: 1.0, normalScale: 0.55 };
   } else {
     const { cvsNorm, cvsRough, cvsMetal } = drawPaintedSteelMaps(256, '#94a3b8');
-    bundle = { normalMap: mk(cvsNorm, false, 2, 2), roughnessMap: mk(cvsRough, false, 2, 2), metalnessMap: mk(cvsMetal, false, 2, 2), roughness: 1.0, metalness: 1.0, normalScale: 0.65 };
+    bundle = { normalMap: mk(cvsNorm, false, 1, 1), roughnessMap: mk(cvsRough, false, 1, 1), metalnessMap: mk(cvsMetal, false, 1, 1), roughness: 1.0, metalness: 1.0, normalScale: 0.40 };
   }
   pbrFactory.cachedTextures.set(cacheKey, bundle);
   return bundle;

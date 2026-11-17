@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-17 10:06 [fix] Bo sung 6 dau chu thap & tia laser chieu CoG len 6 mat kien hang; lam mem hoa loang lo PBR bang radial gradient tu nhien thay vi khoi vuong
+- Nhánh: feat/horizon-clouds | Commit trước đó: 1f1a4ee
+- File: src/graphics/CoGFaceProjection.js,src/graphics/index.js,src/sim/rigging/hook_pool.js,src/sim/cargo/shell_rebuild.js,src/sim/gear/editor.js,src/graphics/pbr/IndustrialWearPBR.js,src/graphics/pbr/StressPBRMaterials.js,src/graphics/pbr/ProceduralTextures.js,src/graphics/pbr/SurfacePBRUpgrader.js,test/cog_gizmo_drag.test.js
+
 ## 2026-11-17 09:53 [fix] Tu dong bat X-Ray + thanh truc X/Y/Z khi giu keo CoG va giu Shift keo do sau logic theo camera; giu nguyen ban do PBR khi model OBJ/CAD tai xong va nang cap vat lieu go/thep/nen be tong tu nhien hon
 - Nhánh: feat/horizon-clouds | Commit trước đó: 8a9d856
 - File: src/graphics/CoGGizmoHelper.js,src/sim/gear/editor.js,src/sim/telemetry.js,src/graphics/pbr/SurfacePBRUpgrader.js,src/graphics/pbr/IndustrialWearPBR.js,src/graphics/pbr/StressPBRMaterials.js,src/graphics/PBRMaterialFactory.js,src/sim/library/parsers.js,src/sim/cargo/shell_rebuild.js,src/sim/scene.js,src/graphics/JobsiteSiteVisuals.js

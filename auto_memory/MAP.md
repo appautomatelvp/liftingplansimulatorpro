@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 10:06 | Nhánh: feat/horizon-clouds | Commit cuối: 1f1a4ee fix(pbr): preserve PBR wear maps on async OBJ load and upgrade wood/steel/concrete (13 minutes ago)
+Cập nhật: 2026-11-17 10:06 | Nhánh: feat/horizon-clouds | Commit cuối: b95d0b6 feat(cog): project 6 surface crosshairs and laser sightlines onto cargo faces (3 seconds ago)
 Tổng: 294 file, 82049 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)

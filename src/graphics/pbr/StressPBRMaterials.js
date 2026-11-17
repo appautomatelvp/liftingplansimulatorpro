@@ -10,18 +10,37 @@ function seededRand(seed) {
   };
 }
 
-function drawSafeScratch(ctx, x0, y0, dx, dy, width, color) {
-  ctx.fillStyle = color;
-  const steps = Math.max(4, Math.ceil(Math.hypot(dx, dy) / 2));
-  for (let i = 0; i <= steps; i++) {
-    const t = i / steps;
-    ctx.fillRect(x0 + dx * t, y0 + dy * t, width, width);
+function drawSoftRadialSmudge(ctx, x, y, r, rgbStr, peakAlpha, size) {
+  for (let ox = -1; ox <= 1; ox++) {
+    for (let oy = -1; oy <= 1; oy++) {
+      const cx = x + ox * size;
+      const cy = y + oy * size;
+      if (cx + r < 0 || cx - r > size || cy + r < 0 || cy - r > size) continue;
+      const g = ctx.createRadialGradient(cx, cy, r * 0.05, cx, cy, r);
+      g.addColorStop(0, `rgba(${rgbStr}, ${peakAlpha.toFixed(3)})`);
+      g.addColorStop(0.5, `rgba(${rgbStr}, ${(peakAlpha * 0.4).toFixed(3)})`);
+      g.addColorStop(1, `rgba(${rgbStr}, 0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
+}
+
+function drawSafeScratch(ctx, x0, y0, dx, dy, width, color) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x0, y0);
+  ctx.lineTo(x0 + dx, y0 + dy);
+  ctx.stroke();
 }
 
 /**
  * Generates industrial painted steel beam PBR textures:
- * matte paint base (low metalness, higher roughness) with exposed shiny steel edge scratches.
+ * smooth matte enamel base with sparse, soft organic dust weathering and faint fine scuffs.
  */
 export function drawPaintedSteelMaps(size = 256, paintHex = '#d97706') {
   const cvsBase = makeCanvas(size, size), ctxBase = cvsBase.getContext('2d');
@@ -33,34 +52,38 @@ export function drawPaintedSteelMaps(size = 256, paintHex = '#d97706') {
   ctxBase.fillRect(0, 0, size, size);
   ctxNorm.fillStyle = '#8080ff';
   ctxNorm.fillRect(0, 0, size, size);
-  ctxRough.fillStyle = '#9c9c9c'; // ~0.61 industrial semi-matte coat (no plastic mirror)
+  ctxRough.fillStyle = '#a2a2a2'; // ~0.63 industrial semi-matte coat
   ctxRough.fillRect(0, 0, size, size);
   ctxMetal.fillStyle = '#2c2c2c'; // ~0.17 paint film metalness
   ctxMetal.fillRect(0, 0, size, size);
 
   const rand = seededRand(4219);
-  // Subtle industrial dust / matte enamel mottling before scratches
-  for (let m = 0; m < 45; m++) {
-    ctxRough.fillStyle = m % 2 === 0 ? 'rgba(182, 182, 182, 0.35)' : 'rgba(130, 130, 130, 0.3)';
-    ctxRough.fillRect(rand() * size, rand() * size, 8 + rand() * 24, 6 + rand() * 18);
+  // Sparse, soft radial weathering clouds (no sharp rectangular blocks)
+  for (let m = 0; m < 10; m++) {
+    const rx = rand() * size;
+    const ry = rand() * size;
+    const rr = size * (0.12 + rand() * 0.16);
+    const dusty = m % 2 === 0;
+    drawSoftRadialSmudge(ctxBase, rx, ry, rr, dusty ? '30, 35, 44' : '226, 232, 240', 0.055, size);
+    drawSoftRadialSmudge(ctxRough, rx, ry, rr, dusty ? '210, 210, 210' : '128, 128, 128', 0.22, size);
   }
-  for (let i = 0; i < 36; i++) {
+  // Only 6 faint rounded hairline scuffs
+  for (let i = 0; i < 6; i++) {
     const x = rand() * size;
     const y = rand() * size;
-    const dx = (rand() - 0.5) * (size * 0.35);
-    const dy = (rand() - 0.5) * 14;
-    const w = 1 + rand() * 2;
-    drawSafeScratch(ctxBase, x, y, dx, dy, w, '#cbd5e1');
-    drawSafeScratch(ctxNorm, x, y, dx, dy, w, '#6890ff');
-    drawSafeScratch(ctxRough, x, y, dx, dy, w, '#383838'); // ~0.22 exposed bare steel roughness
-    drawSafeScratch(ctxMetal, x, y, dx, dy, w, '#e6e6e6'); // ~0.90 exposed bare steel metalness
+    const dx = (rand() - 0.5) * (size * 0.24);
+    const dy = (rand() - 0.5) * 10;
+    const w = 1.0 + rand() * 0.8;
+    drawSafeScratch(ctxBase, x, y, dx, dy, w, 'rgba(203, 213, 225, 0.24)');
+    drawSafeScratch(ctxRough, x, y, dx, dy, w, 'rgba(84, 84, 84, 0.35)');
+    drawSafeScratch(ctxMetal, x, y, dx, dy, w, 'rgba(210, 210, 210, 0.38)');
   }
 
   return { cvsBase, cvsNorm, cvsRough, cvsMetal };
 }
 
 /**
- * Generates forged galvanized steel textures for shackles, hooks, and master links.
+ * Generates forged galvanized steel textures for shackles, hooks, and master links (soft brushed grain, zero pixels).
  */
 export function drawForgedSteelMaps(size = 256) {
   const cvsBase = makeCanvas(size, size), ctxBase = cvsBase.getContext('2d');
@@ -72,23 +95,26 @@ export function drawForgedSteelMaps(size = 256) {
   ctxBase.fillRect(0, 0, size, size);
   ctxNorm.fillStyle = '#8080ff';
   ctxNorm.fillRect(0, 0, size, size);
-  ctxRough.fillStyle = '#4a4a4a'; // ~0.29 brushed forged steel
+  ctxRough.fillStyle = '#5a5a5a'; // ~0.35 brushed forged steel
   ctxRough.fillRect(0, 0, size, size);
-  ctxMetal.fillStyle = '#e0e0e0'; // ~0.88 metalness
+  ctxMetal.fillStyle = '#dedede'; // ~0.87 metalness
   ctxMetal.fillRect(0, 0, size, size);
 
   const rand = seededRand(9001);
-  for (let i = 0; i < 64; i++) {
+  for (let m = 0; m < 10; m++) {
     const x = rand() * size;
     const y = rand() * size;
-    const s = 3 + rand() * 10;
+    const r = size * (0.12 + rand() * 0.16);
     const bright = rand() > 0.5;
-    ctxBase.fillStyle = bright ? '#cbd5e1' : '#64748b';
-    ctxBase.fillRect(x, y, s, 2);
-    ctxNorm.fillStyle = bright ? '#9278ff' : '#708aff';
-    ctxNorm.fillRect(x, y, s, 2);
-    ctxRough.fillStyle = bright ? '#3a3a3a' : '#5e5e5e';
-    ctxRough.fillRect(x, y, s, 2);
+    drawSoftRadialSmudge(ctxBase, x, y, r, bright ? '203, 213, 225' : '71, 85, 105', 0.12, size);
+    drawSoftRadialSmudge(ctxRough, x, y, r, bright ? '72, 72, 72' : '116, 116, 116', 0.22, size);
+  }
+  for (let i = 0; i < 14; i++) {
+    const x = rand() * size;
+    const y = rand() * size;
+    const dx = 18 + rand() * 44;
+    const bright = rand() > 0.5;
+    drawSafeScratch(ctxBase, x, y, dx, (rand() - 0.5) * 3, 1.2, bright ? 'rgba(226, 232, 240, 0.18)' : 'rgba(51, 65, 85, 0.18)');
   }
 
   return { cvsBase, cvsNorm, cvsRough, cvsMetal };
