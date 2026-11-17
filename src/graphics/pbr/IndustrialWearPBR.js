@@ -136,3 +136,69 @@ export function drawForgedChainMaps(size = 256) {
   }
   return { cvsBase, cvsRough };
 }
+
+/**
+ * Generates rough sawn hardwood / dunnage timber maps (fibrous grain, knots, matte roughness ~0.82-0.94).
+ */
+export function drawTimberWoodMaps(size = 256, woodHex = '#8b5a2b') {
+  const cvsBase = makeCanvas(size, size), ctxBase = cvsBase.getContext('2d');
+  const cvsNorm = makeCanvas(size, size), ctxNorm = cvsNorm.getContext('2d');
+  const cvsRough = makeCanvas(size, size), ctxRough = cvsRough.getContext('2d');
+
+  ctxBase.fillStyle = woodHex;
+  ctxBase.fillRect(0, 0, size, size);
+  ctxNorm.fillStyle = '#8080ff';
+  ctxNorm.fillRect(0, 0, size, size);
+  ctxRough.fillStyle = '#d4d4d4'; // ~0.83 matte sawn timber
+  ctxRough.fillRect(0, 0, size, size);
+
+  const rand = seededRand(5123);
+  for (let i = 0; i < 95; i++) {
+    const y = rand() * size;
+    const h = 1 + rand() * 3.5;
+    const dark = rand() > 0.45;
+    ctxBase.fillStyle = dark ? 'rgba(42, 24, 10, 0.28)' : 'rgba(217, 179, 130, 0.14)';
+    ctxBase.fillRect(0, y, size, h);
+    ctxNorm.fillStyle = dark ? '#8068ff' : '#8098ff';
+    ctxNorm.fillRect(0, y, size, h);
+    ctxRough.fillStyle = dark ? '#e8e8e8' : '#b8b8b8';
+    ctxRough.fillRect(0, y, size, h);
+  }
+  // Plank seam lines & wood knots
+  for (let p = 1; p < 4; p++) {
+    const py = Math.round((p / 4) * size);
+    ctxBase.fillStyle = 'rgba(20, 12, 6, 0.42)';
+    ctxBase.fillRect(0, py, size, 2);
+    ctxNorm.fillStyle = '#8055ff';
+    ctxNorm.fillRect(0, py, size, 2);
+  }
+  return { cvsBase, cvsNorm, cvsRough };
+}
+
+/**
+ * Generates heavy woven matte tarpaulin / canvas cover maps (high matte roughness, cross weave).
+ */
+export function drawCanvasTarpMaps(size = 256, tintHex = '#e2e8f0') {
+  const cvsBase = makeCanvas(size, size), ctxBase = cvsBase.getContext('2d');
+  const cvsNorm = makeCanvas(size, size), ctxNorm = cvsNorm.getContext('2d');
+  const cvsRough = makeCanvas(size, size), ctxRough = cvsRough.getContext('2d');
+
+  ctxBase.fillStyle = tintHex;
+  ctxBase.fillRect(0, 0, size, size);
+  ctxNorm.fillStyle = '#8080ff';
+  ctxNorm.fillRect(0, 0, size, size);
+  ctxRough.fillStyle = '#dcdcdc'; // ~0.86 matte canvas fabric
+  ctxRough.fillRect(0, 0, size, size);
+
+  const step = 8;
+  for (let i = 0; i < size; i += step) {
+    ctxBase.fillStyle = 'rgba(15, 23, 42, 0.06)';
+    ctxBase.fillRect(i, 0, 2, size);
+    ctxBase.fillRect(0, i, size, 2);
+    ctxNorm.fillStyle = '#7090ff';
+    ctxNorm.fillRect(i, 0, 2, size);
+    ctxNorm.fillStyle = '#9070ff';
+    ctxNorm.fillRect(0, i, size, 2);
+  }
+  return { cvsBase, cvsNorm, cvsRough };
+}

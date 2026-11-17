@@ -105,17 +105,22 @@ export function rebuildDunnageVisual3D({ THREE, dunnageGroup, state, MATS }) {
     color: wood.color,
     roughness: wood.roughness,
     metalness: wood.metalness,
-    map: cfg.woodType !== 'steel_beam' ? (MATS?.timberWood?.map || null) : null
+    map: cfg.woodType !== 'steel_beam' ? (MATS?.timberWood?.map || null) : null,
+    normalMap: cfg.woodType !== 'steel_beam' ? (MATS?.timberWood?.normalMap || null) : (MATS?.darkSteel?.normalMap || null),
+    roughnessMap: cfg.woodType !== 'steel_beam' ? (MATS?.timberWood?.roughnessMap || null) : (MATS?.darkSteel?.roughnessMap || null)
   });
   const capMat = new THREE.MeshStandardMaterial({
     color: cfg.woodType === 'steel_beam' ? 0xeab308 : 0x1e293b,
-    roughness: 0.55,
-    metalness: 0.45
+    roughness: 0.65,
+    metalness: 0.58,
+    roughnessMap: MATS?.darkSteel?.roughnessMap || null
   });
   const padMat = new THREE.MeshStandardMaterial({
     color: cfg.groundId === 'soil' ? 0x6b4f32 : soil.color,
-    roughness: soil.roughness,
-    metalness: soil.metalness
+    roughness: Math.max(0.86, soil.roughness || 0.9),
+    metalness: 0.04,
+    normalMap: MATS?.quayConcrete?.normalMap || null,
+    roughnessMap: MATS?.quayConcrete?.roughnessMap || null
   });
 
   const siteContainer = new THREE.Group();
@@ -245,9 +250,12 @@ export function syncCraneOutriggerMats3D({ THREE, craneVehicleGroup, presetId = 
     }
     obj.visible = true;
     const baseMat = spec.kind === 'steel'
-      ? new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.45, metalness: 0.72 })
+      ? new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.65, metalness: 0.72, normalMap: MATS?.darkSteel?.normalMap || null, roughnessMap: MATS?.darkSteel?.roughnessMap || null })
       : new THREE.MeshStandardMaterial({
-          color: 0x7c4a26, roughness: 0.85, metalness: 0.04, map: MATS?.timberWood?.map || null
+          color: 0x8b5a2b, roughness: 0.95, metalness: 0.03,
+          map: MATS?.timberWood?.map || null,
+          normalMap: MATS?.timberWood?.normalMap || null,
+          roughnessMap: MATS?.timberWood?.roughnessMap || null
         });
     const trimMat = new THREE.MeshStandardMaterial({
       color: spec.kind === 'steel' ? 0xeab308 : 0x1e293b, roughness: 0.55, metalness: 0.5

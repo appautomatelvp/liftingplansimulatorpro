@@ -16,8 +16,10 @@ import {
 import {
   drawCorrugatedContainerMaps,
   drawForgedChainMaps,
-  drawGreasedWireRopeMaps
+  drawGreasedWireRopeMaps,
+  drawTimberWoodMaps
 } from './pbr/IndustrialWearPBR.js';
+import { upgradeLoadedModelGroup } from './pbr/SurfacePBRUpgrader.js';
 
 export class PBRMaterialFactory {
   constructor(renderer = null) {
@@ -72,7 +74,7 @@ export class PBRMaterialFactory {
         }
       });
     });
-    return root;
+    return upgradeLoadedModelGroup(THREE, root, this);
   }
 
   createQuayConcreteMaterial(options = {}) {
@@ -80,8 +82,8 @@ export class PBRMaterialFactory {
     if (this.cachedMaterials.has(cacheKey)) return this.cachedMaterials.get(cacheKey);
 
     const { cvsBase, cvsNorm, cvsRough, cvsAO } = drawQuayConcreteMaps(1024, options.includeJoints !== false);
-    const rx = options.repeatX || 18;
-    const ry = options.repeatY || 18;
+    const rx = options.repeatX || 115;
+    const ry = options.repeatY || 115;
     const material = new THREE.MeshStandardMaterial({
       map: this._buildRepeatTexture(cvsBase, true, rx, ry, true),
       normalMap: this._buildRepeatTexture(cvsNorm, false, rx, ry, true),
@@ -211,11 +213,36 @@ export class PBRMaterialFactory {
       metalnessMap: this._buildRepeatTexture(cvsMetal, false, 2, 1, false),
       roughness: 1.0,
       metalness: 1.0,
-      clearcoat: 0.14,
-      clearcoatRoughness: 0.36
+      clearcoat: 0.06,
+      clearcoatRoughness: 0.56
     });
     this.cachedMaterials.set(cacheKey, material);
     return material;
+  }
+
+  createTimberWoodMaterial(woodHex = '#8b5a2b') {
+    const cacheKey = `timber_wood_${woodHex}`;
+    if (this.cachedMaterials.has(cacheKey)) return this.cachedMaterials.get(cacheKey);
+    const { cvsBase, cvsNorm, cvsRough } = drawTimberWoodMaps(256, woodHex);
+    const mat = new THREE.MeshStandardMaterial({
+      map: this._buildRepeatTexture(cvsBase, true, 2, 2, true),
+      normalMap: this._buildRepeatTexture(cvsNorm, false, 2, 2, true),
+      normalScale: new THREE.Vector2(0.95, 0.95),
+      roughnessMap: this._buildRepeatTexture(cvsRough, false, 2, 2, false),
+      roughness: 1.0,
+      metalness: 0.03
+    });
+    this.cachedMaterials.set(cacheKey, mat);
+    return mat;
+  }
+
+  createRubberMaterial(rubberHex = '#17191f') {
+    const cacheKey = `rubber_matte_${rubberHex}`;
+    if (this.cachedMaterials.has(cacheKey)) return this.cachedMaterials.get(cacheKey);
+    const mat = new THREE.MeshStandardMaterial({ color: rubberHex, roughness: 0.92, metalness: 0.04 });
+    upgradeLoadedModelGroup(THREE, { traverse: (fn) => fn({ isMesh: true, material: mat, name: 'rubber_pad', userData: {} }) }, this);
+    this.cachedMaterials.set(cacheKey, mat);
+    return mat;
   }
 
   createForgedShackleMaterial() {

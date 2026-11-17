@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-17 09:53 [fix] Tu dong bat X-Ray + thanh truc X/Y/Z khi giu keo CoG va giu Shift keo do sau logic theo camera; giu nguyen ban do PBR khi model OBJ/CAD tai xong va nang cap vat lieu go/thep/nen be tong tu nhien hon
+- Nhánh: feat/horizon-clouds | Commit trước đó: 8a9d856
+- File: src/graphics/CoGGizmoHelper.js,src/sim/gear/editor.js,src/sim/telemetry.js,src/graphics/pbr/SurfacePBRUpgrader.js,src/graphics/pbr/IndustrialWearPBR.js,src/graphics/pbr/StressPBRMaterials.js,src/graphics/PBRMaterialFactory.js,src/sim/library/parsers.js,src/sim/cargo/shell_rebuild.js,src/sim/scene.js,src/graphics/JobsiteSiteVisuals.js
+
 ## 2026-11-17 09:22 [feat] Hoan tat toi uu UI/UX Viewport sach, keo tha CoG 3 truc, 4 Quick Toggles taskbar va nang cap PBR hao mon cong nghiep (CoGGizmoHelper, IndustrialWearPBR, ElevationRulerTool, Angle Gizmo always-on, IBL bai cang).
 - Nhánh: feat/horizon-clouds | Commit trước đó: 0c51cd1
 - File: CoGGizmoHelper.js,IndustrialWearPBR.js,PBRMaterialFactory.js,EnvironmentManager.js,ElevationRulerTool.js,hook_pool.js,editor.js,state.js,presets_events.js,reconstruction_export.js,scene.js,index.html

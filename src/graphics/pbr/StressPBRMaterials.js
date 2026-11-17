@@ -33,12 +33,17 @@ export function drawPaintedSteelMaps(size = 256, paintHex = '#d97706') {
   ctxBase.fillRect(0, 0, size, size);
   ctxNorm.fillStyle = '#8080ff';
   ctxNorm.fillRect(0, 0, size, size);
-  ctxRough.fillStyle = '#757575'; // ~0.46 paint roughness
+  ctxRough.fillStyle = '#9c9c9c'; // ~0.61 industrial semi-matte coat (no plastic mirror)
   ctxRough.fillRect(0, 0, size, size);
-  ctxMetal.fillStyle = '#282828'; // ~0.16 paint metalness
+  ctxMetal.fillStyle = '#2c2c2c'; // ~0.17 paint film metalness
   ctxMetal.fillRect(0, 0, size, size);
 
   const rand = seededRand(4219);
+  // Subtle industrial dust / matte enamel mottling before scratches
+  for (let m = 0; m < 45; m++) {
+    ctxRough.fillStyle = m % 2 === 0 ? 'rgba(182, 182, 182, 0.35)' : 'rgba(130, 130, 130, 0.3)';
+    ctxRough.fillRect(rand() * size, rand() * size, 8 + rand() * 24, 6 + rand() * 18);
+  }
   for (let i = 0; i < 36; i++) {
     const x = rand() * size;
     const y = rand() * size;

@@ -444,13 +444,9 @@
                         ? buildStsTwinTwentyVisual(H || 2.591)
                         : buildCargoMesh(cargoType, L, W, H);
                     activeCargoVisual.userData.meshKey = meshKey;
-                    // Keep authored MTL / CAD materials on Realistic V2 containers, reefers, vehicles
+                    // Keep glossy automotive paint only on vehicle models; enrich ISO/industrial CAD assets with weathered PBR maps
                     const cadProto = customCargoMeshes && customCargoMeshes[cargoType];
-                    const keepCadMaterials = !!(cadProto && (
-                        cargoType === 'car'
-                        || cadProto.userData?.keepMaterials
-                        || cadProto.userData?.isoRealisticV2
-                    ));
+                    const keepCadMaterials = Boolean(cadProto && cargoType === 'car');
                     if (pbrFactory && !keepCadMaterials) pbrFactory.enforcePBRMaterials(activeCargoVisual);
                     if (state.xrayCargo) applyXRayToCargo(activeCargoVisual, true);
                     if (typeof applyCADFeatureEdges === 'function' && !activeCargoVisual.userData?._cadEdgesApplied) {

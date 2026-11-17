@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 09:53 | Nhánh: feat/horizon-clouds | Commit cuối: 8a9d856 step 5: finalize UI/UX cleanup, CoG 3D drag, quick toggles, and PBR wear upgrade docs (29 minutes ago)
+Cập nhật: 2026-11-17 09:53 | Nhánh: feat/horizon-clouds | Commit cuối: 93e7561 fix(cog): auto X-Ray, X/Y/Z axis bars, and Shift depth drag relative to camera (2 seconds ago)
 Tổng: 293 file, 81808 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
