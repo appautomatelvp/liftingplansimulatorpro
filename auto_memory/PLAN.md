@@ -46,7 +46,7 @@ Người lập kế hoạch: Model cao nhất (KHÔNG viết code ở bước n�
 - **Sửa (≤25 dòng):** `src/sim/telemetry.js` (dòng ~912: HUD đọc `phy.rigging.dnvShares` thay vì tự gọi `evaluateFourLegIndeterminacy`; giữ hàm cũ làm fallback), `auto_kit/test.md` (thêm Golden Test).
 - **Kiểm tra:** `npx vitest run test/dnv_four_point_lift.test.js test/phase1_core_safety.test.js`.
 
-### [ ] Bước 3: Ứng suất cục bộ phụ kiện — Bow vs Pin (Pillar 1.2)
+### [x] Bước 3: Ứng suất cục bộ phụ kiện — Bow vs Pin (Pillar 1.2)
 - **Tạo:** `src/core/LocalizedHardwareStress.js` (<230 dòng, thuần, SI, bọc ngoài file khóa `standards/hardware.js` bằng cách GỌI `computeShackleSideDerate`, không sửa nó): `evaluateShackleComponentLoad({ wllT, pinMm, jawMm, loadT, bearingOn: 'pin'|'bow', sideAngleDeg })` → `{ bowLimitT, pinShearLimitT, governing, utilizationPct, derateFactor }`. Pin: ứng suất cắt kép τ = F/(2·A_pin) so với giới hạn chảy cắt; Bow: derating ASME B30.26 (45° = 70%, 90° = 50%).
 - **Sửa (≤25 dòng):** `src/core/index.js` (export), `src/sim/physics/cables_break.js` (tại nơi đã tính quá tải phụ kiện, gọi hàm mới để lấy `governing`/`utilizationPct`; không chèn logic dài).
 - **Tạo test:** `test/localized_hardware_stress.test.js` (ví dụ: shackle 17 t, dây tựa chốt vs thân; góc 45°/90° → 70%/50%; ranh giới không NaN).

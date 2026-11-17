@@ -1290,6 +1290,16 @@
                         ? RIG.getHitchFactor(state)
                         : 1.0;
                     const swlEff = legSwl(c.index) * hitchF;
+                    const shackleItem = state.gear && state.gear.shackles ? state.gear.shackles[c.index] : null;
+                    const evalHw = (typeof CAE !== 'undefined' && CAE.evaluateShackleComponentLoad)
+                        ? CAE.evaluateShackleComponentLoad : (typeof window !== 'undefined' && window.CAE && window.CAE.evaluateShackleComponentLoad);
+                    if (evalHw) {
+                        const hwWll = (shackleItem && shackleItem.wllT) || state.shackleWll || Math.max(12, legSwl(c.index) * 1.1);
+                        c._hardwareStress = evalHw({
+                            wllT: hwWll, pinMm: shackleItem && shackleItem.pinDiaMm, jawMm: shackleItem && shackleItem.jawMm,
+                            loadT: slack ? 0 : seen, bearingOn: c._bearingOn || 'bow', sideAngleDeg: c._sideAngleDeg || 0, hwType: state.hwType || 'bow_shackle'
+                        });
+                    }
                     const mbl = swlEff * Math.max(1.5, leg.sf || 5);
                     c._alarmZone = (!slack && seen > swlEff)
                         ? (seen >= mbl ? 3 : 2)

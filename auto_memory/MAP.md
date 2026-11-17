@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 08:08 | Nhánh: feat/horizon-clouds | Commit cuối: 177a21c step 1: unify DNV 4-point diagonal load distribution in DnvFourPointLift (2 minutes ago)
-Tổng: 273 file, 78845 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 08:11 | Nhánh: feat/horizon-clouds | Commit cuối: 8c86265 step 2: add DNV 4-point Golden Test and sync HUD with unified solver (3 minutes ago)
+Tổng: 276 file, 79083 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -30,7 +30,7 @@ Tổng: 273 file, 78845 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/library/parsers.js (654 dòng)
 - src/sim/library/reconstruction_export.js (2112 dòng)
 - src/sim/physics/beams_seed.js (2987 dòng)
-- src/sim/physics/cables_break.js (1555 dòng)
+- src/sim/physics/cables_break.js (1565 dòng)
 - src/sim/physics/flatrack_payload.js (657 dòng)
 - src/sim/physics/footprint_rig.js (838 dòng)
 - src/sim/physics/hoist_contacts.js (1110 dòng)
@@ -127,8 +127,9 @@ Tổng: 273 file, 78845 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/core/EngineeringEngine.js` | 661 |  ⚠️>300 |
 | `src/core/GroundPressureEngine.js` | 238 |  |
 | `src/core/HullOptimizer.js` | 322 |  ⚠️>300 |
-| `src/core/index.js` | 82 |  |
+| `src/core/index.js` | 83 |  |
 | `src/core/LiftPlanModel.js` | 1073 |  ⚠️>300 |
+| `src/core/LocalizedHardwareStress.js` | 100 | Phân tích ứng suất cục bộ phụ kiện (Pin vs Bow) bọc ngoài standards/hardware.js theo ASME B30.26 |
 | `src/core/PhysicalCableSolver.js` | 199 |  |
 | `src/core/physics-world/CannonBackend.js` | 185 |  |
 | `src/core/physics-world/ConstraintGraph.js` | 158 |  |
@@ -188,6 +189,7 @@ Tổng: 273 file, 78845 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/constraints/UnilateralCableConstraint.js` | 151 |  |
 | `src/rigging/DnvFourPointLift.js` | 118 | Thuật toán chia tải siêu tĩnh DNV-ST-N001 cho cẩu 4 nhánh (nguồn chân lý duy nhất: 2 nhánh chéo gánh 100% × SKL [1.25..1.5]) |
 | `src/rigging/FlatRackLashingPhysics.js` | 234 | Dựng dây chằng Flat Rack ôm khít kiện hàng (không lòi ngang) và mô phỏng đứt tuần tự tự nhiên theo vật lý. |
+| `src/rigging/HardwareBearingTracker.js` | 64 | Truy vết vị trí dây tựa thực tế trên ma ní (Pin vs Bow) và góc tải lệch bên (side-loading angle) theo ASME B30.26 |
 | `src/rigging/HStyleLiftingBeam.js` | 188 | Cấu tạo 3D và thông số khớp nối H-Style Lifting Beam (tùy chọn trên Direct Hook/2-Cáp và dưới 4-Cáp/Twistlock) |
 | `src/rigging/index.js` | 25 | src/rigging/index.js |
 | `src/rigging/PretensionSolver.js` | 297 | Giải cao độ móc cẩu và dầm ngáng tại trạng thái Nhớm Cáp (kiện chạm đất, toàn bộ cáp căng đúng chiều dài thực) ⚠️>250 |
@@ -249,7 +251,7 @@ Tổng: 273 file, 78845 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/manifest.js` | 39 |  |
 | `src/sim/physics.js` | 6 |  |
 | `src/sim/physics/beams_seed.js` | 2987 |  ⚠️>300 |
-| `src/sim/physics/cables_break.js` | 1555 |  ⚠️>300 |
+| `src/sim/physics/cables_break.js` | 1565 |  ⚠️>300 |
 | `src/sim/physics/flatrack_payload.js` | 657 | --- FLAT RACK LASHING RUPTURE, DECK SLIDING & FALLING PAYLOAD PHYSICS --- ⚠️>300 |
 | `src/sim/physics/footprint_rig.js` | 838 |  ⚠️>300 |
 | `src/sim/physics/hoist_contacts.js` | 1110 |  ⚠️>300 |
@@ -308,6 +310,7 @@ Tổng: 273 file, 78845 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/inclined_lashing_slide.test.js` | 67 |  |
 | `test/jobsite_lashing_follow_regression.test.js` | 160 | Kiểm thử hồi quy 3D đà gỗ/độ dốc/tấm lót Tab 6, dây chằng Flat Rack ôm sát & đứt tự nhiên, và Camera Follow. |
 | `test/liftplan.test.js` | 153 |  |
+| `test/localized_hardware_stress.test.js` | 63 |  |
 | `test/optimize_horizon_cargo_perf.test.js` | 272 | Kiểm thử tự động cho hòa chân trời, 3D Steel Pipe / Vehicle, cache CAD và tối ưu hiệu năng ⚠️>250 |
 | `test/phase1_core_safety.test.js` | 208 |  |
 | `test/physics_destruction.test.js` | 69 |  |
