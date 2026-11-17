@@ -202,27 +202,38 @@ export function drawChainAlloyCanvas(size = 256) {
   return cvsBase;
 }
 
-export function drawWebSlingMaps(size = 512, colorHex = '#16a34a', stripeCount = 2) {
+export function drawWebSlingMaps(size = 1024, colorHex = '#16a34a', stripeCount = 2) {
   const cvsBase = makeCanvas(size, size), ctxBase = cvsBase.getContext('2d');
   const cvsNorm = makeCanvas(size, size), ctxNorm = cvsNorm.getContext('2d');
-  ctxBase.fillStyle = colorHex; ctxBase.fillRect(0, 0, size, size);
-  ctxBase.fillStyle = 'rgba(0, 0, 0, 0.16)';
-  ctxBase.fillRect(0, 0, 48, size);
-  ctxBase.fillRect(size - 48, 0, 48, size);
-  ctxBase.fillStyle = 'rgba(255, 255, 255, 0.08)';
-  for (let y = 0; y < size; y += 8) {
-    for (let x = 0; x < size; x += 16) ctxBase.fillRect((y / 8) % 2 === 0 ? x : x + 4, y, 8, 4);
+  ctxBase.fillStyle = colorHex;
+  ctxBase.fillRect(0, 0, size, size);
+  const edgeW = Math.round(size * 0.08);
+  ctxBase.fillStyle = 'rgba(0, 0, 0, 0.14)';
+  ctxBase.fillRect(0, 0, edgeW, size);
+  ctxBase.fillRect(size - edgeW, 0, edgeW, size);
+  for (let i = 0; i < 36; i++) {
+    const sx = (Math.sin(i * 19.3) * 0.5 + 0.5) * size, sy = (Math.cos(i * 31.7) * 0.5 + 0.5) * size, r = size * (0.04 + (i % 5) * 0.016);
+    ctxBase.fillStyle = addStops(ctxBase.createRadialGradient(sx, sy, 0, sx, sy, r), [[0, i % 2 ? 'rgba(255,255,255,0.04)' : 'rgba(15,23,42,0.07)'], [1, 'rgba(0,0,0,0)']]);
+    ctxBase.fillRect(sx - r, sy - r, r * 2, r * 2);
   }
-  const sCount = Math.max(0, Math.min(8, stripeCount || 0));
-  if (sCount > 0) {
-    ctxBase.fillStyle = '#111827';
-    const step = (size - 140) / (sCount + 1);
-    for (let s = 1; s <= sCount; s++) ctxBase.fillRect(70 + s * step - 3, 0, 6, size);
+  const step = Math.max(4, Math.round(size / 128));
+  ctxNorm.fillStyle = 'rgb(128, 128, 255)';
+  ctxNorm.fillRect(0, 0, size, size);
+  for (let y = 0; y < size; y += step) {
+    const even = ((y / step) | 0) % 2 === 0;
+    ctxBase.fillStyle = even ? 'rgba(255,255,255,0.085)' : 'rgba(0,0,0,0.075)';
+    for (let x = 0; x < size; x += step * 2) ctxBase.fillRect(even ? x : x + step, y, step, Math.max(2, step >> 1));
+    ctxNorm.fillStyle = 'rgb(112,128,255)'; ctxNorm.fillRect(0, y, size, Math.max(1, step >> 2));
+    ctxNorm.fillStyle = 'rgb(144,128,255)'; ctxNorm.fillRect(0, y + (step >> 1), size, Math.max(1, step >> 2));
   }
-  ctxNorm.fillStyle = 'rgb(128, 128, 255)'; ctxNorm.fillRect(0, 0, size, size);
-  for (let y = 0; y < size; y += 8) {
-    ctxNorm.fillStyle = 'rgb(115, 128, 255)'; ctxNorm.fillRect(0, y, size, 2);
-    ctxNorm.fillStyle = 'rgb(142, 128, 255)'; ctxNorm.fillRect(0, y + 4, size, 2);
+  ctxNorm.fillStyle = 'rgb(128,114,255)';
+  for (let x = 0; x < size; x += step * 2) ctxNorm.fillRect(x, 0, Math.max(1, step >> 2), size);
+  const sCount = Math.max(2, Math.min(8, stripeCount || 2)), span = size * 0.44, x0 = (size - span) * 0.5, sw = Math.max(4, Math.round(size * 0.011));
+  ctxBase.fillStyle = '#0f172a';
+  for (let s = 0; s < sCount; s++) ctxBase.fillRect(Math.round(x0 + ((s + 0.5) / sCount) * span - sw * 0.5), 0, sw, size);
+  ctxBase.fillStyle = 'rgba(241, 245, 249, 0.72)';
+  for (const fx of [0.16, 0.24, 0.76, 0.84]) {
+    for (let y = 0; y < size; y += step * 3) ctxBase.fillRect(Math.round(size * fx), y, Math.max(2, Math.round(size * 0.005)), Math.round(step * 1.8));
   }
   return { cvsBase, cvsNorm };
 }

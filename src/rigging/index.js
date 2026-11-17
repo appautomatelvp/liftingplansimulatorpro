@@ -9,6 +9,7 @@ export * from './StsSpreaderRealism.js';
 export * from './HStyleLiftingBeam.js';
 export * from './PretensionSolver.js';
 export * from './SlingPerfHelper.js';
+export * from './WebbingSlingMeshBuilder.js';
 export * from './UnifiedHoistProfile.js';
 export * from './FlatRackLashingPhysics.js';
 export * from './ReplayRecorder.js';

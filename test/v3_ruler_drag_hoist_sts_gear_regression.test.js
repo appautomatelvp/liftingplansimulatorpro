@@ -7,6 +7,11 @@ import { createElevationRulerTool } from '../src/graphics/ElevationRulerTool.js'
 import { pickBestElevationHoverPoint, buildRulerHoverInputs } from '../src/graphics/ElevationRulerMath.js';
 import { rebuildDunnageVisual3D, sampleDunnageContactPointsForCargo } from '../src/graphics/JobsiteSiteVisuals.js';
 import { computeWebSlingVisualSize, applySlingSegmentTransform } from '../src/rigging/SlingPerfHelper.js';
+import {
+  createContinuousWebRibbonMesh,
+  updateWebRibbonMesh,
+  createEn1492WebEyeGroup
+} from '../src/rigging/WebbingSlingMeshBuilder.js';
 import { EXTRA_UI_EN, translateBadge } from '../src/i18n/sim_ui_phrases.js';
 import {
   startReplayRecording,
@@ -298,5 +303,34 @@ describe('V3 UX & Physics Upgrades Regression', () => {
     expect(rulerSrc).toContain("isVi ? 'Đỉnh' : 'Top'");
     expect(rulerSrc).toContain("isVi ? 'Đáy' : 'Bottom'");
     expect(rulerSrc).toContain("isVi ? 'Điểm đỏ' : 'Probe'");
+  });
+
+  it('11. Continuous EN 1492-1 webbing ribbon builds quad-loop strap, anti-abrasion eye sleeve, and right-handed basis', () => {
+    const dir = new THREE.Vector3(0.45, 0.88, -0.15).normalize();
+    const seg = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial());
+    applySlingSegmentTransform(THREE, seg, new THREE.Vector3(0, 0, 0), dir.clone().multiplyScalar(2), new THREE.Vector3(0, 1, 0), 'web', 2, 120, 5, 15, 0, 4, 1);
+    const alignedY = new THREE.Vector3(0, 1, 0).applyQuaternion(seg.quaternion);
+    expect(alignedY.distanceTo(dir)).toBeLessThan(1e-5);
+
+    const mat = new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.95, metalness: 0 });
+    const ribbon = createContinuousWebRibbonMesh(THREE, mat, 32);
+    const pts = [
+      new THREE.Vector3(-1.5, 4.0, 0),
+      new THREE.Vector3(-0.9, 2.8, 0.05),
+      new THREE.Vector3(-0.3, 1.6, 0.02),
+      new THREE.Vector3( 0.0, 0.4, 0)
+    ];
+    const ok = updateWebRibbonMesh(THREE, ribbon, pts, 150, { hasEyeA: true, hasEyeB: true, eyeInsetM: 0.14, slackRatio: 0.96 });
+    expect(ok).toBe(true);
+    expect(ribbon.geometry.drawRange.count).toBeGreaterThan(100);
+    const pos = ribbon.geometry.attributes.position.array;
+    for (let i = 0; i < 60; i++) expect(Number.isFinite(pos[i])).toBe(true);
+
+    const eye = createEn1492WebEyeGroup(THREE, { webGreen: mat });
+    const names = [];
+    eye.traverse(c => { if (c.name) names.push(c.name); });
+    expect(names).toContain('Web_Eye_Loop');
+    expect(names).toContain('Web_Wear_Sleeve');
+    expect(names).toContain('Web_Cuff');
   });
 });

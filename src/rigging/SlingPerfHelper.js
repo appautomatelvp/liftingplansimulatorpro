@@ -146,7 +146,8 @@ export function applySlingSegmentTransform(THREE, seg, p0, p1, upY, look, overla
     _scratchX.crossVectors(_scratchV0, upY);
     if (_scratchX.lengthSq() < 1e-8) _scratchX.set(1, 0, 0);
     _scratchX.normalize();
-    _scratchZ.crossVectors(_scratchV0, _scratchX).normalize();
+    // Right-handed basis (X × Y = +Z): prevents reflection det=-1 corrupting segment quaternions
+    _scratchZ.crossVectors(_scratchX, _scratchV0).normalize();
     _scratchBasis.makeBasis(_scratchX, _scratchV0, _scratchZ);
     seg.quaternion.setFromRotationMatrix(_scratchBasis);
     return;

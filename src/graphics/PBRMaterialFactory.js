@@ -145,13 +145,13 @@ export class PBRMaterialFactory {
     const cacheKey = `web_sling_${colorHex}_${stripeCount}`;
     if (this.cachedMaterials.has(cacheKey)) return this.cachedMaterials.get(cacheKey);
 
-    const { cvsBase, cvsNorm } = drawWebSlingMaps(512, colorHex, stripeCount);
+    const { cvsBase, cvsNorm } = drawWebSlingMaps(1024, colorHex, stripeCount);
     const material = new THREE.MeshStandardMaterial({
-      map: this._buildRepeatTexture(cvsBase, true, 1, 8, true),
-      normalMap: this._buildRepeatTexture(cvsNorm, false, 1, 8, false),
-      normalScale: new THREE.Vector2(0.80, 0.80),
-      roughness: 0.94,
-      metalness: 0.02,
+      map: this._buildRepeatTexture(cvsBase, true, 1, 6, true),
+      normalMap: this._buildRepeatTexture(cvsNorm, false, 1, 6, false),
+      normalScale: new THREE.Vector2(1.05, 1.05),
+      roughness: 0.95,
+      metalness: 0.0,
       side: THREE.DoubleSide
     });
     this.cachedMaterials.set(cacheKey, material);

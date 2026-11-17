@@ -1002,6 +1002,9 @@
 
         // Helper: Stitched Web-Sling Eye Sleeve for synthetic slings with EN 1492-1 Becket Eye, Cross-Stitch & Tag
         function createWebEyeSleeveGroup() {
+            if (typeof RIG !== 'undefined' && RIG.createEn1492WebEyeGroup) {
+                return RIG.createEn1492WebEyeGroup(THREE, MATS);
+            }
             const g = new THREE.Group();
             g.name = 'Synthetic_Web_Eye_Sleeve';
 
@@ -1350,9 +1353,14 @@
             linkInstances.receiveShadow = false;
             linkInstances.frustumCulled = false;
             group.add(linkInstances);
+            const webRibbon = (typeof RIG !== 'undefined' && RIG.createContinuousWebRibbonMesh)
+                ? RIG.createContinuousWebRibbonMesh(THREE, MATS.webGreen, 48)
+                : null;
+            if (webRibbon) group.add(webRibbon);
             return {
                 group,
                 segments,
+                webRibbon,
                 endEyeA,
                 endEyeB,
                 webEyeA,

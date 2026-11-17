@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 07:12 | Nhánh: feat/horizon-clouds | Commit cuối: 6c552c4 fix: slim heavy web sling visual width and unify VI/EN labels (4 seconds ago)
-Tổng: 270 file, 78264 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 07:17 | Nhánh: feat/horizon-clouds | Commit cuối: 13ee5d8 docs: log web sling sizing and VI/EN parity fix (6 minutes ago)
+Tổng: 271 file, 78578 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -36,8 +36,8 @@ Tổng: 270 file, 78264 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/physics/hoist_contacts.js (1108 dòng)
 - src/sim/physics/step_engine.js (792 dòng)
 - src/sim/plan_wizard.js (650 dòng)
-- src/sim/rigging/draw_update.js (838 dòng)
-- src/sim/rigging/hook_pool.js (3118 dòng)
+- src/sim/rigging/draw_update.js (852 dòng)
+- src/sim/rigging/hook_pool.js (3126 dòng)
 - src/sim/scene.js (1980 dòng)
 - src/sim/session/prelift_reset.js (1142 dòng)
 - src/sim/session/presets_events.js (3618 dòng)
@@ -51,7 +51,7 @@ Tổng: 270 file, 78264 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - test/physics_master_blueprint.test.js (524 dòng)
 - test/rigging.test.js (1370 dòng)
 - test/rigging_physics_and_alarms.test.js (306 dòng)
-- test/v3_ruler_drag_hoist_sts_gear_regression.test.js (302 dòng)
+- test/v3_ruler_drag_hoist_sts_gear_regression.test.js (336 dòng)
 
 ## 🔒 File đã khóa [LOCKED]
 - src/utils/firestoreSanitize.js
@@ -167,7 +167,7 @@ Tổng: 270 file, 78264 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/graphics/HorizonSkyDome.js` | 286 | Dựng vòm bầu trời HorizonSkyDome với mây chân trời 3D Gradient Quintic mềm mại và màu khí quyển thực tế ⚠️>250 |
 | `src/graphics/index.js` | 35 |  |
 | `src/graphics/JobsiteSiteVisuals.js` | 289 | Dựng và đồng bộ hình khối 3D cho đà kê gỗ, đệm địa chất độ dốc và tấm lót chân chống cẩu ở Tab 6. ⚠️>250 |
-| `src/graphics/pbr/ProceduralTextures.js` | 276 | Vẽ texture canvas thủ công (bê tông cảng, cáp thép, xích, sling, mặt nước, vạch cảnh báo) ⚠️>250 |
+| `src/graphics/pbr/ProceduralTextures.js` | 287 | Vẽ texture canvas thủ công (bê tông cảng, cáp thép, xích, sling, mặt nước, vạch cảnh báo) ⚠️>250 |
 | `src/graphics/pbr/StressPBRMaterials.js` | 146 | Tạo bản đồ PBR thép sơn công nghiệp, thép rèn mạ kẽm và màu ứng suất căng cơ học thời gian thực |
 | `src/graphics/PBRMaterialFactory.js` | 244 | Nhà máy tạo vật liệu PBR chuẩn công nghiệp hàng hải và đồng bộ không gian màu Three.js r170+ |
 | `src/graphics/SceneRenderer.js` | 313 |  ⚠️>300 |
@@ -188,17 +188,18 @@ Tổng: 270 file, 78264 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/constraints/UnilateralCableConstraint.js` | 151 |  |
 | `src/rigging/FlatRackLashingPhysics.js` | 234 | Dựng dây chằng Flat Rack ôm khít kiện hàng (không lòi ngang) và mô phỏng đứt tuần tự tự nhiên theo vật lý. |
 | `src/rigging/HStyleLiftingBeam.js` | 188 | Cấu tạo 3D và thông số khớp nối H-Style Lifting Beam (tùy chọn trên Direct Hook/2-Cáp và dưới 4-Cáp/Twistlock) |
-| `src/rigging/index.js` | 23 | src/rigging/index.js |
+| `src/rigging/index.js` | 24 | src/rigging/index.js |
 | `src/rigging/PretensionSolver.js` | 297 | Giải cao độ móc cẩu và dầm ngáng tại trạng thái Nhớm Cáp (kiện chạm đất, toàn bộ cáp căng đúng chiều dài thực) ⚠️>250 |
 | `src/rigging/ReplayRecorder.js` | 261 | Ghi và phát lại toàn bộ trạng thái mô phỏng (Hook, Ngáng dầm, Kiện, Cáp đứt/chùng, Lashing/OOG rơi, Cẩu) tối đa 60 giây. ⚠️>250 |
 | `src/rigging/riggingConstants.js` | 69 | src/rigging/riggingConstants.js |
 | `src/rigging/RiggingPhysicsSolver.js` | 684 | src/rigging/RiggingPhysicsSolver.js ⚠️>300 |
 | `src/rigging/riggingUIStore.js` | 100 | src/rigging/riggingUIStore.js |
 | `src/rigging/RigidInertialDynamics.js` | 212 | Động lực học vật rắn lệch tâm (Steiner-Huygens Inertia Tensor), mô-men xoắn/nghiêng khi cẩu và rơi tự do 9.81 m/s² |
-| `src/rigging/SlingPerfHelper.js` | 166 | Tái sử dụng biến toán học scratch và bộ đệm nghỉ XPBD để giảm giật lag vòng lặp cáp 3D |
+| `src/rigging/SlingPerfHelper.js` | 167 | Tái sử dụng biến toán học scratch và bộ đệm nghỉ XPBD để giảm giật lag vòng lặp cáp 3D |
 | `src/rigging/StsSpreaderRealism.js` | 174 | Chuẩn hóa kích thước ISO 668/1161, hệ cáp tời 8 nhánh và cơ học nâng hạ thực tế cho Ngáng cẩu Container STS |
 | `src/rigging/TrueMeshSurfaceContact.js` | 230 | Bộ giải tiếp xúc bề mặt 3D thực (0mm khe hở, không xuyên thủng) cho cáp và xích ôm sát kiện hàng 3D |
 | `src/rigging/UnifiedHoistProfile.js` | 65 | Quy chuẩn tốc độ nâng/hạ kiện hàng đồng nhất (0.85 m/s * scale) và chống giật bắn cho mọi phương án cáp & STS Spreader |
+| `src/rigging/WebbingSlingMeshBuilder.js` | 245 | Dựng lưới 3D liền mạch chuẩn EN 1492-1 cho cáp bẹ dẹt 2 lớp (Webbing Sling), đầu khuyên thuôn bọc bạt chống mài mòn, chỉ may chữ X/zig-zag và tem xanh/trắng |
 | `src/saas/access.js` | 48 |  |
 | `src/saas/admin_catalog_audit_panels.js` | 89 | Dựng giao diện phân hệ Catalog thiết bị 3 cột, Nhật ký Kiểm toán Diff và Modal chi tiết người dùng |
 | `src/saas/admin_cms.css` | 170 | Giao diện CSS chuẩn Enterprise Command Center cho CMS Quản trị (/admin) |
@@ -256,8 +257,8 @@ Tổng: 270 file, 78264 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/physics/step_engine.js` | 792 |  ⚠️>300 |
 | `src/sim/plan_wizard.js` | 650 |  ⚠️>300 |
 | `src/sim/rigging.js` | 6 |  |
-| `src/sim/rigging/draw_update.js` | 838 | Slack cable morphology is solved by a persistent material-aware XPBD chain. ⚠️>300 |
-| `src/sim/rigging/hook_pool.js` | 3118 |  ⚠️>300 |
+| `src/sim/rigging/draw_update.js` | 852 | Slack cable morphology is solved by a persistent material-aware XPBD chain. ⚠️>300 |
+| `src/sim/rigging/hook_pool.js` | 3126 |  ⚠️>300 |
 | `src/sim/scene.js` | 1980 |  ⚠️>300 |
 | `src/sim/session.js` | 6 |  |
 | `src/sim/session/prelift_reset.js` | 1142 |  ⚠️>300 |
@@ -327,6 +328,6 @@ Tổng: 270 file, 78264 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/sts_twin_cable_flare.test.js` | 106 |  |
 | `test/telemetry_usage.test.js` | 50 |  |
 | `test/v2_ux_dunnage_ruler_regression.test.js` | 151 | Kiểm thử hồi quy 7 tính năng mới: Lashing khít đáy, SWL >= 12MT, Chỉnh đồng bộ, Hạ êm, Góc xoay mượt, Gỗ kê đỡ/nghiêng kiện, Thước cao độ 3D + Điểm đỏ. |
-| `test/v3_ruler_drag_hoist_sts_gear_regression.test.js` | 302 | Kiểm thử hồi quy 6 nâng cấp mới: bỏ cục tời khi tắt cẩu 3D, kéo đặt thước 3D & bắt Điểm Đỏ cáp/ma ní, dblclick Hạ/Kéo, mở khóa chỉnh cáp, hết giật STS Direct. ⚠️>300 |
+| `test/v3_ruler_drag_hoist_sts_gear_regression.test.js` | 336 | Kiểm thử hồi quy 6 nâng cấp mới: bỏ cục tời khi tắt cẩu 3D, kéo đặt thước 3D & bắt Điểm Đỏ cáp/ma ní, dblclick Hạ/Kéo, mở khóa chỉnh cáp, hết giật STS Direct. ⚠️>300 |
 | `test/workspace_data.test.js` | 155 |  |
 | `vite.config.js` | 115 |  |
