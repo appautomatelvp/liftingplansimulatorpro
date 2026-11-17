@@ -4,6 +4,7 @@ export * from './DnvFourPointLift.js';
 export * from './HardwareBearingTracker.js';
 export * from './RiggingPhysicsSolver.js';
 export * from './CompoundColliders.js';
+export * from './LoadPathGravity.js';
 export * from './CollisionMaterialSolver.js';
 export * from './BrokenCableWhipXPBD.js';
 export * from './CableMaterialBehavior.js';

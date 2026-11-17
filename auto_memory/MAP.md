@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 08:22 | Nhánh: feat/horizon-clouds | Commit cuối: f286e60 step 7: add CompoundColliders SAT/CCD zero-penetration and wire beam depenetration (4 minutes ago)
-Tổng: 284 file, 80142 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 08:25 | Nhánh: feat/horizon-clouds | Commit cuối: 942fdef step 8: add CableMaterialBehavior wind drag and elastic snap whipPhase tracking (3 minutes ago)
+Tổng: 286 file, 80371 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -29,12 +29,12 @@ Tổng: 284 file, 80142 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/library/core.js (641 dòng)
 - src/sim/library/parsers.js (654 dòng)
 - src/sim/library/reconstruction_export.js (2137 dòng)
-- src/sim/physics/beams_seed.js (2998 dòng)
+- src/sim/physics/beams_seed.js (2997 dòng)
 - src/sim/physics/cables_break.js (1573 dòng)
 - src/sim/physics/flatrack_payload.js (657 dòng)
 - src/sim/physics/footprint_rig.js (838 dòng)
 - src/sim/physics/hoist_contacts.js (1110 dòng)
-- src/sim/physics/step_engine.js (804 dòng)
+- src/sim/physics/step_engine.js (808 dòng)
 - src/sim/plan_wizard.js (650 dòng)
 - src/sim/rigging/draw_update.js (853 dòng)
 - src/sim/rigging/hook_pool.js (3126 dòng)
@@ -195,7 +195,8 @@ Tổng: 284 file, 80142 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/FlatRackLashingPhysics.js` | 234 | Dựng dây chằng Flat Rack ôm khít kiện hàng (không lòi ngang) và mô phỏng đứt tuần tự tự nhiên theo vật lý. |
 | `src/rigging/HardwareBearingTracker.js` | 64 | Truy vết vị trí dây tựa thực tế trên ma ní (Pin vs Bow) và góc tải lệch bên (side-loading angle) theo ASME B30.26 |
 | `src/rigging/HStyleLiftingBeam.js` | 188 | Cấu tạo 3D và thông số khớp nối H-Style Lifting Beam (tùy chọn trên Direct Hook/2-Cáp và dưới 4-Cáp/Twistlock) |
-| `src/rigging/index.js` | 28 | src/rigging/index.js |
+| `src/rigging/index.js` | 29 | src/rigging/index.js |
+| `src/rigging/LoadPathGravity.js` | 163 | Kết nối đường tải trọng lực (rơi tự do g=-9.81 khi mất cáp), mô-men lật τ=r×mg trên mặt đỡ và võng uốn dầm Euler-Bernoulli |
 | `src/rigging/PretensionSolver.js` | 297 | Giải cao độ móc cẩu và dầm ngáng tại trạng thái Nhớm Cáp (kiện chạm đất, toàn bộ cáp căng đúng chiều dài thực) ⚠️>250 |
 | `src/rigging/ReplayRecorder.js` | 261 | Ghi và phát lại toàn bộ trạng thái mô phỏng (Hook, Ngáng dầm, Kiện, Cáp đứt/chùng, Lashing/OOG rơi, Cẩu) tối đa 60 giây. ⚠️>250 |
 | `src/rigging/riggingConstants.js` | 69 | src/rigging/riggingConstants.js |
@@ -254,14 +255,14 @@ Tổng: 284 file, 80142 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/library/reconstruction_export.js` | 2137 | --- 2D IMAGE TO 3D CONTOUR & RELIEF RECONSTRUCTION ENGINE --- ⚠️>300 |
 | `src/sim/manifest.js` | 39 |  |
 | `src/sim/physics.js` | 6 |  |
-| `src/sim/physics/beams_seed.js` | 2998 |  ⚠️>300 |
+| `src/sim/physics/beams_seed.js` | 2997 |  ⚠️>300 |
 | `src/sim/physics/cables_break.js` | 1573 |  ⚠️>300 |
 | `src/sim/physics/flatrack_payload.js` | 657 | --- FLAT RACK LASHING RUPTURE, DECK SLIDING & FALLING PAYLOAD PHYSICS --- ⚠️>300 |
 | `src/sim/physics/footprint_rig.js` | 838 |  ⚠️>300 |
 | `src/sim/physics/hoist_contacts.js` | 1110 |  ⚠️>300 |
 | `src/sim/physics/index.js` | 9 | Bounded context index — parts are assembled via src/sim/manifest.js (shared scope). |
 | `src/sim/physics/port.js` | 59 |  |
-| `src/sim/physics/step_engine.js` | 804 |  ⚠️>300 |
+| `src/sim/physics/step_engine.js` | 808 |  ⚠️>300 |
 | `src/sim/plan_wizard.js` | 650 |  ⚠️>300 |
 | `src/sim/rigging.js` | 6 |  |
 | `src/sim/rigging/draw_update.js` | 853 | Slack cable morphology is solved by a persistent material-aware XPBD chain. ⚠️>300 |
@@ -317,6 +318,7 @@ Tổng: 284 file, 80142 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/inclined_lashing_slide.test.js` | 67 |  |
 | `test/jobsite_lashing_follow_regression.test.js` | 160 | Kiểm thử hồi quy 3D đà gỗ/độ dốc/tấm lót Tab 6, dây chằng Flat Rack ôm sát & đứt tự nhiên, và Camera Follow. |
 | `test/liftplan.test.js` | 153 |  |
+| `test/load_path_gravity.test.js` | 62 |  |
 | `test/localized_hardware_stress.test.js` | 88 |  |
 | `test/optimize_horizon_cargo_perf.test.js` | 272 | Kiểm thử tự động cho hòa chân trời, 3D Steel Pipe / Vehicle, cache CAD và tối ưu hiệu năng ⚠️>250 |
 | `test/phase1_core_safety.test.js` | 208 |  |

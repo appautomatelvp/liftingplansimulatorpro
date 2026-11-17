@@ -214,7 +214,11 @@
             }
 
             sanitizeSimBodies();
-
+            if (typeof RIG !== 'undefined' && RIG.computeLoadPathConnectivity) {
+                const lpc = RIG.computeLoadPathConnectivity(phy.cables, state.beamType);
+                phy.freeFall = lpc.cargoFreeFall && (phy.groundClearance || 0) > 0.04;
+                phy.beamFreeFall = lpc.beamFreeFall;
+            }
             publishCableLoads();
 
             const hookY = document.getElementById('inp-hook-y');

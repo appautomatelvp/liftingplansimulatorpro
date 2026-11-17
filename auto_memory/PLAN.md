@@ -81,7 +81,7 @@ Người lập kế hoạch: Model cao nhất (KHÔNG viết code ở bước n�
 - **Tạo test:** `test/cable_whip_recoil.test.js`: (a) tension ≥ MBL → `removeConstraint`; (b) 5 khung đầu đầu cáp di chuyển NGƯỢC chiều căng trước khi y giảm; (c) xích slack: góc gập nhỏ hơn cáp thép cùng chiều dài; (d) vải: lệch ngang do gió > 0, cáp thép ≈ 0; (e) không NaN.
 - **Kiểm tra:** `npx vitest run test/cable_whip_recoil.test.js test/cable_dynamics_xpbd.test.js test/custom_slings.test.js`.
 
-### [ ] Bước 9: Trọng lực thật — rơi tự do khi mất đường tải + mô-men phục hồi + dầm uốn (Pillar 5)
+### [x] Bước 9: Trọng lực thật — rơi tự do khi mất đường tải + mô-men phục hồi + dầm uốn (Pillar 5)
 - **Tạo:** `src/rigging/LoadPathGravity.js` (<230 dòng): `computeLoadPathConnectivity(cables)` → nếu mọi đường tải từ hook → kiện/dầm/phụ kiện đều đứt, đánh dấu vật thể `freeFall=true` (gia tốc −9.81 m/s², giảm chấn nhỏ); `computeRestingTorque({ cogWorld, supportPolygon, mass })` cho kiện chạm đất mà CoG ngoài đa giác đỡ (τ = r × mg đập đầu cao xuống); `bendingDeflectionProfile(beam, loadN)` Euler–Bernoulli δ(x) để bẻ lưới 3D (bọc `DeformableSteelStructure` SẴN CÓ qua `CAE`, không sửa file khóa).
 - **Sửa (≤25 dòng):** `src/sim/physics/beams_seed.js` (gọi connectivity + torque tại vòng lặp vật lý; mở rộng `canWarpBeam` từ `lifting_beam` sang mọi dầm có `memberBody`), `src/sim/physics/step_engine.js` (cờ `freeFall`).
 - **Tạo test:** `test/load_path_gravity.test.js`: (a) cắt hết cáp → sau 1 s y cargo/spreader giảm ≈ ½·g·t² (±5%); (b) kiện treo nghiêng chạm đất, CoG ngoài đa giác → đầu cao hạ xuống đến nằm phẳng; (c) dầm 12 m, tải 30 t → độ võng giữa nhịp đúng công thức 5wL⁴/384EI (±5%).

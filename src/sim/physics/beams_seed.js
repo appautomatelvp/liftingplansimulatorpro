@@ -2074,9 +2074,9 @@
         // Multi-sample rigid depenetration: beam segment cannot occupy cargo volume
         function depenetrateBeamFromCargo(b, maxPasses) {
             if (!b || !activeCargoVisual) return false;
-            if (typeof RIG !== 'undefined' && RIG.buildCompoundBeamCollider && RIG.resolveCompoundContact && phy.cargoPos) {
+            if (state.beamType !== 'basket' && typeof RIG !== 'undefined' && RIG.buildCompoundBeamCollider && RIG.resolveCompoundContact && phy.cargoPos) {
                 const cargoCol = RIG.buildCompoundCargoCollider({ center: phy.cargoPos, quat: phy.cargoQuat, L: state.L || 6, W: state.W || 2.4, H: state.H || 2.6 });
-                const beamCol = RIG.buildCompoundBeamCollider({ center: b.x, quat: b.q, spanX: state.beamLength || 6, beamHeight: Math.max(0.28, beamCargoContactPad(b) * 2), isHBeam: state.beamType === 'hbeam' });
+                const beamCol = RIG.buildCompoundBeamCollider({ center: b.x, quat: b.q, spanX: b.len || state.beamLength || 6, beamHeight: Math.max(0.28, beamCargoContactPad(b) * 2), isHBeam: state.beamType === 'hbeam' });
                 const satHit = RIG.resolveCompoundContact(beamCol, cargoCol);
                 if (satHit.collided && satHit.penetrationM > 0.0005) {
                     const satN = new THREE.Vector3(satHit.normal.x, satHit.normal.y, satHit.normal.z);
@@ -2919,11 +2919,10 @@
                     targetBeamTwistDeg = beamState.maxTorsionalTwistDeg;
                     targetSpreaderAmp = beamState.amplificationFactor;
 
-                    // Phase 2: bind mesh flex for lifting beams (Euler-Bernoulli + Saint-Venant).
-                    // Modulift/STS CAD fittings tear under vertex warp — keep those rigid (telemetry only).
-                    const canWarpBeam = state.beamType === 'lifting_beam'
-                        || state.beamType === 'straight'
-                        || state.beamType === 'adjustable';
+                    // Phase 2+5: bind Euler-Bernoulli + Saint-Venant flex for all beam assemblies;
+                    // apply subtle scale on CAD spreader fittings while keeping lifting beams full scale.
+                    const isFrameCad = state.beamType === 'spreader' || state.beamType === 'container_spreader' || state.beamType === 'hbeam';
+                    const canWarpBeam = state.beamType !== 'none' && state.beamType !== 'basket' && Boolean(topBeam.group);
                     if (topBeam.group && typeof beamStruct.applyMeshDeformation === 'function') {
                         if (canWarpBeam && airborne) {
                             beamStruct.applyMeshDeformation(
@@ -2931,7 +2930,7 @@
                                 beamVerticalLoadN,
                                 P_compressionN,
                                 beamTorqueNm,
-                                Math.min(3.0, visScale),
+                                isFrameCad ? Math.min(1.0, visScale * 0.25) : Math.min(3.0, visScale),
                                 topBeam.axis === 'z' ? 'z' : 'x'
                             );
                         } else {
