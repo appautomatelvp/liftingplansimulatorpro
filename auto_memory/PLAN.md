@@ -41,7 +41,7 @@ Người lập kế hoạch: Model cao nhất (KHÔNG viết code ở bước n�
 - **Sửa (≤25 dòng):** `src/rigging/RiggingPhysicsSolver.js` (thay thân `applyDNV4LegSkewRule` bằng gọi hàm mới, giữ chữ ký cũ để không vỡ test), `src/rigging/index.js` (export).
 - **Kiểm tra:** `npx vitest run test/rigging_physics_and_alarms.test.js test/standards_compliance_engine.test.js`.
 
-### [ ] Bước 2: Golden Test Pillar 1.1 + đồng bộ HUD
+### [x] Bước 2: Golden Test Pillar 1.1 + đồng bộ HUD
 - **Tạo:** `test/dnv_four_point_lift.test.js` — bộ số mẫu ghi vào `auto_kit/test.md`: (a) cargo 20 t, 4 chân cân đối, CoG giữa, SKL=1.25 → 2 chân chéo mỗi chân = 20×0.5×1.25 = **12.5 t**, 2 chân kia = 0; (b) CoG lệch về góc LP1 → chéo (LP1,LP3) được chọn; (c) SKL kẹp [1.25, 1.50]; (d) có dầm cân bằng (equalizer) → chia đều (không áp luật).
 - **Sửa (≤25 dòng):** `src/sim/telemetry.js` (dòng ~912: HUD đọc `phy.rigging.dnvShares` thay vì tự gọi `evaluateFourLegIndeterminacy`; giữ hàm cũ làm fallback), `auto_kit/test.md` (thêm Golden Test).
 - **Kiểm tra:** `npx vitest run test/dnv_four_point_lift.test.js test/phase1_core_safety.test.js`.

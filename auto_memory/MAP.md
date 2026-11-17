@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 08:07 | Nhánh: feat/horizon-clouds | Commit cuối: 92ef299 docs: log EN 1492-1 webbing color and stripe progression fix (11 minutes ago)
-Tổng: 272 file, 78759 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 08:08 | Nhánh: feat/horizon-clouds | Commit cuối: 177a21c step 1: unify DNV 4-point diagonal load distribution in DnvFourPointLift (2 minutes ago)
+Tổng: 273 file, 78845 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -43,7 +43,7 @@ Tổng: 272 file, 78759 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/session/presets_events.js (3618 dòng)
 - src/sim/session/ui_units_bom.js (1967 dòng)
 - src/sim/state.js (607 dòng)
-- src/sim/telemetry.js (1121 dòng)
+- src/sim/telemetry.js (1127 dòng)
 - src/sim/weather_fx.js (596 dòng)
 - test/cable_morphology_and_deformation.test.js (426 dòng)
 - test/custom_slings.test.js (712 dòng)
@@ -266,7 +266,7 @@ Tổng: 272 file, 78759 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/session/presets_events.js` | 3618 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
 | `src/sim/session/ui_units_bom.js` | 1967 | --- 12. UI EVENT BINDINGS & COLLAPSIBLE PANELS --- ⚠️>300 |
 | `src/sim/state.js` | 607 | Floor cribbing removed: static cargo rests flush on the quay / ground plane. ⚠️>300 |
-| `src/sim/telemetry.js` | 1121 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
+| `src/sim/telemetry.js` | 1127 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
 | `src/sim/ui-layout.js` | 241 |  |
 | `src/sim/weather_fx.js` | 596 |  ⚠️>300 |
 | `src/simulation/destruction-manager/DestructionSolver.js` | 147 |  |
@@ -297,6 +297,7 @@ Tổng: 272 file, 78759 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/cog_tilt_stability.test.js` | 231 |  |
 | `test/custom_slings.test.js` | 712 |  ⚠️>300 |
 | `test/deployment_environment.test.js` | 21 |  |
+| `test/dnv_four_point_lift.test.js` | 80 |  |
 | `test/engineering.test.js` | 410 |  ⚠️>300 |
 | `test/feedback_mailto.test.js` | 144 |  |
 | `test/firestore-rules-emulator.mjs` | 351 |  |

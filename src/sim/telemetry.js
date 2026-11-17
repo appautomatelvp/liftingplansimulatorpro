@@ -909,7 +909,13 @@
             const matType = state.slingMaterialType || 'wire';
             const isRigid = state.isRigidPayload !== false;
             const legTens = (phy.legTensions && phy.legTensions.length === 4) ? phy.legTensions : [0, 0, 0, 0];
-            const skew = elasticSlingEngine.evaluateFourLegIndeterminacy(legTens, isRigid);
+            const dnvMeta = phy.rigging && phy.rigging.dnvMeta;
+            const dnvShares = phy.rigging && Array.isArray(phy.rigging.dnvShares) && phy.rigging.dnvShares.length === 4 ? phy.rigging.dnvShares : null;
+            const skew = dnvMeta
+                ? { heavyPairSharePct: dnvMeta.heavyPairSharePct, hasSkewRisk: dnvMeta.hasSkewRisk, sklUsed: dnvMeta.sklUsed }
+                : (dnvShares
+                    ? { heavyPairSharePct: 100.0, hasSkewRisk: isRigid }
+                    : elasticSlingEngine.evaluateFourLegIndeterminacy(legTens, isRigid));
 
             for (let i = 0; i < 4; i++) {
                 const tVal = (phy.legTensions && phy.legTensions[i]) || 0;
