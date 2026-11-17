@@ -3371,6 +3371,7 @@
                     document.getElementById('sim-status-text').textContent = 'Đang kéo móc. Cáp giữ đúng chiều dài đã đặt: chùng thì nằm trên nóc, căng tới đâu thì nhấc điểm đó lên trước.';
 
                 } else if (dragType === 'cog') {
+                    controls.enabled = false;
                     const worldCoG = new THREE.Vector3();
                     cogIndicatorGroup.getWorldPosition(worldCoG);
                     const camDir = new THREE.Vector3();
@@ -3378,18 +3379,23 @@
                     const cogAxis = hitObj.userData.cogAxis || 'free';
                     const startHit = hits[0].point ? hits[0].point.clone() : worldCoG.clone();
                     if (typeof GFX !== 'undefined' && GFX.buildCogDragPlane) {
-                        dragPlane.copy(GFX.buildCogDragPlane({ THREE, axis: cogAxis, worldCoG, cameraDir: camDir, cargoQuat: phy.cargoQuat }));
+                        dragPlane.copy(GFX.buildCogDragPlane({ THREE, axis: cogAxis, worldCoG, cameraDir: camDir, cargoQuat: phy.cargoQuat, shiftDepth: false }));
                     } else {
                         dragPlane.setFromNormalAndCoplanarPoint(camDir, startHit);
                     }
                     const startWorld = new THREE.Vector3();
                     if (!raycaster.ray.intersectPlane(dragPlane, startWorld)) startWorld.copy(startHit);
-                    dragTarget = { type: 'cog', axis: cogAxis, startWorld, startCog: { x: state.cogX || 0, y: state.cogY || 0, z: state.cogZ || 0 }, pointerId: e.pointerId };
+                    const prevXRay = Boolean(state.xrayCargo);
+                    state.xrayCargo = true;
+                    state._cogDragMode = 'screen';
+                    if (typeof applyXRayToCargo === 'function') applyXRayToCargo(activeCargoVisual || cargoRootGroup, true);
+                    if (typeof syncDisplayOptionsUI === 'function') syncDisplayOptionsUI();
+                    dragTarget = { type: 'cog', axis: cogAxis, shiftDepth: false, prevXRay, startWorld, startCog: { x: state.cogX || 0, y: state.cogY || 0, z: state.cogZ || 0 }, pointerId: e.pointerId };
                     if (typeof window.setCameraFocusOverride === 'function') window.setCameraFocusOverride('cog', 0, 4000);
                     e.preventDefault();
                     e.stopPropagation();
                     try { renderer?.domElement?.setPointerCapture?.(e.pointerId); } catch (_) { /* ignore */ }
-                    document.getElementById('sim-status-text').textContent = '🎯 Đang kéo trực tiếp Trọng Tâm (CoG) 3D của kiện hàng...';
+                    document.getElementById('sim-status-text').textContent = '🎯 Kéo CoG (Lên/Xuống & Ngang theo màn hình) — Giữ thêm SHIFT để chỉnh ĐỘ SÂU (tiến/lùi)';
 
                 } else if (dragType === 'lp') {
                     dragTarget = { type: 'lp', index: lpIndex };
@@ -3487,6 +3493,28 @@
                 return;
             }
 
+            if (dragTarget.type === 'cog') {
+                if (typeof GFX !== 'undefined' && GFX.syncCogDragShiftMode && GFX.syncCogDragShiftMode({
+                    THREE, dragTarget, dragPlane, ray: raycaster.ray, camera, cargoRootGroup,
+                    cargoQuat: phy.cargoQuat, state, shiftPressed: e.shiftKey
+                })) {
+                    document.getElementById('sim-status-text').textContent = dragTarget.shiftDepth
+                        ? '🎯 Kéo ĐỘ SÂU CoG (Shift: Tiến/Lùi & Trái/Phải theo hướng camera, khóa độ cao)'
+                        : '🎯 Kéo CoG (Lên/Xuống & Ngang theo màn hình) — Giữ thêm SHIFT để chỉnh ĐỘ SÂU (tiến/lùi)';
+                }
+                if (typeof GFX !== 'undefined' && GFX.applyCogDragDelta) {
+                    GFX.applyCogDragDelta({
+                        THREE, ray: raycaster.ray, dragPlane, axis: dragTarget.axis || 'free',
+                        startWorld: dragTarget.startWorld, startCog: dragTarget.startCog,
+                        cargoRootGroup, state, shiftDepth: Boolean(dragTarget.shiftDepth)
+                    });
+                }
+                if (cogIndicatorGroup) cogIndicatorGroup.position.set(state.cogX, state.cogY, state.cogZ);
+                syncCoGSlidersFromState();
+                window.dispatchEvent(new CustomEvent('safelift:cog-change', { detail: { cogX: state.cogX, cogY: state.cogY, cogZ: state.cogZ } }));
+                return;
+            }
+
             const intersectPt = new THREE.Vector3();
             if (!raycaster.ray.intersectPlane(dragPlane, intersectPt)) return;
 
@@ -3516,18 +3544,6 @@
 
             if (dragTarget.type === 'hook') {
                 setHookDragCommand(intersectPt);
-
-            } else if (dragTarget.type === 'cog') {
-                if (typeof GFX !== 'undefined' && GFX.applyCogDragDelta) {
-                    GFX.applyCogDragDelta({
-                        THREE, ray: raycaster.ray, dragPlane, axis: dragTarget.axis || 'free',
-                        startWorld: dragTarget.startWorld, startCog: dragTarget.startCog, cargoRootGroup, state
-                    });
-                }
-                if (cogIndicatorGroup) cogIndicatorGroup.position.set(state.cogX, state.cogY, state.cogZ);
-                syncCoGSlidersFromState();
-                window.dispatchEvent(new CustomEvent('safelift:cog-change', { detail: { cogX: state.cogX, cogY: state.cogY, cogZ: state.cogZ } }));
-                return;
 
             } else if (dragTarget.type === 'lp') {
                 const idx = dragTarget.index;
@@ -3612,6 +3628,10 @@
             controls.enabled = true;
             if (dragTarget) {
                 if (dragTarget.type === 'cog') {
+                    state.xrayCargo = Boolean(dragTarget.prevXRay);
+                    state._cogDragMode = null;
+                    if (typeof applyXRayToCargo === 'function') applyXRayToCargo(activeCargoVisual || cargoRootGroup, state.xrayCargo);
+                    if (typeof syncDisplayOptionsUI === 'function') syncDisplayOptionsUI();
                     rebuildCargoAndRig(false);
                     try { if (dragTarget.pointerId != null) renderer?.domElement?.releasePointerCapture?.(dragTarget.pointerId); } catch (_) { /* ignore */ }
                 } else if (dragTarget.type === 'hook') {

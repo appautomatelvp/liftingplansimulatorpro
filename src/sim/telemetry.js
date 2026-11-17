@@ -690,7 +690,10 @@
                     const cogWorld = new THREE.Vector3();
                     cogIndicatorGroup.getWorldPosition(cogWorld);
                     projectToScreen(cogWorld, lblCog);
-                    lblCog.textContent = `🎯 CoG (${state.cogX.toFixed(2)}, ${state.cogY.toFixed(2)}, ${state.cogZ.toFixed(2)})`;
+                    const cogHint = state._cogDragMode === 'depth'
+                        ? ' · [Shift: Độ sâu]'
+                        : (state._cogDragMode === 'screen' ? ' · [Giữ Shift = Độ sâu]' : '');
+                    lblCog.textContent = `🎯 CoG (${state.cogX.toFixed(2)}, ${state.cogY.toFixed(2)}, ${state.cogZ.toFixed(2)})${cogHint}`;
                     lblCog.style.opacity = '1';
                 } else {
                     lblCog.style.opacity = '0';
