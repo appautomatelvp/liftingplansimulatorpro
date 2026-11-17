@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { evaluateShackleComponentLoad } from '../src/core/LocalizedHardwareStress.js';
+import { trackShackleBearing } from '../src/rigging/HardwareBearingTracker.js';
 
 describe('Localized Shackle Hardware Stress (Pin Shear vs Bow ASME B30.26 Derating)', () => {
   it('applies ASME B30.26 side-load derating on bow: 45° -> 70% WLL, 90° -> 50% WLL', () => {
@@ -59,5 +60,29 @@ describe('Localized Shackle Hardware Stress (Pin Shear vs Bow ASME B30.26 Derati
     expect(bad.isAllowed).toBe(false);
     expect(bad.isProhibited).toBe(true);
     expect(bad.isOverloaded).toBe(true);
+  });
+
+  it('tracks whether sling contact sits on Pin vs Bow and measures out-of-plane side angle', () => {
+    const onBow = trackShackleBearing({
+      pinPos: { x: 0, y: 0, z: 0 },
+      contactPos: { x: 0, y: 0.14, z: 0 },
+      shackleAxis: { x: 0, y: 1, z: 0 },
+      pinAxis: { x: 1, y: 0, z: 0 },
+      slingLeaveVec: { x: 0, y: 1, z: 0 },
+      pinHalfSpanM: 0.04
+    });
+    expect(onBow.bearingOn).toBe('bow');
+    expect(onBow.sideAngleDeg).toBe(0);
+
+    const onPinSide = trackShackleBearing({
+      pinPos: { x: 0, y: 0, z: 0 },
+      contactPos: { x: 0, y: 0.01, z: 0 },
+      shackleAxis: { x: 0, y: 1, z: 0 },
+      pinAxis: { x: 1, y: 0, z: 0 },
+      slingLeaveVec: { x: 0.7071, y: 0.7071, z: 0 },
+      pinHalfSpanM: 0.04
+    });
+    expect(onPinSide.bearingOn).toBe('pin');
+    expect(onPinSide.sideAngleDeg).toBeCloseTo(45, 0);
   });
 });

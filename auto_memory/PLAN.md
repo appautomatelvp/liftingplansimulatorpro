@@ -52,7 +52,7 @@ Người lập kế hoạch: Model cao nhất (KHÔNG viết code ở bước n�
 - **Tạo test:** `test/localized_hardware_stress.test.js` (ví dụ: shackle 17 t, dây tựa chốt vs thân; góc 45°/90° → 70%/50%; ranh giới không NaN).
 - **Kiểm tra:** `npx vitest run test/localized_hardware_stress.test.js test/rigging.test.js`.
 
-### [ ] Bước 4: Truy vết "dây tựa vào đâu" + hiển thị ứng suất phụ kiện
+### [x] Bước 4: Truy vết "dây tựa vào đâu" + hiển thị ứng suất phụ kiện
 - **Tạo:** `src/rigging/HardwareBearingTracker.js` (<200 dòng, dùng vị trí điểm tiếp xúc cục bộ sling-end ↔ shackle: nếu điểm nằm trong vùng cung chốt ±`pinHalfSpan` → `'pin'`, ngược lại `'bow'`; cũng tính góc tải ngang so với mặt phẳng má).
 - **Sửa (≤25 dòng):** `src/sim/physics/step_engine.js` (gắn `meta.bearingOn`, `meta.sideAngleDeg` cho mỗi nhánh), `src/sim/telemetry.js` (dòng nhãn LP/MN: hiển thị `Pin 72%`/`Bow 55%` + tô đỏ khi vượt).
 - **Kiểm tra:** `npx vitest run test/rigging_alarms_and_tolerances.test.js test/localized_hardware_stress.test.js`.

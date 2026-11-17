@@ -571,6 +571,17 @@
             }
             sling.visA = visA.clone();
             sling.visB = visB.clone();
+            if (cable && !isBrokenStub && typeof RIG !== 'undefined' && RIG.trackShackleBearing) {
+                const track = RIG.trackShackleBearing({
+                    pinPos: sling.pinB || pointB,
+                    contactPos: visB,
+                    shackleAxis: sling.shackleDirB || { x: 0, y: 1, z: 0 },
+                    pinAxis: sling.parentNormalB || { x: 1, y: 0, z: 0 },
+                    slingLeaveVec: sling.hwLeaveB || sling.shackleDirB
+                });
+                cable._bearingOn = track.bearingOn;
+                cable._sideAngleDeg = track.sideAngleDeg;
+            }
         }
 
         function alignLinkedHardware(rig, master) {

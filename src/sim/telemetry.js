@@ -565,15 +565,24 @@
                             if (dOpt.showSlingAngles) {
                                 parts.push(`${Math.round(phy.legAngleDeg[i] || 60)}°`);
                             }
+                            let hwOver = false;
                             if (dOpt.showShackleLoads) {
-                                parts.push(`${state.lang === 'en' ? 'SH' : 'MN'}: ${Math.round(pct)}%`);
+                                const legCable = (phy.cables || []).find(c => c.role === 'leg' && c.index === i);
+                                const hwS = legCable && legCable._hardwareStress;
+                                if (hwS) {
+                                    const gov = hwS.governing === 'pin' ? 'Pin' : 'Bow';
+                                    parts.push(`${state.lang === 'en' ? 'SH' : 'MN'}(${gov}): ${Math.round(hwS.utilizationPct || 0)}%`);
+                                    hwOver = Boolean(hwS.isOverloaded);
+                                } else {
+                                    parts.push(`${state.lang === 'en' ? 'SH' : 'MN'}: ${Math.round(pct)}%`);
+                                }
                             }
                             if (dOpt.showSlingLengths) {
                                 const turn = state.legDeltaL[i] || 0;
                                 const turnStr = Math.abs(turn) > 0.01 ? ` (${turn > 0 ? '+' : ''}${turn.toFixed(2)}m)` : '';
                                 parts.push(`L: ${state.slingLength.toFixed(1)}m${turnStr}`);
                             }
-                            _setElemTextCached(lbl, parts.join(' · '), `label-3d ${colorClass}`);
+                            _setElemTextCached(lbl, parts.join(' · '), `label-3d ${hwOver ? 'text-red-400' : colorClass}`);
                         }
                     } else {
                         _setElemPosCached(lbl, 0, 0, '0');

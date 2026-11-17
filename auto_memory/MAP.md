@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 08:11 | Nhánh: feat/horizon-clouds | Commit cuối: 8c86265 step 2: add DNV 4-point Golden Test and sync HUD with unified solver (3 minutes ago)
-Tổng: 276 file, 79083 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 08:13 | Nhánh: feat/horizon-clouds | Commit cuối: 8cb46fa step 3: add LocalizedHardwareStress wrapping standards/hardware.js for Pin shear vs Bow derating (72 seconds ago)
+Tổng: 276 file, 79129 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -34,7 +34,7 @@ Tổng: 276 file, 79083 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/physics/flatrack_payload.js (657 dòng)
 - src/sim/physics/footprint_rig.js (838 dòng)
 - src/sim/physics/hoist_contacts.js (1110 dòng)
-- src/sim/physics/step_engine.js (793 dòng)
+- src/sim/physics/step_engine.js (804 dòng)
 - src/sim/plan_wizard.js (650 dòng)
 - src/sim/rigging/draw_update.js (853 dòng)
 - src/sim/rigging/hook_pool.js (3126 dòng)
@@ -43,7 +43,7 @@ Tổng: 276 file, 79083 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/session/presets_events.js (3618 dòng)
 - src/sim/session/ui_units_bom.js (1967 dòng)
 - src/sim/state.js (607 dòng)
-- src/sim/telemetry.js (1127 dòng)
+- src/sim/telemetry.js (1136 dòng)
 - src/sim/weather_fx.js (596 dòng)
 - test/cable_morphology_and_deformation.test.js (426 dòng)
 - test/custom_slings.test.js (712 dòng)
@@ -191,7 +191,7 @@ Tổng: 276 file, 79083 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/FlatRackLashingPhysics.js` | 234 | Dựng dây chằng Flat Rack ôm khít kiện hàng (không lòi ngang) và mô phỏng đứt tuần tự tự nhiên theo vật lý. |
 | `src/rigging/HardwareBearingTracker.js` | 64 | Truy vết vị trí dây tựa thực tế trên ma ní (Pin vs Bow) và góc tải lệch bên (side-loading angle) theo ASME B30.26 |
 | `src/rigging/HStyleLiftingBeam.js` | 188 | Cấu tạo 3D và thông số khớp nối H-Style Lifting Beam (tùy chọn trên Direct Hook/2-Cáp và dưới 4-Cáp/Twistlock) |
-| `src/rigging/index.js` | 25 | src/rigging/index.js |
+| `src/rigging/index.js` | 26 | src/rigging/index.js |
 | `src/rigging/PretensionSolver.js` | 297 | Giải cao độ móc cẩu và dầm ngáng tại trạng thái Nhớm Cáp (kiện chạm đất, toàn bộ cáp căng đúng chiều dài thực) ⚠️>250 |
 | `src/rigging/ReplayRecorder.js` | 261 | Ghi và phát lại toàn bộ trạng thái mô phỏng (Hook, Ngáng dầm, Kiện, Cáp đứt/chùng, Lashing/OOG rơi, Cẩu) tối đa 60 giây. ⚠️>250 |
 | `src/rigging/riggingConstants.js` | 69 | src/rigging/riggingConstants.js |
@@ -257,7 +257,7 @@ Tổng: 276 file, 79083 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/physics/hoist_contacts.js` | 1110 |  ⚠️>300 |
 | `src/sim/physics/index.js` | 9 | Bounded context index — parts are assembled via src/sim/manifest.js (shared scope). |
 | `src/sim/physics/port.js` | 59 |  |
-| `src/sim/physics/step_engine.js` | 793 |  ⚠️>300 |
+| `src/sim/physics/step_engine.js` | 804 |  ⚠️>300 |
 | `src/sim/plan_wizard.js` | 650 |  ⚠️>300 |
 | `src/sim/rigging.js` | 6 |  |
 | `src/sim/rigging/draw_update.js` | 853 | Slack cable morphology is solved by a persistent material-aware XPBD chain. ⚠️>300 |
@@ -268,7 +268,7 @@ Tổng: 276 file, 79083 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/session/presets_events.js` | 3618 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
 | `src/sim/session/ui_units_bom.js` | 1967 | --- 12. UI EVENT BINDINGS & COLLAPSIBLE PANELS --- ⚠️>300 |
 | `src/sim/state.js` | 607 | Floor cribbing removed: static cargo rests flush on the quay / ground plane. ⚠️>300 |
-| `src/sim/telemetry.js` | 1127 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
+| `src/sim/telemetry.js` | 1136 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
 | `src/sim/ui-layout.js` | 241 |  |
 | `src/sim/weather_fx.js` | 596 |  ⚠️>300 |
 | `src/simulation/destruction-manager/DestructionSolver.js` | 147 |  |
@@ -310,7 +310,7 @@ Tổng: 276 file, 79083 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/inclined_lashing_slide.test.js` | 67 |  |
 | `test/jobsite_lashing_follow_regression.test.js` | 160 | Kiểm thử hồi quy 3D đà gỗ/độ dốc/tấm lót Tab 6, dây chằng Flat Rack ôm sát & đứt tự nhiên, và Camera Follow. |
 | `test/liftplan.test.js` | 153 |  |
-| `test/localized_hardware_stress.test.js` | 63 |  |
+| `test/localized_hardware_stress.test.js` | 88 |  |
 | `test/optimize_horizon_cargo_perf.test.js` | 272 | Kiểm thử tự động cho hòa chân trời, 3D Steel Pipe / Vehicle, cache CAD và tối ưu hiệu năng ⚠️>250 |
 | `test/phase1_core_safety.test.js` | 208 |  |
 | `test/physics_destruction.test.js` | 69 |  |
