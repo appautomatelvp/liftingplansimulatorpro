@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 08:13 | Nhánh: feat/horizon-clouds | Commit cuối: 8cb46fa step 3: add LocalizedHardwareStress wrapping standards/hardware.js for Pin shear vs Bow derating (72 seconds ago)
-Tổng: 276 file, 79129 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 08:14 | Nhánh: feat/horizon-clouds | Commit cuối: 669d917 step 4: track shackle Pin vs Bow bearing point and display governing stress in HUD (82 seconds ago)
+Tổng: 278 file, 79411 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -28,7 +28,7 @@ Tổng: 276 file, 79129 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/gear/editor.js (3614 dòng)
 - src/sim/library/core.js (641 dòng)
 - src/sim/library/parsers.js (654 dòng)
-- src/sim/library/reconstruction_export.js (2112 dòng)
+- src/sim/library/reconstruction_export.js (2137 dòng)
 - src/sim/physics/beams_seed.js (2987 dòng)
 - src/sim/physics/cables_break.js (1565 dòng)
 - src/sim/physics/flatrack_payload.js (657 dòng)
@@ -166,12 +166,13 @@ Tổng: 276 file, 79129 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/graphics/GraphicsToneHelper.js` | 114 | Điều chỉnh và lưu độ sáng tối (Brightness) và tương phản (Contrast) cho khung hình 3D như game |
 | `src/graphics/GroundHorizonFade.js` | 46 | Hòa mượt mép ngoài đĩa mặt đất vào màu sương mù chân trời không lộ đường cắt |
 | `src/graphics/HorizonSkyDome.js` | 286 | Dựng vòm bầu trời HorizonSkyDome với mây chân trời 3D Gradient Quintic mềm mại và màu khí quyển thực tế ⚠️>250 |
-| `src/graphics/index.js` | 35 |  |
+| `src/graphics/index.js` | 36 |  |
 | `src/graphics/JobsiteSiteVisuals.js` | 289 | Dựng và đồng bộ hình khối 3D cho đà kê gỗ, đệm địa chất độ dốc và tấm lót chân chống cẩu ở Tab 6. ⚠️>250 |
 | `src/graphics/pbr/ProceduralTextures.js` | 290 | Vẽ texture canvas thủ công (bê tông cảng, cáp thép, xích, sling, mặt nước, vạch cảnh báo) ⚠️>250 |
 | `src/graphics/pbr/StressPBRMaterials.js` | 146 | Tạo bản đồ PBR thép sơn công nghiệp, thép rèn mạ kẽm và màu ứng suất căng cơ học thời gian thực |
 | `src/graphics/PBRMaterialFactory.js` | 244 | Nhà máy tạo vật liệu PBR chuẩn công nghiệp hàng hải và đồng bộ không gian màu Three.js r170+ |
 | `src/graphics/SceneRenderer.js` | 313 |  ⚠️>300 |
+| `src/graphics/SlingAngleGizmo.js` | 199 | Gizmo 3D cung góc dây cáp tương tác (hover/chọn): đường ngang đứt nét, vector dây, quạt cung xanh/vàng/đỏ, nhãn độ |
 | `src/graphics/SolidShellSealer.js` | 109 | Bịt kín lõi/đáy rỗng và bật hai mặt vật liệu cho xe 3D và kiện hàng tránh nhìn xuyên |
 | `src/graphics/SpecialtyCargoMeshes.js` | 158 | Dựng khối 3D ống thép siêu trường Steel Pipe (OOG) và xe buýt procedural đồng bộ CAD |
 | `src/i18n/cargo_labels.js` | 48 |  |
@@ -247,7 +248,7 @@ Tổng: 276 file, 79129 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/library.js` | 6 |  |
 | `src/sim/library/core.js` | 641 |  ⚠️>300 |
 | `src/sim/library/parsers.js` | 654 | --- HIGH-SPEED BINARY & ASCII .STL / .OBJ / .GLB PARSERS --- ⚠️>300 |
-| `src/sim/library/reconstruction_export.js` | 2112 | --- 2D IMAGE TO 3D CONTOUR & RELIEF RECONSTRUCTION ENGINE --- ⚠️>300 |
+| `src/sim/library/reconstruction_export.js` | 2137 | --- 2D IMAGE TO 3D CONTOUR & RELIEF RECONSTRUCTION ENGINE --- ⚠️>300 |
 | `src/sim/manifest.js` | 39 |  |
 | `src/sim/physics.js` | 6 |  |
 | `src/sim/physics/beams_seed.js` | 2987 |  ⚠️>300 |
@@ -327,6 +328,7 @@ Tổng: 276 file, 79129 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/security_headers.test.js` | 44 |  |
 | `test/sim_test_harness.js` | 210 |  |
 | `test/simulation.test.js` | 93 |  |
+| `test/sling_angle_gizmo.test.js` | 57 |  |
 | `test/solid_collision_and_settling.test.js` | 77 |  |
 | `test/solid_collision_and_sliding.test.js` | 106 |  |
 | `test/standards_compliance_engine.test.js` | 281 |  ⚠️>250 |

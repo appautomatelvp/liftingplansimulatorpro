@@ -57,7 +57,7 @@ Người lập kế hoạch: Model cao nhất (KHÔNG viết code ở bước n�
 - **Sửa (≤25 dòng):** `src/sim/physics/step_engine.js` (gắn `meta.bearingOn`, `meta.sideAngleDeg` cho mỗi nhánh), `src/sim/telemetry.js` (dòng nhãn LP/MN: hiển thị `Pin 72%`/`Bow 55%` + tô đỏ khi vượt).
 - **Kiểm tra:** `npx vitest run test/rigging_alarms_and_tolerances.test.js test/localized_hardware_stress.test.js`.
 
-### [ ] Bước 5: Gizmo góc 3D tương tác (Pillar 2.1)
+### [x] Bước 5: Gizmo góc 3D tương tác (Pillar 2.1)
 - **Tạo:** `src/graphics/SlingAngleGizmo.js` (<250 dòng, Three.js, không logic vật lý): khi hover/chọn dây → vẽ (a) đường ngang đứt nét, (b) đường đặc dọc vector dây, (c) quạt cung bán trong suốt giữa hai đường (xanh ≥ 45°, vàng 30–44°, đỏ < 30°), (d) nhãn số độ. Tái sử dụng mesh (không tạo object mới mỗi khung), `dispose()` khi tắt, ẩn ở `performance`.
 - **Sửa (≤25 dòng):** `src/graphics/index.js` (export `createSlingAngleGizmo`), `src/sim/library/reconstruction_export.js` (khởi tạo 1 lần cạnh `createElevationRulerTool`, gọi `update` theo cáp đang hover/chọn).
 - **Tạo test:** `test/sling_angle_gizmo.test.js` (màu theo ngưỡng 45°/30°, độ mở cung = góc thật, `visible=false` khi không chọn, không rò geometry).

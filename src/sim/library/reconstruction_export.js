@@ -2088,6 +2088,31 @@
             if (phy._elevationRuler) {
                 phy._elevationRuler.update({ visible: Boolean(state.displayOptions?.showRuler), state, phy });
             }
+            if (!phy._slingAngleGizmo && typeof GFX !== 'undefined' && GFX.createSlingAngleGizmo && scene && renderer?.domElement) {
+                phy._slingAngleGizmo = GFX.createSlingAngleGizmo({ THREE, scene });
+                renderer.domElement.addEventListener('pointermove', (ev) => {
+                    const rect = renderer.domElement.getBoundingClientRect();
+                    const mx = ((ev.clientX - rect.left) / Math.max(1, rect.width)) * 2 - 1;
+                    const my = -((ev.clientY - rect.top) / Math.max(1, rect.height)) * 2 + 1;
+                    let best = -1, bestD = 0.08;
+                    (phy.cables || []).forEach((c, idx) => {
+                        if (!c || c.broken || typeof attachWorld !== 'function') return;
+                        const mid = attachWorld(c.a).clone().add(attachWorld(c.b)).multiplyScalar(0.5).project(camera);
+                        const d = Math.hypot(mid.x - mx, mid.y - my);
+                        if (mid.z <= 1 && d < bestD) { bestD = d; best = idx; }
+                    });
+                    phy._hoverSlingCableIdx = best;
+                });
+            }
+            if (phy._slingAngleGizmo) {
+                const idx = phy._hoverSlingCableIdx >= 0 ? phy._hoverSlingCableIdx : (phy._selectedSlingCableIdx ?? -1);
+                const c = (idx >= 0 && phy.cables) ? phy.cables[idx] : null;
+                const dOpt = state.displayOptions || {};
+                const gizmoOn = dOpt.showSlingAngleGizmo !== 'off';
+                phy._angleGizmoData = (c && !c.broken && gizmoOn && typeof attachWorld === 'function')
+                    ? phy._slingAngleGizmo.update({ visible: true, qualityTier: state.qualityTier || 'high', pointA: attachWorld(c.a), pointB: attachWorld(c.b) })
+                    : phy._slingAngleGizmo.update({ visible: false });
+            }
 
             // Shadow frustum: every ~4 frames is enough at 1080p
             if (!animate._shadowTick) animate._shadowTick = 0;
