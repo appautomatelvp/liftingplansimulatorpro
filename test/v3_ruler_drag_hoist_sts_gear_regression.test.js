@@ -390,4 +390,60 @@ describe('V3 UX & Physics Upgrades Regression', () => {
     const texSrc = fs.readFileSync(path.resolve(import.meta.dirname, '../src/graphics/pbr/ProceduralTextures.js'), 'utf8');
     expect(texSrc).toContain('Math.max(0, Math.min(12, stripeCount | 0))');
   });
+
+  it('14. ReplayRecorder preserves DNV SKL, activeDiagonal, whipPhase recoil velocities, freeFall, and beam bending', () => {
+    const state = { poseLock: false, slewDeg: 0, craneAngleDeg: 0, gear: { legs: [{ broken: false }], uppers: [], hangers: [] } };
+    const phy = {
+      rigLive: true,
+      groundClearance: 3.5,
+      freeFall: false,
+      beamFreeFall: false,
+      hookPos: new THREE.Vector3(0, 12, 0),
+      hookTarget: new THREE.Vector3(0, 12, 0),
+      cargoPos: new THREE.Vector3(0, 4.8, 0),
+      cargoQuat: new THREE.Quaternion(),
+      beams: [],
+      cables: [{
+        role: 'leg',
+        index: 0,
+        L0: 3.0,
+        tensionT: 14.0,
+        slack: false,
+        broken: false,
+        _bearingOn: 'pin'
+      }],
+      legSlacks: [false],
+      legTensions: [14.0],
+      upperTensions: [],
+      rigging: { dnvMeta: { sklUsed: 1.38, activeDiagonal: [0, 2] } },
+      structuralDeformation: { beamDeflectionMm: 18.4 }
+    };
+    const replay = { recording: false, playing: false, frames: [], t0: 0, cursor: 0 };
+    startReplayRecording({ replay, state, phy, nowSec: 0 });
+
+    phy.cables[0].broken = true;
+    phy.cables[0].break = { upperLen: 1.5, lowerLen: 1.5, tipU: new THREE.Vector3(0, 9.5, 0), tipL: new THREE.Vector3(0, 6.2, 0) };
+    phy.cables[0]._whipState = { active: true, whipPhase: 7, tipVelUpper: { x: 0, y: 12.5, z: 0 }, tipVelLower: { x: 0, y: -12.5, z: 0 } };
+    phy.freeFall = true;
+    phy.structuralDeformation.beamDeflectionMm = 24.2;
+    captureReplayFrame({ replay, state, phy, nowSec: 0.4, force: true });
+
+    // Scramble live state before playback
+    phy.cables[0].broken = false;
+    phy.cables[0]._whipState = null;
+    phy.freeFall = false;
+    phy.structuralDeformation.beamDeflectionMm = 0;
+
+    replay.playing = true;
+    replay.cursor = 0;
+    stepReplayPlayback({ THREE, replay, state, phy, dt: 0.3 });
+
+    expect(phy.cables[0].broken).toBe(true);
+    expect(phy.cables[0]._whipState?.whipPhase).toBe(7);
+    expect(phy.cables[0]._whipState?.tipVelUpper.y).toBeCloseTo(12.5, 2);
+    expect(phy.freeFall).toBe(true);
+    expect(phy.rigging.dnvMeta.sklUsed).toBeCloseTo(1.38, 2);
+    expect(phy.rigging.dnvMeta.activeDiagonal).toEqual([0, 2]);
+    expect(phy.structuralDeformation.beamDeflectionMm).toBeGreaterThan(20);
+  });
 });

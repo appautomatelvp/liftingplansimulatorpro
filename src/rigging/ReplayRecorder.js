@@ -127,12 +127,21 @@ export function captureReplayFrame({ replay, state, phy, activeCargoVisual, nowS
         tipU: c.break?.tipU ? cloneVecArray(c.break.tipU) : null,
         tipL: c.break?.tipL ? cloneVecArray(c.break.tipL) : null,
         uLen: Number(c.break?.upperLen || 0),
-        lLen: Number(c.break?.lowerLen || 0)
+        lLen: Number(c.break?.lowerLen || 0),
+        whipPhase: Number(c._whipState?.whipPhase || 0),
+        tipVelU: c._whipState?.tipVelUpper ? [c._whipState.tipVelUpper.x, c._whipState.tipVelUpper.y, c._whipState.tipVelUpper.z] : null,
+        tipVelL: c._whipState?.tipVelLower ? [c._whipState.tipVelLower.x, c._whipState.tipVelLower.y, c._whipState.tipVelLower.z] : null,
+        bearingOn: c._bearingOn || 'bow'
       };
     }),
     legSlacks: [...(phy.legSlacks || [])],
     legTensions: [...(phy.legTensions || [])],
     upperTensions: [...(phy.upperTensions || [])],
+    sklUsed: Number(phy.rigging?.dnvMeta?.sklUsed || 1.25),
+    activeDiagonal: phy.rigging?.dnvMeta?.activeDiagonal ? [...phy.rigging.dnvMeta.activeDiagonal] : null,
+    freeFall: Boolean(phy.freeFall),
+    beamFreeFall: Boolean(phy.beamFreeFall),
+    beamDeflectionMm: Number(phy.structuralDeformation?.beamDeflectionMm || 0),
     oog: snapshotOogVisual(phy, activeCargoVisual)
   };
 
@@ -231,7 +240,28 @@ export function applyReplayFrame({ THREE, replay, state, phy, activeCargoVisual,
         if (srcA.tipU && srcB.tipU) c.break.tipU.fromArray(srcA.tipU).lerp(tmpTip.fromArray(srcB.tipU), t);
         if (srcA.tipL && srcB.tipL) c.break.tipL.fromArray(srcA.tipL).lerp(tmpTip.fromArray(srcB.tipL), t);
       }
+      const wSrc = t < 0.5 ? ca : cb;
+      c._bearingOn = wSrc.bearingOn || 'bow';
+      if (wSrc.whipPhase > 0 && wSrc.tipVelU && wSrc.tipVelL) {
+        c._whipState = {
+          active: true,
+          whipPhase: wSrc.whipPhase,
+          tipVelUpper: { x: wSrc.tipVelU[0], y: wSrc.tipVelU[1], z: wSrc.tipVelU[2] },
+          tipVelLower: { x: wSrc.tipVelL[0], y: wSrc.tipVelL[1], z: wSrc.tipVelL[2] }
+        };
+      } else {
+        c._whipState = null;
+      }
     });
+  }
+  const fSrc = t < 0.5 ? a : end;
+  phy.freeFall = Boolean(fSrc.freeFall);
+  phy.beamFreeFall = Boolean(fSrc.beamFreeFall);
+  if (phy.rigging) {
+    phy.rigging.dnvMeta = { ...(phy.rigging.dnvMeta || {}), sklUsed: fSrc.sklUsed || 1.25, activeDiagonal: fSrc.activeDiagonal || null };
+  }
+  if (phy.structuralDeformation && fSrc.beamDeflectionMm != null) {
+    phy.structuralDeformation.beamDeflectionMm = THREE.MathUtils.lerp(a.beamDeflectionMm || 0, end.beamDeflectionMm || 0, t);
   }
 
   applyOogReplay({ THREE, phy, activeCargoVisual, oa: a.oog, ob: end.oog || a.oog, t });

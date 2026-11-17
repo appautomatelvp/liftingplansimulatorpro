@@ -1,10 +1,10 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 08:25 | Nhánh: feat/horizon-clouds | Commit cuối: 942fdef step 8: add CableMaterialBehavior wind drag and elastic snap whipPhase tracking (3 minutes ago)
-Tổng: 286 file, 80371 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 08:26 | Nhánh: feat/horizon-clouds | Commit cuối: a712809 step 9: add LoadPathGravity free-fall, resting torque, and extend beam bending (2 minutes ago)
+Tổng: 286 file, 80472 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
-- index.html (3163 dòng)
+- index.html (3170 dòng)
 - scripts/generate_port_assets.js (477 dòng)
 - src/core/AssemblyEngine.js (433 dòng)
 - src/core/AssetManager.js (325 dòng)
@@ -40,7 +40,7 @@ Tổng: 286 file, 80371 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/rigging/hook_pool.js (3126 dòng)
 - src/sim/scene.js (1983 dòng)
 - src/sim/session/prelift_reset.js (1142 dòng)
-- src/sim/session/presets_events.js (3618 dòng)
+- src/sim/session/presets_events.js (3626 dòng)
 - src/sim/session/ui_units_bom.js (1967 dòng)
 - src/sim/state.js (607 dòng)
 - src/sim/telemetry.js (1154 dòng)
@@ -51,7 +51,7 @@ Tổng: 286 file, 80371 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - test/physics_master_blueprint.test.js (524 dòng)
 - test/rigging.test.js (1370 dòng)
 - test/rigging_physics_and_alarms.test.js (306 dòng)
-- test/v3_ruler_drag_hoist_sts_gear_regression.test.js (393 dòng)
+- test/v3_ruler_drag_hoist_sts_gear_regression.test.js (449 dòng)
 
 ## 🔒 File đã khóa [LOCKED]
 - src/utils/firestoreSanitize.js
@@ -84,7 +84,7 @@ Tổng: 286 file, 80371 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `eslint.config.js` | 23 | Flat ESLint config — architecture gates for app/domain layers (optional eslint install). |
 | `firebase.json` | 29 |  |
 | `firestore.rules` | 239 |  |
-| `index.html` | 3163 |  ⚠️>300 |
+| `index.html` | 3170 |  ⚠️>300 |
 | `jsconfig.json` | 19 |  |
 | `package.json` | 42 |  |
 | `playwright.auth.config.js` | 28 |  |
@@ -198,7 +198,7 @@ Tổng: 286 file, 80371 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/index.js` | 29 | src/rigging/index.js |
 | `src/rigging/LoadPathGravity.js` | 163 | Kết nối đường tải trọng lực (rơi tự do g=-9.81 khi mất cáp), mô-men lật τ=r×mg trên mặt đỡ và võng uốn dầm Euler-Bernoulli |
 | `src/rigging/PretensionSolver.js` | 297 | Giải cao độ móc cẩu và dầm ngáng tại trạng thái Nhớm Cáp (kiện chạm đất, toàn bộ cáp căng đúng chiều dài thực) ⚠️>250 |
-| `src/rigging/ReplayRecorder.js` | 261 | Ghi và phát lại toàn bộ trạng thái mô phỏng (Hook, Ngáng dầm, Kiện, Cáp đứt/chùng, Lashing/OOG rơi, Cẩu) tối đa 60 giây. ⚠️>250 |
+| `src/rigging/ReplayRecorder.js` | 291 | Ghi và phát lại toàn bộ trạng thái mô phỏng (Hook, Ngáng dầm, Kiện, Cáp đứt/chùng, Lashing/OOG rơi, Cẩu) tối đa 60 giây. ⚠️>250 |
 | `src/rigging/riggingConstants.js` | 69 | src/rigging/riggingConstants.js |
 | `src/rigging/RiggingPhysicsSolver.js` | 680 | src/rigging/RiggingPhysicsSolver.js ⚠️>300 |
 | `src/rigging/riggingUIStore.js` | 100 | src/rigging/riggingUIStore.js |
@@ -270,7 +270,7 @@ Tổng: 286 file, 80371 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/scene.js` | 1983 |  ⚠️>300 |
 | `src/sim/session.js` | 6 |  |
 | `src/sim/session/prelift_reset.js` | 1142 |  ⚠️>300 |
-| `src/sim/session/presets_events.js` | 3618 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
+| `src/sim/session/presets_events.js` | 3626 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
 | `src/sim/session/ui_units_bom.js` | 1967 | --- 12. UI EVENT BINDINGS & COLLAPSIBLE PANELS --- ⚠️>300 |
 | `src/sim/state.js` | 607 | Floor cribbing removed: static cargo rests flush on the quay / ground plane. ⚠️>300 |
 | `src/sim/telemetry.js` | 1154 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
@@ -343,6 +343,6 @@ Tổng: 286 file, 80371 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/sts_twin_cable_flare.test.js` | 106 |  |
 | `test/telemetry_usage.test.js` | 50 |  |
 | `test/v2_ux_dunnage_ruler_regression.test.js` | 151 | Kiểm thử hồi quy 7 tính năng mới: Lashing khít đáy, SWL >= 12MT, Chỉnh đồng bộ, Hạ êm, Góc xoay mượt, Gỗ kê đỡ/nghiêng kiện, Thước cao độ 3D + Điểm đỏ. |
-| `test/v3_ruler_drag_hoist_sts_gear_regression.test.js` | 393 | Kiểm thử hồi quy 6 nâng cấp mới: bỏ cục tời khi tắt cẩu 3D, kéo đặt thước 3D & bắt Điểm Đỏ cáp/ma ní, dblclick Hạ/Kéo, mở khóa chỉnh cáp, hết giật STS Direct. ⚠️>300 |
+| `test/v3_ruler_drag_hoist_sts_gear_regression.test.js` | 449 | Kiểm thử hồi quy 6 nâng cấp mới: bỏ cục tời khi tắt cẩu 3D, kéo đặt thước 3D & bắt Điểm Đỏ cáp/ma ní, dblclick Hạ/Kéo, mở khóa chỉnh cáp, hết giật STS Direct. ⚠️>300 |
 | `test/workspace_data.test.js` | 155 |  |
 | `vite.config.js` | 115 |  |

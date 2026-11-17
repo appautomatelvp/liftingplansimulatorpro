@@ -87,7 +87,7 @@ Người lập kế hoạch: Model cao nhất (KHÔNG viết code ở bước n�
 - **Tạo test:** `test/load_path_gravity.test.js`: (a) cắt hết cáp → sau 1 s y cargo/spreader giảm ≈ ½·g·t² (±5%); (b) kiện treo nghiêng chạm đất, CoG ngoài đa giác → đầu cao hạ xuống đến nằm phẳng; (c) dầm 12 m, tải 30 t → độ võng giữa nhịp đúng công thức 5wL⁴/384EI (±5%).
 - **Kiểm tra:** `npx vitest run test/load_path_gravity.test.js test/pretension_nhom_cap.test.js test/rigging_realism_sts_contact.test.js`.
 
-### [ ] Bước 10: Ghi/Xem 60 s ghi đủ trạng thái mới + công tắc giao diện
+### [x] Bước 10: Ghi/Xem 60 s ghi đủ trạng thái mới + công tắc giao diện
 - **Sửa (≤25 dòng mỗi file):** `src/rigging/ReplayRecorder.js` (lưu thêm `sklUsed`, `activeDiagonal`, `whipPhase` + vận tốc đầu cáp đứt, `freeFall`, độ võng dầm; phát lại khôi phục đủ), `index.html` + `src/sim/session/presets_events.js` (thêm công tắc *Hiện cung góc / Mũi tên lực / Ứng suất phụ kiện* trong menu Hiển Thị, mặc định **Gizmo = hover**, lưu qua `localDataStore`; từ điển EN/VI đầy đủ).
 - **Tạo test (bổ sung vào file sẵn có):** thêm ca vào `test/v3_ruler_drag_hoist_sts_gear_regression.test.js` (ghi → đứt cáp → xem lại: đầu cáp giật ngược đúng khung hình).
 - **Kiểm tra:** `npx vitest run test/v3_ruler_drag_hoist_sts_gear_regression.test.js test/i18n_keys.test.js`.
