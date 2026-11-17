@@ -996,7 +996,15 @@
             applyLostFrameBranchMoment(cable);
             // frac = cut location along A→B (0..1); omit for mid-span default
             initCableBreak(cable, frac);
-            if (cable) cable._failureProcessed = true;
+            if (cable) {
+                cable._failureProcessed = true;
+                if (typeof RIG !== 'undefined' && RIG.applySnapWhip) {
+                    const mbl = (rec && (rec.swlT || 20) * Math.max(1.5, rec.sf || 5)) * 1000 * 9.80665;
+                    RIG.applySnapWhip(cable, (cable.tensionT || 0) * 1000 * 9.80665, mbl, {
+                        material: (rec && rec.slingType) || state.slingType || 'wire', lengthM: cable.L0 || 4, diameterMm: (rec && rec.diaMm) || 24, tangent: cable.n
+                    });
+                }
+            }
 
             // Twin: if one 20ft lost both outer legs, that half free-falls on its own.
             if (typeof checkTwinHalfDetachment === 'function') checkTwinHalfDetachment();

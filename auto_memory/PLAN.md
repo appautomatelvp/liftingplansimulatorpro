@@ -75,7 +75,7 @@ Người lập kế hoạch: Model cao nhất (KHÔNG viết code ở bước n�
 - **Tạo test:** `test/compound_collider_zero_penetration.test.js` (thả dầm nặng lên nóc container → nghỉ với `penetration < 1 mm`, ma sát giữ không trượt trên mặt phẳng nghiêng nhỏ; hai đoạn xích cắt nhau → tách ra, không xuyên).
 - **Kiểm tra:** `npx vitest run test/compound_collider_zero_penetration.test.js test/architecture/performance_budget.test.js`.
 
-### [ ] Bước 8: XPBD theo vật liệu + hiệu ứng đứt "giật ngược" (Pillar 4)
+### [x] Bước 8: XPBD theo vật liệu + hiệu ứng đứt "giật ngược" (Pillar 4)
 - **Tạo:** `src/rigging/CableMaterialBehavior.js` (<220 dòng): bảng hành vi (độ cứng uốn cao/thấp, gió cản cho vải: lực kéo `½ρCdAv²` theo diện tích dải), + hàm `applySnapWhip(cable, tensionN, mblN)` đặt vận tốc hồi đàn hồi cho 2 đầu đứt (hướng ngược lực căng, độ lớn từ `computeElasticSnapRecoil`), 6–10 khung đầu giữ `whipPhase`, sau đó tắt dần bằng giảm chấn không khí rồi rơi theo `g`.
 - **Sửa (≤25 dòng):** `src/rigging/CableDynamicsXPBD.js` (nhận profile mới: xích uốn≈0 gập góc sắc, cáp thép catenary rộng, vải chịu gió), `src/sim/physics/cables_break.js` (tại điểm xử lý `T ≥ MBL` gọi `applySnapWhip`; không đổi logic cũ khác).
 - **Tạo test:** `test/cable_whip_recoil.test.js`: (a) tension ≥ MBL → `removeConstraint`; (b) 5 khung đầu đầu cáp di chuyển NGƯỢC chiều căng trước khi y giảm; (c) xích slack: góc gập nhỏ hơn cáp thép cùng chiều dài; (d) vải: lệch ngang do gió > 0, cáp thép ≈ 0; (e) không NaN.

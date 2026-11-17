@@ -2079,8 +2079,10 @@
                 const beamCol = RIG.buildCompoundBeamCollider({ center: b.x, quat: b.q, spanX: state.beamLength || 6, beamHeight: Math.max(0.28, beamCargoContactPad(b) * 2), isHBeam: state.beamType === 'hbeam' });
                 const satHit = RIG.resolveCompoundContact(beamCol, cargoCol);
                 if (satHit.collided && satHit.penetrationM > 0.0005) {
-                    b.x.addScaledVector(new THREE.Vector3(satHit.normal.x, satHit.normal.y, satHit.normal.z), satHit.penetrationM);
-                    if (b.v && b.w) stopClosing(b.v, b.w, b.x, satHit.point || b.x, new THREE.Vector3(satHit.normal.x, satHit.normal.y, satHit.normal.z), b.invMass, b.invI, b.q);
+                    const satN = new THREE.Vector3(satHit.normal.x, satHit.normal.y, satHit.normal.z);
+                    const satPt = satHit.point ? new THREE.Vector3(satHit.point.x, satHit.point.y, satHit.point.z) : b.x.clone();
+                    b.x.addScaledVector(satN, satHit.penetrationM);
+                    if (b.v && b.w) stopClosing(b.v, b.w, b.x, satPt, satN, b.invMass, b.invI, b.q);
                 }
             }
             // Roof seating uses structural tube radius — fat visualRadius left a visible air gap

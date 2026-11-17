@@ -6,6 +6,7 @@ export * from './RiggingPhysicsSolver.js';
 export * from './CompoundColliders.js';
 export * from './CollisionMaterialSolver.js';
 export * from './BrokenCableWhipXPBD.js';
+export * from './CableMaterialBehavior.js';
 export * from './RigidInertialDynamics.js';
 export * from './TrueMeshSurfaceContact.js';
 export * from './StsSpreaderRealism.js';
