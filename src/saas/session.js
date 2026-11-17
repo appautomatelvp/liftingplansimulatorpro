@@ -15,6 +15,7 @@ import { installBoundedErrorCounter, normalizeFeatureFlags, readFeatureFlags } f
 import { isMaintenance, loadFlagsOnce } from './runtime_flags.js';
 import { mountWorkspaceDashboard } from './workspace_dashboard.js';
 import { mountTrialCountdownBanner } from './trial_banner.js';
+import { subscribeFeatureLocks } from './feature_locks_cms.js';
 import { openDeveloperContact } from './contact_dialog.js';
 import { clearAppSplash, ensureSaasRoot, installSessionShellUI, mountAccountWidget, playCinemaWorkspaceReveal } from './session_ui_bindings.js';
 
@@ -36,6 +37,7 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
   let trialBanner = null;
   let unsubscribeAuth = null;
   let unsubscribeProfile = null;
+  let unsubscribeFeatureLocks = null;
   let currentUser = null;
   let workspaceStarted = false;
   let authRun = 0;
@@ -131,6 +133,9 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
     });
     if (sessionFlags) syncFlagsToUI(profile, sessionFlags);
     else applyRuntimeFlags(profile);
+    if (!unsubscribeFeatureLocks && firebase?.db) {
+      unsubscribeFeatureLocks = subscribeFeatureLocks(firebase.db, (locks) => featureAccess.setFeatureLocks(locks));
+    }
     if (!trialBanner) {
       trialBanner = mountTrialCountdownBanner({
         getProfile: () => window.SafeLift?.saas?.profile,
@@ -154,6 +159,8 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
     authRun++;
     unsubscribeProfile?.();
     unsubscribeProfile = null;
+    unsubscribeFeatureLocks?.();
+    unsubscribeFeatureLocks = null;
     currentUser = null;
     lastProfileKey = '';
     sessionFlags = null;
@@ -269,6 +276,7 @@ export function installSaasSession({ onWorkspaceAuthorized, onProfileChange, onS
     dispose() {
       unsubscribeAuth?.();
       unsubscribeProfile?.();
+      unsubscribeFeatureLocks?.();
       disposeShellUI();
       authScreen?.dispose();
       adminScreen?.dispose();

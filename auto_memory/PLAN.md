@@ -53,7 +53,7 @@ Người lập kế hoạch: Model cao nhất (CHƯA viết code ở bước nà
   - `src/saas/session.js`: gắn `mountTrialCountdownBanner` sau khi mở workspace và xử lý callback `onExpired` ép re-apply khóa Pro realtime + `playQuota`/`viewportWatermark` refresh ngay lập tức.
 - **Kiểm tra:** thêm test UI countdown `HH:MM:SS` & auto-expire vào `test/trial_access.test.js`; chạy `npx vitest run test/trial_access.test.js test/i18n_keys.test.js` + `npm run architecture:gate`.
 
-### [ ] Bước 3: Module 2 — Firestore Realtime `system_config/feature_locks` & Admin CMS Asset/Feature Matrix (`/admin`)
+### [x] Bước 3: Module 2 — Firestore Realtime `system_config/feature_locks` & Admin CMS Asset/Feature Matrix (`/admin`)
 - **Tạo mới:**
   - `src/saas/feature_locks_cms.js` (< 210 dòng, `@purpose: Định nghĩa danh mục Asset 3D & Tính năng, đồng bộ realtime system_config/feature_locks và giải quyết 3 trạng thái Active/TierLocked/UnderUpgrade`):
     - Danh mục chuẩn hóa `ASSET_LOCK_CATALOG` & `FEATURE_LOCK_CATALOG`: gồm `cargo_oog_transformer`, `cargo_specialized`, `spreader_modular`, `lifting_beam`, `crane_sts_gantry`, `crane_mobile_crawler`, `windSimulation`, `riskAssessmentGenerator`...

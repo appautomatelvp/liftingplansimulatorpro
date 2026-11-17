@@ -16,6 +16,8 @@ import {
   renderAdminShell, renderAuditSection, renderCatalogSection, renderFlagsSection,
   renderKpiRibbon, renderUnauthorizedAdminCard, renderUserDetailModal, renderUsersSection
 } from './admin_panels.js';
+import { normalizeFeatureLocksDoc, readFeatureLocks, saveFeatureLocks, subscribeFeatureLocks } from './feature_locks_cms.js';
+import { renderFeatureLocksSection } from './admin_feature_locks_panel.js';
 
 export function mountAdminDashboard(container, { db, profile, authUser, signOut }) {
   const root = document.createElement('main');
@@ -24,6 +26,7 @@ export function mountAdminDashboard(container, { db, profile, authUser, signOut 
   let users = []; let nextCursor = null; let pageCursors = [null]; let pageIndex = 0; let hasMore = false;
   let emailPrefix = ''; let loading = false; let status = ''; let error = false;
   let accessReason = ''; let flagsReason = ''; let flags = normalizeFeatureFlags({}); let flagsBusy = false;
+  let featureLocks = normalizeFeatureLocksDoc({}); let locksBusy = false; let unsubLocks = null;
   let auditLogs = []; let auditLoading = false; let catalogItems = []; let catalogLoading = false; let catalogBusy = false;
   let catalogDraft = EMPTY_CATALOG_DRAFT();
   let activeSection = 'all'; let inspectedUser = null;
@@ -70,8 +73,10 @@ export function mountAdminDashboard(container, { db, profile, authUser, signOut 
     ].join('') : '';
     const catalogSection = canEditCatalog && (activeSection === 'all' || activeSection === 'catalog')
       ? renderCatalogSection({ tr, catalogLoading, catalogDraft, catalogBusy, catalogItems, catalogFilters }) : '';
+    const locksSection = canViewUsersAudit && (activeSection === 'all' || activeSection === 'locks')
+      ? renderFeatureLocksSection({ tr, canEditUsers, featureLocks, locksBusy }) : '';
     root.innerHTML = renderAdminShell({
-      tr, profile, status, error, usersSection, catalogSection, kpiSection,
+      tr, profile, status, error, usersSection, catalogSection, locksSection, kpiSection,
       activeSection, flags, envLabel, canViewUsersAudit, canEditCatalog,
       modalHtml: renderUserDetailModal({ tr, user: inspectedUser })
     });
@@ -118,6 +123,29 @@ export function mountAdminDashboard(container, { db, profile, authUser, signOut 
       const visible = filterAuditLogs(auditLogs, auditFilters);
       triggerCsvDownload('safelift3d-audit-logs.csv', buildAuditCsv(visible));
       status = tr('cmsCsvExported', { count: visible.length }); error = false; render();
+    });
+    onAll('[data-lock-item][data-lock-state]', 'click', async (btn) => {
+      if (locksBusy || !canEditUsers) return;
+      const itemId = btn.dataset.lockItem;
+      const nextState = btn.dataset.lockState;
+      const draft = normalizeFeatureLocksDoc({ ...featureLocks, locks: { ...featureLocks.locks, [itemId]: nextState } });
+      featureLocks = draft; locksBusy = true; render();
+      try {
+        featureLocks = await saveFeatureLocks(db, authUser.uid, draft);
+        status = tr('cmsLocksSaved'); error = false;
+      } catch {
+        status = tr('adminFlagsError'); error = true;
+      } finally { locksBusy = false; render(); }
+    });
+    on('[data-action="save-locks"]', 'click', async () => {
+      if (locksBusy || !canEditUsers) return;
+      locksBusy = true; render();
+      try {
+        featureLocks = await saveFeatureLocks(db, authUser.uid, featureLocks);
+        status = tr('cmsLocksSaved'); error = false;
+      } catch {
+        status = tr('adminFlagsError'); error = true;
+      } finally { locksBusy = false; render(); }
     });
     onAll('[data-limit-preset]', 'click', (btn) => {
       const formEl = root.querySelector('[data-action="flags-form"]');
@@ -244,7 +272,12 @@ export function mountAdminDashboard(container, { db, profile, authUser, signOut 
   const loadCatalog = (show = true) => runSafeLoad(canEditCatalog, () => catalogLoading, (v) => { catalogLoading = v; }, () => listCatalogItems(db, 30), (rows) => { catalogItems = rows; }, show);
 
   render();
-  if (canViewUsersAudit) { loadUsers(); loadAudit(); readFeatureFlags(db).then((loaded) => { flags = loaded; render(); }).catch(() => {}); }
+  if (canViewUsersAudit) {
+    loadUsers(); loadAudit();
+    readFeatureFlags(db).then((loaded) => { flags = loaded; render(); }).catch(() => {});
+    readFeatureLocks(db).then((loaded) => { featureLocks = loaded; render(); }).catch(() => {});
+    unsubLocks = subscribeFeatureLocks(db, (fresh) => { featureLocks = fresh; render(); });
+  }
   if (canEditCatalog) loadCatalog();
-  return { dispose() { root.remove(); } };
+  return { dispose() { unsubLocks?.(); root.remove(); } };
 }

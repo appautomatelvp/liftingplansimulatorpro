@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 11:42 | Nhánh: feat/horizon-clouds | Commit cuối: f6ec900 step 1: 24h pro trial, anti-abuse deviceFingerprint & firestore.rules (3 minutes ago)
-Tổng: 302 file, 83193 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 11:45 | Nhánh: feat/horizon-clouds | Commit cuối: ed0021f step 2: live 24h trial countdown banner & auto-expire upgrade modal (3 minutes ago)
+Tổng: 305 file, 83537 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -221,7 +221,8 @@ Tổng: 302 file, 83193 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/saas/access.js` | 64 |  |
 | `src/saas/admin_catalog_audit_panels.js` | 89 | Dựng giao diện phân hệ Catalog thiết bị 3 cột, Nhật ký Kiểm toán Diff và Modal chi tiết người dùng |
 | `src/saas/admin_cms.css` | 170 | Giao diện CSS chuẩn Enterprise Command Center cho CMS Quản trị (/admin) |
-| `src/saas/admin_dashboard.js` | 250 |  |
+| `src/saas/admin_dashboard.js` | 283 |  ⚠️>250 |
+| `src/saas/admin_feature_locks_panel.js` | 51 | Giao diện tab "Feature & 3D Asset Matrix" trong /admin để Admin bật/khóa/bảo trì 3 trạng thái tức thì |
 | `src/saas/admin_helpers.js` | 194 | Các hằng số cấu hình và hàm thuần tính KPI, lọc đa chiều, công tắc module, mẫu Catalog và xuất CSV cho CMS |
 | `src/saas/admin_panels.js` | 159 | Các hàm dựng HTML giao diện Enterprise Command Center và đọc dữ liệu form cho bảng quản trị CMS |
 | `src/saas/app_check_config.js` | 15 |  |
@@ -233,15 +234,16 @@ Tổng: 302 file, 83193 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/saas/contact_dialog.js` | 267 | Hộp thoại Liên hệ & Góp ý kỹ thuật chuẩn Enterprise với khóa trượt xác nhận hành vi chống bot ⚠️>250 |
 | `src/saas/deployment_environment.js` | 22 |  |
 | `src/saas/dialog_accessibility.js` | 45 |  |
-| `src/saas/feature_access_ui.js` | 194 |  |
+| `src/saas/feature_access_ui.js` | 256 |  ⚠️>250 |
+| `src/saas/feature_locks_cms.js` | 114 | Danh mục Asset 3D & Tính năng CMS, đồng bộ realtime system_config/feature_locks với 3 trạng thái Active / Tier Locked / Under Upgrade |
 | `src/saas/feedback.js` | 194 | Giải mã động địa chỉ nhận góp ý và xác thực hành vi thao tác chống bot/spam đa lớp |
 | `src/saas/firebase.js` | 95 |  |
 | `src/saas/firebase_data.js` | 118 |  |
 | `src/saas/i18n.js` | 16 | Định dạng khóa ngôn ngữ SaaS và hộp thoại góp ý theo ngôn ngữ hiện tại |
 | `src/saas/plan_snapshot.js` | 170 | Chuẩn hóa dữ liệu thiết bị và đóng gói/giải mã/di trú snapshot phương án nâng hạ |
 | `src/saas/runtime_flags.js` | 63 |  |
-| `src/saas/saas.css` | 280 | saas-root[hidden] { display: none !important; } |
-| `src/saas/session.js` | 281 |  ⚠️>250 |
+| `src/saas/saas.css` | 293 | saas-root[hidden] { display: none !important; } |
+| `src/saas/session.js` | 289 |  ⚠️>250 |
 | `src/saas/session_ui_bindings.js` | 157 | Gắn kết giao diện header, widget tài khoản, banner bảo trì và hộp thoại liên hệ SaaS |
 | `src/saas/telemetry_usage.js` | 143 |  |
 | `src/saas/trial_access.js` | 139 | Quản lý dùng thử Pro 24h, dấu vân tay thiết bị chống lạm dụng nhiều Gmail và hàm hasProAccess(user) |
@@ -322,6 +324,7 @@ Tổng: 302 file, 83193 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/dnv_four_point_lift.test.js` | 93 |  |
 | `test/elastic_four_point_torsion.test.js` | 79 |  |
 | `test/engineering.test.js` | 410 |  ⚠️>300 |
+| `test/feature_locks_cms.test.js` | 63 | Tests cho Dynamic CMS Feature & 3D Asset Locks (system_config/feature_locks 3-state resolution & matrix HTML) |
 | `test/feedback_mailto.test.js` | 144 |  |
 | `test/firestore-rules-emulator.mjs` | 351 |  |
 | `test/firestore-rules-trial-cms.mjs` | 55 | Emulator test bo sung cho rules 24h trial_devices anti-abuse va system_config/feature_locks |
