@@ -8,6 +8,10 @@ import {
   applyCogDragDelta,
   syncCogDragShiftMode
 } from '../src/graphics/CoGGizmoHelper.js';
+import {
+  createCogFaceProjectionGroup,
+  updateCogFaceProjections
+} from '../src/graphics/CoGFaceProjection.js';
 import { EXTRA_UI_EN } from '../src/i18n/sim_ui_phrases.js';
 
 describe('CoG 3D Axis Handles & Drag Behavior (Section 3)', () => {
@@ -107,5 +111,21 @@ describe('CoG 3D Axis Handles & Drag Behavior (Section 3)', () => {
     }
     expect(EXTRA_UI_EN['Lực căng']).toBe('Tension');
     expect(EXTRA_UI_EN['Thước']).toBe('Ruler');
+  });
+
+  it('projects 6 surface intersection crosshairs accurately onto outer cargo faces as CoG moves', () => {
+    const cogGroup = new THREE.Group();
+    const proj = createCogFaceProjectionGroup(THREE);
+    cogGroup.add(proj);
+    updateCogFaceProjections(cogGroup, { L: 12.0, H: 3.0, W: 2.4, cogX: 1.5, cogY: -0.5, cogZ: 0.4, activeDrag: true });
+
+    const { faces, beams } = proj.userData;
+    expect(faces.px.position.x).toBeCloseTo(6.0 - 1.5 + 0.025, 3);
+    expect(faces.nx.position.x).toBeCloseTo(-6.0 - 1.5 - 0.025, 3);
+    expect(faces.py.position.y).toBeCloseTo(1.5 - (-0.5) + 0.025, 3);
+    expect(faces.ny.position.y).toBeCloseTo(-1.5 - (-0.5) - 0.025, 3);
+    expect(faces.pz.position.z).toBeCloseTo(1.2 - 0.4 + 0.025, 3);
+    expect(faces.nz.position.z).toBeCloseTo(-1.2 - 0.4 - 0.025, 3);
+    expect(beams.x.scale.y).toBeCloseTo(12.05, 2);
   });
 });

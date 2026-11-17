@@ -36,3 +36,4 @@ export { pickBestElevationHoverPoint, buildRulerHoverInputs } from './ElevationR
 export { classifySlingAngleZone, computeSlingAngleArcData, createSlingAngleGizmo } from './SlingAngleGizmo.js';
 export { computeVectorLength, classifyForceColorHex, getSlingAngleTooltip, createForceVectorField } from './ForceVectorField.js';
 export { createCoGAxisHandles, buildCogDragPlane, applyCogDragDelta, syncCogDragShiftMode } from './CoGGizmoHelper.js';
+export { createCogFaceProjectionGroup, updateCogFaceProjections } from './CoGFaceProjection.js';

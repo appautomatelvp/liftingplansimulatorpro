@@ -3390,6 +3390,9 @@
                     state._cogDragMode = 'screen';
                     if (typeof applyXRayToCargo === 'function') applyXRayToCargo(activeCargoVisual || cargoRootGroup, true);
                     if (typeof syncDisplayOptionsUI === 'function') syncDisplayOptionsUI();
+                    if (typeof GFX !== 'undefined' && GFX.updateCogFaceProjections) {
+                        GFX.updateCogFaceProjections(cogIndicatorGroup, { L: state.L, W: state.W, H: state.H, cogX: state.cogX, cogY: state.cogY, cogZ: state.cogZ, activeDrag: true });
+                    }
                     dragTarget = { type: 'cog', axis: cogAxis, shiftDepth: false, prevXRay, startWorld, startCog: { x: state.cogX || 0, y: state.cogY || 0, z: state.cogZ || 0 }, pointerId: e.pointerId };
                     if (typeof window.setCameraFocusOverride === 'function') window.setCameraFocusOverride('cog', 0, 4000);
                     e.preventDefault();
@@ -3509,7 +3512,12 @@
                         cargoRootGroup, state, shiftDepth: Boolean(dragTarget.shiftDepth)
                     });
                 }
-                if (cogIndicatorGroup) cogIndicatorGroup.position.set(state.cogX, state.cogY, state.cogZ);
+                if (cogIndicatorGroup) {
+                    cogIndicatorGroup.position.set(state.cogX, state.cogY, state.cogZ);
+                    if (typeof GFX !== 'undefined' && GFX.updateCogFaceProjections) {
+                        GFX.updateCogFaceProjections(cogIndicatorGroup, { L: state.L, W: state.W, H: state.H, cogX: state.cogX, cogY: state.cogY, cogZ: state.cogZ, activeDrag: true });
+                    }
+                }
                 syncCoGSlidersFromState();
                 window.dispatchEvent(new CustomEvent('safelift:cog-change', { detail: { cogX: state.cogX, cogY: state.cogY, cogZ: state.cogZ } }));
                 return;
@@ -3632,6 +3640,9 @@
                     state._cogDragMode = null;
                     if (typeof applyXRayToCargo === 'function') applyXRayToCargo(activeCargoVisual || cargoRootGroup, state.xrayCargo);
                     if (typeof syncDisplayOptionsUI === 'function') syncDisplayOptionsUI();
+                    if (typeof GFX !== 'undefined' && GFX.updateCogFaceProjections) {
+                        GFX.updateCogFaceProjections(cogIndicatorGroup, { L: state.L, W: state.W, H: state.H, cogX: state.cogX, cogY: state.cogY, cogZ: state.cogZ, activeDrag: false });
+                    }
                     rebuildCargoAndRig(false);
                     try { if (dragTarget.pointerId != null) renderer?.domElement?.releasePointerCapture?.(dragTarget.pointerId); } catch (_) { /* ignore */ }
                 } else if (dragTarget.type === 'hook') {

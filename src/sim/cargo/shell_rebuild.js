@@ -523,6 +523,9 @@
             rebuildDunnageBlocks();
 
             cogIndicatorGroup.position.set(cogX, cogY, cogZ);
+            if (typeof GFX !== 'undefined' && GFX.updateCogFaceProjections) {
+                GFX.updateCogFaceProjections(cogIndicatorGroup, { L, W, H, cogX, cogY, cogZ, activeDrag: Boolean(state._cogDragMode) });
+            }
 
             state.lugs.forEach((pos, i) => {
                 if (!pos) return;

@@ -344,6 +344,9 @@
             if (typeof GFX !== 'undefined' && GFX.createCoGAxisHandles) {
                 cogIndicatorGroup.add(GFX.createCoGAxisHandles(THREE));
             }
+            if (typeof GFX !== 'undefined' && GFX.createCogFaceProjectionGroup) {
+                cogIndicatorGroup.add(GFX.createCogFaceProjectionGroup(THREE));
+            }
             cargoRootGroup.add(cogIndicatorGroup);
 
             // Up to 8 welded pad-eyes + hardware shackles
