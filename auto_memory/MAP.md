@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 09:17 | Nhánh: feat/horizon-clouds | Commit cuối: 17768f3 step 2: offset ElevationRuler clear of cargo and default Angle Gizmo to always-on (86 seconds ago)
-Tổng: 290 file, 81089 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 09:20 | Nhánh: feat/horizon-clouds | Commit cuối: 82f528b step 3: add 4 quick toggles (Angle/Tension/Ruler/CoG) to bottom taskbar (3 minutes ago)
+Tổng: 292 file, 81294 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -40,7 +40,7 @@ Tổng: 290 file, 81089 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/plan_wizard.js (650 dòng)
 - src/sim/rigging/draw_update.js (853 dòng)
 - src/sim/rigging/hook_pool.js (3130 dòng)
-- src/sim/scene.js (1983 dòng)
+- src/sim/scene.js (1990 dòng)
 - src/sim/session/prelift_reset.js (1142 dòng)
 - src/sim/session/presets_events.js (3639 dòng)
 - src/sim/session/ui_units_bom.js (1967 dòng)
@@ -165,16 +165,17 @@ Tổng: 290 file, 81089 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/graphics/CoGGizmoHelper.js` | 115 | Tay cầm kéo thả 3 trục X/Y/Z cho Gizmo Trọng Tâm (CoG) và hàm chiếu tọa độ kẹp biên theo kiện hàng |
 | `src/graphics/ElevationRulerMath.js` | 117 | Thuật toán bắt điểm 3D cho thước đo cao độ (lưới khối + dây cáp mảnh + ma ní) |
 | `src/graphics/ElevationRulerTool.js` | 301 | Vẽ cây thước đo cao độ 3D so với mặt đất, cho phép kéo đặt vị trí và điểm đỏ rà chuột mọi chi tiết. ⚠️>300 |
-| `src/graphics/EnvironmentManager.js` | 280 | Quản lý ánh sáng IBL, sương mù chân trời, HDR và đồng bộ thời gian thực cho cảnh 3D ⚠️>250 |
+| `src/graphics/EnvironmentManager.js` | 291 | Quản lý ánh sáng IBL, sương mù chân trời, HDR và đồng bộ thời gian thực cho cảnh 3D ⚠️>250 |
 | `src/graphics/ForceVectorField.js` | 122 | Trường mũi tên véc-tơ lực 3D thời gian thực từ CoG & các điểm nối (tái sử dụng pool, không cấp phát mỗi khung hình) |
 | `src/graphics/GraphicsToneHelper.js` | 114 | Điều chỉnh và lưu độ sáng tối (Brightness) và tương phản (Contrast) cho khung hình 3D như game |
 | `src/graphics/GroundHorizonFade.js` | 46 | Hòa mượt mép ngoài đĩa mặt đất vào màu sương mù chân trời không lộ đường cắt |
 | `src/graphics/HorizonSkyDome.js` | 286 | Dựng vòm bầu trời HorizonSkyDome với mây chân trời 3D Gradient Quintic mềm mại và màu khí quyển thực tế ⚠️>250 |
 | `src/graphics/index.js` | 38 |  |
 | `src/graphics/JobsiteSiteVisuals.js` | 289 | Dựng và đồng bộ hình khối 3D cho đà kê gỗ, đệm địa chất độ dốc và tấm lót chân chống cẩu ở Tab 6. ⚠️>250 |
+| `src/graphics/pbr/IndustrialWearPBR.js` | 138 | Sinh bản đồ PBR hao mòn công nghiệp (tôn sóng container, rỉ cạnh, bụi xước roughnessMap, cáp dầu mỡ & xích rèn nhám) |
 | `src/graphics/pbr/ProceduralTextures.js` | 290 | Vẽ texture canvas thủ công (bê tông cảng, cáp thép, xích, sling, mặt nước, vạch cảnh báo) ⚠️>250 |
 | `src/graphics/pbr/StressPBRMaterials.js` | 146 | Tạo bản đồ PBR thép sơn công nghiệp, thép rèn mạ kẽm và màu ứng suất căng cơ học thời gian thực |
-| `src/graphics/PBRMaterialFactory.js` | 244 | Nhà máy tạo vật liệu PBR chuẩn công nghiệp hàng hải và đồng bộ không gian màu Three.js r170+ |
+| `src/graphics/PBRMaterialFactory.js` | 261 | Nhà máy tạo vật liệu PBR chuẩn công nghiệp hàng hải và đồng bộ không gian màu Three.js r170+ ⚠️>250 |
 | `src/graphics/SceneRenderer.js` | 313 |  ⚠️>300 |
 | `src/graphics/SlingAngleGizmo.js` | 199 | Gizmo 3D cung góc dây cáp tương tác (hover/chọn): đường ngang đứt nét, vector dây, quạt cung xanh/vàng/đỏ, nhãn độ |
 | `src/graphics/SolidShellSealer.js` | 109 | Bịt kín lõi/đáy rỗng và bật hai mặt vật liệu cho xe 3D và kiện hàng tránh nhìn xuyên |
@@ -271,7 +272,7 @@ Tổng: 290 file, 81089 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/rigging.js` | 6 |  |
 | `src/sim/rigging/draw_update.js` | 853 | Slack cable morphology is solved by a persistent material-aware XPBD chain. ⚠️>300 |
 | `src/sim/rigging/hook_pool.js` | 3130 |  ⚠️>300 |
-| `src/sim/scene.js` | 1983 |  ⚠️>300 |
+| `src/sim/scene.js` | 1990 |  ⚠️>300 |
 | `src/sim/session.js` | 6 |  |
 | `src/sim/session/prelift_reset.js` | 1142 |  ⚠️>300 |
 | `src/sim/session/presets_events.js` | 3639 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
@@ -322,6 +323,7 @@ Tổng: 290 file, 81089 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/hyper_realistic_physics_pbr.test.js` | 184 | Kiểm thử Vàng 3 trụ cột: Va chạm CCD & Ma sát, Cẩu 20 tấn lệch tâm + Cắt cáp quật XPBD, và Vật liệu PBR Ứng suất |
 | `test/i18n_keys.test.js` | 56 |  |
 | `test/inclined_lashing_slide.test.js` | 67 |  |
+| `test/industrial_pbr_materials.test.js` | 32 |  |
 | `test/jobsite_lashing_follow_regression.test.js` | 160 | Kiểm thử hồi quy 3D đà gỗ/độ dốc/tấm lót Tab 6, dây chằng Flat Rack ôm sát & đứt tự nhiên, và Camera Follow. |
 | `test/liftplan.test.js` | 153 |  |
 | `test/load_path_gravity.test.js` | 62 |  |

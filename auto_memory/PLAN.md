@@ -54,7 +54,7 @@ Người lập kế hoạch: Model cao nhất (KHÔNG viết code ở bước n�
 - **Tạo / cập nhật test:** thêm kiểm chứng 4 Quick Toggles trong `test/cog_gizmo_drag.test.js` + chạy `test/i18n_keys.test.js`.
 - **Kiểm tra:** `npx vitest run test/cog_gizmo_drag.test.js test/i18n_keys.test.js` + `npm run architecture:gate`.
 
-### [ ] Bước 4: Nâng cấp vật liệu PBR hao mòn công nghiệp & HDRI bãi cảng (Phần 4)
+### [x] Bước 4: Nâng cấp vật liệu PBR hao mòn công nghiệp & HDRI bãi cảng (Phần 4)
 - **Tạo:** `src/graphics/pbr/IndustrialWearPBR.js` (<220 dòng):
   - `drawCorrugatedContainerMaps(size = 512, paintHex)`: sinh map màu sơn công nghiệp có vết trầy cạnh / rỉ sét nhẹ (`Edge Wear & Rust`), `normalMap` gân sóng container + bề mặt thép gồ ghề, và grunge `roughnessMap` (`0.42–0.85` không bóng nhựa).
   - `drawGreasedWireRopeMaps(size = 512)` & `drawForgedChainMaps(size = 256)`: cáp thép màu xám sẫm/đen dầu mỡ công nghiệp, roughness cao hơn (`0.46–0.58`); xích hợp kim kim loại cao (`metalness: 0.90`) nhưng bề mặt nhám lì rèn nóng (`roughness: 0.44`).

@@ -1,13 +1,11 @@
 // @purpose: Nhà máy tạo vật liệu PBR chuẩn công nghiệp hàng hải và đồng bộ không gian màu Three.js r170+
 import * as THREE from 'three';
 import {
-  drawChainAlloyCanvas,
   drawHazardChevronCanvas,
   drawMaritimeWaterNormalCanvas,
   drawQuayConcreteMaps,
   drawRoundSlingMaps,
   drawWebSlingMaps,
-  drawWireRopeMaps,
   makeCanvas
 } from './pbr/ProceduralTextures.js';
 import {
@@ -15,6 +13,11 @@ import {
   drawPaintedSteelMaps,
   resolveStressTintedMaterial
 } from './pbr/StressPBRMaterials.js';
+import {
+  drawCorrugatedContainerMaps,
+  drawForgedChainMaps,
+  drawGreasedWireRopeMaps
+} from './pbr/IndustrialWearPBR.js';
 
 export class PBRMaterialFactory {
   constructor(renderer = null) {
@@ -97,16 +100,14 @@ export class PBRMaterialFactory {
     const cacheKey = 'wire_rope_pbr';
     if (this.cachedMaterials.has(cacheKey)) return this.cachedMaterials.get(cacheKey);
 
-    const { cvsBase, cvsNorm, cvsRough } = drawWireRopeMaps(512);
-    const material = new THREE.MeshPhysicalMaterial({
+    const { cvsBase, cvsNorm, cvsRough } = drawGreasedWireRopeMaps(256);
+    const material = new THREE.MeshStandardMaterial({
       map: this._buildRepeatTexture(cvsBase, true, 1, 16, true),
       normalMap: this._buildRepeatTexture(cvsNorm, false, 1, 16, true),
-      normalScale: new THREE.Vector2(1.15, 1.15),
+      normalScale: new THREE.Vector2(1.25, 1.25),
       roughnessMap: this._buildRepeatTexture(cvsRough, false, 1, 16, false),
-      roughness: 0.30,
-      metalness: 0.90,
-      clearcoat: 0.20,
-      clearcoatRoughness: 0.35
+      roughness: 0.62,
+      metalness: 0.86
     });
     this.cachedMaterials.set(cacheKey, material);
     return material;
@@ -117,25 +118,22 @@ export class PBRMaterialFactory {
     if (this.cachedMaterials.has(cacheKey)) return this.cachedMaterials.get(cacheKey);
 
     if (variant === 'powder_red' || variant === 'powder_yellow') {
-      const mat = new THREE.MeshPhysicalMaterial({
-        color: variant === 'powder_red' ? 0xdc2626 : 0xeab308,
-        metalness: 0.42,
-        roughness: 0.22,
-        clearcoat: 0.48,
-        clearcoatRoughness: 0.18
+      const mat = new THREE.MeshStandardMaterial({
+        color: variant === 'powder_red' ? 0xb91c1c : 0xd97706,
+        metalness: 0.35,
+        roughness: 0.48
       });
       this.cachedMaterials.set(cacheKey, mat);
       return mat;
     }
 
-    const baseMap = this._buildRepeatTexture(drawChainAlloyCanvas(256), true, 1, 1, false);
-    const mat = new THREE.MeshPhysicalMaterial({
-      map: baseMap,
-      color: 0x3e4554,
-      metalness: 0.88,
-      roughness: 0.32,
-      clearcoat: 0.16,
-      clearcoatRoughness: 0.30
+    const { cvsBase, cvsRough } = drawForgedChainMaps(256);
+    const mat = new THREE.MeshStandardMaterial({
+      map: this._buildRepeatTexture(cvsBase, true, 1, 1, false),
+      roughnessMap: this._buildRepeatTexture(cvsRough, false, 1, 1, false),
+      color: 0x4b5563,
+      metalness: 0.90,
+      roughness: 0.50
     });
     this.cachedMaterials.set(cacheKey, mat);
     return mat;
@@ -233,6 +231,25 @@ export class PBRMaterialFactory {
       metalness: 1.0,
       clearcoat: 0.24,
       clearcoatRoughness: 0.26
+    });
+    this.cachedMaterials.set(cacheKey, material);
+    return material;
+  }
+
+  createIndustrialCargoMaterial(paintHex = '#0369a1', options = {}) {
+    const rx = options.repeatX || 2;
+    const ry = options.repeatY || 1;
+    const cacheKey = `ind_cargo_${paintHex}_${rx}_${ry}`;
+    if (this.cachedMaterials.has(cacheKey)) return this.cachedMaterials.get(cacheKey);
+    const { cvsBase, cvsNorm, cvsRough, cvsMetal } = drawCorrugatedContainerMaps(options.size || 256, paintHex);
+    const material = new THREE.MeshStandardMaterial({
+      map: this._buildRepeatTexture(cvsBase, true, rx, ry, true),
+      normalMap: this._buildRepeatTexture(cvsNorm, false, rx, ry, true),
+      normalScale: new THREE.Vector2(options.normalScale ?? 1.15, options.normalScale ?? 1.15),
+      roughnessMap: this._buildRepeatTexture(cvsRough, false, rx, ry, false),
+      metalnessMap: this._buildRepeatTexture(cvsMetal, false, rx, ry, false),
+      roughness: 1.0,
+      metalness: 1.0
     });
     this.cachedMaterials.set(cacheKey, material);
     return material;

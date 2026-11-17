@@ -69,11 +69,18 @@
                 roughness: 0.22
             });
 
-            // High-Precision CAD / Industrial Cargo Surface Materials
-            MATS.containerBlue = new THREE.MeshPhysicalMaterial({ color: 0x0369a1, metalness: 0.35, roughness: 0.38, clearcoat: 0.35 });
-            MATS.woodCrate = new THREE.MeshStandardMaterial({ color: 0xb45309, metalness: 0.12, roughness: 0.72 });
-            MATS.vesselSteel = new THREE.MeshPhysicalMaterial({ color: 0xdbeafe, metalness: 0.72, roughness: 0.22, clearcoat: 0.45 });
-            MATS.trafoGrey = new THREE.MeshPhysicalMaterial({ color: 0x64748b, metalness: 0.58, roughness: 0.3, clearcoat: 0.35 });
+            // High-Precision CAD / Industrial Cargo Surface Materials (weathered PBR steel + corrugated maps)
+            const mkInd = (hex, rx = 2, ry = 1) => (pbrFactory && pbrFactory.createIndustrialCargoMaterial)
+                ? pbrFactory.createIndustrialCargoMaterial(hex, { repeatX: rx, repeatY: ry })
+                : new THREE.MeshStandardMaterial({ color: hex, metalness: 0.45, roughness: 0.62 });
+            if (pbrFactory && pbrFactory.createPaintedSteelBeamMaterial) {
+                MATS.yellowHazard = pbrFactory.createPaintedSteelBeamMaterial('#d97706');
+                MATS.orangeBeam = pbrFactory.createPaintedSteelBeamMaterial('#ea580c');
+            }
+            MATS.containerBlue = mkInd('#0369a1', 3, 1);
+            MATS.woodCrate = new THREE.MeshStandardMaterial({ color: 0xb45309, metalness: 0.08, roughness: 0.82 });
+            MATS.vesselSteel = mkInd('#94a3b8', 2, 1);
+            MATS.trafoGrey = mkInd('#64748b', 2, 1);
             MATS.porcelain = new THREE.MeshPhysicalMaterial({ color: 0x7c2d12, metalness: 0.15, roughness: 0.15, clearcoat: 0.9 });
             MATS.carRed = new THREE.MeshPhysicalMaterial({ color: 0xb91c1c, metalness: 0.55, roughness: 0.16, clearcoat: 1.0, clearcoatRoughness: 0.12 });
             MATS.carTrim = new THREE.MeshStandardMaterial({ color: 0x111827, metalness: 0.4, roughness: 0.45 });
@@ -82,9 +89,9 @@
             MATS.boatHull = new THREE.MeshPhysicalMaterial({ color: 0xf8fafc, metalness: 0.28, roughness: 0.22, clearcoat: 0.75 });
             MATS.hullBoot = new THREE.MeshPhysicalMaterial({ color: 0x7f1d1d, metalness: 0.35, roughness: 0.4, clearcoat: 0.3 });
             MATS.boatDeck = new THREE.MeshPhysicalMaterial({ color: 0x0f766e, metalness: 0.25, roughness: 0.45, clearcoat: 0.25 });
-            MATS.boxMaroon = new THREE.MeshPhysicalMaterial({ color: 0x9f1239, metalness: 0.35, roughness: 0.4, clearcoat: 0.3 });
-            MATS.boxGreen = new THREE.MeshPhysicalMaterial({ color: 0x166534, metalness: 0.32, roughness: 0.42, clearcoat: 0.28 });
-            MATS.reeferWhite = new THREE.MeshPhysicalMaterial({ color: 0xf8fafc, metalness: 0.25, roughness: 0.35, clearcoat: 0.4 });
+            MATS.boxMaroon = mkInd('#9f1239', 3, 1);
+            MATS.boxGreen = mkInd('#166534', 3, 1);
+            MATS.reeferWhite = mkInd('#cbd5e1', 3, 1);
             MATS.tankSteel = new THREE.MeshPhysicalMaterial({ color: 0xe2e8f0, metalness: 0.82, roughness: 0.18, clearcoat: 0.55 });
             MATS.glassDark = new THREE.MeshPhysicalMaterial({ color: 0x0f172a, metalness: 0.85, roughness: 0.08, clearcoat: 1.0 });
             MATS.rubberTire = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.88, metalness: 0.05 });

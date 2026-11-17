@@ -249,6 +249,17 @@ export class EnvironmentManager {
     ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, cvs.width, cvs.height);
 
+    // Subtle industrial port-yard crane/warehouse horizon reflection silhouettes for realistic metallic IBL
+    const horizonY = Math.round(cvs.height * 0.49);
+    ctx.fillStyle = 'rgba(30, 41, 59, 0.32)';
+    [90, 260, 510, 740, 890].forEach((gx, idx) => {
+      const gw = 44 + (idx % 3) * 24;
+      const gh = 18 + (idx % 2) * 14;
+      ctx.fillRect(gx, horizonY - gh, gw, gh + 8);
+    });
+    ctx.fillStyle = 'rgba(251, 191, 36, 0.14)';
+    ctx.fillRect(0, horizonY + 12, cvs.width, 6);
+
     const sunPos = this.sunLight ? this.sunLight.position.toArray() : preset.sunPosition;
     const sunX = (sunPos[0] / 50 + 0.5) * cvs.width;
     const sunY = (1.0 - (sunPos[1] / 60)) * (cvs.height * 0.5);
