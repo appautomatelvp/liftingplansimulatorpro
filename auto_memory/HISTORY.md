@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-17 11:56 [feat] Hoan tat 6/6 buoc: Dung thu 24h Pro Trial + chong lap Gmail (trial_devices), Ma tran khoa CMS realtime (system_config/feature_locks), Tem ban quyen 3D (BrandDecalHelper), Watermark man hinh Free/Trial va Trang Risk Assessment JSA/HSE dong khi xuat PDF.
+- Nhánh: feat/horizon-clouds | Commit trước đó: 0d1a7ad
+- File: src/saas/trial_access.js,src/saas/trial_banner.js,src/saas/feature_locks_cms.js,src/saas/admin_feature_locks_panel.js,src/graphics/BrandDecalHelper.js,src/saas/viewport_watermark.js,src/core/RiskAssessmentReport.js,firestore.rules
+
 ## 2026-11-17 10:33 [fix] Hoan tat Hotfix: dong bo UI theo cay phan cap (CableTelemetryMapper.js), parity day du thong so cho cap tang tren, sua goc ngang [0..90] xoa loi 96 do va chia tai dan hoi 4 diem theo EA + GJ XPBD (ElasticFourPointSolver.js)
 - Nhánh: feat/horizon-clouds | Commit trước đó: 0b2c234
 - File: src/rigging/CableTelemetryMapper.js,src/rigging/ElasticFourPointSolver.js,src/rigging/DnvFourPointLift.js,src/rigging/RiggingPhysicsSolver.js,src/graphics/SlingAngleGizmo.js,src/sim/physics/cables_break.js,src/sim/physics/beams_seed.js,src/sim/telemetry.js,test/elastic_four_point_torsion.test.js

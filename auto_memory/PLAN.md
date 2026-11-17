@@ -1,5 +1,5 @@
 # KẾ HOẠCH THỰC HIỆN (PLAN.md)
-Trạng thái: ACTIVE
+Trạng thái: DONE
 Tính năng: 24H PRO TRIAL, DYNAMIC CMS FEATURE LOCKS (`system_config/feature_locks`), RISK ASSESSMENT (JSA/HSE) & 3D ANTI-THEFT BRANDING (Three.js Decals + Viewport & PDF Watermark)
 Nhánh Git: feat/horizon-clouds (Backup: `LIFTING PLAN SIMULATOR PRO-112617112026 (test - trial-cms-locks-branding-risk).zip`)
 Người lập kế hoạch: Model cao nhất (CHƯA viết code ở bước này — chờ Founder duyệt mở khóa `firestore.rules` `[LOCK-04]` và gõ `làm tiếp`).
@@ -101,7 +101,7 @@ Người lập kế hoạch: Model cao nhất (CHƯA viết code ở bước nà
 - **Tạo / cập nhật test:** `test/risk_assessment_pdf.test.js` kiểm tra Risk Assessment Matrix phản ứng đúng theo góc sling `<45°`, CoG lệch lớn, gió cao, quá áp lực nền, và kiểm tra watermark đỏ nặng khi `isTrialActive: true` vs nhẹ khi `isProUser: true` + attribution footer đủ tên/email/SĐT tác giả; chạy `test/liftplan.test.js` & `test/standards_compliance_engine.test.js`.
 - **Kiểm tra:** `npx vitest run test/risk_assessment_pdf.test.js test/liftplan.test.js test/standards_compliance_engine.test.js` + `npm run architecture:gate`.
 
-### [ ] Bước 6: Kiểm Thử Toàn Diện, Build Sạch & Nghiệm Thu Cuối
+### [x] Bước 6: Kiểm Thử Toàn Diện, Build Sạch & Nghiệm Thu Cuối
 - Chạy: `npx vitest run` (toàn bộ ~65 file test), `npm run architecture:gate`, `npm run build`, `npm run check:dist`, `npx playwright test e2e/saas-accessibility.spec.js --project=fhd-1080p`, `./scripts/auto_check.ps1`.
 - Nếu có Firebase Emulator chạy được trên máy, chạy kiểm chứng thêm `node --test test/firestore-rules-emulator.mjs` (hoặc báo rõ nếu chưa mở Java emulator).
 - Cập nhật `auto_memory/CONTEXT.md`, `STATE.md`, đặt `Trạng thái: DONE` trong `PLAN.md`, chạy `./scripts/auto_log.ps1`.

@@ -20,14 +20,16 @@
 
 ## 4. Hợp đồng dữ liệu Firestore & LocalStorage (Bất khả xâm phạm khi nâng cấp)
 - **Firestore Collections (`firestore.rules`):**
-  - `users/{uid}`: Hồ sơ người dùng (`role`: `user|admin|support|catalog-editor`, `tier`: `free|premium`, `status`: `active|locked|banned`).
-  - `users/{uid}/equipment/{itemId}`: Thiết bị cá nhân (slot `1..20` free, `1..200` premium).
+  - `users/{uid}`: Hồ sơ người dùng (`role`: `user|admin|support|catalog-editor`, `tier`: `free|premium|pro|enterprise`, `trialStartedAt`, `trialEndsAt`, `deviceFingerprint`, `status`: `active|locked|banned`).
+  - `trial_devices/{fpHash}`: Chống nhận lại Trial 24h trên cùng thiết bị; `system_config/feature_locks`: ma trận khóa 3 trạng thái realtime (`active|tier_locked|upgrading`).
+  - `users/{uid}/equipment/{itemId}`: Thiết bị cá nhân (slot `1..20` free, `1..200` pro/trial).
   - `users/{uid}/liftPlans/{itemId}`: Phương án nâng hạ (`snapshot` JSON ≤ 48 KB, tăng `revision` mỗi lần lưu).
   - `users/{uid}/meta/usage`: Bộ đếm quota ghi mỗi ngày (`DAILY_WRITE_LIMIT = 200`).
   - `config/featureFlags`, `adminAuditLogs/{logId}`, `catalog/{itemId}`.
-- **LocalStorage Keys:** `safelift_lang`, `safelift_auth_attempts_v1`, `lp-user-rigs`, `lp-user-rigs-migrated:{uid}`, `lifting_sim_audio_muted`, `lifting_sim_audio_vol`.
+- **LocalStorage Keys:** `safelift_lang`, `safelift_auth_attempts_v1`, `safelift_device_fp_v1`, `safelift_trial_claimed_v1`, `lp-user-rigs`, `lp-user-rigs-migrated:{uid}`, `lifting_sim_audio_muted`, `lifting_sim_audio_vol`.
 
 ## 5. Quyết định quan trọng (mới nhất ở trên) — ghi KÈM LÝ DO
+- [2026-11-17] Hoàn tất 6/6 bước **Thương mại hóa & Bảo vệ Bản quyền (`24h Pro Trial`, `CMS Feature & 3D Matrix`, `3D Decal + Watermark`, `JSA/HSE Risk Assessment PDF`)**: dùng thử 24h chống tạo nhiều Gmail qua `trial_devices/{fpHash}`, ma trận CMS realtime `system_config/feature_locks` (Active / Tier Locked / Under Upgrade), tem bản quyền `CanvasTexture` cache chung trên Cần/Móc/Dầm/Hàng (`0 ms/frame`), SVG watermark cho Free/Trial, và trang PDF JSA/HSE động kèm watermark theo gói.
 - [2026-11-17] Hotfix Đồng bộ Cây Phân Cấp, UI Parity Cáp Tầng Trên, Góc Ngang `[0°..90°]` & Chia Tải Đàn Hồi `EA + GJ` (`CableTelemetryMapper.js`, `ElasticFourPointSolver.js`): bỏ tra chỉ số phẳng, hiển thị đủ `Tên · Lực · Góc · %SWL ma ní · Chiều dài` cho cả tầng trên (`LP1/LP2`) lẫn tầng dưới (`LP11/LP12`), tính góc ngang `asin(|dy|/L)` kẹp `[0..90]` xóa lỗi `96°/98°`, và giải tải 4 nhánh theo độ mềm dọc trục cáp `EA` + xoắn Saint-Venant `GJ` thay cho ép `0t`.
 - [2026-11-17] Tối ưu UX/UI Viewport & PBR (`CoGGizmoHelper.js`, `IndustrialWearPBR.js`): sửa kéo thả 3 trục X/Y/Z Trọng tâm CoG trực tiếp mượt mà không rebuild giữa chừng; dời Thước đo độ cao xa rìa kiện (`offsetX=3.4m`), bật sẵn Angle Gizmo (`'always'`) và tắt nhãn chữ phụ mặc định; bổ sung 4 Quick Toggles (`Góc`, `Lực căng`, `Thước`, `CoG`) cạnh `REC/Xem/Dừng`; nâng cấp tôn sóng container rỉ/xước cạnh, cáp thép dầu mỡ & xích rèn nhám + phản chiếu IBL bãi cảng.
 - [2026-11-17] Áp dụng **Cây Định Danh Phân Cấp (`HierarchicalNaming.js`)**: mọi sợi cáp/ma ní tự động nhận mã kế thừa theo cây từ Móc Cẩu (`LP1, LP2 → LP11, LP12 / LP21, LP22 → LP111...`) kèm `parentId`/`parentName`, đồng bộ nhãn 3D, Inspector, cảnh báo góc, Compliance và Replay 60s.

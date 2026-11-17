@@ -45,8 +45,8 @@
 ---
 
 ## 4. CÔNG VIỆC ĐANG LÀM DỞ (ONGOING WORK)
-- **Mục tiêu hiện tại:** Hoàn tất nâng cấp **UI/UX Viewport Sạch, Kéo thả CoG 3 trục, 4 Quick Toggles & Vật liệu PBR Hao mòn Công nghiệp (`CoGGizmoHelper.js`, `IndustrialWearPBR.js`)** trên nhánh `feat/horizon-clouds`: sửa kéo thả Trọng tâm CoG 3D, dời Thước đo xa rìa kiện + bật sẵn Angle Gizmo, bổ sung 4 nút bật/tắt nhanh lên taskbar dưới, và nâng cấp bề mặt container/thép/cáp/xích chuẩn PBR bãi cảng.
-- **Bước tiếp theo:** Founder kiểm tra trực quan 3D trên trình duyệt (kéo trục X/Y/Z của CoG, bấm 4 nút nhanh dưới taskbar, kiểm tra bề mặt container & cáp/xích), khi muốn đẩy lên GitHub thì báo AI push & merge.
+- **Mục tiêu hiện tại:** Hoàn tất 6/6 bước **Gói Dùng Thử 24h Pro, Ma Trận Khóa CMS Realtime (`system_config/feature_locks`), Tem Bản Quyền 3D (`BrandDecalHelper.js`), Watermark Màn Hình & Báo Cáo JSA/HSE Risk Assessment PDF (`RiskAssessmentReport.js`)** trên nhánh `feat/horizon-clouds`.
+- **Bước tiếp theo:** Founder kiểm tra thực tế trên trình duyệt (thanh đếm ngược 24h, tab Khóa Tính Năng trong `/admin`, tem 3D trên cần/móc/dầm/hàng, xuất PDF kiểm tra JSA/HSE & watermark); khi muốn đẩy lên GitHub/deploy thì báo AI cho phép `git push`.
 
 ---
 
