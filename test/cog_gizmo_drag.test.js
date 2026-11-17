@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 import * as THREE from 'three';
 import {
   createCoGAxisHandles,
   buildCogDragPlane,
   applyCogDragDelta
 } from '../src/graphics/CoGGizmoHelper.js';
+import { EXTRA_UI_EN } from '../src/i18n/sim_ui_phrases.js';
 
 describe('CoG 3D Axis Handles & Drag Behavior (Section 3)', () => {
   it('builds X/Y/Z axis handles and free hit proxy with depthTest disabled and renderOrder=999', () => {
@@ -50,5 +53,17 @@ describe('CoG 3D Axis Handles & Drag Behavior (Section 3)', () => {
       startWorld: worldCoG.clone(), startCog: { x: 0, y: 0, z: 0 }, cargoRootGroup, state
     });
     expect(state.cogX).toBeCloseTo(5.4, 2);
+  });
+
+  it('exposes all 4 taskbar quick toggles with bindings and EN/VI translations', () => {
+    const root = path.resolve(import.meta.dirname, '..');
+    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+    const eventsSrc = fs.readFileSync(path.join(root, 'src/sim/session/presets_events.js'), 'utf8');
+    for (const id of ['btn-qt-angle', 'btn-qt-tension', 'btn-qt-ruler', 'btn-qt-cog']) {
+      expect(html).toContain(`id="${id}"`);
+      expect(eventsSrc).toContain(id);
+    }
+    expect(EXTRA_UI_EN['Lực căng']).toBe('Tension');
+    expect(EXTRA_UI_EN['Thước']).toBe('Ruler');
   });
 });

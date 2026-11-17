@@ -46,7 +46,7 @@ Người lập kế hoạch: Model cao nhất (KHÔNG viết code ở bước n�
   - `src/sim/session/presets_events.js` (~dòng 2827): đồng bộ checkbox `chk-disp-angle-gizmo` theo `dOpt.showSlingAngleGizmo !== 'off'`.
 - **Kiểm tra:** `npx vitest run test/sling_angle_gizmo.test.js test/v2_ux_dunnage_ruler_regression.test.js test/v3_ruler_drag_hoist_sts_gear_regression.test.js` + `npm run architecture:gate`.
 
-### [ ] Bước 3: Bổ sung 4 Quick Toggles lên thanh Taskbar dưới (Phần 2)
+### [x] Bước 3: Bổ sung 4 Quick Toggles lên thanh Taskbar dưới (Phần 2)
 - **Sửa (≤25 dòng/file):**
   - `index.html` (~dòng 430): chèn nhóm 4 nút gọn ngay cạnh `REC | Xem | Dừng` ở hàng trên bên phải của thanh taskbar: `btn-qt-angle` (Góc), `btn-qt-tension` (Lực căng), `btn-qt-ruler` (Thước), `btn-qt-cog` (CoG).
   - `src/sim/session/presets_events.js` (~dòng 2827 & 3020): gắn sự kiện click cho 4 nút (đồng bộ hai chiều với `state.displayOptions` & cập nhật trạng thái sáng/tắt của nút ngay trong `syncDisplayOptionsUI()`).

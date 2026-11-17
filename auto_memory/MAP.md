@@ -1,10 +1,10 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 09:15 | Nhánh: feat/horizon-clouds | Commit cuối: 32bf20d step 1: fix 3D CoG gizmo dragging with 3-axis handles, pointer capture, and smooth state sync (2 minutes ago)
-Tổng: 290 file, 81038 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 09:17 | Nhánh: feat/horizon-clouds | Commit cuối: 17768f3 step 2: offset ElevationRuler clear of cargo and default Angle Gizmo to always-on (86 seconds ago)
+Tổng: 290 file, 81089 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
-- index.html (3170 dòng)
+- index.html (3186 dòng)
 - scripts/generate_port_assets.js (477 dòng)
 - src/core/AssemblyEngine.js (433 dòng)
 - src/core/AssetManager.js (325 dòng)
@@ -42,7 +42,7 @@ Tổng: 290 file, 81038 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/rigging/hook_pool.js (3130 dòng)
 - src/sim/scene.js (1983 dòng)
 - src/sim/session/prelift_reset.js (1142 dòng)
-- src/sim/session/presets_events.js (3626 dòng)
+- src/sim/session/presets_events.js (3639 dòng)
 - src/sim/session/ui_units_bom.js (1967 dòng)
 - src/sim/state.js (608 dòng)
 - src/sim/telemetry.js (1171 dòng)
@@ -86,7 +86,7 @@ Tổng: 290 file, 81038 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `eslint.config.js` | 23 | Flat ESLint config — architecture gates for app/domain layers (optional eslint install). |
 | `firebase.json` | 29 |  |
 | `firestore.rules` | 239 |  |
-| `index.html` | 3170 |  ⚠️>300 |
+| `index.html` | 3186 |  ⚠️>300 |
 | `jsconfig.json` | 19 |  |
 | `package.json` | 42 |  |
 | `playwright.auth.config.js` | 28 |  |
@@ -184,7 +184,7 @@ Tổng: 290 file, 81038 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/i18n/contact_keys.js` | 73 | Bộ từ điển song ngữ VI/EN chuẩn công nghiệp cho hộp thoại Hỗ trợ kỹ thuật & Góp ý |
 | `src/i18n/index.js` | 134 |  |
 | `src/i18n/keys.js` | 598 |  ⚠️>300 |
-| `src/i18n/sim_ui_phrases.js` | 170 | Bảng từ điển bổ sung & chuyển đổi badge động song ngữ Việt–Anh cho mô phỏng 3D và bảng thiết bị |
+| `src/i18n/sim_ui_phrases.js` | 177 | Bảng từ điển bổ sung & chuyển đổi badge động song ngữ Việt–Anh cho mô phỏng 3D và bảng thiết bị |
 | `src/main.js` | 67 |  |
 | `src/rigging/BrokenCableWhipXPBD.js` | 252 | Mô phỏng XPBD sóng quật, thu hồi năng lượng đàn hồi và va chạm CCD cho hai nửa cáp đứt hoặc cáp tháo chốt ⚠️>250 |
 | `src/rigging/CableDynamicsXPBD.js` | 271 | Bộ giải động lực học cáp/xích XPBD chịu kéo, tự va chạm và đứt thu hồi đàn hồi ⚠️>250 |
@@ -274,7 +274,7 @@ Tổng: 290 file, 81038 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/scene.js` | 1983 |  ⚠️>300 |
 | `src/sim/session.js` | 6 |  |
 | `src/sim/session/prelift_reset.js` | 1142 |  ⚠️>300 |
-| `src/sim/session/presets_events.js` | 3626 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
+| `src/sim/session/presets_events.js` | 3639 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
 | `src/sim/session/ui_units_bom.js` | 1967 | --- 12. UI EVENT BINDINGS & COLLAPSIBLE PANELS --- ⚠️>300 |
 | `src/sim/state.js` | 608 | Floor cribbing removed: static cargo rests flush on the quay / ground plane. ⚠️>300 |
 | `src/sim/telemetry.js` | 1171 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
@@ -306,7 +306,7 @@ Tổng: 290 file, 81038 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/cargo_labels.test.js` | 63 |  |
 | `test/catalog_client.test.js` | 94 |  |
 | `test/cms_data.test.js` | 187 |  |
-| `test/cog_gizmo_drag.test.js` | 54 |  |
+| `test/cog_gizmo_drag.test.js` | 69 |  |
 | `test/cog_tilt_stability.test.js` | 231 |  |
 | `test/compound_collider_zero_penetration.test.js` | 67 |  |
 | `test/custom_slings.test.js` | 712 |  ⚠️>300 |
