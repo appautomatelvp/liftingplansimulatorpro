@@ -214,7 +214,11 @@
             }
 
             sanitizeSimBodies();
-
+            if (typeof RIG !== 'undefined' && RIG.computeLoadPathConnectivity) {
+                const lpc = RIG.computeLoadPathConnectivity(phy.cables, state.beamType);
+                phy.freeFall = lpc.cargoFreeFall && (phy.groundClearance || 0) > 0.04;
+                phy.beamFreeFall = lpc.beamFreeFall;
+            }
             publishCableLoads();
 
             const hookY = document.getElementById('inp-hook-y');
@@ -314,6 +318,7 @@
                     ? gearIsCtrlHover('sling', role, index)
                     : false,
                 diaMm: item && item.diaMm ? item.diaMm : (itemSlingType === 'web' ? 50 : 18),
+                swlT: swl,
                 grade: item && item.grade ? item.grade : '',
                 slingType: itemSlingType,
                 parts: (item && item.parts) || 1,
@@ -570,6 +575,17 @@
             }
             sling.visA = visA.clone();
             sling.visB = visB.clone();
+            if (cable && !isBrokenStub && typeof RIG !== 'undefined' && RIG.trackShackleBearing) {
+                const track = RIG.trackShackleBearing({
+                    pinPos: sling.pinB || pointB,
+                    contactPos: visB,
+                    shackleAxis: sling.shackleDirB || { x: 0, y: 1, z: 0 },
+                    pinAxis: sling.parentNormalB || { x: 1, y: 0, z: 0 },
+                    slingLeaveVec: sling.hwLeaveB || sling.shackleDirB
+                });
+                cable._bearingOn = track.bearingOn;
+                cable._sideAngleDeg = track.sideAngleDeg;
+            }
         }
 
         function alignLinkedHardware(rig, master) {

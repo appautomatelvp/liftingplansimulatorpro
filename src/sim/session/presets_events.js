@@ -1216,6 +1216,9 @@
             'Các trang hiệu chỉnh': 'Adjustment panels'
         });
 
+        const _extraUiEn = (typeof window !== 'undefined' && window.SafeLift?.i18n?.extraUiEn) || null;
+        if (_extraUiEn) Object.assign(UI_EN, _extraUiEn);
+
         function libText(s) {
             if (!s) return '';
             if (state.lang !== 'en') return s;
@@ -1404,6 +1407,7 @@
             if (typeof updateUnitDisplayElements === 'function') updateUnitDisplayElements();
             if (typeof syncCableControlsSelection === 'function') syncCableControlsSelection();
             if (typeof syncSlingSlidersFromState === 'function') syncSlingSlidersFromState();
+            if (typeof computeRiggingMassBreakdown === 'function') computeRiggingMassBreakdown();
             syncDrawerHeaderLanguage();
         }
 
@@ -2821,9 +2825,13 @@
                 setChk('chk-disp-lengths', dOpt.showSlingLengths);
                 setChk('chk-disp-cog', dOpt.showCoG);
                 setChk('chk-disp-vectors', dOpt.showVectors);
+                setChk('chk-disp-angle-gizmo', dOpt.showSlingAngleGizmo !== 'off');
                 setChk('chk-disp-cad', dOpt.showCADEdges);
                 setChk('chk-disp-hud', dOpt.showHUD);
                 setChk('chk-disp-ruler', dOpt.showRuler);
+                if (typeof window !== 'undefined' && window.SafeLift?.localDataStore?.safeWriteLocalStore) {
+                    window.SafeLift.localDataStore.safeWriteLocalStore('safelift_display_opts_v1', dOpt);
+                }
 
                 // Backward-compatibility state sync
                 state.showVectors = Boolean(dOpt.showVectors);
@@ -3009,6 +3017,10 @@
             bindChk('chk-disp-lengths', 'showSlingLengths');
             bindChk('chk-disp-cog', 'showCoG');
             bindChk('chk-disp-vectors', 'showVectors');
+            document.getElementById('chk-disp-angle-gizmo')?.addEventListener('change', (e) => {
+                state.displayOptions.showSlingAngleGizmo = e.target.checked ? 'hover' : 'off';
+                syncDisplayOptionsUI();
+            });
             bindChk('chk-disp-cad', 'showCADEdges');
             bindChk('chk-disp-hud', 'showHUD');
             bindChk('chk-disp-ruler', 'showRuler');

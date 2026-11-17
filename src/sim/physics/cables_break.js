@@ -996,7 +996,15 @@
             applyLostFrameBranchMoment(cable);
             // frac = cut location along A→B (0..1); omit for mid-span default
             initCableBreak(cable, frac);
-            if (cable) cable._failureProcessed = true;
+            if (cable) {
+                cable._failureProcessed = true;
+                if (typeof RIG !== 'undefined' && RIG.applySnapWhip) {
+                    const mbl = (rec && (rec.swlT || 20) * Math.max(1.5, rec.sf || 5)) * 1000 * 9.80665;
+                    RIG.applySnapWhip(cable, (cable.tensionT || 0) * 1000 * 9.80665, mbl, {
+                        material: (rec && rec.slingType) || state.slingType || 'wire', lengthM: cable.L0 || 4, diameterMm: (rec && rec.diaMm) || 24, tangent: cable.n
+                    });
+                }
+            }
 
             // Twin: if one 20ft lost both outer legs, that half free-falls on its own.
             if (typeof checkTwinHalfDetachment === 'function') checkTwinHalfDetachment();
@@ -1290,6 +1298,16 @@
                         ? RIG.getHitchFactor(state)
                         : 1.0;
                     const swlEff = legSwl(c.index) * hitchF;
+                    const shackleItem = state.gear && state.gear.shackles ? state.gear.shackles[c.index] : null;
+                    const evalHw = (typeof CAE !== 'undefined' && CAE.evaluateShackleComponentLoad)
+                        ? CAE.evaluateShackleComponentLoad : (typeof window !== 'undefined' && window.CAE && window.CAE.evaluateShackleComponentLoad);
+                    if (evalHw) {
+                        const hwWll = (shackleItem && shackleItem.wllT) || state.shackleWll || Math.max(12, legSwl(c.index) * 1.1);
+                        c._hardwareStress = evalHw({
+                            wllT: hwWll, pinMm: shackleItem && shackleItem.pinDiaMm, jawMm: shackleItem && shackleItem.jawMm,
+                            loadT: slack ? 0 : seen, bearingOn: c._bearingOn || 'bow', sideAngleDeg: c._sideAngleDeg || 0, hwType: state.hwType || 'bow_shackle'
+                        });
+                    }
                     const mbl = swlEff * Math.max(1.5, leg.sf || 5);
                     c._alarmZone = (!slack && seen > swlEff)
                         ? (seen >= mbl ? 3 : 2)

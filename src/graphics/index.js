@@ -33,3 +33,5 @@ export {
   createElevationRulerTool
 } from './ElevationRulerTool.js';
 export { pickBestElevationHoverPoint, buildRulerHoverInputs } from './ElevationRulerMath.js';
+export { classifySlingAngleZone, computeSlingAngleArcData, createSlingAngleGizmo } from './SlingAngleGizmo.js';
+export { computeVectorLength, classifyForceColorHex, getSlingAngleTooltip, createForceVectorField } from './ForceVectorField.js';

@@ -76,7 +76,8 @@ export const EN1492_COLOR_TABLE = [
     { maxWllT: 5.0, colorNameVi: 'Đỏ (5T)', colorHex: '#dc2626', stripeCount: 5, webWidthMm: 150, webThickMm: 8.0, roundDiaMm: 52, linearMassWeb: 1.25, linearMassRound: 1.42 },
     { maxWllT: 6.0, colorNameVi: 'Nâu (6T)', colorHex: '#92400e', stripeCount: 6, webWidthMm: 180, webThickMm: 8.5, roundDiaMm: 58, linearMassWeb: 1.52, linearMassRound: 1.70 },
     { maxWllT: 8.0, colorNameVi: 'Xanh dương (8T)', colorHex: '#2563eb', stripeCount: 8, webWidthMm: 240, webThickMm: 9.0, roundDiaMm: 66, linearMassWeb: 2.05, linearMassRound: 2.25 },
-    { maxWllT: Infinity, colorNameVi: 'Cam (Heavy 10T+)', colorHex: '#ea580c', stripeCount: 0, webWidthMm: 300, webThickMm: 10.0, roundDiaMm: 85, linearMassWeb: 2.80, linearMassRound: 3.10 }
+    { maxWllT: 11.99, colorNameVi: 'Cam (10T)', colorHex: '#ea580c', stripeCount: 10, webWidthMm: 300, webThickMm: 10.0, roundDiaMm: 85, linearMassWeb: 2.80, linearMassRound: 3.10 },
+    { maxWllT: Infinity, colorNameVi: 'Cam (Heavy 12T+)', colorHex: '#ea580c', stripeCount: 0, webWidthMm: 300, webThickMm: 10.0, roundDiaMm: 85, linearMassWeb: 2.80, linearMassRound: 3.10 }
 ];
 
 export function getEN1492ColorSpec(wllT = 2.0) {

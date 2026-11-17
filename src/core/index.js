@@ -22,6 +22,7 @@ export { GroundPressureEngine, SOIL_BEARING_LIBRARY, COMMERCIAL_MAT_PRESETS } fr
 export { ElasticSlingEngine, SLING_MATERIALS, EN1492_COLOR_TABLE, getEN1492ColorSpec, getSlingPhysicalSpec } from './ElasticSlingEngine.js';
 export { PhysicalCableSolver } from './PhysicalCableSolver.js';
 export { DeformableSteelStructure } from './DeformableSteelStructure.js';
+export { evaluateShackleComponentLoad } from './LocalizedHardwareStress.js';
 export { RIGGING_DICTIONARY, getDictionaryEntry } from './RiggingDictionary.js';
 export { RIGGING_EQUIPMENT_CATALOG, getRiggingEquipmentGroup } from './RiggingEquipmentCatalog.js';
 

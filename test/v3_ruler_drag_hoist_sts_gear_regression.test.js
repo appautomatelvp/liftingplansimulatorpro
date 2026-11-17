@@ -6,6 +6,14 @@ import * as THREE from 'three';
 import { createElevationRulerTool } from '../src/graphics/ElevationRulerTool.js';
 import { pickBestElevationHoverPoint, buildRulerHoverInputs } from '../src/graphics/ElevationRulerMath.js';
 import { rebuildDunnageVisual3D, sampleDunnageContactPointsForCargo } from '../src/graphics/JobsiteSiteVisuals.js';
+import { computeWebSlingVisualSize, applySlingSegmentTransform } from '../src/rigging/SlingPerfHelper.js';
+import {
+  createContinuousWebRibbonMesh,
+  updateWebRibbonMesh,
+  createEn1492WebEyeGroup
+} from '../src/rigging/WebbingSlingMeshBuilder.js';
+import { getEN1492ColorSpec } from '../src/core/ElasticSlingEngine.js';
+import { EXTRA_UI_EN, translateBadge } from '../src/i18n/sim_ui_phrases.js';
 import {
   startReplayRecording,
   captureReplayFrame,
@@ -268,5 +276,174 @@ describe('V3 UX & Physics Upgrades Regression', () => {
     expect(tabletCss).toContain('touch-action: none');
     expect(tabletCss).toContain('#bottom-dock-bar');
     expect(tabletCss).toContain('#top-bar');
+  });
+
+  it('10. Web sling uses compact realistic width (never 30cm planks) and ElevationRuler + badges translate cleanly', () => {
+    const heavyWeb = computeWebSlingVisualSize(300);
+    const medWeb = computeWebSlingVisualSize(150);
+    const lightWeb = computeWebSlingVisualSize(60);
+    expect(lightWeb.widthM).toBeCloseTo(0.06, 3);
+    expect(medWeb.widthM).toBeGreaterThan(lightWeb.widthM);
+    expect(heavyWeb.widthM).toBeGreaterThan(medWeb.widthM);
+    expect(heavyWeb.widthM).toBeLessThanOrEqual(0.115);
+
+    const seg = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial());
+    applySlingSegmentTransform(THREE, seg, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 2, 0), new THREE.Vector3(0, 1, 0), 'web', 2, 300, 10, 15, 0, 4, 1);
+    expect(seg.scale.x).toBeLessThanOrEqual(0.115);
+    expect(seg.scale.x).toBeGreaterThan(seg.scale.z);
+
+    expect(EXTRA_UI_EN['🎗️ Cáp bẹ dẹt (Webbing · EN 1492-1)']).toBe('🎗️ Flat Webbing Sling (EN 1492-1)');
+    expect(EXTRA_UI_EN['Thước đo cao độ 3D (Điểm đỏ)']).toBe('3D Elevation Ruler (Hover Probe)');
+    expect(translateBadge('🚨 QUÁ TẢI CẨU', 'en')).toBe('🚨 CRANE OVERLOAD');
+    expect(translateBadge('🟢 ĐẠT CHUẨN NỀN', 'en')).toBe('🟢 GROUND SAFE');
+    expect(translateBadge('⚠️ CRITICAL LIFT', 'vi')).toBe('⚠️ NÂNG TỚI HẠN');
+
+    const rulerSrc = fs.readFileSync(path.resolve(import.meta.dirname, '../src/graphics/ElevationRulerTool.js'), 'utf8');
+    expect(rulerSrc).toContain("isVi ? 'Móc cẩu' : 'Hook'");
+    expect(rulerSrc).toContain("isVi ? 'Ngáng' : 'Spreader'");
+    expect(rulerSrc).toContain("isVi ? 'Đỉnh' : 'Top'");
+    expect(rulerSrc).toContain("isVi ? 'Đáy' : 'Bottom'");
+    expect(rulerSrc).toContain("isVi ? 'Điểm đỏ' : 'Probe'");
+  });
+
+  it('11. Continuous EN 1492-1 webbing ribbon builds quad-loop strap, anti-abrasion eye sleeve, and right-handed basis', () => {
+    const dir = new THREE.Vector3(0.45, 0.88, -0.15).normalize();
+    const seg = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial());
+    applySlingSegmentTransform(THREE, seg, new THREE.Vector3(0, 0, 0), dir.clone().multiplyScalar(2), new THREE.Vector3(0, 1, 0), 'web', 2, 120, 5, 15, 0, 4, 1);
+    const alignedY = new THREE.Vector3(0, 1, 0).applyQuaternion(seg.quaternion);
+    expect(alignedY.distanceTo(dir)).toBeLessThan(1e-5);
+
+    const mat = new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.95, metalness: 0 });
+    const ribbon = createContinuousWebRibbonMesh(THREE, mat, 32);
+    const pts = [
+      new THREE.Vector3(-1.5, 4.0, 0),
+      new THREE.Vector3(-0.9, 2.8, 0.05),
+      new THREE.Vector3(-0.3, 1.6, 0.02),
+      new THREE.Vector3( 0.0, 0.4, 0)
+    ];
+    const ok = updateWebRibbonMesh(THREE, ribbon, pts, 150, { hasEyeA: true, hasEyeB: true, eyeInsetM: 0.14, slackRatio: 0.96 });
+    expect(ok).toBe(true);
+    expect(ribbon.geometry.drawRange.count).toBeGreaterThan(100);
+    const pos = ribbon.geometry.attributes.position.array;
+    for (let i = 0; i < 60; i++) expect(Number.isFinite(pos[i])).toBe(true);
+
+    const eye = createEn1492WebEyeGroup(THREE, { webGreen: mat });
+    const names = [];
+    eye.traverse(c => { if (c.name) names.push(c.name); });
+    expect(names).toContain('Web_Eye_Loop');
+    expect(names).toContain('Web_Wear_Sleeve');
+    expect(names).toContain('Web_Cuff');
+  });
+
+  it('12. Continuous webbing ribbon keeps all 49 spline points seamless inside collar and Lifting Beam length resize moves all cables', () => {
+    const mat = new THREE.MeshStandardMaterial({ color: 0xea580c, roughness: 0.95, metalness: 0 });
+    const ribbon = createContinuousWebRibbonMesh(THREE, mat, 64);
+    const pts49 = Array.from({ length: 49 }, (_, i) => new THREE.Vector3(0, 8 * (1 - i / 48), 0));
+    const inset = 0.13;
+    const ok = updateWebRibbonMesh(THREE, ribbon, pts49, 300, { hasEyeA: true, hasEyeB: true, eyeInsetM: inset, slackRatio: 1 });
+    expect(ok).toBe(true);
+    const pos = ribbon.geometry.attributes.position.array;
+    const sc = ribbon.userData._scratch;
+    // End ring (r = 48) must stay within exact eyeInsetM of pts49[48] — never chopped by 48-ring cap
+    expect(sc.trimmed[48].distanceTo(pts49[48])).toBeCloseTo(inset, 2);
+    expect(sc.trimmed[0].distanceTo(pts49[0])).toBeCloseTo(inset, 2);
+    expect(Number.isFinite(pos[0])).toBe(true);
+
+    const sim = createHeadlessSim();
+    const st = sim.getState();
+    const phy = sim.getPhy();
+    st.beamType = 'lifting_beam';
+    st.liftingBeamTopMode = 'bridle2';
+    st.liftingBeamBottomMode = 'cable';
+    st.gear.members = st.gear.members || {};
+    st.gear.members.main = { lengthM: 5.95, aM: null, bM: null, swlT: null, massT: null };
+    st.customBeamLengthMode = true;
+    sim.rebuildCargoAndRig(false);
+    const uppers = (phy.cables || []).filter(c => c.role === 'upper');
+    const legs = (phy.cables || []).filter(c => c.role === 'leg');
+    expect(uppers.length).toBe(2);
+    expect(legs.length).toBe(4);
+    uppers.forEach(c => expect(Math.abs(c.b.local.x)).toBeCloseTo(5.95 * 0.5, 2));
+    legs.forEach(c => expect(Math.abs(c.a.local.x)).toBeCloseTo(5.95 * 0.5, 2));
+  });
+
+  it('13. EN 1492-1 web sling progression maps all 8 capacities (1T..10T + 12T+) to exact colors and stripe counts', () => {
+    const expected = [
+      [1.0, '#9333ea', 1, 30],
+      [2.0, '#16a34a', 2, 60],
+      [3.0, '#eab308', 3, 90],
+      [4.0, '#64748b', 4, 120],
+      [5.0, '#dc2626', 5, 150],
+      [6.0, '#92400e', 6, 180],
+      [8.0, '#2563eb', 8, 240],
+      [10.0, '#ea580c', 10, 300],
+      [12.0, '#ea580c', 0, 300]
+    ];
+    for (const [wll, hex, stripes, widthMm] of expected) {
+      const spec = getEN1492ColorSpec(wll);
+      expect(spec.colorHex).toBe(hex);
+      expect(spec.stripeCount).toBe(stripes);
+      expect(spec.webWidthMm).toBe(widthMm);
+    }
+    const stepSrc = fs.readFileSync(path.resolve(import.meta.dirname, '../src/sim/physics/step_engine.js'), 'utf8');
+    expect(stepSrc).toContain('swlT: swl');
+    const texSrc = fs.readFileSync(path.resolve(import.meta.dirname, '../src/graphics/pbr/ProceduralTextures.js'), 'utf8');
+    expect(texSrc).toContain('Math.max(0, Math.min(12, stripeCount | 0))');
+  });
+
+  it('14. ReplayRecorder preserves DNV SKL, activeDiagonal, whipPhase recoil velocities, freeFall, and beam bending', () => {
+    const state = { poseLock: false, slewDeg: 0, craneAngleDeg: 0, gear: { legs: [{ broken: false }], uppers: [], hangers: [] } };
+    const phy = {
+      rigLive: true,
+      groundClearance: 3.5,
+      freeFall: false,
+      beamFreeFall: false,
+      hookPos: new THREE.Vector3(0, 12, 0),
+      hookTarget: new THREE.Vector3(0, 12, 0),
+      cargoPos: new THREE.Vector3(0, 4.8, 0),
+      cargoQuat: new THREE.Quaternion(),
+      beams: [],
+      cables: [{
+        role: 'leg',
+        index: 0,
+        L0: 3.0,
+        tensionT: 14.0,
+        slack: false,
+        broken: false,
+        _bearingOn: 'pin'
+      }],
+      legSlacks: [false],
+      legTensions: [14.0],
+      upperTensions: [],
+      rigging: { dnvMeta: { sklUsed: 1.38, activeDiagonal: [0, 2] } },
+      structuralDeformation: { beamDeflectionMm: 18.4 }
+    };
+    const replay = { recording: false, playing: false, frames: [], t0: 0, cursor: 0 };
+    startReplayRecording({ replay, state, phy, nowSec: 0 });
+
+    phy.cables[0].broken = true;
+    phy.cables[0].break = { upperLen: 1.5, lowerLen: 1.5, tipU: new THREE.Vector3(0, 9.5, 0), tipL: new THREE.Vector3(0, 6.2, 0) };
+    phy.cables[0]._whipState = { active: true, whipPhase: 7, tipVelUpper: { x: 0, y: 12.5, z: 0 }, tipVelLower: { x: 0, y: -12.5, z: 0 } };
+    phy.freeFall = true;
+    phy.structuralDeformation.beamDeflectionMm = 24.2;
+    captureReplayFrame({ replay, state, phy, nowSec: 0.4, force: true });
+
+    // Scramble live state before playback
+    phy.cables[0].broken = false;
+    phy.cables[0]._whipState = null;
+    phy.freeFall = false;
+    phy.structuralDeformation.beamDeflectionMm = 0;
+
+    replay.playing = true;
+    replay.cursor = 0;
+    stepReplayPlayback({ THREE, replay, state, phy, dt: 0.3 });
+
+    expect(phy.cables[0].broken).toBe(true);
+    expect(phy.cables[0]._whipState?.whipPhase).toBe(7);
+    expect(phy.cables[0]._whipState?.tipVelUpper.y).toBeCloseTo(12.5, 2);
+    expect(phy.freeFall).toBe(true);
+    expect(phy.rigging.dnvMeta.sklUsed).toBeCloseTo(1.38, 2);
+    expect(phy.rigging.dnvMeta.activeDiagonal).toEqual([0, 2]);
+    expect(phy.structuralDeformation.beamDeflectionMm).toBeGreaterThan(20);
   });
 });

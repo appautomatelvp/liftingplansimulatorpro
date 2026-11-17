@@ -431,6 +431,7 @@
             slingObj.group.name = slingMeshNameMap[look] || 'Wire_Rope_Sling';
 
             const wllNow = (cable && cable.swlT) || meta.swlT || state.wllPerLeg || 15.0;
+            const singleWllNow = Math.max(0.2, wllNow / Math.max(1, meta.parts || 1));
             let mat = MATS.wireRope;
             if (look === 'chain') {
                 mat = MATS.chainDark;
@@ -438,7 +439,7 @@
                 const getDynMat = (typeof window !== 'undefined' && window.getDynamicSlingMaterial)
                     || (typeof MATS !== 'undefined' && MATS.getDynamicSlingMaterial);
                 if (getDynMat) {
-                    mat = getDynMat(look, wllNow);
+                    mat = getDynMat(look, singleWllNow);
                 } else {
                     mat = MATS.webGreen;
                 }
@@ -511,17 +512,15 @@
                 if (slingObj.links && slingObj.links[i]) slingObj.links[i].visible = false;
             }
 
+            const useContinuousWeb = (look === 'web') && !!slingObj.webRibbon && !!(typeof RIG !== 'undefined' && RIG.updateWebRibbonMesh);
             for (let i = 0; i < N; i++) {
                 const seg = slingObj.segments[i];
                 if (seg.geometry !== targetGeo) {
                     seg.geometry = targetGeo;
                 }
                 seg.material = mat;
-                // Keep first/last wire segments visible so they meet the ferrule tip (hiding them
-                // made cables look severed from the swaged sleeve).
-                const hideTipForEye = false;
-                // Chain: hide tube body, show articulated oval links; others: continuous body
-                seg.visible = !chain && !hideTipForEye;
+                // Chain uses instanced oval links; continuous EN 1492-1 webbing uses seamless spline ribbon mesh
+                seg.visible = !chain && !useContinuousWeb;
                 const segLen = Math.max(0.001, pts[i].distanceTo(pts[i + 1]));
                 const tipDig = (!chain && (i === 0 || i === N - 1) && (showWireEye || showGrommetEye))
                     ? 0.022 * Math.max(1, bodyK) : 0;
@@ -674,21 +673,38 @@
                 }
             }
 
+            if (slingObj.webRibbon) {
+                if (useContinuousWeb && pts.length >= 2) {
+                    const webSz = RIG.computeWebSlingVisualSize ? RIG.computeWebSlingVisualSize(dia) : { eyeScaleY: 1.0 };
+                    slingObj.webRibbon.material = mat;
+                    slingObj.webRibbon.visible = RIG.updateWebRibbonMesh(THREE, slingObj.webRibbon, pts, dia, {
+                        hasEyeA: showWebEye,
+                        hasEyeB: showWebEye && reached,
+                        eyeInsetM: showWebEye ? (0.128 * webSz.eyeScaleY) : 0,
+                        slackRatio: Math.min(1, chord / Math.max(0.05, workLen))
+                    });
+                } else {
+                    slingObj.webRibbon.visible = false;
+                }
+            }
+
             // 2. Web Sling Becket Eyes (Folded Eye + Cross-Stitch + Safety Tag)
             if (slingObj.webEyeA && slingObj.webEyeB) {
                 slingObj.webEyeA.visible = showWebEye;
                 slingObj.webEyeB.visible = showWebEye && reached;
-                const webWidthM = Math.max(0.045, Math.min(0.30, dia / 1000));
-                const webEyeScale = THREE.MathUtils.clamp(webWidthM / 0.072, 0.7, 2.4);
+                const webSize = (typeof RIG !== 'undefined' && RIG.computeWebSlingVisualSize)
+                    ? RIG.computeWebSlingVisualSize(dia)
+                    : { eyeScaleX: THREE.MathUtils.clamp((dia / 1000) * 0.34 / 0.078, 0.42, 1.22), eyeScaleY: 0.9, eyeScaleZ: 0.55 };
                 const orientWebEye = (mesh, seat, leave) => {
                     const yAxis = leave.clone().normalize();
                     const side = new THREE.Vector3().crossVectors(yAxis, upY);
                     if (side.lengthSq() < 1e-8) side.set(1, 0, 0);
                     side.normalize();
-                    const nrm = new THREE.Vector3().crossVectors(yAxis, side).normalize();
+                    // Right-handed basis (X × Y = +Z) prevents reflection inversion on eye orientation
+                    const nrm = new THREE.Vector3().crossVectors(side, yAxis).normalize();
                     mesh.position.copy(seat);
                     mesh.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(side, yAxis, nrm));
-                    mesh.scale.set(webEyeScale, webEyeScale, Math.max(0.55, webEyeScale * 0.35));
+                    mesh.scale.set(webSize.eyeScaleX, webSize.eyeScaleY, webSize.eyeScaleZ);
                     mesh.traverse(m => {
                         if (m.isMesh && (m.name === 'Web_Eye_Loop' || m.name === 'Web_Cuff')) m.material = mat;
                     });

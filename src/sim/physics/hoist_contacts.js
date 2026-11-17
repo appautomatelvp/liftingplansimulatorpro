@@ -688,9 +688,11 @@
                 const topMode = state.liftingBeamTopMode || 'bridle2';
                 const bottomMode = state.liftingBeamBottomMode || 'cable';
                 const sp = spanBase();
+                const main = memberSpec('main');
+                const mainSpanX = main ? main.length : sp.spanX;
                 const hb = (typeof RIG !== 'undefined' && RIG.resolveHBeamCorners)
-                    ? RIG.resolveHBeamCorners(sp.spanX, sp.spanZ, state, bottomMode)
-                    : { halfX: sp.spanX * 0.5, halfZ: sp.spanZ * 0.5, outerX: sp.spanX + 0.28, corners: [[sp.spanX * 0.5, sp.spanZ * 0.5, 0], [-sp.spanX * 0.5, sp.spanZ * 0.5, 1], [-sp.spanX * 0.5, -sp.spanZ * 0.5, 2], [sp.spanX * 0.5, -sp.spanZ * 0.5, 3]] };
+                    ? RIG.resolveHBeamCorners(mainSpanX, sp.spanZ, state, bottomMode)
+                    : { halfX: mainSpanX * 0.5, halfZ: sp.spanZ * 0.5, outerX: mainSpanX + 0.28, corners: [[mainSpanX * 0.5, sp.spanZ * 0.5, 0], [-mainSpanX * 0.5, sp.spanZ * 0.5, 1], [-mainSpanX * 0.5, -sp.spanZ * 0.5, 2], [mainSpanX * 0.5, -sp.spanZ * 0.5, 3]] };
                 const selfKg = userBeamKg != null ? userBeamKg : estimateMemberStructuralMassKg('main');
                 add('main', Math.max(120, selfKg + hwShareKg), hb.outerX, 'x', new THREE.Vector3(), ['main']);
                 const dual = (state.hookCount || 1) >= 2;

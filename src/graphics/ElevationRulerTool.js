@@ -139,7 +139,7 @@ export function createElevationRulerTool({ THREE, scene }) {
         const numSpr = makeSpriteLabel(THREE, '#38bdf8');
         if (numSpr) {
           numSpr.scale.set(1.85, 0.48, 1);
-          numSpr.position.set(-1.12, meters, 0);
+          numSpr.position.set(-0.92, meters, 0);
           numSpr.userData._redraw(`${meters.toFixed(0)}m`, '#38bdf8');
           ticksGroup.add(numSpr);
         }
@@ -153,10 +153,10 @@ export function createElevationRulerTool({ THREE, scene }) {
       new THREE.SphereGeometry(0.085, 14, 14),
       new THREE.MeshBasicMaterial({ color: colorHex })
     );
-    const bar = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.025, 0.025), new THREE.MeshBasicMaterial({ color: colorHex }));
-    bar.position.x = 0.32;
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.025, 0.025), new THREE.MeshBasicMaterial({ color: colorHex }));
+    bar.position.x = 0.42;
     const spr = makeSpriteLabel(THREE, cssColor);
-    if (spr) spr.position.set(2.55, 0, 0);
+    if (spr) spr.position.set(3.25, 0, 0);
     grp.add(dot, bar);
     if (spr) grp.add(spr);
     grp.userData.sprite = spr;
@@ -249,10 +249,11 @@ export function createElevationRulerTool({ THREE, scene }) {
       grp.position.set(0, yVal, 0);
       grp.userData.sprite?.userData?._redraw(label, grp.userData.cssColor);
     };
-    place(mHook, marks.hookY, `Hook: ${marks.hookY.toFixed(2)} m`);
-    place(mSpreader, marks.spreaderY, marks.spreaderY != null ? `Ngáng: ${marks.spreaderY.toFixed(2)} m` : '');
-    place(mTop, marks.cargoTopY, `Đỉnh: ${marks.cargoTopY.toFixed(2)} m`);
-    place(mBottom, marks.cargoBottomY, `Đáy: ${marks.cargoBottomY.toFixed(2)} m`);
+    const isVi = state?.lang === 'vi';
+    place(mHook, marks.hookY, `${isVi ? 'Móc cẩu' : 'Hook'}: ${marks.hookY.toFixed(2)} m`);
+    place(mSpreader, marks.spreaderY, marks.spreaderY != null ? `${isVi ? 'Ngáng' : 'Spreader'}: ${marks.spreaderY.toFixed(2)} m` : '');
+    place(mTop, marks.cargoTopY, `${isVi ? 'Đỉnh' : 'Top'}: ${marks.cargoTopY.toFixed(2)} m`);
+    place(mBottom, marks.cargoBottomY, `${isVi ? 'Đáy' : 'Bottom'}: ${marks.cargoBottomY.toFixed(2)} m`);
 
     if (hoverWorld) {
       const hy = Math.max(0, hoverWorld.y);
@@ -266,7 +267,7 @@ export function createElevationRulerTool({ THREE, scene }) {
       if (hoverSprite) {
         hoverSprite.visible = true;
         hoverSprite.position.set(-2.65, hy, 0);
-        hoverSprite.userData?._redraw(`Điểm đỏ: ${hy.toFixed(2)} m`, '#ef4444');
+        hoverSprite.userData?._redraw(`${isVi ? 'Điểm đỏ' : 'Probe'}: ${hy.toFixed(2)} m`, '#ef4444');
       }
     } else {
       hoverDot.visible = false;

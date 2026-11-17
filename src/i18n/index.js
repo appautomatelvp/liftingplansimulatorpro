@@ -1,4 +1,5 @@
 import { KEYS, SPLASH_STAGES } from './keys.js';
+import { EXTRA_UI_EN, translateBadge } from './sim_ui_phrases.js';
 import { formatCargoDerivedLabel, formatCargoCrateLabel } from './cargo_labels.js';
 import { BRAND, COPYRIGHT, applyDocumentBrand } from '../saas/branding.js';
 import { safeReadLocalStore, safeWriteLocalStore } from '../utils/localDataStore.js';
@@ -121,6 +122,8 @@ export function createI18nApi() {
     formatCargoCrateLabel,
     splashMessage,
     applyDataI18n,
+    extraUiEn: EXTRA_UI_EN,
+    translateBadge,
     KEYS,
     SPLASH_STAGES,
     BRAND,
@@ -128,4 +131,4 @@ export function createI18nApi() {
   };
 }
 
-export { KEYS, SPLASH_STAGES, BRAND, COPYRIGHT };
+export { KEYS, SPLASH_STAGES, BRAND, COPYRIGHT, EXTRA_UI_EN, translateBadge };

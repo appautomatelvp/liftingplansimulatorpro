@@ -1,6 +1,7 @@
 // @purpose: Bộ giải động lực học cáp/xích XPBD chịu kéo, tự va chạm và đứt thu hồi đàn hồi
 import * as THREE from 'three';
 import { CABLE_MATERIAL_PROFILES, computeElasticSnapRecoil, normalizeCableMaterial } from './BrokenCableWhipXPBD.js';
+import { computeWindDragAccel, getMaterialBehavior } from './CableMaterialBehavior.js';
 
 export { CABLE_MATERIAL_PROFILES };
 
@@ -178,11 +179,15 @@ export class CableDynamicsXPBD {
     this.previous[endIdx].copy(targetPoint);
   }
 
-  step(dt, pointA, pointB, { gravityY = -GRAVITY, collide, iterations = 10 } = {}) {
+  step(dt, pointA, pointB, { gravityY = -GRAVITY, windVelocity = null, collide, iterations = 10 } = {}) {
     if (!this.positions.length) this.reset(pointA, pointB);
     if (!finiteVector(pointA) || !finiteVector(pointB) || !(dt > 0)) return this.positions.map((p) => p.clone());
     const steps = Math.max(1, Math.min(8, Math.ceil(dt / (1 / 60))));
     const subDt = Math.min(1 / 60, dt / steps);
+    const nodeMassKg = Math.max(0.02, this.linearMassKgM * this.segmentLength);
+    const windAcc = windVelocity ? computeWindDragAccel({
+      material: this.material, windVelocity, diameterM: this.diameterM, segmentLengthM: this.segmentLength, nodeMassKg
+    }) : { x: 0, y: 0, z: 0 };
     for (let stepIndex = 0; stepIndex < steps; stepIndex++) {
       if (this.pinnedA) this._shiftEndpoint(0, pointA, true);
       if (this.pinnedB) this._shiftEndpoint(this.segments, pointB, false);
@@ -191,7 +196,7 @@ export class CableDynamicsXPBD {
         if (this.inverseMasses[i] === 0) continue;
         const position = this.positions[i], old = position.clone();
         const velocity = position.clone().sub(this.previous[i]).multiplyScalar(drag);
-        position.add(velocity).add(new THREE.Vector3(0, gravityY * subDt * subDt, 0));
+        position.add(velocity).add(new THREE.Vector3(windAcc.x * subDt * subDt, (gravityY + windAcc.y) * subDt * subDt, windAcc.z * subDt * subDt));
         this.previous[i].copy(old);
       }
       this._setEndpointInverseMasses();
@@ -223,7 +228,7 @@ export class CableDynamicsXPBD {
   }
 
   breakAt(segmentIndex, tensionN, minimumBreakingLoadN) {
-    if (!(tensionN > minimumBreakingLoadN)) return { broken: false, recoilSpeedMps: 0 };
+    if (!(tensionN >= minimumBreakingLoadN)) return { broken: false, recoilSpeedMps: 0, whipPhase: 0 };
     const index = Math.max(0, Math.min(this.segments - 1, Math.round(segmentIndex)));
     if (!this.positions.length) return { broken: false, recoilSpeedMps: 0 };
     this.brokenSegment = index;
@@ -247,7 +252,9 @@ export class CableDynamicsXPBD {
       this.previous[node].copy(this.positions[node]).addScaledVector(velocity, -this.lastDt);
     });
     this._distanceLambda.fill(0);
-    return { broken: true, segmentIndex: index, storedElasticEnergyJ: energyJ, recoilSpeedMps };
+    const whipFrames = getMaterialBehavior(this.material).whipFrames;
+    this.whipPhase = whipFrames;
+    return { broken: true, segmentIndex: index, storedElasticEnergyJ: energyJ, recoilSpeedMps, whipPhase: whipFrames };
   }
 
   nodeVelocity(index) {

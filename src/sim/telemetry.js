@@ -256,6 +256,24 @@
                     arrow.visible = false;
                 }
             });
+            if (!phy._forceVectorField && typeof GFX !== 'undefined' && GFX.createForceVectorField && typeof scene !== 'undefined') {
+                phy._forceVectorField = GFX.createForceVectorField({ THREE, scene });
+            }
+            if (phy._forceVectorField) {
+                const showVec = Boolean(state.displayOptions?.showVectors ?? state.showVectors);
+                const cogW = (typeof CARGO !== 'undefined' && CARGO.localToWorldCargo) ? CARGO.localToWorldCargo(new THREE.Vector3(...(state.cogOffset || [0, -0.1, 0]))) : phy.cargoPos;
+                const conns = [];
+                (phy.cables || []).forEach((c) => {
+                    if (!c || c.broken || !(c.tensionT > 0.02)) return;
+                    const pA = attachWorld(c.a), pB = attachWorld(c.b);
+                    conns.push({ origin: pB, dir: pA.clone().sub(pB), tensionT: c.tensionT, swlT: c.role === 'leg' ? legSwl(c.index) : (state.upperWll || 20) });
+                });
+                phy._forceVectorField.update({ visible: showVec, qualityTier: state.qualityTier || 'high', cogWorld: cogW, cargoWeightT: state.weight || 0, totalHookLoadT: (phy.hookLoadT || 0), connections: conns });
+            }
+            const angleTipEl = document.getElementById('sling-angle-tooltip') || document.getElementById('lbl-hook');
+            if (angleTipEl && phy._angleGizmoData && typeof GFX !== 'undefined' && GFX.getSlingAngleTooltip) {
+                angleTipEl.title = GFX.getSlingAngleTooltip(state.lang || 'vi');
+            }
 
             const upVec = new THREE.Vector3(0, 1, 0).applyQuaternion(phy.cargoQuat);
             phy.tiltDeg = Math.acos(THREE.MathUtils.clamp(upVec.y, -1, 1)) * (180 / Math.PI);
@@ -292,7 +310,7 @@
             const horizAng = Math.max(0, 90 - vertAng);
             const elVert = document.getElementById('out-angle-vert');
             elVert.textContent = vertAng.toFixed(1) + '°';
-            document.getElementById('out-angle-horiz').textContent = `Ngang β: ${horizAng.toFixed(1)}°`;
+            document.getElementById('out-angle-horiz').textContent = L(`Horiz β: ${horizAng.toFixed(1)}°`, `Ngang β: ${horizAng.toFixed(1)}°`);
             elVert.className = 'font-mono font-bold text-xs ' + (vertAng > 60 ? 'text-red-400' : (vertAng > 45 ? 'text-amber-400' : 'text-emerald-400'));
 
             const elTilt = document.getElementById('out-tilt');
@@ -445,7 +463,7 @@
                 }
             }
             const utilPct = Math.round((maxT / wllPerLeg) * 100);
-            document.getElementById('out-util').textContent = `Max WLL: ${utilPct}%`;
+            document.getElementById('out-util').textContent = L(`Max WLL: ${utilPct}%`, `Tải SWL: ${utilPct}%`);
 
             const elSlack = document.getElementById('out-slack-state');
             if (allSlack) {
@@ -527,7 +545,7 @@
                 const bar = document.getElementById(`bar-t${i}`);
                 const val = document.getElementById(`val-t${i}`);
                 bar.style.width = pct + '%';
-                val.textContent = state.gear.legs[i].broken ? 'ĐỨT' : (t.toFixed(2) + ' T');
+                val.textContent = state.gear.legs[i].broken ? L('PARTED', 'ĐỨT') : (t.toFixed(2) + ' T');
 
                 const colorClass = state.gear.legs[i].broken || t > swl ? 'text-red-400' : (t > swl * 0.8 ? 'text-amber-400' : 'text-emerald-400');
                 const barColor = state.gear.legs[i].broken || t > swl ? 'bg-red-500' : (t > swl * 0.8 ? 'bg-amber-400' : 'bg-emerald-400');
@@ -556,7 +574,7 @@
                         const midPt = hwWorldPos[i].clone().lerp(anchor, 0.42);
                         projectToScreen(midPt, lbl);
                         if (state.gear.legs[i].broken) {
-                            _setElemTextCached(lbl, `LP${i + 1}: ĐỨT`, 'label-3d text-red-400 border-red-500/60 font-bold');
+                            _setElemTextCached(lbl, `LP${i + 1}: ${L('PARTED', 'ĐỨT')}`, 'label-3d text-red-400 border-red-500/60 font-bold');
                         } else {
                             const parts = [`LP${i + 1}`];
                             if (dOpt.showForces) {
@@ -565,15 +583,24 @@
                             if (dOpt.showSlingAngles) {
                                 parts.push(`${Math.round(phy.legAngleDeg[i] || 60)}°`);
                             }
+                            let hwOver = false;
                             if (dOpt.showShackleLoads) {
-                                parts.push(`MN: ${Math.round(pct)}%`);
+                                const legCable = (phy.cables || []).find(c => c.role === 'leg' && c.index === i);
+                                const hwS = legCable && legCable._hardwareStress;
+                                if (hwS) {
+                                    const gov = hwS.governing === 'pin' ? 'Pin' : 'Bow';
+                                    parts.push(`${state.lang === 'en' ? 'SH' : 'MN'}(${gov}): ${Math.round(hwS.utilizationPct || 0)}%`);
+                                    hwOver = Boolean(hwS.isOverloaded);
+                                } else {
+                                    parts.push(`${state.lang === 'en' ? 'SH' : 'MN'}: ${Math.round(pct)}%`);
+                                }
                             }
                             if (dOpt.showSlingLengths) {
                                 const turn = state.legDeltaL[i] || 0;
                                 const turnStr = Math.abs(turn) > 0.01 ? ` (${turn > 0 ? '+' : ''}${turn.toFixed(2)}m)` : '';
                                 parts.push(`L: ${state.slingLength.toFixed(1)}m${turnStr}`);
                             }
-                            _setElemTextCached(lbl, parts.join(' · '), `label-3d ${colorClass}`);
+                            _setElemTextCached(lbl, parts.join(' · '), `label-3d ${hwOver ? 'text-red-400' : colorClass}`);
                         }
                     } else {
                         _setElemPosCached(lbl, 0, 0, '0');
@@ -593,7 +620,7 @@
                     if (dOpt.showHookLoad) {
                         const swl = state.craneSWL || 64;
                         const pctSwl = Math.round((totalHookLoad / Math.max(1, swl)) * 100);
-                        const pfx = isClamped ? '⬆️ MÓC' : '🪝 MÓC';
+                        const pfx = isClamped ? L('⬆️ HOOK', '⬆️ MÓC') : L('🪝 HOOK', '🪝 MÓC');
                         parts.push(`${pfx}: ${totalHookLoad.toFixed(2)}T (${pctSwl}% SWL)`);
                     }
                     if (dOpt.showSlingAngles) {
@@ -712,7 +739,7 @@
                 const utilPct = Math.round((tensionT / Math.max(0.01, wllT)) * 100);
                 const isCrit = angleDeg < 30.0;
                 const isWarn = angleDeg < 60.0 && !isCrit;
-                const zoneText = isCrit ? 'CRITICAL' : (isWarn ? 'WARNING' : 'SAFE');
+                const zoneText = isCrit ? L('CRITICAL', 'NGUY HIỂM') : (isWarn ? L('WARNING', 'CẢNH BÁO') : L('SAFE', 'AN TOÀN'));
                 const zoneColor = isCrit ? 'text-red-400 font-bold' : (isWarn ? 'text-amber-300 font-bold' : 'text-emerald-300 font-bold');
 
                 const elTen = document.getElementById('v-sel-tension');
@@ -721,7 +748,7 @@
                 if (elTen) elTen.innerHTML = state.lang === 'en'
                     ? `Leg tension: <b class="text-white">${tensionT.toFixed(2)} t</b> (${utilPct}%)`
                     : `Lực căng T: <b class="text-white">${tensionT.toFixed(2)} T</b> (${utilPct}%)`;
-                if (elAng) elAng.innerHTML = `Góc α: <b class="text-sky-300">${angleDeg.toFixed(1)}°</b> · LAF: <b class="${zoneColor}">${laf.toFixed(3)}</b>`;
+                if (elAng) elAng.innerHTML = `${L('Angle α:', 'Góc α:')} <b class="text-sky-300">${angleDeg.toFixed(1)}°</b> · LAF: <b class="${zoneColor}">${laf.toFixed(3)}</b>`;
                 if (elSwl) elSwl.innerHTML = `WLL: ${wllT.toFixed(1)} T · <span class="${zoneColor}">[${zoneText}]</span>`;
             }
 
@@ -753,7 +780,8 @@
                 if (zoneEl) {
                     const label = rg.zoneLabel || 'SAFE';
                     const color = label === 'SAFE' ? 'text-emerald-300' : 'text-red-400 font-bold';
-                    zoneEl.innerHTML = `Zone: <b class="${color}">${label}</b>`
+                    const zoneShow = label === 'SAFE' ? L('SAFE', 'AN TOÀN') : (label === 'WARNING' ? L('WARNING', 'CẢNH BÁO') : label);
+                    zoneEl.innerHTML = `${L('Zone:', 'Vùng:')} <b class="${color}">${zoneShow}</b>`
                         + (rg.topology ? ` · ${rg.topology}` : '')
                         + (rg.minAngleDeg != null ? ` · α<sub>min</sub> ${rg.minAngleDeg.toFixed(0)}°` : '');
                 }
@@ -847,9 +875,14 @@
                 elBar.className = `h-full transition-all duration-100 ${lmi.isOverloaded ? 'bg-red-500' : (lmi.isCriticalLift ? 'bg-amber-500' : 'bg-emerald-500')}`;
             }
 
+            const _tBadge = (txt) => (typeof window !== 'undefined' && window.SafeLift?.i18n?.translateBadge)
+                ? window.SafeLift.i18n.translateBadge(txt, state.lang)
+                : txt;
+
             const elBadge = document.getElementById('lmi-status-badge');
             if (elBadge) {
-                elBadge.textContent = lmi.alertBadge || (lmi.isOverloaded ? '🚨 QUÁ TẢI CẨU' : (lmi.isCriticalLift ? '⚠️ CRITICAL LIFT' : '🟢 AN TOÀN'));
+                const rawLmiBadge = lmi.alertBadge || (lmi.isOverloaded ? '🚨 QUÁ TẢI CẨU' : (lmi.isCriticalLift ? '⚠️ CRITICAL LIFT' : '🟢 AN TOÀN'));
+                elBadge.textContent = _tBadge(rawLmiBadge);
                 elBadge.className = `text-[9px] font-mono font-bold px-2 py-0.5 rounded ${
                     lmi.isOverloaded ? 'bg-red-500/20 text-red-400 border border-red-500/50 animate-pulse' :
                     (lmi.isCriticalLift ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50' :
@@ -885,7 +918,8 @@
             const soilEval = groundPressureEngine.evaluateSoilSafety(maxReaction);
             const soilBadge = document.getElementById('soil-status-badge');
             if (soilBadge) {
-                soilBadge.textContent = soilEval.badge || (soilEval.status === 'SAFE' ? '🟢 ĐẠT CHUẨN NỀN' : '🚨 LÚN SỤT NỀN');
+                const rawSoil = soilEval.badge || (soilEval.status === 'SAFE' ? '🟢 ĐẠT CHUẨN NỀN' : '🚨 LÚN SỤT NỀN');
+                soilBadge.textContent = _tBadge(rawSoil);
                 soilBadge.className = `text-[9px] font-mono font-bold px-2 py-0.5 rounded ${
                     soilEval.status === 'SOIL_BEARING_FAILURE' ? 'bg-red-500/20 text-red-400 border border-red-500/50 animate-pulse' :
                     (soilEval.status === 'ELEVATED_PRESSURE' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50' :
@@ -902,7 +936,13 @@
             const matType = state.slingMaterialType || 'wire';
             const isRigid = state.isRigidPayload !== false;
             const legTens = (phy.legTensions && phy.legTensions.length === 4) ? phy.legTensions : [0, 0, 0, 0];
-            const skew = elasticSlingEngine.evaluateFourLegIndeterminacy(legTens, isRigid);
+            const dnvMeta = phy.rigging && phy.rigging.dnvMeta;
+            const dnvShares = phy.rigging && Array.isArray(phy.rigging.dnvShares) && phy.rigging.dnvShares.length === 4 ? phy.rigging.dnvShares : null;
+            const skew = dnvMeta
+                ? { heavyPairSharePct: dnvMeta.heavyPairSharePct, hasSkewRisk: dnvMeta.hasSkewRisk, sklUsed: dnvMeta.sklUsed }
+                : (dnvShares
+                    ? { heavyPairSharePct: 100.0, hasSkewRisk: isRigid }
+                    : elasticSlingEngine.evaluateFourLegIndeterminacy(legTens, isRigid));
 
             for (let i = 0; i < 4; i++) {
                 const tVal = (phy.legTensions && phy.legTensions[i]) || 0;
@@ -923,7 +963,7 @@
             setTxt('skew-share-pct', `${share1.toFixed(1)}% / ${share2.toFixed(1)}%`);
             const skewBadge = document.getElementById('skew-status-badge');
             if (skewBadge) {
-                skewBadge.textContent = skew.hasSkewRisk ? '⚠️ DNV SKEW LECH TAI' : 'DNV-ST-N001';
+                skewBadge.textContent = skew.hasSkewRisk ? L('⚠️ DNV SKEW UNEQUAL LOAD', '⚠️ DNV LỆCH TẢI 4 NHÁNH') : 'DNV-ST-N001';
                 skewBadge.className = `text-[9px] font-mono font-bold px-2 py-0.5 rounded ${
                     skew.hasSkewRisk ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50' :
                     'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
@@ -1084,9 +1124,9 @@
             beam: [
                 { key: 'swlT', labelKey: 'beamSwl', unit: 't', step: 0.5, min: 1, max: 2000, nullable: false },
                 { key: 'lengthM', labelKey: 'memLen', unit: 'm', step: 0.01, min: 0.6, max: 30, nullable: true },
-                { key: 'widthM', label: 'Chiều rộng · Width across', unit: 'm', step: 0.01, min: 0.4, max: 12, nullable: true },
-                { key: 'depthM', label: 'Chiều cao tiết diện · Section depth', unit: 'm', step: 0.01, min: 0.08, max: 1.5, nullable: false },
-                { key: 'massT', label: 'Tự trọng bộ dầm · Assembly self-weight', unit: 't', step: 0.01, min: 0.05, max: 40, nullable: true },
+                { key: 'widthM', label: 'Chiều rộng dầm', unit: 'm', step: 0.01, min: 0.4, max: 12, nullable: true },
+                { key: 'depthM', label: 'Chiều cao tiết diện', unit: 'm', step: 0.01, min: 0.08, max: 1.5, nullable: false },
+                { key: 'massT', label: 'Tự trọng bộ dầm', unit: 't', step: 0.01, min: 0.05, max: 40, nullable: true },
                 { key: 'sf', labelKey: 'beamSf', unit: '', step: 0.5, min: 2, max: 8, nullable: false }
             ],
             member: [
@@ -1102,10 +1142,10 @@
                 { key: 'sf', label: 'Hệ số an toàn', unit: '', step: 0.5, min: 2, max: 8, nullable: false }
             ],
             cargo: [
-                { key: 'L', label: 'Chiều dài · Length', unit: 'm', step: 0.01, min: 0.5, max: 30, nullable: false },
-                { key: 'W', label: 'Chiều rộng · Width', unit: 'm', step: 0.01, min: 0.4, max: 12, nullable: false },
-                { key: 'H', label: 'Chiều cao · Height', unit: 'm', step: 0.01, min: 0.2, max: 12, nullable: false },
-                { key: 'weight', label: 'Tổng trọng lượng · Gross', unit: 't', step: 0.1, min: 0.1, max: 500, nullable: false },
+                { key: 'L', label: 'Chiều dài', unit: 'm', step: 0.01, min: 0.5, max: 30, nullable: false },
+                { key: 'W', label: 'Chiều rộng', unit: 'm', step: 0.01, min: 0.4, max: 12, nullable: false },
+                { key: 'H', label: 'Chiều cao', unit: 'm', step: 0.01, min: 0.2, max: 12, nullable: false },
+                { key: 'weight', label: 'Tổng trọng lượng', unit: 't', step: 0.1, min: 0.1, max: 500, nullable: false },
                 { key: 'tareT', label: 'Tare (khung rỗng)', unit: 't', step: 0.01, min: 0, max: 80, nullable: true },
                 { key: 'cogX', label: 'CoG X', unit: 'm', step: 0.01, min: -20, max: 20, nullable: false },
                 { key: 'cogY', label: 'CoG Y', unit: 'm', step: 0.01, min: -20, max: 20, nullable: false },

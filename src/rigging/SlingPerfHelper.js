@@ -112,6 +112,25 @@ export function writeChainLinkInstanceMatrix(THREE, instances, idx, p0, p1, t, z
 }
 
 /**
+ * Computes compact, realistic flat webbing sling width, multi-ply thickness,
+ * and eye-sleeve scale so heavy straps fit hardware cleanly instead of oversized boards.
+ */
+export function computeWebSlingVisualSize(diaMm) {
+  const d = Math.max(25, Number(diaMm) || 60);
+  const rawM = d / 1000;
+  // Keep 1:1 scale up to 60mm (EN 1492-1 2T = 60mm), then use multi-ply taper up to ~115mm
+  // so 10T+ heavy straps (300mm nominal) stay sleek inside shackles rather than 30cm planks.
+  const widthM = d <= 60
+    ? Math.max(0.030, rawM)
+    : Math.min(0.115, 0.060 + (rawM - 0.060) * 0.22);
+  const thickM = Math.max(0.0030, Math.min(0.0095, widthM * 0.075));
+  const eyeScaleX = Math.max(0.42, Math.min(1.45, widthM / 0.078));
+  const eyeScaleY = Math.max(0.68, Math.min(1.25, 0.72 + eyeScaleX * 0.30));
+  const eyeScaleZ = Math.max(0.55, eyeScaleX * 0.42);
+  return { widthM, thickM, eyeScaleX, eyeScaleY, eyeScaleZ };
+}
+
+/**
  * Updates a tubular or flat-web sling segment transform in place without per-segment allocations.
  */
 export function applySlingSegmentTransform(THREE, seg, p0, p1, upY, look, overlapLen, dia, actualTension, wllNow, index, totalCount, bodyK) {
@@ -122,13 +141,13 @@ export function applySlingSegmentTransform(THREE, seg, p0, p1, upY, look, overla
   _scratchV0.normalize();
 
   if (look === 'web') {
-    const widthM = Math.max(0.045, Math.min(0.30, dia / 1000));
-    const thickM = Math.max(0.0022, Math.min(0.008, widthM * 0.045));
+    const { widthM, thickM } = computeWebSlingVisualSize(dia);
     seg.scale.set(widthM, overlapLen, thickM);
     _scratchX.crossVectors(_scratchV0, upY);
     if (_scratchX.lengthSq() < 1e-8) _scratchX.set(1, 0, 0);
     _scratchX.normalize();
-    _scratchZ.crossVectors(_scratchV0, _scratchX).normalize();
+    // Right-handed basis (X × Y = +Z): prevents reflection det=-1 corrupting segment quaternions
+    _scratchZ.crossVectors(_scratchX, _scratchV0).normalize();
     _scratchBasis.makeBasis(_scratchX, _scratchV0, _scratchZ);
     seg.quaternion.setFromRotationMatrix(_scratchBasis);
     return;

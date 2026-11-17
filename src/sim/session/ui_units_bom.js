@@ -1393,8 +1393,9 @@
                 state.gear.members.main.lengthM = clampedVal;
                 state.customBeamLengthMode = true;
 
-                if (typeof syncHookToRigTaut === 'function') syncHookToRigTaut();
                 rebuildCargoAndRig(false);
+                if (typeof syncHookToRigTaut === 'function') syncHookToRigTaut();
+                if (state.poseLock && typeof seedBeamsFromKinematic === 'function') seedBeamsFromKinematic();
                 syncSlingSlidersFromState();
                 updateRiggingBOMUI();
             };
