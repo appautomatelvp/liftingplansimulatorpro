@@ -1,5 +1,5 @@
 # KẾ HOẠCH THỰC HIỆN (PLAN.md)
-Trạng thái: ACTIVE
+Trạng thái: DONE
 Tính năng: ULTIMATE MASTER DIRECTIVE — 5 Trụ cột Vật lý & Kỹ thuật Nâng hạ (DNV-ST-N001 / ASME B30) cho SafeLift3D
 Nhánh Git: feat/horizon-clouds (backup: `_BACKUPS_LOCAL\...ultimate-physics-5-pillars.zip`)
 Người lập kế hoạch: Model cao nhất (KHÔNG viết code ở bước này). Model thực thi gõ `làm tiếp` 1 lần để chạy một mạch Bước 1 → 11.
@@ -92,7 +92,7 @@ Người lập kế hoạch: Model cao nhất (KHÔNG viết code ở bước n�
 - **Tạo test (bổ sung vào file sẵn có):** thêm ca vào `test/v3_ruler_drag_hoist_sts_gear_regression.test.js` (ghi → đứt cáp → xem lại: đầu cáp giật ngược đúng khung hình).
 - **Kiểm tra:** `npx vitest run test/v3_ruler_drag_hoist_sts_gear_regression.test.js test/i18n_keys.test.js`.
 
-### [ ] Bước 11: Nghiệm thu cuối + ghi nhớ dự án
+### [x] Bước 11: Nghiệm thu cuối + ghi nhớ dự án
 - Chạy toàn bộ: `npx vitest run`, `npm run architecture:gate`, `npm run build`, `npm run check:dist`, `npx playwright test e2e/saas-accessibility.spec.js --project=fhd-1080p` (giữ test song ngữ EN/VI xanh), `./scripts/auto_check.ps1`.
 - Cập nhật `auto_memory/CONTEXT.md` (quyết định: nguồn chân lý DNV duy nhất; module mới), thêm Golden Test vào `auto_kit/test.md`, đặt `Trạng thái: DONE`, `./scripts/auto_log.ps1 -Type feat ...`.
 - **KHÔNG tự `git push`/deploy** — chờ founder gõ "ĐỒNG Ý" (luật §1.4).

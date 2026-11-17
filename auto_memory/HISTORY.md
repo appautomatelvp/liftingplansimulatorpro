@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-17 08:30 [feat] Hoan tat ke hoach 11 buoc 5 Tru cot Vat ly & Ky thuat Nang ha (DNV-ST-N001 / ASME B30): DNV 4 diem thong nhat, Pin vs Bow stress, Gizmo goc 3D + mui ten luc, Compound/CCD <1mm, XPBD gio & whip, roi tu do & uon dam Euler-Bernoulli, ReplayRecorder 60s.
+- Nhánh: feat/horizon-clouds | Commit trước đó: 3469696
+- File: DnvFourPointLift.js,LocalizedHardwareStress.js,HardwareBearingTracker.js,SlingAngleGizmo.js,ForceVectorField.js,CompoundColliders.js,CableMaterialBehavior.js,LoadPathGravity.js,ReplayRecorder.js
+
 ## 2026-11-17 07:56 [feat] Hoan thien bang mau va so soc den chuan EN 1492-1 (1T Tim 1 soc -> 2T Xanh 2 soc -> 3T Vang 3 soc -> 4T Xam 4 soc -> 5T Do 5 soc -> 6T Nau 6 soc -> 8T Xanh duong 8 soc -> 10T Cam 10 soc -> >=12T Cam khong soc), truyen dung swlT/parts vao drawMeta va sua drawWebSlingMaps khong ep so soc toi thieu 2.
 - Nhánh: feat/horizon-clouds | Commit trước đó: b97bbea
 - File: src/core/ElasticSlingEngine.js,src/graphics/pbr/ProceduralTextures.js,src/sim/physics/step_engine.js,src/sim/scene.js,src/sim/rigging/draw_update.js,test/v3_ruler_drag_hoist_sts_gear_regression.test.js

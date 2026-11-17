@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 08:26 | Nhánh: feat/horizon-clouds | Commit cuối: a712809 step 9: add LoadPathGravity free-fall, resting torque, and extend beam bending (2 minutes ago)
+Cập nhật: 2026-11-17 08:30 | Nhánh: feat/horizon-clouds | Commit cuối: 3469696 step 10: extend ReplayRecorder for SKL/whip/freeFall/bending and add Angle Gizmo display toggle (4 minutes ago)
 Tổng: 286 file, 80472 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
