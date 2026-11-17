@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 10:06 | Nhánh: feat/horizon-clouds | Commit cuối: b95d0b6 feat(cog): project 6 surface crosshairs and laser sightlines onto cargo faces (3 seconds ago)
+Cập nhật: 2026-11-17 10:14 | Nhánh: feat/horizon-clouds | Commit cuối: f0df0bd fix(pbr): replace square fillRect blocks with sparse soft organic gradients (9 minutes ago)
 Tổng: 294 file, 82049 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
