@@ -2105,10 +2105,15 @@
                 });
             }
             if (phy._slingAngleGizmo) {
-                const idx = phy._hoverSlingCableIdx >= 0 ? phy._hoverSlingCableIdx : (phy._selectedSlingCableIdx ?? -1);
-                const c = (idx >= 0 && phy.cables) ? phy.cables[idx] : null;
                 const dOpt = state.displayOptions || {};
-                const gizmoOn = dOpt.showSlingAngleGizmo !== 'off';
+                const mode = dOpt.showSlingAngleGizmo || 'always';
+                const gizmoOn = mode !== 'off';
+                let idx = phy._hoverSlingCableIdx >= 0 ? phy._hoverSlingCableIdx : (phy._selectedSlingCableIdx ?? -1);
+                if (idx < 0 && mode === 'always' && Array.isArray(phy.cables)) {
+                    idx = phy.cables.findIndex(cb => cb && !cb.broken && !cb.slack);
+                    if (idx < 0) idx = phy.cables.findIndex(cb => cb && !cb.broken);
+                }
+                const c = (idx >= 0 && phy.cables) ? phy.cables[idx] : null;
                 phy._angleGizmoData = (c && !c.broken && gizmoOn && typeof attachWorld === 'function')
                     ? phy._slingAngleGizmo.update({ visible: true, qualityTier: state.qualityTier || 'high', pointA: attachWorld(c.a), pointB: attachWorld(c.b) })
                     : phy._slingAngleGizmo.update({ visible: false });

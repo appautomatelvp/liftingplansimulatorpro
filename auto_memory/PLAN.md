@@ -38,7 +38,7 @@ Người lập kế hoạch: Model cao nhất (KHÔNG viết code ở bước n�
 - **Tạo test:** `test/cog_gizmo_drag.test.js` kiểm tra kéo CoG theo trục X/Y/Z và tự do cập nhật đúng `state.cogX/Y/Z` & kẹp giới hạn biên cargo.
 - **Kiểm tra:** `npx vitest run test/cog_gizmo_drag.test.js test/v3_ruler_drag_hoist_sts_gear_regression.test.js` + `npm run architecture:gate`.
 
-### [ ] Bước 2: Dời Thước đo xa kiện, Viewport sạch mặc định & Angle Gizmo Always-On (Phần 1)
+### [x] Bước 2: Dời Thước đo xa kiện, Viewport sạch mặc định & Angle Gizmo Always-On (Phần 1)
 - **Sửa (≤25 dòng/file):**
   - `src/graphics/ElevationRulerTool.js` (~dòng 236): thêm tham số `offsetX` (mặc định `3.4` m ngoài `halfL` + margin rìa) và `offsetZ` (`-halfW - 0.85` m) + hỗ trợ `setDefaultOffset(x, z)` để thước luôn nằm thoáng hẳn bên rìa phải ngoài bounding box kiện hàng.
   - `src/sim/state.js` (~dòng 118): cấu hình mặc định gọn sạch (`showRuler: true`, `showSlingAngleGizmo: 'always'`, `showCoG: true`, `showGroundAngle: true`, `showHUD: true`, các label phụ `showForces`, `showSlingAngles`, `showShackleLoads`, `showSlingLengths`, `showVectors` đều `false`).

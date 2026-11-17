@@ -2989,12 +2989,12 @@
 
             // Quick "All" and "None" buttons
             document.getElementById('btn-display-all')?.addEventListener('click', () => {
-                Object.keys(state.displayOptions).forEach(k => { state.displayOptions[k] = true; });
+                Object.keys(state.displayOptions).forEach(k => { state.displayOptions[k] = k === 'showSlingAngleGizmo' ? 'always' : true; });
                 syncDisplayOptionsUI();
             });
 
             document.getElementById('btn-display-none')?.addEventListener('click', () => {
-                Object.keys(state.displayOptions).forEach(k => { state.displayOptions[k] = false; });
+                Object.keys(state.displayOptions).forEach(k => { state.displayOptions[k] = k === 'showSlingAngleGizmo' ? 'off' : false; });
                 syncDisplayOptionsUI();
             });
 
@@ -3018,7 +3018,7 @@
             bindChk('chk-disp-cog', 'showCoG');
             bindChk('chk-disp-vectors', 'showVectors');
             document.getElementById('chk-disp-angle-gizmo')?.addEventListener('change', (e) => {
-                state.displayOptions.showSlingAngleGizmo = e.target.checked ? 'hover' : 'off';
+                state.displayOptions.showSlingAngleGizmo = e.target.checked ? 'always' : 'off';
                 syncDisplayOptionsUI();
             });
             bindChk('chk-disp-cad', 'showCADEdges');

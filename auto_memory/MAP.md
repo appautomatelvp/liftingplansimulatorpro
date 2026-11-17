@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 09:13 | Nhánh: feat/horizon-clouds | Commit cuối: e461aea step 5: add 3D hierarchical naming regression test and update project memory docs (12 minutes ago)
-Tổng: 290 file, 81021 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 09:15 | Nhánh: feat/horizon-clouds | Commit cuối: 32bf20d step 1: fix 3D CoG gizmo dragging with 3-axis handles, pointer capture, and smooth state sync (2 minutes ago)
+Tổng: 290 file, 81038 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -16,6 +16,7 @@ Tổng: 290 file, 81021 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/core/LiftPlanModel.js (1073 dòng)
 - src/core/RiggingDictionary.js (434 dòng)
 - src/core/SimulationEngine.js (560 dòng)
+- src/graphics/ElevationRulerTool.js (301 dòng)
 - src/graphics/SceneRenderer.js (313 dòng)
 - src/i18n/keys.js (598 dòng)
 - src/rigging/ReplayRecorder.js (302 dòng)
@@ -29,7 +30,7 @@ Tổng: 290 file, 81021 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/gear/editor.js (3633 dòng)
 - src/sim/library/core.js (641 dòng)
 - src/sim/library/parsers.js (654 dòng)
-- src/sim/library/reconstruction_export.js (2137 dòng)
+- src/sim/library/reconstruction_export.js (2142 dòng)
 - src/sim/physics/beams_seed.js (3001 dòng)
 - src/sim/physics/cables_break.js (1578 dòng)
 - src/sim/physics/flatrack_payload.js (657 dòng)
@@ -43,7 +44,7 @@ Tổng: 290 file, 81021 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/session/prelift_reset.js (1142 dòng)
 - src/sim/session/presets_events.js (3626 dòng)
 - src/sim/session/ui_units_bom.js (1967 dòng)
-- src/sim/state.js (607 dòng)
+- src/sim/state.js (608 dòng)
 - src/sim/telemetry.js (1171 dòng)
 - src/sim/weather_fx.js (596 dòng)
 - test/cable_morphology_and_deformation.test.js (426 dòng)
@@ -163,7 +164,7 @@ Tổng: 290 file, 81021 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/domain/standards/index.js` | 26 |  |
 | `src/graphics/CoGGizmoHelper.js` | 115 | Tay cầm kéo thả 3 trục X/Y/Z cho Gizmo Trọng Tâm (CoG) và hàm chiếu tọa độ kẹp biên theo kiện hàng |
 | `src/graphics/ElevationRulerMath.js` | 117 | Thuật toán bắt điểm 3D cho thước đo cao độ (lưới khối + dây cáp mảnh + ma ní) |
-| `src/graphics/ElevationRulerTool.js` | 290 | Vẽ cây thước đo cao độ 3D so với mặt đất, cho phép kéo đặt vị trí và điểm đỏ rà chuột mọi chi tiết. ⚠️>250 |
+| `src/graphics/ElevationRulerTool.js` | 301 | Vẽ cây thước đo cao độ 3D so với mặt đất, cho phép kéo đặt vị trí và điểm đỏ rà chuột mọi chi tiết. ⚠️>300 |
 | `src/graphics/EnvironmentManager.js` | 280 | Quản lý ánh sáng IBL, sương mù chân trời, HDR và đồng bộ thời gian thực cho cảnh 3D ⚠️>250 |
 | `src/graphics/ForceVectorField.js` | 122 | Trường mũi tên véc-tơ lực 3D thời gian thực từ CoG & các điểm nối (tái sử dụng pool, không cấp phát mỗi khung hình) |
 | `src/graphics/GraphicsToneHelper.js` | 114 | Điều chỉnh và lưu độ sáng tối (Brightness) và tương phản (Contrast) cho khung hình 3D như game |
@@ -255,7 +256,7 @@ Tổng: 290 file, 81021 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/library.js` | 6 |  |
 | `src/sim/library/core.js` | 641 |  ⚠️>300 |
 | `src/sim/library/parsers.js` | 654 | --- HIGH-SPEED BINARY & ASCII .STL / .OBJ / .GLB PARSERS --- ⚠️>300 |
-| `src/sim/library/reconstruction_export.js` | 2137 | --- 2D IMAGE TO 3D CONTOUR & RELIEF RECONSTRUCTION ENGINE --- ⚠️>300 |
+| `src/sim/library/reconstruction_export.js` | 2142 | --- 2D IMAGE TO 3D CONTOUR & RELIEF RECONSTRUCTION ENGINE --- ⚠️>300 |
 | `src/sim/manifest.js` | 39 |  |
 | `src/sim/physics.js` | 6 |  |
 | `src/sim/physics/beams_seed.js` | 3001 |  ⚠️>300 |
@@ -275,7 +276,7 @@ Tổng: 290 file, 81021 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/session/prelift_reset.js` | 1142 |  ⚠️>300 |
 | `src/sim/session/presets_events.js` | 3626 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
 | `src/sim/session/ui_units_bom.js` | 1967 | --- 12. UI EVENT BINDINGS & COLLAPSIBLE PANELS --- ⚠️>300 |
-| `src/sim/state.js` | 607 | Floor cribbing removed: static cargo rests flush on the quay / ground plane. ⚠️>300 |
+| `src/sim/state.js` | 608 | Floor cribbing removed: static cargo rests flush on the quay / ground plane. ⚠️>300 |
 | `src/sim/telemetry.js` | 1171 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
 | `src/sim/ui-layout.js` | 241 |  |
 | `src/sim/weather_fx.js` | 596 |  ⚠️>300 |
