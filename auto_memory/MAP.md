@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 07:47 | Nhánh: feat/horizon-clouds | Commit cuối: 5576b52 fix: close webbing eye-collar gap and sync lifting beam cable anchors on resize (4 seconds ago)
-Tổng: 271 file, 78610 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 07:56 | Nhánh: feat/horizon-clouds | Commit cuối: 2fe612b docs: log webbing seam and lifting beam resize fix (9 minutes ago)
+Tổng: 271 file, 78644 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -10,7 +10,7 @@ Tổng: 271 file, 78610 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/core/AssetManager.js (325 dòng)
 - src/core/AssetPipeline.js (333 dòng)
 - src/core/AssetSpecs.js (446 dòng)
-- src/core/ElasticSlingEngine.js (449 dòng)
+- src/core/ElasticSlingEngine.js (450 dòng)
 - src/core/EngineeringEngine.js (661 dòng)
 - src/core/HullOptimizer.js (322 dòng)
 - src/core/LiftPlanModel.js (1073 dòng)
@@ -34,11 +34,11 @@ Tổng: 271 file, 78610 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/physics/flatrack_payload.js (657 dòng)
 - src/sim/physics/footprint_rig.js (838 dòng)
 - src/sim/physics/hoist_contacts.js (1110 dòng)
-- src/sim/physics/step_engine.js (792 dòng)
+- src/sim/physics/step_engine.js (793 dòng)
 - src/sim/plan_wizard.js (650 dòng)
-- src/sim/rigging/draw_update.js (852 dòng)
+- src/sim/rigging/draw_update.js (853 dòng)
 - src/sim/rigging/hook_pool.js (3126 dòng)
-- src/sim/scene.js (1980 dòng)
+- src/sim/scene.js (1983 dòng)
 - src/sim/session/prelift_reset.js (1142 dòng)
 - src/sim/session/presets_events.js (3618 dòng)
 - src/sim/session/ui_units_bom.js (1967 dòng)
@@ -51,7 +51,7 @@ Tổng: 271 file, 78610 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - test/physics_master_blueprint.test.js (524 dòng)
 - test/rigging.test.js (1370 dòng)
 - test/rigging_physics_and_alarms.test.js (306 dòng)
-- test/v3_ruler_drag_hoist_sts_gear_regression.test.js (368 dòng)
+- test/v3_ruler_drag_hoist_sts_gear_regression.test.js (393 dòng)
 
 ## 🔒 File đã khóa [LOCKED]
 - src/utils/firestoreSanitize.js
@@ -123,7 +123,7 @@ Tổng: 271 file, 78610 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/core/AssetSpecs.js` | 446 |  ⚠️>300 |
 | `src/core/CraneLoadChartEngine.js` | 292 |  ⚠️>250 |
 | `src/core/DeformableSteelStructure.js` | 245 |  |
-| `src/core/ElasticSlingEngine.js` | 449 |  ⚠️>300 |
+| `src/core/ElasticSlingEngine.js` | 450 |  ⚠️>300 |
 | `src/core/EngineeringEngine.js` | 661 |  ⚠️>300 |
 | `src/core/GroundPressureEngine.js` | 238 |  |
 | `src/core/HullOptimizer.js` | 322 |  ⚠️>300 |
@@ -167,7 +167,7 @@ Tổng: 271 file, 78610 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/graphics/HorizonSkyDome.js` | 286 | Dựng vòm bầu trời HorizonSkyDome với mây chân trời 3D Gradient Quintic mềm mại và màu khí quyển thực tế ⚠️>250 |
 | `src/graphics/index.js` | 35 |  |
 | `src/graphics/JobsiteSiteVisuals.js` | 289 | Dựng và đồng bộ hình khối 3D cho đà kê gỗ, đệm địa chất độ dốc và tấm lót chân chống cẩu ở Tab 6. ⚠️>250 |
-| `src/graphics/pbr/ProceduralTextures.js` | 287 | Vẽ texture canvas thủ công (bê tông cảng, cáp thép, xích, sling, mặt nước, vạch cảnh báo) ⚠️>250 |
+| `src/graphics/pbr/ProceduralTextures.js` | 290 | Vẽ texture canvas thủ công (bê tông cảng, cáp thép, xích, sling, mặt nước, vạch cảnh báo) ⚠️>250 |
 | `src/graphics/pbr/StressPBRMaterials.js` | 146 | Tạo bản đồ PBR thép sơn công nghiệp, thép rèn mạ kẽm và màu ứng suất căng cơ học thời gian thực |
 | `src/graphics/PBRMaterialFactory.js` | 244 | Nhà máy tạo vật liệu PBR chuẩn công nghiệp hàng hải và đồng bộ không gian màu Three.js r170+ |
 | `src/graphics/SceneRenderer.js` | 313 |  ⚠️>300 |
@@ -254,12 +254,12 @@ Tổng: 271 file, 78610 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/physics/hoist_contacts.js` | 1110 |  ⚠️>300 |
 | `src/sim/physics/index.js` | 9 | Bounded context index — parts are assembled via src/sim/manifest.js (shared scope). |
 | `src/sim/physics/port.js` | 59 |  |
-| `src/sim/physics/step_engine.js` | 792 |  ⚠️>300 |
+| `src/sim/physics/step_engine.js` | 793 |  ⚠️>300 |
 | `src/sim/plan_wizard.js` | 650 |  ⚠️>300 |
 | `src/sim/rigging.js` | 6 |  |
-| `src/sim/rigging/draw_update.js` | 852 | Slack cable morphology is solved by a persistent material-aware XPBD chain. ⚠️>300 |
+| `src/sim/rigging/draw_update.js` | 853 | Slack cable morphology is solved by a persistent material-aware XPBD chain. ⚠️>300 |
 | `src/sim/rigging/hook_pool.js` | 3126 |  ⚠️>300 |
-| `src/sim/scene.js` | 1980 |  ⚠️>300 |
+| `src/sim/scene.js` | 1983 |  ⚠️>300 |
 | `src/sim/session.js` | 6 |  |
 | `src/sim/session/prelift_reset.js` | 1142 |  ⚠️>300 |
 | `src/sim/session/presets_events.js` | 3618 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
@@ -328,6 +328,6 @@ Tổng: 271 file, 78610 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/sts_twin_cable_flare.test.js` | 106 |  |
 | `test/telemetry_usage.test.js` | 50 |  |
 | `test/v2_ux_dunnage_ruler_regression.test.js` | 151 | Kiểm thử hồi quy 7 tính năng mới: Lashing khít đáy, SWL >= 12MT, Chỉnh đồng bộ, Hạ êm, Góc xoay mượt, Gỗ kê đỡ/nghiêng kiện, Thước cao độ 3D + Điểm đỏ. |
-| `test/v3_ruler_drag_hoist_sts_gear_regression.test.js` | 368 | Kiểm thử hồi quy 6 nâng cấp mới: bỏ cục tời khi tắt cẩu 3D, kéo đặt thước 3D & bắt Điểm Đỏ cáp/ma ní, dblclick Hạ/Kéo, mở khóa chỉnh cáp, hết giật STS Direct. ⚠️>300 |
+| `test/v3_ruler_drag_hoist_sts_gear_regression.test.js` | 393 | Kiểm thử hồi quy 6 nâng cấp mới: bỏ cục tời khi tắt cẩu 3D, kéo đặt thước 3D & bắt Điểm Đỏ cáp/ma ní, dblclick Hạ/Kéo, mở khóa chỉnh cáp, hết giật STS Direct. ⚠️>300 |
 | `test/workspace_data.test.js` | 155 |  |
 | `vite.config.js` | 115 |  |

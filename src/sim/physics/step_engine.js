@@ -314,6 +314,7 @@
                     ? gearIsCtrlHover('sling', role, index)
                     : false,
                 diaMm: item && item.diaMm ? item.diaMm : (itemSlingType === 'web' ? 50 : 18),
+                swlT: swl,
                 grade: item && item.grade ? item.grade : '',
                 slingType: itemSlingType,
                 parts: (item && item.parts) || 1,

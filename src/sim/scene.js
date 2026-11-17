@@ -153,19 +153,22 @@
                 return MATS.wireRope;
             }
 
-            // Fallback color determination if Core is not yet attached to window
+            // Fallback EN 1492-1 color + black capacity stripe progression (1 stripe = 1T, 0 if >= 12T)
             let colorHex = '#16a34a';
             let stripeCount = 2;
-            if (wll <= 1.0) { colorHex = '#8b5cf6'; stripeCount = 1; }
+            if (wll <= 1.0) { colorHex = '#9333ea'; stripeCount = 1; }
             else if (wll <= 2.0) { colorHex = '#16a34a'; stripeCount = 2; }
             else if (wll <= 3.0) { colorHex = '#eab308'; stripeCount = 3; }
             else if (wll <= 4.0) { colorHex = '#64748b'; stripeCount = 4; }
             else if (wll <= 5.0) { colorHex = '#dc2626'; stripeCount = 5; }
             else if (wll <= 6.0) { colorHex = '#92400e'; stripeCount = 6; }
             else if (wll <= 8.0) { colorHex = '#2563eb'; stripeCount = 8; }
+            else if (wll < 12.0) { colorHex = '#ea580c'; stripeCount = 10; }
             else { colorHex = '#ea580c'; stripeCount = 0; }
 
-            const enSpecGetter = window.getEN1492ColorSpec || (window.Core && window.Core.getEN1492ColorSpec);
+            const enSpecGetter = (window.CAE && window.CAE.getEN1492ColorSpec)
+                || window.getEN1492ColorSpec
+                || (window.Core && window.Core.getEN1492ColorSpec);
             if (typeof enSpecGetter === 'function') {
                 const spec = enSpecGetter(wll);
                 if (spec) {

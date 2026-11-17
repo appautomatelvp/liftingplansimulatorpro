@@ -12,6 +12,7 @@ import {
   updateWebRibbonMesh,
   createEn1492WebEyeGroup
 } from '../src/rigging/WebbingSlingMeshBuilder.js';
+import { getEN1492ColorSpec } from '../src/core/ElasticSlingEngine.js';
 import { EXTRA_UI_EN, translateBadge } from '../src/i18n/sim_ui_phrases.js';
 import {
   startReplayRecording,
@@ -364,5 +365,29 @@ describe('V3 UX & Physics Upgrades Regression', () => {
     expect(legs.length).toBe(4);
     uppers.forEach(c => expect(Math.abs(c.b.local.x)).toBeCloseTo(5.95 * 0.5, 2));
     legs.forEach(c => expect(Math.abs(c.a.local.x)).toBeCloseTo(5.95 * 0.5, 2));
+  });
+
+  it('13. EN 1492-1 web sling progression maps all 8 capacities (1T..10T + 12T+) to exact colors and stripe counts', () => {
+    const expected = [
+      [1.0, '#9333ea', 1, 30],
+      [2.0, '#16a34a', 2, 60],
+      [3.0, '#eab308', 3, 90],
+      [4.0, '#64748b', 4, 120],
+      [5.0, '#dc2626', 5, 150],
+      [6.0, '#92400e', 6, 180],
+      [8.0, '#2563eb', 8, 240],
+      [10.0, '#ea580c', 10, 300],
+      [12.0, '#ea580c', 0, 300]
+    ];
+    for (const [wll, hex, stripes, widthMm] of expected) {
+      const spec = getEN1492ColorSpec(wll);
+      expect(spec.colorHex).toBe(hex);
+      expect(spec.stripeCount).toBe(stripes);
+      expect(spec.webWidthMm).toBe(widthMm);
+    }
+    const stepSrc = fs.readFileSync(path.resolve(import.meta.dirname, '../src/sim/physics/step_engine.js'), 'utf8');
+    expect(stepSrc).toContain('swlT: swl');
+    const texSrc = fs.readFileSync(path.resolve(import.meta.dirname, '../src/graphics/pbr/ProceduralTextures.js'), 'utf8');
+    expect(texSrc).toContain('Math.max(0, Math.min(12, stripeCount | 0))');
   });
 });

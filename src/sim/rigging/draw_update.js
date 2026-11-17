@@ -431,6 +431,7 @@
             slingObj.group.name = slingMeshNameMap[look] || 'Wire_Rope_Sling';
 
             const wllNow = (cable && cable.swlT) || meta.swlT || state.wllPerLeg || 15.0;
+            const singleWllNow = Math.max(0.2, wllNow / Math.max(1, meta.parts || 1));
             let mat = MATS.wireRope;
             if (look === 'chain') {
                 mat = MATS.chainDark;
@@ -438,7 +439,7 @@
                 const getDynMat = (typeof window !== 'undefined' && window.getDynamicSlingMaterial)
                     || (typeof MATS !== 'undefined' && MATS.getDynamicSlingMaterial);
                 if (getDynMat) {
-                    mat = getDynMat(look, wllNow);
+                    mat = getDynMat(look, singleWllNow);
                 } else {
                     mat = MATS.webGreen;
                 }
