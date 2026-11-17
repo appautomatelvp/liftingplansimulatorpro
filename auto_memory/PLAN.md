@@ -45,7 +45,7 @@ Người lập kế hoạch: Model cao nhất (KHÔNG viết code ở bước n�
   - `src/sim/physics/beams_seed.js`: tại điểm khởi tạo/nạp `phy.cables` gọi `RIG.assignHierarchicalNames(phy.cables, { bodies: phy.beams })` và `RIG.syncHierarchicalNamesToGear(phy.cables, state)`.
 - **Kiểm tra:** `npx vitest run test/hierarchical_naming.test.js test/rigging.test.js` + `npm run architecture:gate`.
 
-### [ ] Bước 3: Cập nhật nhãn 3D trên viewport (`telemetry.js`)
+### [x] Bước 3: Cập nhật nhãn 3D trên viewport (`telemetry.js`)
 - **Sửa (≤25 dòng):** `src/sim/telemetry.js`:
   - Tại vòng lặp vẽ nhãn `#lbl-t0..t7` (~dòng 569): lấy `cableName = RIG.resolveCableLabel('leg', i, state, phy)` thay cho `` `LP${i + 1}` `` cứng, hiển thị đúng `LP11 · 7.1T · 60° · ...` (hoặc `LP11: ĐỨT/PARTED`).
   - Bổ sung cập nhật nhãn nổi cho các nhánh tầng trên (`upper`, `hanger`) qua pool `lbl-hier-*` tạo động một lần trong `#labels-container` khi có nhiều tầng (`state.beamType !== 'none'`), hiển thị tên `LP1`, `LP2`, `LP11`... tại trung điểm cáp và ẩn khi tắt hiển thị.

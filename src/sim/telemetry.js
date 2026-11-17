@@ -573,10 +573,11 @@
                         const anchor = (state.beamType === 'none') ? masterLinkWorld : slingAnchorWorld(i, rig);
                         const midPt = hwWorldPos[i].clone().lerp(anchor, 0.42);
                         projectToScreen(midPt, lbl);
+                        const legHierName = (typeof RIG !== 'undefined' && RIG.resolveCableLabel) ? RIG.resolveCableLabel('leg', i, state, phy) : `LP${i + 1}`;
                         if (state.gear.legs[i].broken) {
-                            _setElemTextCached(lbl, `LP${i + 1}: ${L('PARTED', 'ĐỨT')}`, 'label-3d text-red-400 border-red-500/60 font-bold');
+                            _setElemTextCached(lbl, `${legHierName}: ${L('PARTED', 'ĐỨT')}`, 'label-3d text-red-400 border-red-500/60 font-bold');
                         } else {
-                            const parts = [`LP${i + 1}`];
+                            const parts = [legHierName];
                             if (dOpt.showForces) {
                                 parts.push(phy.legSlacks[i] ? '0.0T' : `${t.toFixed(1)}T`);
                             }
@@ -607,6 +608,22 @@
                     }
                 }
             }
+            const lblBox = document.getElementById('labels-container');
+            const dOptHier = state.displayOptions || {};
+            const showHierTop = Boolean(lblBox && state.beamType && state.beamType !== 'none' && (dOptHier.showForces || dOptHier.showSlingAngles || dOptHier.showSlingLengths));
+            const topCables = showHierTop ? (phy.cables || []).filter(c => c && (c.role === 'upper' || c.role === 'hanger')) : [];
+            const topPool = updateSceneAndTelemetry._hierTopPool || (updateSceneAndTelemetry._hierTopPool = []);
+            topCables.forEach((tc, ti) => {
+                let el = topPool[ti];
+                if (!el && lblBox) { el = document.createElement('div'); el.className = 'label-3d text-sky-300'; lblBox.appendChild(el); topPool.push(el); }
+                if (!el || typeof attachWorld !== 'function') return;
+                const pMid = attachWorld(tc.a).clone().lerp(attachWorld(tc.b), 0.55);
+                projectToScreen(pMid, el);
+                const cName = (typeof RIG !== 'undefined' && RIG.resolveCableLabel) ? RIG.resolveCableLabel(tc, tc.index, state, phy) : `LP${tc.index + 1}`;
+                const tens = tc.role === 'upper' ? ((phy.upperTensions && phy.upperTensions[tc.index]) || 0) : ((phy.hangerTensions && phy.hangerTensions[tc.index]) || 0);
+                _setElemTextCached(el, tc.broken ? `${cName}: ${L('PARTED', 'ĐỨT')}` : `${cName} · ${tens.toFixed(1)}T`, tc.broken ? 'label-3d text-red-400 border-red-500/60 font-bold' : 'label-3d text-sky-300');
+            });
+            for (let k = topCables.length; k < topPool.length; k++) _setElemPosCached(topPool[k], 0, 0, '0');
 
             const dOpt = state.displayOptions || {};
             const lblHook = document.getElementById('lbl-hook');
