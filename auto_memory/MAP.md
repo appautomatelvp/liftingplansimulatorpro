@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 11:56 | Nhánh: feat/horizon-clouds | Commit cuối: 0d1a7ad step 5: PDF watermark/attribution & dynamic JSA/HSE risk assessment page (4 minutes ago)
+Cập nhật: 2026-11-17 13:34 | Nhánh: feat/horizon-clouds | Commit cuối: 01eadc9 Merge remote-tracking branch 'origin/master' into feat/horizon-clouds (18 minutes ago)
 Tổng: 310 file, 84149 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
