@@ -2,27 +2,36 @@ import { describe, expect, it } from 'vitest';
 import { computeAdaptiveSKL, resolveFourLegDiagonalLoad } from '../src/rigging/DnvFourPointLift.js';
 import { applyDNV4LegSkewRule } from '../src/rigging/RiggingPhysicsSolver.js';
 
-describe('DNV-ST-N001 4-Point Statically Indeterminate Lift (Golden Tests)', () => {
-  it('(a) 20t symmetric rigid cargo with SKL=1.25 puts 12.5t on active diagonal and 0t on passive legs', () => {
+describe('DNV-ST-N001 & Elastic 4-Point Torsional Lift (Golden Tests)', () => {
+  it('(a) elastic 4-point beam torsion shares load organically across all 4 taut legs (never forces 0t)', () => {
     const res = resolveFourLegDiagonalLoad({
       totalLoadT: 20,
       cogOffsetXZ: { x: 0, z: 0 },
+      legLengthsM: [4.0, 4.012, 4.0, 4.012],
       skl: 1.25,
       isRigid: true,
       isEqualizer: false
     });
-    expect(res.sklUsed).toBe(1.25);
-    expect(res.heavyPairSharePct).toBe(100);
-    expect(res.hasSkewRisk).toBe(true);
+    expect(res.elasticTorsionActive).toBe(true);
     const [a0, a1] = res.activeDiagonal;
     const [p0, p1] = res.passiveDiagonal;
-    expect(res.tensionsT[a0]).toBeCloseTo(12.5, 3);
-    expect(res.tensionsT[a1]).toBeCloseTo(12.5, 3);
-    expect(res.tensionsT[p0]).toBe(0);
-    expect(res.tensionsT[p1]).toBe(0);
+    expect(res.tensionsT[a0]).toBeGreaterThan(res.tensionsT[p0]);
+    expect(res.tensionsT[p0]).toBeGreaterThan(1.5);
+    expect(res.tensionsT[p1]).toBeGreaterThan(1.5);
+    expect(res.tensionsT.reduce((s, v) => s + v, 0)).toBeCloseTo(20.0, 1);
+
+    // Pure infinite-rigidity edge benchmark still supported when elasticTorsion=false
+    const pureRigid = resolveFourLegDiagonalLoad({
+      totalLoadT: 20,
+      skl: 1.25,
+      isRigid: true,
+      isEqualizer: false,
+      elasticTorsion: false
+    });
+    expect(pureRigid.tensionsT[pureRigid.passiveDiagonal[0]]).toBe(0);
   });
 
-  it('(b) CoG shifted toward LP1 selects diagonal (LP1, LP3) = [0, 2] consistently', () => {
+  it('(b) CoG shifted toward LP1 concentrates higher load on (LP1, LP3) while keeping secondary diagonal active', () => {
     const lugPositions = [
       { x: -2, z: -1 }, // LP1 (idx 0)
       { x: 2, z: -1 },  // LP2 (idx 1)
@@ -40,9 +49,9 @@ describe('DNV-ST-N001 4-Point Statically Indeterminate Lift (Golden Tests)', () 
     expect(res.activeDiagonal).toEqual([0, 2]);
     expect(res.passiveDiagonal).toEqual([1, 3]);
     expect(res.tensionsT[0]).toBeGreaterThan(res.tensionsT[2]);
-    expect(res.tensionsT[1]).toBe(0);
-    expect(res.tensionsT[3]).toBe(0);
-    expect(res.tensionsT[0] + res.tensionsT[2]).toBeCloseTo(25.0, 2);
+    expect(res.tensionsT[1]).toBeGreaterThan(0);
+    expect(res.tensionsT[3]).toBeGreaterThan(0);
+    expect(res.tensionsT.reduce((s, v) => s + v, 0)).toBeCloseTo(20.0, 1);
   });
 
   it('(c) clamps explicit and adaptive SKL strictly within [1.25, 1.50]', () => {
@@ -70,11 +79,15 @@ describe('DNV-ST-N001 4-Point Statically Indeterminate Lift (Golden Tests)', () 
     expect(res.tensionsT).toEqual([5, 5, 5, 5]);
   });
 
-  it('applyDNV4LegSkewRule delegates directly to DnvFourPointLift unified solver', () => {
-    const shares = applyDNV4LegSkewRule([{ L0: 4 }, { L0: 4 }, { L0: 4 }, { L0: 4 }], [0.25, 0.25, 0.25, 0.25], 1.25);
-    expect(shares[0] + shares[2]).toBeCloseTo(1.25, 4);
-    expect(shares[1]).toBe(0);
-    expect(shares[3]).toBe(0);
-    expect(shares.sklUsed).toBe(1.25);
+  it('applyDNV4LegSkewRule delegates to elastic torsional or rigid solver cleanly', () => {
+    const elastic = applyDNV4LegSkewRule([{ L0: 4 }, { L0: 4.01 }, { L0: 4 }, { L0: 4.01 }], [0.25, 0.25, 0.25, 0.25], 1.25);
+    expect(elastic[0] + elastic[1] + elastic[2] + elastic[3]).toBeCloseTo(1.0, 3);
+    expect(elastic[1]).toBeGreaterThan(0);
+
+    const rigid = applyDNV4LegSkewRule([{ L0: 4 }, { L0: 4 }, { L0: 4 }, { L0: 4 }], [0.25, 0.25, 0.25, 0.25], 1.25, { elasticTorsion: false });
+    expect(rigid[0] + rigid[2]).toBeCloseTo(1.25, 4);
+    expect(rigid[1]).toBe(0);
+    expect(rigid[3]).toBe(0);
+    expect(rigid.sklUsed).toBe(1.25);
   });
 });

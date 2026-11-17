@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 10:23 | Nhánh: feat/horizon-clouds | Commit cuối: 1515ef4 step 2: clamp horizontal angles [0..90] and compute hardware stress for upper/hanger tiers (2 minutes ago)
-Tổng: 295 file, 82254 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 10:28 | Nhánh: feat/horizon-clouds | Commit cuối: b253380 step 3: restore hierarchical tree binding and full upper sling metrics UI parity (5 minutes ago)
+Tổng: 297 file, 82520 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -20,7 +20,7 @@ Tổng: 295 file, 82254 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/graphics/SceneRenderer.js (313 dòng)
 - src/i18n/keys.js (598 dòng)
 - src/rigging/ReplayRecorder.js (302 dòng)
-- src/rigging/RiggingPhysicsSolver.js (681 dòng)
+- src/rigging/RiggingPhysicsSolver.js (700 dòng)
 - src/sim/audio.js (725 dòng)
 - src/sim/cargo/containers_iso.js (1453 dòng)
 - src/sim/cargo/shell_rebuild.js (572 dòng)
@@ -31,7 +31,7 @@ Tổng: 295 file, 82254 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/library/core.js (641 dòng)
 - src/sim/library/parsers.js (660 dòng)
 - src/sim/library/reconstruction_export.js (2142 dòng)
-- src/sim/physics/beams_seed.js (3001 dòng)
+- src/sim/physics/beams_seed.js (3004 dòng)
 - src/sim/physics/cables_break.js (1593 dòng)
 - src/sim/physics/flatrack_payload.js (657 dòng)
 - src/sim/physics/footprint_rig.js (838 dòng)
@@ -52,7 +52,7 @@ Tổng: 295 file, 82254 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - test/engineering.test.js (410 dòng)
 - test/physics_master_blueprint.test.js (524 dòng)
 - test/rigging.test.js (1370 dòng)
-- test/rigging_physics_and_alarms.test.js (306 dòng)
+- test/rigging_physics_and_alarms.test.js (305 dòng)
 - test/v3_ruler_drag_hoist_sts_gear_regression.test.js (449 dòng)
 
 ## 🔒 File đã khóa [LOCKED]
@@ -198,17 +198,18 @@ Tổng: 295 file, 82254 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/constraints/CornerProtectorModel.js` | 51 |  |
 | `src/rigging/constraints/HardwareConstraint.js` | 236 |  |
 | `src/rigging/constraints/UnilateralCableConstraint.js` | 151 |  |
-| `src/rigging/DnvFourPointLift.js` | 118 | Thuật toán chia tải siêu tĩnh DNV-ST-N001 cho cẩu 4 nhánh (nguồn chân lý duy nhất: 2 nhánh chéo gánh 100% × SKL [1.25..1.5]) |
+| `src/rigging/DnvFourPointLift.js` | 137 | Thuật toán chia tải 4 nhánh kết hợp độ mềm xoắn dầm Saint-Venant (GJ) + độ giãn trục cáp (EA) |
+| `src/rigging/ElasticFourPointSolver.js` | 133 | Giải phân bố lực đàn hồi 4 điểm dựa trên độ cứng kéo dọc trục cáp (EA) và độ cứng xoắn Saint-Venant của dầm (GJ) |
 | `src/rigging/FlatRackLashingPhysics.js` | 234 | Dựng dây chằng Flat Rack ôm khít kiện hàng (không lòi ngang) và mô phỏng đứt tuần tự tự nhiên theo vật lý. |
 | `src/rigging/HardwareBearingTracker.js` | 64 | Truy vết vị trí dây tựa thực tế trên ma ní (Pin vs Bow) và góc tải lệch bên (side-loading angle) theo ASME B30.26 |
 | `src/rigging/HierarchicalNaming.js` | 177 | Thuật toán đệ quy đặt tên cáp & phụ kiện theo Cây Phân Cấp (LP1 -> LP11, LP12 -> LP111...) truy xuất nguồn gốc lực |
 | `src/rigging/HStyleLiftingBeam.js` | 188 | Cấu tạo 3D và thông số khớp nối H-Style Lifting Beam (tùy chọn trên Direct Hook/2-Cáp và dưới 4-Cáp/Twistlock) |
-| `src/rigging/index.js` | 31 | src/rigging/index.js |
+| `src/rigging/index.js` | 32 | src/rigging/index.js |
 | `src/rigging/LoadPathGravity.js` | 163 | Kết nối đường tải trọng lực (rơi tự do g=-9.81 khi mất cáp), mô-men lật τ=r×mg trên mặt đỡ và võng uốn dầm Euler-Bernoulli |
 | `src/rigging/PretensionSolver.js` | 297 | Giải cao độ móc cẩu và dầm ngáng tại trạng thái Nhớm Cáp (kiện chạm đất, toàn bộ cáp căng đúng chiều dài thực) ⚠️>250 |
 | `src/rigging/ReplayRecorder.js` | 302 | Ghi và phát lại toàn bộ trạng thái mô phỏng (Hook, Ngáng dầm, Kiện, Cáp đứt/chùng, Lashing/OOG rơi, Cẩu) tối đa 60 giây. ⚠️>300 |
 | `src/rigging/riggingConstants.js` | 69 | src/rigging/riggingConstants.js |
-| `src/rigging/RiggingPhysicsSolver.js` | 681 | src/rigging/RiggingPhysicsSolver.js ⚠️>300 |
+| `src/rigging/RiggingPhysicsSolver.js` | 700 | src/rigging/RiggingPhysicsSolver.js ⚠️>300 |
 | `src/rigging/riggingUIStore.js` | 100 | src/rigging/riggingUIStore.js |
 | `src/rigging/RigidInertialDynamics.js` | 212 | Động lực học vật rắn lệch tâm (Steiner-Huygens Inertia Tensor), mô-men xoắn/nghiêng khi cẩu và rơi tự do 9.81 m/s² |
 | `src/rigging/SlingPerfHelper.js` | 167 | Tái sử dụng biến toán học scratch và bộ đệm nghỉ XPBD để giảm giật lag vòng lặp cáp 3D |
@@ -263,7 +264,7 @@ Tổng: 295 file, 82254 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/library/reconstruction_export.js` | 2142 | --- 2D IMAGE TO 3D CONTOUR & RELIEF RECONSTRUCTION ENGINE --- ⚠️>300 |
 | `src/sim/manifest.js` | 39 |  |
 | `src/sim/physics.js` | 6 |  |
-| `src/sim/physics/beams_seed.js` | 3001 |  ⚠️>300 |
+| `src/sim/physics/beams_seed.js` | 3004 |  ⚠️>300 |
 | `src/sim/physics/cables_break.js` | 1593 |  ⚠️>300 |
 | `src/sim/physics/flatrack_payload.js` | 657 | --- FLAT RACK LASHING RUPTURE, DECK SLIDING & FALLING PAYLOAD PHYSICS --- ⚠️>300 |
 | `src/sim/physics/footprint_rig.js` | 838 |  ⚠️>300 |
@@ -315,7 +316,8 @@ Tổng: 295 file, 82254 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/compound_collider_zero_penetration.test.js` | 67 |  |
 | `test/custom_slings.test.js` | 712 |  ⚠️>300 |
 | `test/deployment_environment.test.js` | 21 |  |
-| `test/dnv_four_point_lift.test.js` | 80 |  |
+| `test/dnv_four_point_lift.test.js` | 93 |  |
+| `test/elastic_four_point_torsion.test.js` | 79 |  |
 | `test/engineering.test.js` | 410 |  ⚠️>300 |
 | `test/feedback_mailto.test.js` | 144 |  |
 | `test/firestore-rules-emulator.mjs` | 351 |  |
@@ -340,7 +342,7 @@ Tổng: 295 file, 82254 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/rigging.test.js` | 1370 |  ⚠️>300 |
 | `test/rigging_alarms_and_tolerances.test.js` | 216 |  |
 | `test/rigging_groups_and_dynamics.test.js` | 84 |  |
-| `test/rigging_physics_and_alarms.test.js` | 306 | test/rigging_physics_and_alarms.test.js ⚠️>300 |
+| `test/rigging_physics_and_alarms.test.js` | 305 | test/rigging_physics_and_alarms.test.js ⚠️>300 |
 | `test/rigging_realism_sts_contact.test.js` | 186 | Bộ kiểm thử vàng xác minh tiếp xúc bề mặt 3D thực (0mm khe hở), dầm chữ H, kích thước STS ISO 668/1161 và vật lý đứt cáp |
 | `test/runtime_flags.test.js` | 96 |  |
 | `test/saas_access.test.js` | 55 |  |

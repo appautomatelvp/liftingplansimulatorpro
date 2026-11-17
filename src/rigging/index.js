@@ -1,6 +1,7 @@
 // src/rigging/index.js
 export * from './riggingConstants.js';
 export * from './DnvFourPointLift.js';
+export * from './ElasticFourPointSolver.js';
 export * from './HierarchicalNaming.js';
 export * from './CableTelemetryMapper.js';
 export * from './HardwareBearingTracker.js';

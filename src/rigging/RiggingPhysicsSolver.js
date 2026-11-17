@@ -16,6 +16,7 @@ import {
   T_TO_KN
 } from './riggingConstants.js';
 import { resolveFourLegDiagonalLoad } from './DnvFourPointLift.js';
+import { computeCableAxialStiffness } from './ElasticFourPointSolver.js';
 
 export {
   TOPOLOGY,
@@ -252,7 +253,7 @@ export function solveCoGMomentEquilibrium(lugs, cogWorld = { x: 0, y: 0, z: 0 },
  * @param {number} SKL - Skew Load Factor (default 1.25)
  * @returns {number[]} dnvShares - multipliers/fractions per leg
  */
-export function applyDNV4LegSkewRule(legs4, cogLoadShares = [0.25, 0.25, 0.25, 0.25], SKL = DNV_4LEG.SKL_DEFAULT) {
+export function applyDNV4LegSkewRule(legs4, cogLoadShares = [0.25, 0.25, 0.25, 0.25], SKL = DNV_4LEG.SKL_DEFAULT, elasticOpts = {}) {
   const legLengthsM = Array.isArray(legs4) ? legs4.map((c) => (c && c.L0) || 0) : null;
   const res = resolveFourLegDiagonalLoad({
     totalLoadT: 1.0,
@@ -260,7 +261,12 @@ export function applyDNV4LegSkewRule(legs4, cogLoadShares = [0.25, 0.25, 0.25, 0
     legLengthsM,
     skl: SKL,
     isRigid: true,
-    isEqualizer: false
+    isEqualizer: false,
+    elasticTorsion: elasticOpts.elasticTorsion !== false,
+    beamGJ: elasticOpts.beamGJ ?? 3.2e7,
+    cableEA: elasticOpts.cableEA ?? 2.2e7,
+    beamSpanM: elasticOpts.beamSpanM ?? 6.0,
+    lugWidthM: elasticOpts.lugWidthM ?? 2.2
   });
   const dnvShares = [...res.shares];
   dnvShares.activeDiagonal = res.activeDiagonal;
@@ -268,7 +274,10 @@ export function applyDNV4LegSkewRule(legs4, cogLoadShares = [0.25, 0.25, 0.25, 0
   dnvShares.sklUsed = res.sklUsed;
   dnvShares.heavyPairSharePct = res.heavyPairSharePct;
   dnvShares.hasSkewRisk = res.hasSkewRisk;
-  dnvShares.dnvNotice = `DNV-ST-N001: 4-leg statically indeterminate lift. Active diagonal carries 100% load * SKL (${res.sklUsed}x). Passive legs carry 0t.`;
+  dnvShares.elasticTorsionActive = Boolean(res.elasticTorsionActive);
+  dnvShares.dnvNotice = res.elasticTorsionActive
+    ? `Elastic 4-Leg Torsion (EA + GJ): primary diagonal ${(res.heavyPairSharePct || 70).toFixed(1)}%, secondary diagonal taut under beam twist.`
+    : `DNV-ST-N001: 4-leg statically indeterminate lift. Active diagonal carries 100% load * SKL (${res.sklUsed}x). Passive legs carry 0t.`;
   return dnvShares;
 }
 
@@ -508,7 +517,17 @@ export function evaluate(phy, state, deps = {}) {
     };
     const cogShares = solveCoGMomentEquilibrium(lugs, cogWorld, payloadWeightT);
     const skl = (state.rigSolver && state.rigSolver.skl) || DNV_4LEG.SKL_DEFAULT;
-    dnvShares = applyDNV4LegSkewRule(legCables, cogShares, skl);
+    const beamSpanM = Math.max(1.5, Number(state.beamLength) || 6.0);
+    const beamSwlT = Math.max(10, Number(state.gear?.beam?.swlT) || 30);
+    const beamGJ = 79.3e9 * Math.max(3.8e-4, beamSpanM * beamSpanM * beamSwlT * 2.0e-7);
+    const cableEA = computeCableAxialStiffness({ material: state.slingType || 'wire', diameterMm: state.slingDiameterMm || 22, lengthM: state.slingLength || 4 }).eaN;
+    dnvShares = applyDNV4LegSkewRule(legCables, cogShares, skl, {
+      elasticTorsion: state.rigSolver?.elasticTorsion !== false,
+      beamGJ,
+      cableEA,
+      beamSpanM,
+      lugWidthM: Math.max(1.0, Number(state.W) || 2.2)
+    });
     dnvNotice = dnvShares.dnvNotice;
   }
 
