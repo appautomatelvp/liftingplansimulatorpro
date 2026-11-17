@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-17 09:01 [feat] Hoan tat Cay Dinh Danh Phan Cap (HierarchicalNaming.js): gan ten de quy tu Moc Cau (LP1, LP2 -> LP11, LP12 / LP21, LP22 -> LP111...), dong bo nhan 3D, Inspector, canh bao goc, dut cap, Compliance va ReplayRecorder 60s.
+- Nhánh: feat/horizon-clouds | Commit trước đó: b8fde5b
+- File: src/rigging/HierarchicalNaming.js,src/rigging/index.js,src/sim/physics/hoist_contacts.js,src/sim/physics/beams_seed.js,src/sim/telemetry.js,src/sim/gear/editor.js,src/sim/physics/step_engine.js,src/sim/physics/cables_break.js,src/sim/compliance.js,src/rigging/ReplayRecorder.js,test/hierarchical_naming.test.js
+
 ## 2026-11-17 08:30 [feat] Hoan tat ke hoach 11 buoc 5 Tru cot Vat ly & Ky thuat Nang ha (DNV-ST-N001 / ASME B30): DNV 4 diem thong nhat, Pin vs Bow stress, Gizmo goc 3D + mui ten luc, Compound/CCD <1mm, XPBD gio & whip, roi tu do & uon dam Euler-Bernoulli, ReplayRecorder 60s.
 - Nhánh: feat/horizon-clouds | Commit trước đó: 3469696
 - File: DnvFourPointLift.js,LocalizedHardwareStress.js,HardwareBearingTracker.js,SlingAngleGizmo.js,ForceVectorField.js,CompoundColliders.js,CableMaterialBehavior.js,LoadPathGravity.js,ReplayRecorder.js

@@ -1,5 +1,5 @@
 # KẾ HOẠCH THỰC HIỆN (PLAN.md)
-Trạng thái: ACTIVE
+Trạng thái: DONE
 Tính năng: HIERARCHICAL RIGGING NAMING CONVENTION — Định danh cáp & phụ kiện theo Cây Phân Cấp (`LP1 -> LP11, LP12 -> LP111...`) truy xuất nguồn gốc lực (Load Path Traceability)
 Nhánh Git: feat/horizon-clouds (backup: `_BACKUPS_LOCAL\LIFTING PLAN SIMULATOR PRO-084417112026 (test - hierarchical-rigging-naming).zip`)
 Người lập kế hoạch: Model cao nhất (KHÔNG viết code ở bước này). Gõ `làm tiếp` 1 lần để chạy một mạch Bước 1 → 5.
@@ -59,7 +59,7 @@ Người lập kế hoạch: Model cao nhất (KHÔNG viết code ở bước n�
   - `src/sim/compliance.js` (~dòng 215) & `src/rigging/ReplayRecorder.js`: dùng/lưu `name`, `parentId`, `parentName`, `tier` khi ghi & phát lại 60s.
 - **Kiểm tra:** `npx vitest run test/hierarchical_naming.test.js test/i18n_keys.test.js test/rigging_physics_and_alarms.test.js` + `npm run architecture:gate`.
 
-### [ ] Bước 5: Kiểm thử tích hợp 3D + E2E & Nghiệm thu cuối
+### [x] Bước 5: Kiểm thử tích hợp 3D + E2E & Nghiệm thu cuối
 - Bổ sung test tích hợp headless 3D vào `test/hierarchical_naming.test.js`: bật Spreader Beam, xác nhận `phy.cables` có đúng `LP1`, `LP2`, `LP11`, `LP12`, `LP21`, `LP22`, nhãn 3D `#lbl-t*` và banner cảnh báo góc dùng đúng `LP2`, đồng thời kiểm tra chế độ `cascaded` 3 tầng (`LP111`).
 - Chạy toàn bộ: `npx vitest run`, `npm run architecture:gate`, `npm run build`, `npm run check:dist`, `npx playwright test e2e/saas-accessibility.spec.js --project=fhd-1080p`, `./scripts/auto_check.ps1`.
 - Cập nhật `auto_memory/CONTEXT.md`, `STATE.md`, đặt `Trạng thái: DONE`, chạy `./scripts/auto_log.ps1 -Type feat ...`.

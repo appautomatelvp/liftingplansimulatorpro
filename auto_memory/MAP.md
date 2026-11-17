@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 08:57 | Nhánh: feat/horizon-clouds | Commit cuối: fa42d65 step 3: display hierarchical names LP1/LP2/LP11.. on 3D viewport labels (2 minutes ago)
-Tổng: 288 file, 80809 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 09:02 | Nhánh: feat/horizon-clouds | Commit cuối: b8fde5b step 4: use hierarchical names in Inspector, angle warning, break messages, compliance, and ReplayRecorder (4 minutes ago)
+Tổng: 288 file, 80832 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -315,7 +315,7 @@ Tổng: 288 file, 80809 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/force_vector_field.test.js` | 54 |  |
 | `test/graphics.test.js` | 113 |  |
 | `test/h_style_lifting_beam.test.js` | 191 | Kiểm thử vàng cấu tạo H-Style Lifting Beam 4 góc và 4 tổ hợp liên kết Trên/Dưới |
-| `test/hierarchical_naming.test.js` | 107 |  |
+| `test/hierarchical_naming.test.js` | 130 |  |
 | `test/hyper_realistic_physics_pbr.test.js` | 184 | Kiểm thử Vàng 3 trụ cột: Va chạm CCD & Ma sát, Cẩu 20 tấn lệch tâm + Cắt cáp quật XPBD, và Vật liệu PBR Ứng suất |
 | `test/i18n_keys.test.js` | 56 |  |
 | `test/inclined_lashing_slide.test.js` | 67 |  |

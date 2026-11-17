@@ -4,6 +4,7 @@ import {
   syncHierarchicalNamesToGear,
   resolveCableLabel
 } from '../src/rigging/HierarchicalNaming.js';
+import { createHeadlessSim } from './sim_test_harness.js';
 
 const hookEnd = () => ({ kind: 'hook' });
 const bodyEnd = (id, x, y = 0, z = 0) => ({ kind: 'body', id, local: [x, y, z] });
@@ -103,5 +104,27 @@ describe('Hierarchical Rigging Naming Convention (Load Path Tree)', () => {
     expect([0, 1, 2, 3].map((i) => resolveCableLabel('leg', i, state, { cables }))).toEqual(['LP11', 'LP12', 'LP13', 'LP14']);
     expect(state.gear.shackles[2].hierarchicalName).toBe('LP13');
     expect(state.gear.legs[2].parentName).toBe('LP1');
+  });
+
+  it('(f) headless 3D sim assigns Spreader & Cascaded hierarchical names to cables and syncs gear state', () => {
+    const sim = createHeadlessSim();
+    const st = sim.getState();
+    const phy = sim.getPhy();
+
+    // 1. Spreader 2 uppers + 4 legs
+    st.beamType = 'spreader';
+    sim.rebuildCargoAndRig(false);
+    const upNames = phy.cables.filter((c) => c.role === 'upper').map((c) => c.name).sort();
+    const legNames = phy.cables.filter((c) => c.role === 'leg').map((c) => c.name).sort();
+    expect(upNames).toEqual(['LP1', 'LP2']);
+    expect(legNames).toEqual(['LP11', 'LP12', 'LP21', 'LP22']);
+    expect(st.gear.legs[0].hierarchicalName).toMatch(/^LP[12][12]$/);
+    expect(st.gear.legs[0].parentName).toMatch(/^LP[12]$/);
+
+    // 2. Cascaded 3-tier (upper -> hanger -> leg)
+    st.beamType = 'cascaded';
+    sim.rebuildCargoAndRig(false);
+    const casLegs = phy.cables.filter((c) => c.role === 'leg').map((c) => c.name).sort();
+    expect(casLegs).toEqual(['LP111', 'LP121', 'LP211', 'LP221']);
   });
 });
