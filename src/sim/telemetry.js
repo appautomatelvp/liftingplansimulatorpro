@@ -256,6 +256,24 @@
                     arrow.visible = false;
                 }
             });
+            if (!phy._forceVectorField && typeof GFX !== 'undefined' && GFX.createForceVectorField && typeof scene !== 'undefined') {
+                phy._forceVectorField = GFX.createForceVectorField({ THREE, scene });
+            }
+            if (phy._forceVectorField) {
+                const showVec = Boolean(state.displayOptions?.showVectors ?? state.showVectors);
+                const cogW = (typeof CARGO !== 'undefined' && CARGO.localToWorldCargo) ? CARGO.localToWorldCargo(new THREE.Vector3(...(state.cogOffset || [0, -0.1, 0]))) : phy.cargoPos;
+                const conns = [];
+                (phy.cables || []).forEach((c) => {
+                    if (!c || c.broken || !(c.tensionT > 0.02)) return;
+                    const pA = attachWorld(c.a), pB = attachWorld(c.b);
+                    conns.push({ origin: pB, dir: pA.clone().sub(pB), tensionT: c.tensionT, swlT: c.role === 'leg' ? legSwl(c.index) : (state.upperWll || 20) });
+                });
+                phy._forceVectorField.update({ visible: showVec, qualityTier: state.qualityTier || 'high', cogWorld: cogW, cargoWeightT: state.weight || 0, totalHookLoadT: (phy.hookLoadT || 0), connections: conns });
+            }
+            const angleTipEl = document.getElementById('sling-angle-tooltip') || document.getElementById('lbl-hook');
+            if (angleTipEl && phy._angleGizmoData && typeof GFX !== 'undefined' && GFX.getSlingAngleTooltip) {
+                angleTipEl.title = GFX.getSlingAngleTooltip(state.lang || 'vi');
+            }
 
             const upVec = new THREE.Vector3(0, 1, 0).applyQuaternion(phy.cargoQuat);
             phy.tiltDeg = Math.acos(THREE.MathUtils.clamp(upVec.y, -1, 1)) * (180 / Math.PI);

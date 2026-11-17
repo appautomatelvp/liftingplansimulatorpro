@@ -63,7 +63,7 @@ Người lập kế hoạch: Model cao nhất (KHÔNG viết code ở bước n�
 - **Tạo test:** `test/sling_angle_gizmo.test.js` (màu theo ngưỡng 45°/30°, độ mở cung = góc thật, `visible=false` khi không chọn, không rò geometry).
 - **Kiểm tra:** `npx vitest run test/sling_angle_gizmo.test.js test/graphics.test.js` + `npm run build`.
 
-### [ ] Bước 6: Tooltip giải thích + mũi tên lực thời gian thực (Pillar 2.1 tooltip + 2.2)
+### [x] Bước 6: Tooltip giải thích + mũi tên lực thời gian thực (Pillar 2.1 tooltip + 2.2)
 - **Tạo:** `src/graphics/ForceVectorField.js` (<220 dòng): mũi tên từ **CoG** và từ từng **điểm nối** (hook, ma ní, tai cẩu), độ dài/độ dày ∝ √T hoặc T chuẩn hóa theo SWL, màu theo vùng an toàn; cập nhật `setLength/setDirection` tại chỗ.
 - **Sửa (≤25 dòng):** `src/sim/telemetry.js` (nạp lực mỗi khung vào field + tooltip song ngữ `Horizontal Sling Angle (α)…` / `Góc ngang của dây (α)…` đi qua `window.SafeLift.i18n.L`), `src/i18n/sim_ui_phrases.js` (thêm cặp câu EN/VI).
 - **Tạo test:** `test/force_vector_field.test.js` (độ dài tỉ lệ T, gốc tại CoG, tooltip có đủ 2 ngôn ngữ).

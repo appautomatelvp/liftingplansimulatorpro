@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 08:14 | Nhánh: feat/horizon-clouds | Commit cuối: 669d917 step 4: track shackle Pin vs Bow bearing point and display governing stress in HUD (82 seconds ago)
-Tổng: 278 file, 79411 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 08:16 | Nhánh: feat/horizon-clouds | Commit cuối: b30b055 step 5: add interactive 3D SlingAngleGizmo with green/yellow/red arc and zero leaks (2 minutes ago)
+Tổng: 280 file, 79610 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -43,7 +43,7 @@ Tổng: 278 file, 79411 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/session/presets_events.js (3618 dòng)
 - src/sim/session/ui_units_bom.js (1967 dòng)
 - src/sim/state.js (607 dòng)
-- src/sim/telemetry.js (1136 dòng)
+- src/sim/telemetry.js (1154 dòng)
 - src/sim/weather_fx.js (596 dòng)
 - test/cable_morphology_and_deformation.test.js (426 dòng)
 - test/custom_slings.test.js (712 dòng)
@@ -163,10 +163,11 @@ Tổng: 278 file, 79411 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/graphics/ElevationRulerMath.js` | 117 | Thuật toán bắt điểm 3D cho thước đo cao độ (lưới khối + dây cáp mảnh + ma ní) |
 | `src/graphics/ElevationRulerTool.js` | 290 | Vẽ cây thước đo cao độ 3D so với mặt đất, cho phép kéo đặt vị trí và điểm đỏ rà chuột mọi chi tiết. ⚠️>250 |
 | `src/graphics/EnvironmentManager.js` | 280 | Quản lý ánh sáng IBL, sương mù chân trời, HDR và đồng bộ thời gian thực cho cảnh 3D ⚠️>250 |
+| `src/graphics/ForceVectorField.js` | 122 | Trường mũi tên véc-tơ lực 3D thời gian thực từ CoG & các điểm nối (tái sử dụng pool, không cấp phát mỗi khung hình) |
 | `src/graphics/GraphicsToneHelper.js` | 114 | Điều chỉnh và lưu độ sáng tối (Brightness) và tương phản (Contrast) cho khung hình 3D như game |
 | `src/graphics/GroundHorizonFade.js` | 46 | Hòa mượt mép ngoài đĩa mặt đất vào màu sương mù chân trời không lộ đường cắt |
 | `src/graphics/HorizonSkyDome.js` | 286 | Dựng vòm bầu trời HorizonSkyDome với mây chân trời 3D Gradient Quintic mềm mại và màu khí quyển thực tế ⚠️>250 |
-| `src/graphics/index.js` | 36 |  |
+| `src/graphics/index.js` | 37 |  |
 | `src/graphics/JobsiteSiteVisuals.js` | 289 | Dựng và đồng bộ hình khối 3D cho đà kê gỗ, đệm địa chất độ dốc và tấm lót chân chống cẩu ở Tab 6. ⚠️>250 |
 | `src/graphics/pbr/ProceduralTextures.js` | 290 | Vẽ texture canvas thủ công (bê tông cảng, cáp thép, xích, sling, mặt nước, vạch cảnh báo) ⚠️>250 |
 | `src/graphics/pbr/StressPBRMaterials.js` | 146 | Tạo bản đồ PBR thép sơn công nghiệp, thép rèn mạ kẽm và màu ứng suất căng cơ học thời gian thực |
@@ -180,7 +181,7 @@ Tổng: 278 file, 79411 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/i18n/contact_keys.js` | 73 | Bộ từ điển song ngữ VI/EN chuẩn công nghiệp cho hộp thoại Hỗ trợ kỹ thuật & Góp ý |
 | `src/i18n/index.js` | 134 |  |
 | `src/i18n/keys.js` | 598 |  ⚠️>300 |
-| `src/i18n/sim_ui_phrases.js` | 166 | Bảng từ điển bổ sung & chuyển đổi badge động song ngữ Việt–Anh cho mô phỏng 3D và bảng thiết bị |
+| `src/i18n/sim_ui_phrases.js` | 170 | Bảng từ điển bổ sung & chuyển đổi badge động song ngữ Việt–Anh cho mô phỏng 3D và bảng thiết bị |
 | `src/main.js` | 67 |  |
 | `src/rigging/BrokenCableWhipXPBD.js` | 252 | Mô phỏng XPBD sóng quật, thu hồi năng lượng đàn hồi và va chạm CCD cho hai nửa cáp đứt hoặc cáp tháo chốt ⚠️>250 |
 | `src/rigging/CableDynamicsXPBD.js` | 264 | Bộ giải động lực học cáp/xích XPBD chịu kéo, tự va chạm và đứt thu hồi đàn hồi ⚠️>250 |
@@ -269,7 +270,7 @@ Tổng: 278 file, 79411 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/session/presets_events.js` | 3618 | --- ASME B30.9 RIGGING SAFETY PRESET ENGINES --- ⚠️>300 |
 | `src/sim/session/ui_units_bom.js` | 1967 | --- 12. UI EVENT BINDINGS & COLLAPSIBLE PANELS --- ⚠️>300 |
 | `src/sim/state.js` | 607 | Floor cribbing removed: static cargo rests flush on the quay / ground plane. ⚠️>300 |
-| `src/sim/telemetry.js` | 1136 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
+| `src/sim/telemetry.js` | 1154 | --- 9. UPDATE 3D SCENE, CRANES, CABLES & TELEMETRY --- ⚠️>300 |
 | `src/sim/ui-layout.js` | 241 |  |
 | `src/sim/weather_fx.js` | 596 |  ⚠️>300 |
 | `src/simulation/destruction-manager/DestructionSolver.js` | 147 |  |
@@ -304,6 +305,7 @@ Tổng: 278 file, 79411 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/engineering.test.js` | 410 |  ⚠️>300 |
 | `test/feedback_mailto.test.js` | 144 |  |
 | `test/firestore-rules-emulator.mjs` | 351 |  |
+| `test/force_vector_field.test.js` | 54 |  |
 | `test/graphics.test.js` | 113 |  |
 | `test/h_style_lifting_beam.test.js` | 191 | Kiểm thử vàng cấu tạo H-Style Lifting Beam 4 góc và 4 tổ hợp liên kết Trên/Dưới |
 | `test/hyper_realistic_physics_pbr.test.js` | 184 | Kiểm thử Vàng 3 trụ cột: Va chạm CCD & Ma sát, Cẩu 20 tấn lệch tâm + Cắt cáp quật XPBD, và Vật liệu PBR Ứng suất |

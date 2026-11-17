@@ -133,7 +133,11 @@ export const EXTRA_UI_EN = {
   'Bộ treo': 'Rigging',
   'Auto cáp': 'Auto slings',
   'Khối lượng riêng / Bền': 'Grade / Rating',
-  'Kích thước mặc định': 'Default dimensions'
+  'Kích thước mặc định': 'Default dimensions',
+  'Góc ngang của dây (α): Góc tạo bởi nhánh dây cáp và mặt phẳng nằm ngang.': 'Horizontal Sling Angle (α): The angle between the sling leg and the horizontal plane.',
+  'Hiện cung góc': 'Angle Gizmo',
+  'Mũi tên lực': 'Force Vectors',
+  'Ứng suất phụ kiện': 'Hardware Stress'
 };
 
 const BADGE_PAIRS = [
