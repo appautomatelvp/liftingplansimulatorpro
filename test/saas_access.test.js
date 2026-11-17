@@ -19,9 +19,13 @@ describe('SafeLift3D SaaS tier access', () => {
     expect(canAccessFeature({ role: 'admin', tier: 'free' }, 'beam.equalizer')).toBe(true);
   });
 
-  it('treats unknown tiers as free and unknown feature IDs as ungated', () => {
-    expect(normalizeTier({ role: 'user', tier: 'enterprise' })).toBe('free');
-    expect(canAccessFeature({ role: 'user', tier: 'enterprise' }, 'cargo.specialized')).toBe(false);
+  it('supports pro/enterprise tiers, treats unknown tiers as free, and treats unknown feature IDs as ungated', () => {
+    expect(normalizeTier({ role: 'user', tier: 'pro' })).toBe('pro');
+    expect(normalizeTier({ role: 'user', tier: 'enterprise' })).toBe('enterprise');
+    expect(normalizeTier({ role: 'user', tier: 'unknown_tier' })).toBe('free');
+    expect(canAccessFeature({ role: 'user', tier: 'enterprise' }, 'cargo.specialized')).toBe(true);
+    expect(canAccessFeature({ role: 'user', tier: 'free', status: 'active', trialEndsAt: Date.now() + 60_000 }, 'cargo.specialized')).toBe(true);
+    expect(canAccessFeature({ role: 'user', tier: 'free', status: 'active', trialEndsAt: Date.now() - 60_000 }, 'cargo.specialized')).toBe(false);
     expect(canAccessFeature({ role: 'user', tier: 'free' }, 'core.new-tool')).toBe(true);
   });
 

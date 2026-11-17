@@ -15,23 +15,57 @@ import {
   updateDoc
 } from 'firebase/firestore';
 import { prepareFirestorePayload } from '../utils/firestoreSanitize.js';
+import {
+  TRIAL_DURATION_MS,
+  getOrCreateDeviceFingerprint,
+  hasLocalTrialClaimed,
+  markLocalTrialClaimed
+} from './trial_access.js';
 
 export async function ensureUserProfile(db, authUser) {
   const profileRef = doc(db, 'users', authUser.uid);
   const profileSnapshot = await getDoc(profileRef);
   if (!profileSnapshot.exists()) {
+    const fp = getOrCreateDeviceFingerprint();
+    let eligibleForTrial = !hasLocalTrialClaimed();
+    if (eligibleForTrial) {
+      try {
+        const devSnap = await getDoc(doc(db, 'trial_devices', fp));
+        if (devSnap.exists()) eligibleForTrial = false;
+      } catch { /* fallback cleanly if offline */ }
+    }
+    const nowMs = Date.now();
+    const trialEndsAt = eligibleForTrial ? new Date(nowMs + TRIAL_DURATION_MS) : null;
     const profile = {
       uid: authUser.uid,
       email: authUser.email || '',
       displayName: authUser.displayName || '',
       role: 'user',
       tier: 'free',
+      deviceFingerprint: fp,
+      trialStartedAt: eligibleForTrial ? serverTimestamp() : null,
+      trialEndsAt,
       createdAt: serverTimestamp(),
       lastLogin: serverTimestamp(),
       status: 'active'
     };
     await setDoc(profileRef, prepareFirestorePayload(profile));
-    return { ...profile, createdAt: new Date(), lastLogin: new Date() };
+    if (eligibleForTrial) {
+      markLocalTrialClaimed(fp, authUser.uid);
+      try {
+        await setDoc(doc(db, 'trial_devices', fp), prepareFirestorePayload({
+          deviceFingerprint: fp,
+          firstUid: authUser.uid,
+          claimedAt: serverTimestamp()
+        }));
+      } catch { /* non-fatal if another tab/account just claimed */ }
+    }
+    return {
+      ...profile,
+      trialStartedAt: eligibleForTrial ? new Date(nowMs) : null,
+      createdAt: new Date(nowMs),
+      lastLogin: new Date(nowMs)
+    };
   }
 
   const profile = profileSnapshot.data();
@@ -75,7 +109,9 @@ export async function listUsersPage(db, { cursor = null, emailPrefix = '', pageS
 
 export async function setUserAccess(db, uid, update) {
   const allowed = {};
-  if (update.tier === 'free' || update.tier === 'premium') allowed.tier = update.tier;
+  if (update.tier === 'free' || update.tier === 'premium' || update.tier === 'pro' || update.tier === 'enterprise') {
+    allowed.tier = update.tier;
+  }
   if (update.status === 'active' || update.status === 'locked' || update.status === 'banned') allowed.status = update.status;
   if (!Object.keys(allowed).length) throw new Error('No valid access change was provided.');
   await updateDoc(doc(db, 'users', uid), prepareFirestorePayload(allowed));

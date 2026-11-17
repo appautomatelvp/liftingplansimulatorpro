@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 10:33 | Nhánh: feat/horizon-clouds | Commit cuối: 0b2c234 step 4: elastic 4-point load distribution using XPBD cable EA and beam torsion GJ (5 minutes ago)
-Tổng: 297 file, 82517 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 11:39 | Nhánh: feat/horizon-clouds | Commit cuối: a348e91 step 5: tune elastic XPBD compliance, update memory & finalize 4-point hotfix (67 minutes ago)
+Tổng: 300 file, 82884 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -85,7 +85,7 @@ Tổng: 297 file, 82517 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `e2e/saas-accessibility.spec.js` | 148 |  |
 | `eslint.config.js` | 23 | Flat ESLint config — architecture gates for app/domain layers (optional eslint install). |
 | `firebase.json` | 29 |  |
-| `firestore.rules` | 239 |  |
+| `firestore.rules` | 279 |  |
 | `index.html` | 3186 |  ⚠️>300 |
 | `jsconfig.json` | 19 |  |
 | `package.json` | 42 |  |
@@ -217,7 +217,7 @@ Tổng: 297 file, 82517 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/TrueMeshSurfaceContact.js` | 230 | Bộ giải tiếp xúc bề mặt 3D thực (0mm khe hở, không xuyên thủng) cho cáp và xích ôm sát kiện hàng 3D |
 | `src/rigging/UnifiedHoistProfile.js` | 65 | Quy chuẩn tốc độ nâng/hạ kiện hàng đồng nhất (0.85 m/s * scale) và chống giật bắn cho mọi phương án cáp & STS Spreader |
 | `src/rigging/WebbingSlingMeshBuilder.js` | 242 | Dựng lưới 3D liền mạch chuẩn EN 1492-1 cho cáp bẹ dẹt 2 lớp (Webbing Sling), đầu khuyên thuôn bọc bạt chống mài mòn, chỉ may chữ X/zig-zag và tem xanh/trắng |
-| `src/saas/access.js` | 48 |  |
+| `src/saas/access.js` | 64 |  |
 | `src/saas/admin_catalog_audit_panels.js` | 89 | Dựng giao diện phân hệ Catalog thiết bị 3 cột, Nhật ký Kiểm toán Diff và Modal chi tiết người dùng |
 | `src/saas/admin_cms.css` | 170 | Giao diện CSS chuẩn Enterprise Command Center cho CMS Quản trị (/admin) |
 | `src/saas/admin_dashboard.js` | 250 |  |
@@ -235,7 +235,7 @@ Tổng: 297 file, 82517 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/saas/feature_access_ui.js` | 194 |  |
 | `src/saas/feedback.js` | 194 | Giải mã động địa chỉ nhận góp ý và xác thực hành vi thao tác chống bot/spam đa lớp |
 | `src/saas/firebase.js` | 95 |  |
-| `src/saas/firebase_data.js` | 82 |  |
+| `src/saas/firebase_data.js` | 118 |  |
 | `src/saas/i18n.js` | 15 | Định dạng khóa ngôn ngữ SaaS và hộp thoại góp ý theo ngôn ngữ hiện tại |
 | `src/saas/plan_snapshot.js` | 170 | Chuẩn hóa dữ liệu thiết bị và đóng gói/giải mã/di trú snapshot phương án nâng hạ |
 | `src/saas/runtime_flags.js` | 63 |  |
@@ -243,6 +243,7 @@ Tổng: 297 file, 82517 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/saas/session.js` | 262 |  ⚠️>250 |
 | `src/saas/session_ui_bindings.js` | 157 | Gắn kết giao diện header, widget tài khoản, banner bảo trì và hộp thoại liên hệ SaaS |
 | `src/saas/telemetry_usage.js` | 143 |  |
+| `src/saas/trial_access.js` | 139 | Quản lý dùng thử Pro 24h, dấu vân tay thiết bị chống lạm dụng nhiều Gmail và hàm hasProAccess(user) |
 | `src/saas/workspace_dashboard.js` | 260 |  ⚠️>250 |
 | `src/saas/workspace_data.js` | 228 |  |
 | `src/saas/workspace_views.js` | 184 | Các hàm dựng HTML, hộp thoại chọn phụ trợ và di trú dữ liệu rig cũ cho Workspace SaaS |
@@ -321,6 +322,7 @@ Tổng: 297 file, 82517 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/engineering.test.js` | 410 |  ⚠️>300 |
 | `test/feedback_mailto.test.js` | 144 |  |
 | `test/firestore-rules-emulator.mjs` | 351 |  |
+| `test/firestore-rules-trial-cms.mjs` | 55 | Emulator test bo sung cho rules 24h trial_devices anti-abuse va system_config/feature_locks |
 | `test/force_vector_field.test.js` | 54 |  |
 | `test/graphics.test.js` | 113 |  |
 | `test/h_style_lifting_beam.test.js` | 191 | Kiểm thử vàng cấu tạo H-Style Lifting Beam 4 góc và 4 tổ hợp liên kết Trên/Dưới |
@@ -345,7 +347,7 @@ Tổng: 297 file, 82517 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/rigging_physics_and_alarms.test.js` | 305 | test/rigging_physics_and_alarms.test.js ⚠️>300 |
 | `test/rigging_realism_sts_contact.test.js` | 186 | Bộ kiểm thử vàng xác minh tiếp xúc bề mặt 3D thực (0mm khe hở), dầm chữ H, kích thước STS ISO 668/1161 và vật lý đứt cáp |
 | `test/runtime_flags.test.js` | 96 |  |
-| `test/saas_access.test.js` | 55 |  |
+| `test/saas_access.test.js` | 59 |  |
 | `test/security_headers.test.js` | 44 |  |
 | `test/sim_test_harness.js` | 210 |  |
 | `test/simulation.test.js` | 93 |  |
@@ -355,6 +357,7 @@ Tổng: 297 file, 82517 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/standards_compliance_engine.test.js` | 281 |  ⚠️>250 |
 | `test/sts_twin_cable_flare.test.js` | 106 |  |
 | `test/telemetry_usage.test.js` | 50 |  |
+| `test/trial_access.test.js` | 77 | Unit tests cho trial_access (24h Pro trial, device fingerprint anti-abuse, countdown & expiry) |
 | `test/v2_ux_dunnage_ruler_regression.test.js` | 151 | Kiểm thử hồi quy 7 tính năng mới: Lashing khít đáy, SWL >= 12MT, Chỉnh đồng bộ, Hạ êm, Góc xoay mượt, Gỗ kê đỡ/nghiêng kiện, Thước cao độ 3D + Điểm đỏ. |
 | `test/v3_ruler_drag_hoist_sts_gear_regression.test.js` | 449 | Kiểm thử hồi quy 6 nâng cấp mới: bỏ cục tời khi tắt cẩu 3D, kéo đặt thước 3D & bắt Điểm Đỏ cáp/ma ní, dblclick Hạ/Kéo, mở khóa chỉnh cáp, hết giật STS Direct. ⚠️>300 |
 | `test/workspace_data.test.js` | 155 |  |

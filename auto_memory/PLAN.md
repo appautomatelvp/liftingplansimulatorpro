@@ -1,75 +1,108 @@
 # KẾ HOẠCH THỰC HIỆN (PLAN.md)
-Trạng thái: DONE
-Tính năng: MASTER HOTFIX — Khôi phục đồng bộ dữ liệu theo Cây Phân Cấp (`LP1 -> LP11, LP12...`), UI Parity cho Cáp Tầng Trên, Sửa lỗi Góc Ngang >90° (`96°/98°`), và Phân Bố Lực Đàn Hồi 4 Điểm theo Độ Cứng Xoắn Dầm (`EA + GJ` XPBD thay cho ép `100/0/100/0`)
-Nhánh Git: feat/horizon-clouds
-Người lập kế hoạch: Model cao nhất (CHƯA viết code ở bước này). Gõ `làm tiếp` 1 lần để chạy một mạch Bước 1 → 5.
+Trạng thái: ACTIVE
+Tính năng: 24H PRO TRIAL, DYNAMIC CMS FEATURE LOCKS (`system_config/feature_locks`), RISK ASSESSMENT (JSA/HSE) & 3D ANTI-THEFT BRANDING (Three.js Decals + Viewport & PDF Watermark)
+Nhánh Git: feat/horizon-clouds (Backup: `LIFTING PLAN SIMULATOR PRO-112617112026 (test - trial-cms-locks-branding-risk).zip`)
+Người lập kế hoạch: Model cao nhất (CHƯA viết code ở bước này — chờ Founder duyệt mở khóa `firestore.rules` `[LOCK-04]` và gõ `làm tiếp`).
 
-## 0. KẾT QUẢ KHÁM CODE (NGUYÊN NHÂN GỐC RỄ ĐÃ TÌM RA)
-1. **FIX 1 — Mất đồng bộ dữ liệu Cây Phân Cấp (`telemetry.js:541-626`, `HierarchicalNaming.js`, `index.html:1857`):**
-   - Bảng thanh lực căng & 3D label ở `telemetry.js:541-609` vẫn chạy vòng `for (let i = 0; i < 4; i++)` theo chỉ số phẳng `i = 0..3`, lấy chiều dài dùng chung `state.slingLength` thay vì đọc đúng node `node.id` / `node.name` (`LP11`, `LP12`, `LP21`, `LP22`...) và chiều dài riêng `c.L0` + tăng đơ của từng nhánh.
-   - Nhãn thanh bảng bên trái (`#leg-lbl-0..3` trong `index.html:1857`) đang ghi cứng `LP1..LP4` thay vì đồng bộ tên cây phân cấp thực tế.
-2. **FIX 2 — Cáp tầng trên `LP1/LP2` bị thiếu Góc, Chiều dài & `%SWL` ma ní (`telemetry.js:613-626`, `cables_break.js:1339-1379`):**
-   - `topPool` trong `telemetry.js:624` chỉ render `${cName} · ${tens.toFixed(1)}T`, bỏ qua hoàn toàn góc ngang, chiều dài `L: ...m` và tải ma ní `SH(Bow/Pin): ...%`.
-   - Trong `cables_break.js:1339-1379`, nhánh `c.role === 'upper'` và `'hanger'` chưa gọi `evaluateShackleComponentLoad` để gán `c._hardwareStress`, và nhánh `'hanger'` chưa lưu `phy.hangerAngleDeg[c.index]`.
-3. **FIX 3 — Lỗi Góc Ngang > 90° (`96°/98°`) (`cables_break.js:1405`, `telemetry.js:105-109, 214-215`, `SlingAngleGizmo.js:35`):**
-   - Ở `cables_break.js:1405` (`publishCableLoads`), công thức viết `Math.asin(clamp(n.y, -1, 1))` **thiếu `Math.abs`**. Khi đầu dưới hơi cao hơn đầu trên hoặc vector ngược hướng (`n.y < 0`), góc ngang bị âm (vd `-6°` / `-8°`), dẫn tới `phy.maxAngleVert = 90 - (-6) = 96°` (hiển thị thành `96°` / `98°` trên HUD & tooltip!).
-   - Ở `SlingAngleGizmo.js` & `telemetry.js:215, 309-313, 351-352, 585`, góc ngang chưa được tính thống nhất bằng `asin(|top.y - bot.y| / length) * (180 / Math.PI)` và kẹp chặt `[0°, 90°]`.
-4. **FIX 4 — Phân bố lực 4 điểm bị ép `100/0/100/0` thay vì đàn hồi thực (`DnvFourPointLift.js`, `RiggingPhysicsSolver.js:489-561`, `beams_seed.js:2462-2505`):**
-   - Trong bộ giải XPBD (`beams_seed.js:2487-2488`), ràng buộc dây cáp đang giải cứng hoàn toàn (`wSum = endCompliance(a) + endCompliance(b)` không có độ mềm kéo trục dây `alpha_EA = L0 / (EA * dt^2)`), và chưa liên kết độ mềm xoắn Saint-Venant (`GJ`) của dầm nâng trong bước giải lực, nên chênh lệch dài vài mm làm 2 sợi chéo rơi xuống `slack = true` (`0.0T`).
-   - Đồng thời `DnvFourPointLift.js:99-102` & `RiggingPhysicsSolver.js:489-560` đang ép 2 chân chéo thụ động bằng `0t` (`shares = [0, 0, ...]`) ngay cả khi dầm/khung có độ mềm xoắn (`GJ > 0`), ghi đè lên chia tải đàn hồi thực tế.
+## 0. KẾT QUẢ KHÁM CODE HIỆN TẠI
+1. **SaaS Auth, Tier & Feature Flags (`src/saas/`):**
+   - `src/saas/firebase_data.js` (`ensureUserProfile` dòng 19–45) đang tạo `users/{uid}` với `{ uid, email, displayName, role: 'user', tier: 'free', createdAt, lastLogin, status: 'active' }` (chưa có `trialStartedAt`, `trialEndsAt`, `deviceFingerprint`, chưa kiểm tra `trial_devices`).
+   - `src/saas/access.js` (`TIERS`, `FEATURE_RULES`, `canAccessFeature`) chỉ nhận `free | premium | admin` (`enterprise` hiện đang bị quy về `free` theo `test/saas_access.test.js:23`); chưa có `hasProAccess(user)` xét thời hạn dùng thử 24h.
+   - `src/saas/telemetry_usage.js` + `runtime_flags.js` hiện đọc 1 lần (`loadFlagsOnce`) tài liệu `config/featureFlags` chứ chưa subscribe realtime `onSnapshot` tới `system_config/feature_locks`, và chưa phân biệt 3 trạng thái `Active` / `Tier Locked` / `Under Upgrade` ở từng khối 3D (Cargo, Spreader, Crane) hay tính năng (`windSimulation`, `riskAssessmentGenerator`).
+   - `src/saas/admin_dashboard.js` + `admin_panels.js` + `admin_helpers.js` chưa có tab `"Feature & 3D Asset Matrix"` cho nút bấm đổi 3 trạng thái tức thì.
+2. **Bảo mật & `[LOCKED]` Firestore Rules (`firestore.rules` — `LOCK-04`):**
+   - `firestore.rules:146-162` đang khóa cứng `users/{uid}` `create` chỉ cho phép `hasOnly(['uid', 'email', 'displayName', 'role', 'tier', 'createdAt', 'lastLogin', 'status'])` và `catch-all deny` cuối file. Để lưu `trialStartedAt`, `trialEndsAt`, `deviceFingerprint`, chống gian lận đa tài khoản qua `trial_devices/{fpHash}`, hỗ trợ `tier in ['free', 'premium', 'pro', 'enterprise']` và bật `system_config/feature_locks` cho Admin CMS **bắt buộc phải sửa `firestore.rules` (`[LOCK-04]`)** và cập nhật `test/firestore-rules-emulator.mjs`.
+   - `test/auth_screen.test.js:34-42` cấm lộ SĐT/email thô trong `index.html`, `auth_screen.js`, `feature_access_ui.js`, `contact_dialog.js`, `COPYRIGHT`, `AUTH_COPY` — nên mọi chuỗi bản quyền có SĐT/email **chỉ** đưa vào lớp vẽ Decal 3D (`CanvasTexture`) và trang xuất PDF qua helper tách riêng (`resolveAttributionStrings`), không rò ra màn hình Auth/Splash.
+3. **3D Meshes & Báo cáo PDF (`src/sim/`, `src/core/LiftPlanModel.js`):**
+   - Cụm móc cẩu `hookAssemblyGroup` nằm trong `src/sim/rigging/hook_pool.js` (`plate` má móc dòng 214–222); các loại cẩu (`mobile_telescopic`, `crawler`, `gantry`, `hook_only`) dựng ở `buildCraneVehicle()` trong `src/sim/scene.js:789-1060` (có `craneVehicleCache`); dầm/ngáng (`spreader`, `lifting_beam`, `h_beam`, `frame`, `cascaded`, `modular_truss`, `basket`, `container_spreader`) dựng trong `rebuildSpreaderVisuals()` ở `src/sim/cargo/specialty_meshes.js:2080+`; kiện hàng dựng ở `src/sim/cargo/shell_rebuild.js:407+`.
+   - Xuất PDF chạy từ `src/sim/compliance.js:131-165` (`exportLiftPlanToPDF` + `buildCurrentLiftPlanModel`) gọi `LiftPlanModel.generatePrintableHTML(screenshot)` (`src/core/LiftPlanModel.js:780-1073`). Lưu ý `src/core/` nằm trong **Physics Quarantine** (cấm import DOM / Three.js) nên logic đánh giá Risk Assessment JSA/HSE & ghép HTML watermark là hàm JS thuần 100%.
 
-## 1. Giả định đã chọn & Lưu ý Golden Tests (`@test`)
-1. Không đụng các file `[LOCKED]` trong `STATE.md` (`src/core/standards/*`, `src/core/DeformableSteelStructure.js`, `src/core/PhysicalCableSolver.js`, `src/core/physics-world/*`, `manifest.js`, `firestore.rules`, `firestoreSanitize.js`, `localDataStore.js`). Mọi hàm mới tách gọn vào module `<250` dòng (`@purpose`).
-2. **Lưu ý về FIX 4 & Golden Tests cũ:**
-   - Hai bài test cũ (`test/dnv_four_point_lift.test.js` & `test/rigging_physics_and_alarms.test.js`) hiện kiểm tra `passive === 0` (quy tắc cứng tuyệt đối `100/0/100/0`). Theo FIX 4, khi dầm/hệ có độ mềm xoắn (`GJ > 0` / cáp có độ giãn trục `EA > 0`), thuật toán sẽ tính chia tải đàn hồi không ép `0t` (ra tỷ lệ lệch tự nhiên như `~35%/15%/35%/15%` tùy chênh dài & độ cứng dầm), và chỉ giữ trường hợp `beamGJ = 0, cableEA = Infinity` cho kịch bản cứng lý tưởng thuần túy nếu gọi tường minh; cập nhật bộ số test để kiểm chứng phân bố đàn hồi `> 0` trên cả 4 nhánh khi `GJ > 0` & `EA > 0`.
+## 1. Giả định & Quyết định chờ Founder xác nhận (khi gõ `làm tiếp`)
+1. **Xin phép sửa file `[LOCKED]` `firestore.rules` (`LOCK-04`):** Cần bổ sung rule chặt cho `trialStartedAt`/`trialEndsAt`/`deviceFingerprint` (giới hạn `trialEndsAt <= request.time + duration.value(24, 'h')`, user tự update không được sửa `trialEndsAt`/`tier`), collection `trial_devices/{fpHash}` (chỉ cho phép tạo 1 lần bởi user khớp `deviceFingerprint`, cấm sửa/xóa) và `system_config/feature_locks` (signed-in `get`, chỉ `activeAdmin()` ghi kèm audit log).
+2. **Tương thích ngược `tier: 'premium'` vs `'pro' | 'enterprise'`:** Giữ nguyên hỗ trợ `'premium'` cho khách cũ, đồng thời công nhận `'pro'` và `'enterprise'` trong `hasProAccess(user)` và `TIERS`.
+3. **Không làm tụt FPS WebGL:** Bộ decal 3D dùng **1 shared `THREE.CanvasTexture` cache + 1 `PlaneGeometry` tái sử dụng**, gắn trực tiếp làm con của boom cẩu, má móc cẩu, dầm/spreader, và góc kiện hàng (tự cập nhật theo kích thước kiện / quay & nhận sáng bóng đổ chung với vật thể mà chi phí GPU ≈ `0 ms/frame`).
 
 ## 2. File CẤM đụng
-`src/core/standards/*`, `src/core/DeformableSteelStructure.js`, `src/core/PhysicalCableSolver.js`, `src/core/CraneLoadChartEngine.js`, `src/core/GroundPressureEngine.js`, `src/core/physics-world/*`, `src/sim/manifest.js`, `src/utils/firestoreSanitize.js`, `src/utils/localDataStore.js`, `firestore.rules`.
+`src/sim/physics/*` (bảo toàn 100% XPBD solver), `src/core/standards/*`, `src/core/physics-world/*`, `src/core/DeformableSteelStructure.js`, `src/core/PhysicalCableSolver.js`, `src/core/CraneLoadChartEngine.js`, `src/core/GroundPressureEngine.js`, `src/sim/manifest.js`, `src/utils/firestoreSanitize.js`, `src/utils/localDataStore.js`.
 
 ---
 
-## CÁC BƯỚC THỰC HIỆN TUẦN TỰ (chạy 1 mạch từ đầu đến hết, mỗi bước xong: `vitest` + `architecture:gate` → tick `[x]` → `git commit` → làm tiếp)
+## CÁC BƯỚC THỰC HIỆN TUẦN TỰ (chạy 1 mạch Bước 1 → 6 sau khi được phép, mỗi bước xong: test + `architecture:gate` → tick `[x]` → `git commit`)
 
-### [x] Bước 1: Tạo Helper Đồng Bộ Cây & Thống Nhất Công Thức Góc Ngang `[0°..90°]` (FIX 1 + FIX 3 lõi)
-- **Tạo mới:** `src/rigging/CableTelemetryMapper.js` (< 180 dòng, `@purpose: Chuẩn hóa dữ liệu telemetry từng nhánh cáp theo node.id/node.name cây phân cấp và công thức góc ngang [0°..90°]`):
-  - `computeHorizontalSlingAngleDeg(topAnchor, bottomAnchor)`: tính đúng `dy = Math.abs(top.y - bot.y)`, `len = hypot(dx, dy, dz)`, `Math.max(0, Math.min(90, Math.asin(clamp(dy / len, 0, 1)) * 180 / Math.PI))` — tuyệt đối không bao giờ ra `<0°` hay `>90°`.
-  - `buildHierarchicalCableSnapshots(phy, state, helpers)`: duyệt cây `phy.cables` theo `assignHierarchicalNames`, trả về danh sách/bản đồ tra cứu theo `node.id` & `node.name` gồm `{ id, name, parentId, parentName, tier, role, index, tensionT, angleDeg, lengthM, swlT, hardwareStress, slack, broken }`.
-  - `formatSlingHudLabel({ snapshot, dOpt, lang })`: định dạng thống nhất **cùng một chuẩn hiển thị** cho cả Tầng Trên (`LP1`, `LP2`) lẫn Tầng Dưới (`LP11`, `LP12`...): `Name · TensionT · Angle° · SH(Pin/Bow): XX% · L: X.Xm`.
+### [x] Bước 1: Module 1 — Logic 24h Pro Trial, Anti-Abuse `deviceFingerprint` & Firestore Schema
+- **Tạo mới:** `src/saas/trial_access.js` (< 210 dòng, `@purpose: Quản lý gói dùng thử Pro 24h, dấu vân tay thiết bị chống lập nhiều Gmail và helper hasProAccess(user)`):
+  - `TRIAL_DURATION_MS = 24 * 60 * 60 * 1000`, `DEVICE_FP_KEY = 'safelift_device_fp_v1'`.
+  - `getOrCreateDeviceFingerprint()`: sinh hash ổn định (SHA-256 fallback FNV-1a kết hợp thông số trình duyệt/màn hình/timezone + lưu `localStorage` qua `safeWriteLocalStore` / đọc an toàn).
+  - `toMillis(ts)` (hỗ trợ cả `Date`, `number`, Firestore `Timestamp.toMillis()`).
+  - `hasProAccess(user, nowMs = Date.now())`: trả `true` nếu `tier === 'pro' | 'premium' | 'enterprise' | 'admin'`, `role === 'admin'`, hoặc `status === 'active' && nowMs < toMillis(user.trialEndsAt)`.
+  - `getTrialState(user, nowMs = Date.now())`: trả `{ inTrial, expired, remainingMs, progressPct, tierLabel }` (khi `user.tier === 'free'` và không phải admin).
 - **Sửa (≤ 25 dòng/file):**
-  - `src/rigging/index.js`: export `CableTelemetryMapper.js`.
-  - `src/rigging/RiggingPhysicsSolver.js`: thêm/dùng `computeHorizontalSlingAngleDeg` cho `computeSlingAngle3D`, đảm bảo luôn kẹp `[0, 90]`.
-  - `src/graphics/SlingAngleGizmo.js`: sửa `computeSlingAngleArcData` tính bằng `Math.asin(clamp(|dy| / len, 0, 1))` và kẹp `[0, 90]`.
-- **Kiểm tra:** `npx vitest run test/hierarchical_naming.test.js test/sling_angle_gizmo.test.js` + `npm run architecture:gate`.
+  - `src/saas/access.js`: hỗ trợ `TIERS.PRO`, `TIERS.ENTERPRISE`, `TIERS.PREMIUM` & re-export `hasProAccess` trong `canAccessFeature(profile, featureId, nowMs)`.
+  - `src/saas/firebase_data.js`: cập nhật `ensureUserProfile(db, authUser)` khi tạo user mới: tính `deviceFingerprint`, kiểm tra `trial_devices/{fp}` (và `localStorage`) — nếu thiết bị chưa từng nhận trial thì ghi `trial_devices/{fp}` + đặt `trialStartedAt: serverTimestamp()`, `trialEndsAt: new Date(Date.now() + 24h)`, còn nếu đã nhận rồi thì đặt `trialEndsAt: null` (trả về `free` ngay).
+  - **`firestore.rules` (`[LOCKED] - cần Founder đồng ý`)** & `test/firestore-rules-emulator.mjs`: cho phép tạo `users/{uid}` kèm `trialStartedAt == request.time`, `trialEndsAt <= request.time + 24h`, `deviceFingerprint`; thêm rule `match /trial_devices/{fp}` (`create` 1 lần nếu chưa tồn tại); hỗ trợ `'pro' | 'enterprise' | 'premium'` trong tier.
+- **Tạo / cập nhật test:** `test/trial_access.test.js` (test `hasProAccess`, hết hạn đúng `24h`, chống tạo lại trial trên cùng `deviceFingerprint`), cập nhật `test/saas_access.test.js`.
+- **Kiểm tra:** `npx vitest run test/trial_access.test.js test/saas_access.test.js test/auth_screen.test.js` + `npm run architecture:gate`.
 
-### [x] Bước 2: Sửa Góc Ngang & Đánh Giá Ma Ní Đầy Đủ Cho Mọi Tầng Cáp Trong Physics Sync (FIX 2 + FIX 3 runtime)
+### [ ] Bước 2: Module 1 (UI) — Thanh Đếm Ngược 24h Live & Hết Hạn Khóa Về Free
+- **Tạo mới:** `src/saas/trial_banner.js` (< 190 dòng, `@purpose: Hiển thị thanh đếm ngược 24h Trial ở đầu workspace và modal thông báo khi hết hạn về Free`):
+  - `mountTrialCountdownBanner({ getProfile, onExpired })`: tạo bar mượt `[HH:MM:SS]` kèm thanh progress tự tụt theo `%` thời gian còn lại trong 24h; hỗ trợ song ngữ EN/VN đúng câu lệnh (*"🎁 Trải nghiệm Full Tính Năng Pro miễn phí: Còn lại [HH:MM:SS] — Nâng cấp ngay để không bị gián đoạn."*).
+  - Khi đồng hồ chạm `00:00:00`: tự động gọi `onExpired()` để làm mới `featureAccess.setProfile(...)` khóa ngay các tính năng Pro về `free`, gỡ banner countdown và mở modal thân thiện hướng dẫn nâng cấp Pro (kèm nút Liên hệ Kỹ sư / mở `openDeveloperContact`).
 - **Sửa (≤ 25 dòng/file):**
-  - `src/sim/physics/cables_break.js`:
-    - Trong `publishXpbdLoads()` (~dòng 1281–1385): tính `horiz` trực tiếp từ hai đầu `attachWorld(c.a)` và `attachWorld(c.b)` qua `computeHorizontalSlingAngleDeg` (lưu `c.angleDeg = horiz`, gán `phy.legAngleDeg`, `phy.upperAngleDeg`, `phy.hangerAngleDeg`); chạy `evaluateShackleComponentLoad` cho **cả `upper`, `hanger`, lẫn `leg`** để tầng trên luôn có `c._hardwareStress` (`Bow`/`Pin`, `%SWL`); kẹp `phy.maxAngleVert` chặt trong `[0, 90]`.
-    - Trong `publishCableLoads()` (~dòng 1405 & 1455–1488): sửa lỗi thiếu `Math.abs` ở dòng 1405 (`horiz` luôn dương `[0, 90]`), tính luôn `phy.upperAngleDeg[i]` & kẹp `phy.maxAngleVert` trong `[0, 90]`.
-- **Kiểm tra:** `npx vitest run test/rigging.test.js test/custom_slings.test.js test/compliance*` (hoặc toàn bộ unit test liên quan) + `npm run architecture:gate`.
+  - `src/saas/i18n.js`: thêm key song ngữ EN/VN cho Trial Countdown Banner & Expired Upgrade Modal (không chứa raw email/phone).
+  - `src/saas/saas.css`: style gọn đẹp cho `#saas-trial-banner`, thanh progress bar và `#saas-trial-expired-modal`.
+  - `src/saas/session.js`: gắn `mountTrialCountdownBanner` sau khi mở workspace và xử lý callback `onExpired` ép re-apply khóa Pro realtime + `playQuota`/`viewportWatermark` refresh ngay lập tức.
+- **Kiểm tra:** thêm test UI countdown `HH:MM:SS` & auto-expire vào `test/trial_access.test.js`; chạy `npx vitest run test/trial_access.test.js test/i18n_keys.test.js` + `npm run architecture:gate`.
 
-### [x] Bước 3: Khôi Phục Liên Kết Cây & UI Parity Đầy Đủ Cho Tầng Trên Trên Màn Hình 3D + Bảng HUD (FIX 1 + FIX 2 UI)
+### [ ] Bước 3: Module 2 — Firestore Realtime `system_config/feature_locks` & Admin CMS Asset/Feature Matrix (`/admin`)
+- **Tạo mới:**
+  - `src/saas/feature_locks_cms.js` (< 210 dòng, `@purpose: Định nghĩa danh mục Asset 3D & Tính năng, đồng bộ realtime system_config/feature_locks và giải quyết 3 trạng thái Active/TierLocked/UnderUpgrade`):
+    - Danh mục chuẩn hóa `ASSET_LOCK_CATALOG` & `FEATURE_LOCK_CATALOG`: gồm `cargo_oog_transformer`, `cargo_specialized`, `spreader_modular`, `lifting_beam`, `crane_sts_gantry`, `crane_mobile_crawler`, `windSimulation`, `riskAssessmentGenerator`...
+    - `normalizeFeatureLocksDoc(raw)`, `evaluateItemLockState({ itemId, profile, featureLocks, nowMs })` trả về `{ state: 'active' | 'tier_locked' | 'upgrading', allowed, reason, minTier }`.
+    - `subscribeFeatureLocks(db, onChange, onError)` (Firestore `onSnapshot` tới `system_config/feature_locks`) & `saveFeatureLocks(db, adminUid, docData, deps)` (ghi batch kèm audit log `FLAGS_UPDATE`).
+  - `src/saas/admin_feature_locks_panel.js` (< 180 dòng, `@purpose: Giao diện tab "Feature & 3D Asset Matrix" trong /admin cho phép đổi 3 trạng thái Active / Tier Locked / Under Upgrade bằng 1 click`).
 - **Sửa (≤ 25 dòng/file):**
-  - `src/sim/telemetry.js`:
-    - Trong `noteSlingAngle` (~dòng 105), dòng 214–215, 309–314, 351–353: dùng `computeHorizontalSlingAngleDeg` và kẹp `[0, 90]` ở mọi nơi hiển thị góc (`#hud-beta`, `#out-angle-vert`, `#out-angle-horiz`, `#lbl-hook`).
-    - Ở phần render nhãn 3D & bảng thanh lực căng (~dòng 541–627): chuyển sang dùng `RIG.buildHierarchicalCableSnapshots(phy, state, ...)` + `RIG.formatSlingHudLabel(...)` tra cứu theo `node.id` / `node.name` — đồng bộ nhãn `#leg-lbl-0..3` sang tên cây thực tế (`LP11..LP22`), dùng chiều dài thực `snapshot.lengthM` của từng nhánh (hết dùng `state.slingLength` chung), và render **đầy đủ 4 thông số** (`LP1: 17.8T · 54° · L: 8.0m · SH(Bow): 75%`) cho **cả cáp Tầng Trên (`topPool`) lẫn Tầng Dưới (`lbl-t0..t3` / mở rộng >4 nhánh nếu có)**!
-- **Kiểm tra:** `npx vitest run test/hierarchical_naming.test.js test/rigging.test.js test/telemetry_usage.test.js` + `npm run architecture:gate`.
+  - **`firestore.rules` (`[LOCKED]`)**: cho phép `match /system_config/feature_locks { allow get: if signedIn(); allow create, update: if activeAdmin(); }` (với validation schema chặt).
+  - `src/saas/admin_dashboard.js` + `src/saas/admin_panels.js`: thêm tab `"Feature & 3D Asset Matrix"` (`activeSection === 'locks'`) nối tới `saveFeatureLocks` + `subscribeFeatureLocks`.
+  - `src/saas/feature_access_ui.js` & `src/saas/session.js`: subscribe realtime `system_config/feature_locks`; gắn selector `#cargo-library [data-cargo]`, `#beam-store [data-beam]`, `#crane-store [data-crane]`, `[data-feature-gate="windSimulation"]`, `[data-feature-gate="riskAssessmentGenerator"]`; khi một mục ở trạng thái `Under Upgrade` (`upgrading`), tự chèn badge `🛠️ Đang nâng cấp / Upgrading...`, disable chọn, và hiện tooltip + modal thông báo đúng nội dung: *"Khối 3D / Chức năng này đang được Kỹ sư Lê Việt Phương nâng cấp thuật toán vật lý. Vui lòng quay lại sau!"*.
+- **Tạo test:** `test/feature_locks_cms.test.js` kiểm tra normalize 3 trạng thái, priority rule (`upgrading` chặn cả Pro/Trial, `tier_locked` mở cho Trial/Pro), và DOM badge/tooltip UI; kiểm tra lại `test/runtime_flags.test.js`.
+- **Kiểm tra:** `npx vitest run test/feature_locks_cms.test.js test/runtime_flags.test.js test/cms_data.test.js` + `npm run architecture:gate`.
 
-### [x] Bước 4: Nâng Cấp Phân Bố Lực Đàn Hồi 4 Điểm Theo Độ Cứng Dọc Trục Cáp (`EA`) & Độ Cứng Xoắn Dầm (`GJ`) (FIX 4)
-- **Tạo mới:** `src/rigging/ElasticFourPointSolver.js` (< 180 dòng, `@purpose: Giải cân bằng tương thích biến dạng đàn hồi 4 nhánh (EA cáp + xoắn Saint-Venant GJ dầm/kiện) thay cho ép 100/0/100/0 cứng`):
-  - `computeCableAxialCompliance({ L0, diameterMm, material, dt })`: tính tham số mềm XPBD `alpha = L0 / (E * A * dt^2)` từ mô-đun Young thực (`CableDynamicsXPBD` profiles).
-  - `solveElasticFourPointDistribution({ totalLoadT, cogShares, legLengthsM, beamGJ, cableEA, lugSpanM, widthM })`: giải cân bằng lực đàn hồi kết hợp kéo dọc trục `EA` và góc xoắn dầm `φ = M_x * L / GJ` — khi dầm/cáp có tính đàn hồi (`GJ > 0, EA > 0`), 2 nhánh chéo ngắn hơn chịu tỷ lệ cao hơn nhưng 2 nhánh còn lại **tự căng và gánh tải thực (> 0t)**, tự nhiên ra phân bố lệch (vd ~35%–15%–35%–15%) phụ thuộc dung sai chiều dài và độ cứng dầm, tuyệt đối không hardcode.
-  - `applyXpbdBeamTorsionalCoupling(beamBody, cables, dt)`: hàm hỗ trợ bổ sung mô-men hồi phục xoắn & tương tác góc xoắn trong vòng lặp XPBD (`beams_seed.js`).
-- **Sửa (≤ 25 dòng/file):**
-  - `src/rigging/index.js`: export `ElasticFourPointSolver.js`.
-  - `src/rigging/DnvFourPointLift.js`: tích hợp `solveElasticFourPointDistribution` vào `resolveFourLegDiagonalLoad` khi có độ cứng xoắn/đàn hồi (mặc định bật `elasticTorsion: true` với tham số thép công nghiệp hoặc nhận `beamGJ` / `cableEA` thực tế; chỉ về rigid `0t` nếu caller truyền tường minh `elasticTorsion: false, isRigid: true`).
-  - `src/rigging/RiggingPhysicsSolver.js`: truyền `beamGJ` & `cableEA` thực của cấu hình hiện tại vào `resolveFourLegDiagonalLoad`, ưu tiên lực XPBD đàn hồi hữu cơ thay vì ép `0t` lên 2 nhánh.
-  - `src/sim/physics/beams_seed.js` (~dòng 2485–2505): đưa độ mềm dọc trục XPBD `alpha_EA` vào `wSum` của `phy.cables` + ghép cặp xoắn đàn hồi `GJ` của `phy.beams` trong vòng giải XPBD để cả 4 dây cùng tham gia chịu lực một cách tự nhiên theo vật lý thực.
-- **Cập nhật & tạo test:**
-  - `test/elastic_four_point_torsion.test.js`: test mới kiểm chứng khi có chênh chiều dài cáp + dầm có `GJ` & cáp có `EA`, lực phân bố bất đối xứng hợp lý (tổng = tải + cả 4 nhánh đều > 0, độ lệch tăng giảm tỷ lệ thuận với `GJ` và chênh chiều dài), KHÔNG ép `0t` và KHÔNG hardcode.
-  - Cập nhật `test/dnv_four_point_lift.test.js` & `test/rigging_physics_and_alarms.test.js` phù hợp quy tắc Elastic 4-Point (giữ kiểm chứng trường hợp thuần cứng khi tắt đàn hồi và kiểm chứng chia tải thực `> 0` khi bật đàn hồi `GJ/EA`).
-- **Kiểm tra:** `npx vitest run test/elastic_four_point_torsion.test.js test/dnv_four_point_lift.test.js test/rigging_physics_and_alarms.test.js test/cog_tilt_stability.test.js`.
+### [ ] Bước 4: Module 3 (3D + Viewport) — Stencil Decal Bản Quyền 3D & Watermark Bảo Vệ Màn Hình
+- **Tạo mới:**
+  - `src/graphics/BrandDecalHelper.js` (< 210 dòng, `@purpose: Tạo texture decal công nghiệp cache 1 lần (CanvasTexture) và gắn tem bản quyền 3D lên Cần cẩu, Móc cẩu, Dầm/Spreader và Kiện hàng mà không ảnh hưởng FPS`):
+    - `createBrandDecalTexture(THREE, options)` dùng HTML5 Canvas vẽ chữ stencil sắc nét `SAFELIFT3D.COM • DEV BY LÊ VIỆT PHƯƠNG (+84968051697)` trên nền tấm tem công nghiệp có đinh tán/viền cảnh báo, cache chung `THREE.CanvasTexture` + `MeshStandardMaterial` (`polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2`, `SRGBColorSpace`).
+    - `stampCraneBrandDecals(THREE, craneVehicleGroup, craneDynamicParts, type)`: gắn decal dọc 2 bên thành cần chính (`teleBoom`, `boomMesh` lattice, `gantry` dầm cầu).
+    - `stampHookBrandDecals(THREE, hookAssemblyGroup)`: gắn decal lên 2 mặt má thép bên ngoài cụm móc (`cz = ±0.068`).
+    - `stampSpreaderBrandDecals(THREE, spreaderRootGroup, beamType, spanX)`: gắn tem stencil dọc 2 bên bụng/cánh dầm spreader / lifting beam (`spreader`, `lifting_beam`, `h_beam`, `frame`, `cascaded`, `container_spreader`, `basket`).
+    - `stampCargoBrandPlate(THREE, cargoRootGroup, dims)`: gắn biển kiểm định / tem stencil bản quyền ở góc cạnh trên mặt trước/bên của khối kiện hàng (`cargoRootGroup`), tự khớp theo `(L, W, H)`.
+  - `src/saas/viewport_watermark.js` (< 140 dòng, `@purpose: Lớp phủ SVG pattern chéo bán trong suốt bảo vệ màn hình 3D đối với tài khoản Free & 24h Trial`):
+    - `syncViewportWatermark(profile, nowMs)`: bật `#saas-viewport-watermark` (lớp `pointer-events: none` SVG chéo mờ lặp lại trên vùng canvas 3D) cho `free` và `trial`, tự ẩn/giảm cực nhẹ khi tài khoản là `pro` / `enterprise` / `admin`.
+- **Sửa (≤ 18 dòng/file — KHÔNG đụng `src/sim/physics/*`):**
+  - `src/graphics/index.js`: export các hàm từ `BrandDecalHelper.js`.
+  - `src/sim/scene.js` (`buildCraneVehicle`, trước khi đẩy vào `craneVehicleCache`): gọi `GFX.stampCraneBrandDecals(THREE, craneVehicleGroup, craneDynamicParts, type)`.
+  - `src/sim/rigging/hook_pool.js` (`buildHookAndRiggingPool`): gọi `GFX.stampHookBrandDecals(THREE, hookAssemblyGroup)`.
+  - `src/sim/cargo/specialty_meshes.js` (`rebuildSpreaderVisuals`): gọi `GFX.stampSpreaderBrandDecals(THREE, spreaderRootGroup, beamType, spanX)`.
+  - `src/sim/cargo/shell_rebuild.js` (`rebuildCargoAndRig`): gọi `GFX.stampCargoBrandPlate(THREE, cargoRootGroup, { L, W, H })`.
+  - `src/saas/session.js` + `src/saas/saas.css`: gọi `syncViewportWatermark(profile)` khi đổi profile / hết hạn trial.
+- **Tạo test:** `test/brand_decal_and_watermark.test.js` kiểm tra tái sử dụng cache `CanvasTexture`, gắn đủ decal vào Hook / Boom / Spreader / Cargo và kiểm tra lớp phủ SVG watermark theo trạng thái `free` / `trial` / `pro` (và đảm bảo `test/auth_screen.test.js` vẫn xanh).
+- **Kiểm tra:** `npx vitest run test/brand_decal_and_watermark.test.js test/auth_screen.test.js test/graphics.test.js test/rigging.test.js` + `npm run architecture:gate`.
 
-### [x] Bước 5: Nghiệm Thu Toàn Diện & Báo Cáo Xác Minh UI Binding
-- Chạy `npx vitest run` (toàn bộ ~61 file test), `npm run architecture:gate`, `npm run build`, `npm run check:dist`, `npx playwright test e2e/saas-accessibility.spec.js --project=fhd-1080p`, `./scripts/auto_check.ps1`.
-- Đặt `Trạng thái: DONE` trong `PLAN.md`, chạy `./scripts/auto_log.ps1`, cập nhật `auto_memory/CONTEXT.md`, commit sạch tại chỗ và báo cáo danh sách file + bằng chứng test chi tiết cho Founder.
+### [ ] Bước 5: Module 3 (PDF) & Risk Assessment JSA/HSE Matrix Động Từ Thông Số 3D
+- **Tạo mới:**
+  - `src/core/RiskAssessmentReport.js` (< 210 dòng, `@purpose: Đánh giá ma trận rủi ro JSA/HSE động (Đất nền, Góc Sling, Lệch CoG, Gió, Kiểm định thiết bị) và sinh Header/Footer + Watermark in PDF thuần không phụ thuộc DOM`):
+    - `evaluateLiveRiskMatrix(planModel)`: nhận thông số vật lý thực (`workingRadiusM`, `groundBearingKpa`, `topBridle.slingAngleDeg`, `cogOffsetM`, `windSpeedMps / maxWindLimitMps`, `inspectionStatus`), chấm mức `LOW / MEDIUM / HIGH / CRITICAL`, xác suất/mức nghiêm trọng và biện pháp kiểm soát cụ thể.
+    - `buildPdfBrandingChrome({ isTrialActive, isProUser, lang })`: sinh CSS & HTML cho:
+      - Header/Footer mỗi trang PDF (`@page` + print header/footer cố định): `Generated by SafeLift3D (safelift3d.com) | System Architect: Lê Việt Phương (levietphuong.hcmutrans@gmail.com | +84 968 051 697)`.
+      - Watermark chéo nền mỗi trang PDF: **chữ đỏ đậm lặp chéo** (`TRIAL VERSION — SAFELIFT3D.COM • NOT FOR CONSTRUCTION`) nếu đang dùng bản **24h Trial / Free**, và watermark bảo mật xám/xanh cực mảnh (`AUTHORIZED PRO LICENSE — SAFELIFT3D.COM`) nếu là **Pro / Enterprise / Admin**.
+      - Trang **Integrated Risk Assessment (JSA / HSE)** có ngắt trang in chuẩn A4 (`page-break-before: always`) trình bày đủ 5 hạng mục bắt buộc + bảng ma trận đánh giá + chữ ký HSE.
+- **Sửa (≤ 20 dòng/file):**
+  - `src/core/LiftPlanModel.js`: dùng `buildPdfBrandingChrome` & `evaluateLiveRiskMatrix` trong `generatePrintableHTML(screenshotUrl, options)` để mỗi trang đều có Header/Footer bản quyền, Watermark theo gói (`trial` vs `pro`) và trang JSA/HSE Risk Assessment tự động ở cuối hồ sơ.
+  - `src/sim/compliance.js` (`buildCurrentLiftPlanModel` & `exportLiftPlanToPDF`): truyền trạng thái gió thực (`state.weather / phy.wind`), áp lực nền (`phy.groundBearing` / Tab 6), tình trạng kiểm định (`state.gear`) và trạng thái gói người dùng hiện tại (`window.SafeLift?.saas?.profile` -> `isTrialActive`, `isProUser`), đồng thời kiểm tra khóa `riskAssessmentGenerator` nếu Admin đang đặt `Under Upgrade`!
+- **Tạo / cập nhật test:** `test/risk_assessment_pdf.test.js` kiểm tra Risk Assessment Matrix phản ứng đúng theo góc sling `<45°`, CoG lệch lớn, gió cao, quá áp lực nền, và kiểm tra watermark đỏ nặng khi `isTrialActive: true` vs nhẹ khi `isProUser: true` + attribution footer đủ tên/email/SĐT tác giả; chạy `test/liftplan.test.js` & `test/standards_compliance_engine.test.js`.
+- **Kiểm tra:** `npx vitest run test/risk_assessment_pdf.test.js test/liftplan.test.js test/standards_compliance_engine.test.js` + `npm run architecture:gate`.
+
+### [ ] Bước 6: Kiểm Thử Toàn Diện, Build Sạch & Nghiệm Thu Cuối
+- Chạy: `npx vitest run` (toàn bộ ~65 file test), `npm run architecture:gate`, `npm run build`, `npm run check:dist`, `npx playwright test e2e/saas-accessibility.spec.js --project=fhd-1080p`, `./scripts/auto_check.ps1`.
+- Nếu có Firebase Emulator chạy được trên máy, chạy kiểm chứng thêm `node --test test/firestore-rules-emulator.mjs` (hoặc báo rõ nếu chưa mở Java emulator).
+- Cập nhật `auto_memory/CONTEXT.md`, `STATE.md`, đặt `Trạng thái: DONE` trong `PLAN.md`, chạy `./scripts/auto_log.ps1`.
+- **KHÔNG tự `git push`/deploy** khi chưa được Founder cho phép trong chính phiên đó.
