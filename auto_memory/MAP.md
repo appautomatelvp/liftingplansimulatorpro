@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 10:28 | Nhánh: feat/horizon-clouds | Commit cuối: b253380 step 3: restore hierarchical tree binding and full upper sling metrics UI parity (5 minutes ago)
-Tổng: 297 file, 82520 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 10:33 | Nhánh: feat/horizon-clouds | Commit cuối: 0b2c234 step 4: elastic 4-point load distribution using XPBD cable EA and beam torsion GJ (5 minutes ago)
+Tổng: 297 file, 82517 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -340,7 +340,7 @@ Tổng: 297 file, 82520 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/pipeline.test.js` | 232 |  |
 | `test/pretension_nhom_cap.test.js` | 238 | Kiểm thử vàng nút Nhớm Cáp (pretensionRig): kiện chạm đất 0.00m và toàn bộ hệ cáp căng đúng chiều dài thực |
 | `test/rigging.test.js` | 1370 |  ⚠️>300 |
-| `test/rigging_alarms_and_tolerances.test.js` | 216 |  |
+| `test/rigging_alarms_and_tolerances.test.js` | 213 |  |
 | `test/rigging_groups_and_dynamics.test.js` | 84 |  |
 | `test/rigging_physics_and_alarms.test.js` | 305 | test/rigging_physics_and_alarms.test.js ⚠️>300 |
 | `test/rigging_realism_sts_contact.test.js` | 186 | Bộ kiểm thử vàng xác minh tiếp xúc bề mặt 3D thực (0mm khe hở), dầm chữ H, kích thước STS ISO 668/1161 và vật lý đứt cáp |

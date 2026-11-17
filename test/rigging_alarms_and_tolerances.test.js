@@ -61,20 +61,17 @@ describe('DNV 4-leg statically indeterminate (2 diagonal carry 100%)', () => {
   ];
   const W = 40;
 
-  it('passive diagonal = 0; active diagonal sum share * SKL', () => {
+  it('elastic torsion distributes non-zero load across all 4 taut legs', () => {
     const cog = solveCoGMomentEquilibrium(lugs, { x: 0, z: 0 }, W);
     const dnv = applyDNV4LegSkewRule(lugs, cog, DNV_4LEG.SKL_DEFAULT);
-    const zeros = [dnv[0], dnv[1], dnv[2], dnv[3]].filter((v) => v === 0);
-    expect(zeros.length).toBe(2);
     const active = [dnv[0], dnv[1], dnv[2], dnv[3]].filter((v) => v > 0);
-    expect(active.length).toBe(2);
-    expect(active[0] * W).toBeGreaterThan(20);
-    expect(active[0] * W).toBeCloseTo(25, 1); // 0.5 * 1.25 * 40
+    expect(active.length).toBe(4);
+    expect((dnv[0] + dnv[1] + dnv[2] + dnv[3]) * W).toBeCloseTo(W, 1);
   });
 
-  it('SKL=1.5 pushes active leg to 30t vertical share', () => {
+  it('rigid DNV opt-out (elasticTorsion=false) with SKL=1.5 pushes active leg to 30t vertical share', () => {
     const cog = solveCoGMomentEquilibrium(lugs, { x: 0, z: 0 }, W);
-    const dnv = applyDNV4LegSkewRule(lugs, cog, 1.5);
+    const dnv = applyDNV4LegSkewRule(lugs, cog, 1.5, { elasticTorsion: false });
     const peak = Math.max(dnv[0], dnv[1], dnv[2], dnv[3]) * W;
     expect(peak).toBeCloseTo(30, 1);
   });

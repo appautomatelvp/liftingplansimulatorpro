@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-17 10:33 [fix] Hoan tat Hotfix: dong bo UI theo cay phan cap (CableTelemetryMapper.js), parity day du thong so cho cap tang tren, sua goc ngang [0..90] xoa loi 96 do va chia tai dan hoi 4 diem theo EA + GJ XPBD (ElasticFourPointSolver.js)
+- Nhánh: feat/horizon-clouds | Commit trước đó: 0b2c234
+- File: src/rigging/CableTelemetryMapper.js,src/rigging/ElasticFourPointSolver.js,src/rigging/DnvFourPointLift.js,src/rigging/RiggingPhysicsSolver.js,src/graphics/SlingAngleGizmo.js,src/sim/physics/cables_break.js,src/sim/physics/beams_seed.js,src/sim/telemetry.js,test/elastic_four_point_torsion.test.js
+
 ## 2026-11-17 10:06 [fix] Bo sung 6 dau chu thap & tia laser chieu CoG len 6 mat kien hang; lam mem hoa loang lo PBR bang radial gradient tu nhien thay vi khoi vuong
 - Nhánh: feat/horizon-clouds | Commit trước đó: 1f1a4ee
 - File: src/graphics/CoGFaceProjection.js,src/graphics/index.js,src/sim/rigging/hook_pool.js,src/sim/cargo/shell_rebuild.js,src/sim/gear/editor.js,src/graphics/pbr/IndustrialWearPBR.js,src/graphics/pbr/StressPBRMaterials.js,src/graphics/pbr/ProceduralTextures.js,src/graphics/pbr/SurfacePBRUpgrader.js,test/cog_gizmo_drag.test.js

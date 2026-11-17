@@ -1,5 +1,5 @@
 # KẾ HOẠCH THỰC HIỆN (PLAN.md)
-Trạng thái: ACTIVE
+Trạng thái: DONE
 Tính năng: MASTER HOTFIX — Khôi phục đồng bộ dữ liệu theo Cây Phân Cấp (`LP1 -> LP11, LP12...`), UI Parity cho Cáp Tầng Trên, Sửa lỗi Góc Ngang >90° (`96°/98°`), và Phân Bố Lực Đàn Hồi 4 Điểm theo Độ Cứng Xoắn Dầm (`EA + GJ` XPBD thay cho ép `100/0/100/0`)
 Nhánh Git: feat/horizon-clouds
 Người lập kế hoạch: Model cao nhất (CHƯA viết code ở bước này). Gõ `làm tiếp` 1 lần để chạy một mạch Bước 1 → 5.
@@ -70,6 +70,6 @@ Người lập kế hoạch: Model cao nhất (CHƯA viết code ở bước nà
   - Cập nhật `test/dnv_four_point_lift.test.js` & `test/rigging_physics_and_alarms.test.js` phù hợp quy tắc Elastic 4-Point (giữ kiểm chứng trường hợp thuần cứng khi tắt đàn hồi và kiểm chứng chia tải thực `> 0` khi bật đàn hồi `GJ/EA`).
 - **Kiểm tra:** `npx vitest run test/elastic_four_point_torsion.test.js test/dnv_four_point_lift.test.js test/rigging_physics_and_alarms.test.js test/cog_tilt_stability.test.js`.
 
-### [ ] Bước 5: Nghiệm Thu Toàn Diện & Báo Cáo Xác Minh UI Binding
+### [x] Bước 5: Nghiệm Thu Toàn Diện & Báo Cáo Xác Minh UI Binding
 - Chạy `npx vitest run` (toàn bộ ~61 file test), `npm run architecture:gate`, `npm run build`, `npm run check:dist`, `npx playwright test e2e/saas-accessibility.spec.js --project=fhd-1080p`, `./scripts/auto_check.ps1`.
 - Đặt `Trạng thái: DONE` trong `PLAN.md`, chạy `./scripts/auto_log.ps1`, cập nhật `auto_memory/CONTEXT.md`, commit sạch tại chỗ và báo cáo danh sách file + bằng chứng test chi tiết cho Founder.

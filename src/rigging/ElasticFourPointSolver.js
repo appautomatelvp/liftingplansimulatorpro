@@ -38,8 +38,8 @@ export function computeXpbdCableCompliance(cable, state, dt = 1 / 60) {
   const len = Math.max(0.35, Number(cable?.L0) || Number(state?.slingLength) || 4.0);
   const { stiffnessNPerM } = computeCableAxialStiffness({ material: mat, diameterMm: dia, lengthM: len });
 
-  // Scale compliance softly in XPBD sub-step units so differential mm stretch engages secondary diagonal organically
-  let compliance = 1.0 / Math.max(1e3, stiffnessNPerM * safeDt * safeDt);
+  // Bounded XPBD compliance scaled safely relative to hoist substeps (prevents rubber-band sag bounce)
+  let compliance = (1.0 / Math.max(1e3, stiffnessNPerM * safeDt * safeDt)) * 0.003;
   const hasBeam = state?.beamType && state.beamType !== 'none' && (cable?.a?.kind === 'body' || cable?.b?.kind === 'body');
   if (hasBeam) {
     const beamSpan = Math.max(1.5, Number(state?.beamLength) || 6.0);
@@ -47,9 +47,9 @@ export function computeXpbdCableCompliance(cable, state, dt = 1 / 60) {
     const jM4 = Math.max(3.8e-4, beamSpan * beamSpan * swlT * 2.0e-7);
     const halfW = Math.max(0.6, (Number(state?.W) || 2.4) * 0.5);
     const kTorsionNPerM = (79.3e9 * jM4) / (beamSpan * halfW * halfW);
-    compliance += 1.0 / Math.max(1e3, kTorsionNPerM * safeDt * safeDt);
+    compliance += (1.0 / Math.max(1e3, kTorsionNPerM * safeDt * safeDt)) * 0.003;
   }
-  return Math.min(2.5e-3, Math.max(0, compliance));
+  return Math.min(2.5e-5, Math.max(0, compliance));
 }
 
 /**
