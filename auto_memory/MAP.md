@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 13:35 | Nhánh: feat/horizon-clouds | Commit cuối: 2cb1355 ci: allowlist public localStorage key name in gitleaks config (2 minutes ago)
-Tổng: 310 file, 84149 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 14:10 | Nhánh: feat/horizon-clouds | Commit cuối: ab519be ci: use singular [allowlist] syntax for gitleaks v8.24.3 (35 minutes ago)
+Tổng: 310 file, 84152 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -82,7 +82,7 @@ Tổng: 310 file, 84149 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `e2e/cms-roles.spec.js` | 106 |  |
 | `e2e/emulator_helpers.js` | 65 |  |
 | `e2e/layout.spec.js` | 313 | Check that an element is actually visible and not clipped or covered. ⚠️>300 |
-| `e2e/saas-accessibility.spec.js` | 148 |  |
+| `e2e/saas-accessibility.spec.js` | 151 |  |
 | `eslint.config.js` | 23 | Flat ESLint config — architecture gates for app/domain layers (optional eslint install). |
 | `firebase.json` | 29 |  |
 | `firestore.rules` | 279 |  |
