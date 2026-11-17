@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 09:02 | Nhánh: feat/horizon-clouds | Commit cuối: b8fde5b step 4: use hierarchical names in Inspector, angle warning, break messages, compliance, and ReplayRecorder (4 minutes ago)
-Tổng: 288 file, 80832 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 09:13 | Nhánh: feat/horizon-clouds | Commit cuối: e461aea step 5: add 3D hierarchical naming regression test and update project memory docs (12 minutes ago)
+Tổng: 290 file, 81021 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -26,7 +26,7 @@ Tổng: 288 file, 80832 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/cargo/specialty_meshes.js (2512 dòng)
 - src/sim/compliance.js (627 dòng)
 - src/sim/dynamics.js (848 dòng)
-- src/sim/gear/editor.js (3618 dòng)
+- src/sim/gear/editor.js (3633 dòng)
 - src/sim/library/core.js (641 dòng)
 - src/sim/library/parsers.js (654 dòng)
 - src/sim/library/reconstruction_export.js (2137 dòng)
@@ -38,7 +38,7 @@ Tổng: 288 file, 80832 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/physics/step_engine.js (809 dòng)
 - src/sim/plan_wizard.js (650 dòng)
 - src/sim/rigging/draw_update.js (853 dòng)
-- src/sim/rigging/hook_pool.js (3126 dòng)
+- src/sim/rigging/hook_pool.js (3130 dòng)
 - src/sim/scene.js (1983 dòng)
 - src/sim/session/prelift_reset.js (1142 dòng)
 - src/sim/session/presets_events.js (3626 dòng)
@@ -161,6 +161,7 @@ Tổng: 288 file, 80832 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/domain/rigging/types.js` | 25 | Rigging domain vocabulary (pure). |
 | `src/domain/site/types.js` | 9 | Site / quay domain vocabulary (pure). |
 | `src/domain/standards/index.js` | 26 |  |
+| `src/graphics/CoGGizmoHelper.js` | 115 | Tay cầm kéo thả 3 trục X/Y/Z cho Gizmo Trọng Tâm (CoG) và hàm chiếu tọa độ kẹp biên theo kiện hàng |
 | `src/graphics/ElevationRulerMath.js` | 117 | Thuật toán bắt điểm 3D cho thước đo cao độ (lưới khối + dây cáp mảnh + ma ní) |
 | `src/graphics/ElevationRulerTool.js` | 290 | Vẽ cây thước đo cao độ 3D so với mặt đất, cho phép kéo đặt vị trí và điểm đỏ rà chuột mọi chi tiết. ⚠️>250 |
 | `src/graphics/EnvironmentManager.js` | 280 | Quản lý ánh sáng IBL, sương mù chân trời, HDR và đồng bộ thời gian thực cho cảnh 3D ⚠️>250 |
@@ -168,7 +169,7 @@ Tổng: 288 file, 80832 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/graphics/GraphicsToneHelper.js` | 114 | Điều chỉnh và lưu độ sáng tối (Brightness) và tương phản (Contrast) cho khung hình 3D như game |
 | `src/graphics/GroundHorizonFade.js` | 46 | Hòa mượt mép ngoài đĩa mặt đất vào màu sương mù chân trời không lộ đường cắt |
 | `src/graphics/HorizonSkyDome.js` | 286 | Dựng vòm bầu trời HorizonSkyDome với mây chân trời 3D Gradient Quintic mềm mại và màu khí quyển thực tế ⚠️>250 |
-| `src/graphics/index.js` | 37 |  |
+| `src/graphics/index.js` | 38 |  |
 | `src/graphics/JobsiteSiteVisuals.js` | 289 | Dựng và đồng bộ hình khối 3D cho đà kê gỗ, đệm địa chất độ dốc và tấm lót chân chống cẩu ở Tab 6. ⚠️>250 |
 | `src/graphics/pbr/ProceduralTextures.js` | 290 | Vẽ texture canvas thủ công (bê tông cảng, cáp thép, xích, sling, mặt nước, vạch cảnh báo) ⚠️>250 |
 | `src/graphics/pbr/StressPBRMaterials.js` | 146 | Tạo bản đồ PBR thép sơn công nghiệp, thép rèn mạ kẽm và màu ứng suất căng cơ học thời gian thực |
@@ -249,7 +250,7 @@ Tổng: 288 file, 80832 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/compliance.js` | 627 |  ⚠️>300 |
 | `src/sim/dynamics.js` | 848 |  ⚠️>300 |
 | `src/sim/gear.js` | 6 |  |
-| `src/sim/gear/editor.js` | 3618 |  ⚠️>300 |
+| `src/sim/gear/editor.js` | 3633 |  ⚠️>300 |
 | `src/sim/gear/park_apply.js` | 81 |  |
 | `src/sim/library.js` | 6 |  |
 | `src/sim/library/core.js` | 641 |  ⚠️>300 |
@@ -268,7 +269,7 @@ Tổng: 288 file, 80832 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/plan_wizard.js` | 650 |  ⚠️>300 |
 | `src/sim/rigging.js` | 6 |  |
 | `src/sim/rigging/draw_update.js` | 853 | Slack cable morphology is solved by a persistent material-aware XPBD chain. ⚠️>300 |
-| `src/sim/rigging/hook_pool.js` | 3126 |  ⚠️>300 |
+| `src/sim/rigging/hook_pool.js` | 3130 |  ⚠️>300 |
 | `src/sim/scene.js` | 1983 |  ⚠️>300 |
 | `src/sim/session.js` | 6 |  |
 | `src/sim/session/prelift_reset.js` | 1142 |  ⚠️>300 |
@@ -304,6 +305,7 @@ Tổng: 288 file, 80832 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `test/cargo_labels.test.js` | 63 |  |
 | `test/catalog_client.test.js` | 94 |  |
 | `test/cms_data.test.js` | 187 |  |
+| `test/cog_gizmo_drag.test.js` | 54 |  |
 | `test/cog_tilt_stability.test.js` | 231 |  |
 | `test/compound_collider_zero_penetration.test.js` | 67 |  |
 | `test/custom_slings.test.js` | 712 |  ⚠️>300 |

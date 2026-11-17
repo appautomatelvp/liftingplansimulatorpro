@@ -324,13 +324,14 @@
             );
             cogSphere.name = 'Center_of_Gravity_Sphere';
             cogSphere.renderOrder = 999;
-            cogSphere.userData = { dragType: 'cog' };
+            cogSphere.userData = { dragType: 'cog', cogAxis: 'free' };
 
             const cogRing = new THREE.Mesh(
-                new THREE.RingGeometry(0.24, 0.31, 32),
+                new THREE.RingGeometry(0.24, 0.34, 32),
                 new THREE.MeshBasicMaterial({ color: 0xef4444, side: THREE.DoubleSide, depthTest: false })
             );
             cogRing.renderOrder = 999;
+            cogRing.userData = { dragType: 'cog', cogAxis: 'free' };
 
             // Vertical CoG Reference Drop Line inside Cargo
             cogDropLine = new THREE.Line(
@@ -340,6 +341,9 @@
             cogDropLine.renderOrder = 998;
 
             cogIndicatorGroup.add(cogSphere, cogRing, cogDropLine);
+            if (typeof GFX !== 'undefined' && GFX.createCoGAxisHandles) {
+                cogIndicatorGroup.add(GFX.createCoGAxisHandles(THREE));
+            }
             cargoRootGroup.add(cogIndicatorGroup);
 
             // Up to 8 welded pad-eyes + hardware shackles

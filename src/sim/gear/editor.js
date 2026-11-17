@@ -3371,15 +3371,24 @@
                     document.getElementById('sim-status-text').textContent = 'Đang kéo móc. Cáp giữ đúng chiều dài đã đặt: chùng thì nằm trên nóc, căng tới đâu thì nhấc điểm đó lên trước.';
 
                 } else if (dragType === 'cog') {
-                    dragTarget = { type: 'cog' };
-                    if (typeof window.setCameraFocusOverride === 'function') {
-                        window.setCameraFocusOverride('cog', 0, 4000);
-                    }
                     const worldCoG = new THREE.Vector3();
                     cogIndicatorGroup.getWorldPosition(worldCoG);
                     const camDir = new THREE.Vector3();
                     camera.getWorldDirection(camDir);
-                    dragPlane.setFromNormalAndCoplanarPoint(camDir, worldCoG);
+                    const cogAxis = hitObj.userData.cogAxis || 'free';
+                    const startHit = hits[0].point ? hits[0].point.clone() : worldCoG.clone();
+                    if (typeof GFX !== 'undefined' && GFX.buildCogDragPlane) {
+                        dragPlane.copy(GFX.buildCogDragPlane({ THREE, axis: cogAxis, worldCoG, cameraDir: camDir, cargoQuat: phy.cargoQuat }));
+                    } else {
+                        dragPlane.setFromNormalAndCoplanarPoint(camDir, startHit);
+                    }
+                    const startWorld = new THREE.Vector3();
+                    if (!raycaster.ray.intersectPlane(dragPlane, startWorld)) startWorld.copy(startHit);
+                    dragTarget = { type: 'cog', axis: cogAxis, startWorld, startCog: { x: state.cogX || 0, y: state.cogY || 0, z: state.cogZ || 0 }, pointerId: e.pointerId };
+                    if (typeof window.setCameraFocusOverride === 'function') window.setCameraFocusOverride('cog', 0, 4000);
+                    e.preventDefault();
+                    e.stopPropagation();
+                    try { renderer?.domElement?.setPointerCapture?.(e.pointerId); } catch (_) { /* ignore */ }
                     document.getElementById('sim-status-text').textContent = '🎯 Đang kéo trực tiếp Trọng Tâm (CoG) 3D của kiện hàng...';
 
                 } else if (dragType === 'lp') {
@@ -3509,13 +3518,16 @@
                 setHookDragCommand(intersectPt);
 
             } else if (dragTarget.type === 'cog') {
-                const localPt = cargoRootGroup.worldToLocal(intersectPt.clone());
-                const { L, W, H } = state;
-                state.cogX = THREE.MathUtils.clamp(localPt.x, -L * 0.45, L * 0.45);
-                state.cogY = THREE.MathUtils.clamp(localPt.y, -H * 0.45, H * 0.45);
-                state.cogZ = THREE.MathUtils.clamp(localPt.z, -W * 0.45, W * 0.45);
+                if (typeof GFX !== 'undefined' && GFX.applyCogDragDelta) {
+                    GFX.applyCogDragDelta({
+                        THREE, ray: raycaster.ray, dragPlane, axis: dragTarget.axis || 'free',
+                        startWorld: dragTarget.startWorld, startCog: dragTarget.startCog, cargoRootGroup, state
+                    });
+                }
+                if (cogIndicatorGroup) cogIndicatorGroup.position.set(state.cogX, state.cogY, state.cogZ);
                 syncCoGSlidersFromState();
-                rebuildCargoAndRig(false);
+                window.dispatchEvent(new CustomEvent('safelift:cog-change', { detail: { cogX: state.cogX, cogY: state.cogY, cogZ: state.cogZ } }));
+                return;
 
             } else if (dragTarget.type === 'lp') {
                 const idx = dragTarget.index;
@@ -3599,7 +3611,10 @@
             }
             controls.enabled = true;
             if (dragTarget) {
-                if (dragTarget.type === 'hook') {
+                if (dragTarget.type === 'cog') {
+                    rebuildCargoAndRig(false);
+                    try { if (dragTarget.pointerId != null) renderer?.domElement?.releasePointerCapture?.(dragTarget.pointerId); } catch (_) { /* ignore */ }
+                } else if (dragTarget.type === 'hook') {
                     // Releasing the mouse is a controlled hoist stop.  Do not
                     // let a target accumulated during a quick drag keep pulling
                     // the hook after the user has let go.
