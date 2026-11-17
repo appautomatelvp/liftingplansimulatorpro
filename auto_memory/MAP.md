@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 07:11 | Nhánh: feat/horizon-clouds | Commit cuối: e51b77c docs: update HISTORY and MAP after CI i18n and sky shader fix (8 hours ago)
+Cập nhật: 2026-11-17 07:12 | Nhánh: feat/horizon-clouds | Commit cuối: 6c552c4 fix: slim heavy web sling visual width and unify VI/EN labels (4 seconds ago)
 Tổng: 270 file, 78264 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
