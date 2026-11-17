@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 07:56 | Nhánh: feat/horizon-clouds | Commit cuối: 2fe612b docs: log webbing seam and lifting beam resize fix (9 minutes ago)
+Cập nhật: 2026-11-17 07:56 | Nhánh: feat/horizon-clouds | Commit cuối: b97bbea feat: full EN 1492-1 1T-12T+ color & black stripe progression on 3D webbing slings (3 seconds ago)
 Tổng: 271 file, 78644 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
