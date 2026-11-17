@@ -39,20 +39,21 @@ export function computeSlingAngle3D(topPoint, bottomPoint) {
   if (!topPoint || !bottomPoint) {
     return { angleDeg: 90.0, horizDist: 0.0, vertDist: 0.0 };
   }
-  const dx = (topPoint.x || 0) - (bottomPoint.x || 0);
-  const dz = (topPoint.z || 0) - (bottomPoint.z || 0);
-  const horizDist = Math.sqrt(dx * dx + dz * dz);
-  const vertDist = Math.abs((topPoint.y || 0) - (bottomPoint.y || 0));
+  const dx = (Number(topPoint.x) || 0) - (Number(bottomPoint.x) || 0);
+  const dz = (Number(topPoint.z) || 0) - (Number(bottomPoint.z) || 0);
+  const horizDist = Math.hypot(dx, dz);
+  const vertDist = Math.abs((Number(topPoint.y) || 0) - (Number(bottomPoint.y) || 0));
+  const length = Math.hypot(dx, vertDist, dz);
 
-  if (horizDist < 1e-4) {
+  if (length < 1e-6 || horizDist < 1e-4) {
     return { angleDeg: 90.0, horizDist: 0.0, vertDist };
   }
   if (vertDist < 1e-4) {
     return { angleDeg: 0.0, horizDist, vertDist: 0.0 };
   }
 
-  const angleRad = Math.atan2(vertDist, horizDist);
-  const angleDeg = angleRad * (180.0 / Math.PI);
+  const ratio = Math.max(0, Math.min(1, vertDist / length));
+  const angleDeg = Math.max(0, Math.min(90, Math.asin(ratio) * (180.0 / Math.PI)));
   return {
     angleDeg: Number(angleDeg.toFixed(2)),
     horizDist: Number(horizDist.toFixed(4)),

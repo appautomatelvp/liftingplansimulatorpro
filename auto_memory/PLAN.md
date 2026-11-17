@@ -30,7 +30,7 @@ Người lập kế hoạch: Model cao nhất (CHƯA viết code ở bước nà
 
 ## CÁC BƯỚC THỰC HIỆN TUẦN TỰ (chạy 1 mạch từ đầu đến hết, mỗi bước xong: `vitest` + `architecture:gate` → tick `[x]` → `git commit` → làm tiếp)
 
-### [ ] Bước 1: Tạo Helper Đồng Bộ Cây & Thống Nhất Công Thức Góc Ngang `[0°..90°]` (FIX 1 + FIX 3 lõi)
+### [x] Bước 1: Tạo Helper Đồng Bộ Cây & Thống Nhất Công Thức Góc Ngang `[0°..90°]` (FIX 1 + FIX 3 lõi)
 - **Tạo mới:** `src/rigging/CableTelemetryMapper.js` (< 180 dòng, `@purpose: Chuẩn hóa dữ liệu telemetry từng nhánh cáp theo node.id/node.name cây phân cấp và công thức góc ngang [0°..90°]`):
   - `computeHorizontalSlingAngleDeg(topAnchor, bottomAnchor)`: tính đúng `dy = Math.abs(top.y - bot.y)`, `len = hypot(dx, dy, dz)`, `Math.max(0, Math.min(90, Math.asin(clamp(dy / len, 0, 1)) * 180 / Math.PI))` — tuyệt đối không bao giờ ra `<0°` hay `>90°`.
   - `buildHierarchicalCableSnapshots(phy, state, helpers)`: duyệt cây `phy.cables` theo `assignHierarchicalNames`, trả về danh sách/bản đồ tra cứu theo `node.id` & `node.name` gồm `{ id, name, parentId, parentName, tier, role, index, tensionT, angleDeg, lengthM, swlT, hardwareStress, slack, broken }`.

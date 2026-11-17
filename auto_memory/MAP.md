@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 10:14 | Nhánh: feat/horizon-clouds | Commit cuối: f0df0bd fix(pbr): replace square fillRect blocks with sparse soft organic gradients (9 minutes ago)
-Tổng: 294 file, 82049 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 10:18 | Nhánh: feat/horizon-clouds | Commit cuối: 3677c0c Snapshot 101417112026 (test): truoc khi lam hotfix-tree-angles-elastic-4point (4 minutes ago)
+Tổng: 295 file, 82218 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -20,7 +20,7 @@ Tổng: 294 file, 82049 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/graphics/SceneRenderer.js (313 dòng)
 - src/i18n/keys.js (598 dòng)
 - src/rigging/ReplayRecorder.js (302 dòng)
-- src/rigging/RiggingPhysicsSolver.js (680 dòng)
+- src/rigging/RiggingPhysicsSolver.js (681 dòng)
 - src/sim/audio.js (725 dòng)
 - src/sim/cargo/containers_iso.js (1453 dòng)
 - src/sim/cargo/shell_rebuild.js (572 dòng)
@@ -179,7 +179,7 @@ Tổng: 294 file, 82049 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/graphics/pbr/SurfacePBRUpgrader.js` | 169 | Phủ bản đồ PBR và tạo UV triplanar cho model tải bất đồng bộ và các bề mặt công nghiệp tránh bị trơn nhựa |
 | `src/graphics/PBRMaterialFactory.js` | 288 | Nhà máy tạo vật liệu PBR chuẩn công nghiệp hàng hải và đồng bộ không gian màu Three.js r170+ ⚠️>250 |
 | `src/graphics/SceneRenderer.js` | 313 |  ⚠️>300 |
-| `src/graphics/SlingAngleGizmo.js` | 199 | Gizmo 3D cung góc dây cáp tương tác (hover/chọn): đường ngang đứt nét, vector dây, quạt cung xanh/vàng/đỏ, nhãn độ |
+| `src/graphics/SlingAngleGizmo.js` | 200 | Gizmo 3D cung góc dây cáp tương tác (hover/chọn): đường ngang đứt nét, vector dây, quạt cung xanh/vàng/đỏ, nhãn độ |
 | `src/graphics/SolidShellSealer.js` | 109 | Bịt kín lõi/đáy rỗng và bật hai mặt vật liệu cho xe 3D và kiện hàng tránh nhìn xuyên |
 | `src/graphics/SpecialtyCargoMeshes.js` | 158 | Dựng khối 3D ống thép siêu trường Steel Pipe (OOG) và xe buýt procedural đồng bộ CAD |
 | `src/i18n/cargo_labels.js` | 48 |  |
@@ -192,6 +192,7 @@ Tổng: 294 file, 82049 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/BrokenCableWhipXPBD.js` | 252 | Mô phỏng XPBD sóng quật, thu hồi năng lượng đàn hồi và va chạm CCD cho hai nửa cáp đứt hoặc cáp tháo chốt ⚠️>250 |
 | `src/rigging/CableDynamicsXPBD.js` | 271 | Bộ giải động lực học cáp/xích XPBD chịu kéo, tự va chạm và đứt thu hồi đàn hồi ⚠️>250 |
 | `src/rigging/CableMaterialBehavior.js` | 121 | Hành vi vật liệu XPBD (uốn cáp/xích/vải, lực cản gió ½ρCdAv²) và trạng thái bật giật hồi đàn hồi (whipPhase) khi đứt cáp |
+| `src/rigging/CableTelemetryMapper.js` | 166 | Chuẩn hóa dữ liệu telemetry từng nhánh cáp theo node.id/node.name cây phân cấp và công thức góc ngang [0°..90°] |
 | `src/rigging/CollisionMaterialSolver.js` | 252 | Bộ giải va chạm liên tục (CCD), ma sát cặp vật liệu, độ nảy theo khối lượng và chống xuyên giữa các sợi cáp/xích ⚠️>250 |
 | `src/rigging/CompoundColliders.js` | 219 | Bộ collider hợp chất (sub-OBB + Convex vertices), lọc thô AABB và va chạm tinh SAT/CCD chống xuyên tuyệt đối |
 | `src/rigging/constraints/CornerProtectorModel.js` | 51 |  |
@@ -202,12 +203,12 @@ Tổng: 294 file, 82049 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/rigging/HardwareBearingTracker.js` | 64 | Truy vết vị trí dây tựa thực tế trên ma ní (Pin vs Bow) và góc tải lệch bên (side-loading angle) theo ASME B30.26 |
 | `src/rigging/HierarchicalNaming.js` | 177 | Thuật toán đệ quy đặt tên cáp & phụ kiện theo Cây Phân Cấp (LP1 -> LP11, LP12 -> LP111...) truy xuất nguồn gốc lực |
 | `src/rigging/HStyleLiftingBeam.js` | 188 | Cấu tạo 3D và thông số khớp nối H-Style Lifting Beam (tùy chọn trên Direct Hook/2-Cáp và dưới 4-Cáp/Twistlock) |
-| `src/rigging/index.js` | 30 | src/rigging/index.js |
+| `src/rigging/index.js` | 31 | src/rigging/index.js |
 | `src/rigging/LoadPathGravity.js` | 163 | Kết nối đường tải trọng lực (rơi tự do g=-9.81 khi mất cáp), mô-men lật τ=r×mg trên mặt đỡ và võng uốn dầm Euler-Bernoulli |
 | `src/rigging/PretensionSolver.js` | 297 | Giải cao độ móc cẩu và dầm ngáng tại trạng thái Nhớm Cáp (kiện chạm đất, toàn bộ cáp căng đúng chiều dài thực) ⚠️>250 |
 | `src/rigging/ReplayRecorder.js` | 302 | Ghi và phát lại toàn bộ trạng thái mô phỏng (Hook, Ngáng dầm, Kiện, Cáp đứt/chùng, Lashing/OOG rơi, Cẩu) tối đa 60 giây. ⚠️>300 |
 | `src/rigging/riggingConstants.js` | 69 | src/rigging/riggingConstants.js |
-| `src/rigging/RiggingPhysicsSolver.js` | 680 | src/rigging/RiggingPhysicsSolver.js ⚠️>300 |
+| `src/rigging/RiggingPhysicsSolver.js` | 681 | src/rigging/RiggingPhysicsSolver.js ⚠️>300 |
 | `src/rigging/riggingUIStore.js` | 100 | src/rigging/riggingUIStore.js |
 | `src/rigging/RigidInertialDynamics.js` | 212 | Động lực học vật rắn lệch tâm (Steiner-Huygens Inertia Tensor), mô-men xoắn/nghiêng khi cẩu và rơi tự do 9.81 m/s² |
 | `src/rigging/SlingPerfHelper.js` | 167 | Tái sử dụng biến toán học scratch và bộ đệm nghỉ XPBD để giảm giật lag vòng lặp cáp 3D |
