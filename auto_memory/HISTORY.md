@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-17 07:17 [feat] Sua loi ma tran doi xung khien Web Sling bi tach dot nam ngang va nang cap Webbing Sling chuan EN 1492-1 voi dai 2 lop lien mach bo mep, khuyen thuon boc bat den chong mai mon, chi may chu X/zig-zag, tem xanh/trang va van vai polyester PBR 1024px.
+- Nhánh: feat/horizon-clouds | Commit trước đó: 34c587d
+- File: src/rigging/WebbingSlingMeshBuilder.js,src/rigging/SlingPerfHelper.js,src/rigging/index.js,src/graphics/pbr/ProceduralTextures.js,src/graphics/PBRMaterialFactory.js,src/sim/rigging/hook_pool.js,src/sim/rigging/draw_update.js,test/v3_ruler_drag_hoist_sts_gear_regression.test.js
+
 ## 2026-11-17 07:12 [fix] Thu gon be ngang Web Sling tai nang ve ty le thuc te (~11.3 cm thay vi 30 cm), bo sung tu dien sim_ui_phrases.js va dong bo song ngu Viet-Anh cho thuoc do 3D, telemetry HUD/3D, gear editor va badge cẩu/nen.
 - Nhánh: feat/horizon-clouds | Commit trước đó: 6c552c4
 - File: src/rigging/SlingPerfHelper.js,src/sim/rigging/draw_update.js,src/graphics/ElevationRulerTool.js,src/i18n/sim_ui_phrases.js,src/i18n/index.js,src/sim/session/presets_events.js,src/sim/telemetry.js,test/v3_ruler_drag_hoist_sts_gear_regression.test.js

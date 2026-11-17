@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 07:17 | Nhánh: feat/horizon-clouds | Commit cuối: 13ee5d8 docs: log web sling sizing and VI/EN parity fix (6 minutes ago)
+Cập nhật: 2026-11-17 07:17 | Nhánh: feat/horizon-clouds | Commit cuối: 34c587d feat: continuous EN 1492-1 duplex webbing ribbon, eye wear sleeve, weave PBR and basis fix (4 seconds ago)
 Tổng: 271 file, 78578 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
