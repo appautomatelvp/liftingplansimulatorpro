@@ -39,7 +39,7 @@ Người lập kế hoạch: Model cao nhất (KHÔNG viết code ở bước n�
 - **Tạo test:** `test/hierarchical_naming.test.js` kiểm tra: cẩu trực tiếp 4 chân (`LP1..LP4`), Spreader 2+4 (`LP1, LP2` & `LP11, LP12, LP21, LP22`), Cascaded 2+4+4 (`LP1 → LP11 → LP111`), Inline-8 3 tầng (`LP111..LP222`), H-Beam `direct_hook` (`LP1 → LP11..LP14`), kiểm tra `parentId`/`parentName` khớp 100%.
 - **Kiểm tra:** `npx vitest run test/hierarchical_naming.test.js` + `npm run architecture:gate`.
 
-### [ ] Bước 2: Gắn đệ quy đặt tên vào Physics Engine (`hoist_contacts.js` & `beams_seed.js`)
+### [x] Bước 2: Gắn đệ quy đặt tên vào Physics Engine (`hoist_contacts.js` & `beams_seed.js`)
 - **Sửa (≤25 dòng/file):**
   - `src/sim/physics/hoist_contacts.js`: ngay trước khi `return { bodies, cables, lugs }` (hoặc bao chung qua helper trước khi trả kết quả `buildRigTopology()`), gọi `RIG.assignHierarchicalNames(cables, { bodies })`.
   - `src/sim/physics/beams_seed.js`: tại điểm khởi tạo/nạp `phy.cables` gọi `RIG.assignHierarchicalNames(phy.cables, { bodies: phy.beams })` và `RIG.syncHierarchicalNamesToGear(phy.cables, state)`.

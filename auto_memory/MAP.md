@@ -1,6 +1,6 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 08:51 | Nhánh: feat/horizon-clouds | Commit cuối: eea10b2 step 11: finalize 5-pillar physics upgrade docs, STATE, CONTEXT, HISTORY, MAP (21 minutes ago)
-Tổng: 288 file, 80757 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
+Cập nhật: 2026-11-17 08:54 | Nhánh: feat/horizon-clouds | Commit cuối: 24f53c3 step 1: add HierarchicalNaming recursive tree algorithm and Golden Tests (3 minutes ago)
+Tổng: 288 file, 80769 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
 - e2e/layout.spec.js (313 dòng)
@@ -29,11 +29,11 @@ Tổng: 288 file, 80757 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 - src/sim/library/core.js (641 dòng)
 - src/sim/library/parsers.js (654 dòng)
 - src/sim/library/reconstruction_export.js (2137 dòng)
-- src/sim/physics/beams_seed.js (2997 dòng)
+- src/sim/physics/beams_seed.js (3001 dòng)
 - src/sim/physics/cables_break.js (1573 dòng)
 - src/sim/physics/flatrack_payload.js (657 dòng)
 - src/sim/physics/footprint_rig.js (838 dòng)
-- src/sim/physics/hoist_contacts.js (1110 dòng)
+- src/sim/physics/hoist_contacts.js (1118 dòng)
 - src/sim/physics/step_engine.js (808 dòng)
 - src/sim/plan_wizard.js (650 dòng)
 - src/sim/rigging/draw_update.js (853 dòng)
@@ -256,11 +256,11 @@ Tổng: 288 file, 80757 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã qu
 | `src/sim/library/reconstruction_export.js` | 2137 | --- 2D IMAGE TO 3D CONTOUR & RELIEF RECONSTRUCTION ENGINE --- ⚠️>300 |
 | `src/sim/manifest.js` | 39 |  |
 | `src/sim/physics.js` | 6 |  |
-| `src/sim/physics/beams_seed.js` | 2997 |  ⚠️>300 |
+| `src/sim/physics/beams_seed.js` | 3001 |  ⚠️>300 |
 | `src/sim/physics/cables_break.js` | 1573 |  ⚠️>300 |
 | `src/sim/physics/flatrack_payload.js` | 657 | --- FLAT RACK LASHING RUPTURE, DECK SLIDING & FALLING PAYLOAD PHYSICS --- ⚠️>300 |
 | `src/sim/physics/footprint_rig.js` | 838 |  ⚠️>300 |
-| `src/sim/physics/hoist_contacts.js` | 1110 |  ⚠️>300 |
+| `src/sim/physics/hoist_contacts.js` | 1118 |  ⚠️>300 |
 | `src/sim/physics/index.js` | 9 | Bounded context index — parts are assembled via src/sim/manifest.js (shared scope). |
 | `src/sim/physics/port.js` | 59 |  |
 | `src/sim/physics/step_engine.js` | 808 |  ⚠️>300 |

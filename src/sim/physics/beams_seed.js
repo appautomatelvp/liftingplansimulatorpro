@@ -174,6 +174,10 @@
         function syncCableRest(captureDesign) {
             const spec = getRigSpec();
             if (captureDesign) phy._stsPinsSnug = false;
+            if (typeof RIG !== 'undefined' && RIG.assignHierarchicalNames && phy.cables) {
+                RIG.assignHierarchicalNames(phy.cables, { bodies: phy.beams });
+                RIG.syncHierarchicalNamesToGear(phy.cables, state);
+            }
             (phy.cables || []).forEach(c => {
                 if (c.role === 'extra') {
                     const ex = (state.gear.extraCables || [])[c.index];
