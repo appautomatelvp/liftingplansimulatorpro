@@ -1,6 +1,7 @@
 // src/rigging/index.js
 export * from './riggingConstants.js';
 export * from './DnvFourPointLift.js';
+export * from './HierarchicalNaming.js';
 export * from './HardwareBearingTracker.js';
 export * from './RiggingPhysicsSolver.js';
 export * from './CompoundColliders.js';
