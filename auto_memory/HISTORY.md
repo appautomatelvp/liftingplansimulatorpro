@@ -1,6 +1,10 @@
 # Nhật ký thay đổi (mới nhất Ở TRÊN CÙNG). Ghi bằng scripts/auto_log.ps1, không sửa tay.
 <!-- LOG_START -->
 
+## 2026-11-17 07:47 [fix] Sua khoang ho giua dai vai Webbing va co khuyen do gioi han 48 vong cat mat diem cuoi #49 (nang len 64 vong & long khit 13cm vao trong co khuyen), dong thoi sua Lifting Beam khi keo doi chieu dai thi cac chot cap tren/duoi trong hoist_contacts.js co gian dong bo theo memberSpec('main').length.
+- Nhánh: feat/horizon-clouds | Commit trước đó: 5576b52
+- File: src/rigging/WebbingSlingMeshBuilder.js,src/sim/rigging/hook_pool.js,src/sim/rigging/draw_update.js,src/sim/physics/hoist_contacts.js,src/sim/session/ui_units_bom.js,test/v3_ruler_drag_hoist_sts_gear_regression.test.js
+
 ## 2026-11-17 07:17 [feat] Sua loi ma tran doi xung khien Web Sling bi tach dot nam ngang va nang cap Webbing Sling chuan EN 1492-1 voi dai 2 lop lien mach bo mep, khuyen thuon boc bat den chong mai mon, chi may chu X/zig-zag, tem xanh/trang va van vai polyester PBR 1024px.
 - Nhánh: feat/horizon-clouds | Commit trước đó: 34c587d
 - File: src/rigging/WebbingSlingMeshBuilder.js,src/rigging/SlingPerfHelper.js,src/rigging/index.js,src/graphics/pbr/ProceduralTextures.js,src/graphics/PBRMaterialFactory.js,src/sim/rigging/hook_pool.js,src/sim/rigging/draw_update.js,test/v3_ruler_drag_hoist_sts_gear_regression.test.js

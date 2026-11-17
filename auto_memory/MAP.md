@@ -1,5 +1,5 @@
 # BẢN ĐỒ DỰ ÁN (TỰ SINH — KHÔNG SỬA TAY)
-Cập nhật: 2026-11-17 07:47 | Nhánh: feat/horizon-clouds | Commit cuối: df24d66 docs: log EN 1492-1 continuous webbing sling upgrade (30 minutes ago)
+Cập nhật: 2026-11-17 07:47 | Nhánh: feat/horizon-clouds | Commit cuối: 5576b52 fix: close webbing eye-collar gap and sync lifting beam cable anchors on resize (4 seconds ago)
 Tổng: 271 file, 78610 dòng. 🔒 = file [LOCKED]. ⚠️ = file sắp/đã quá 300 dòng.
 
 ## ⚠️ Cần tách (quá 300 dòng)
